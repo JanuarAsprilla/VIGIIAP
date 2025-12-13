@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIGIIAP - Visor y Gestor de Información Ambiental del IIAP</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-content">
+            <div class="preloader-logo">
+                <svg viewBox="0 0 100 100" class="preloader-icon">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="2" class="preloader-circle"/>
+                    <path d="M50 20 L50 50 L70 70" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="preloader-hand"/>
+                </svg>
+            </div>
+            <div class="preloader-text">VIGIIAP</div>
+            <div class="preloader-bar">
+                <div class="preloader-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#inicio" class="nav-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 50 50" fill="none">
+                        <rect x="5" y="5" width="40" height="40" rx="5" stroke="currentColor" stroke-width="2"/>
+                        <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="currentColor" font-size="16" font-weight="bold">IIAP</text>
+                    </svg>
+                </div>
+                <span class="logo-text">VIGIIAP</span>
+            </a>
+            
+            <div class="nav-menu" id="navMenu">
+                <a href="#inicio" class="nav-link active">Inicio</a>
+                <a href="#modulos" class="nav-link">Módulos</a>
+                <a href="#mapas" class="nav-link">Mapas</a>
+                <a href="#documentos" class="nav-link">Documentos</a>
+                <a href="#geovisor" class="nav-link">Geovisor</a>
+                <a href="#herramientas" class="nav-link">Herramientas</a>
+                <a href="#solicitudes" class="nav-link">Solicitudes</a>
+            </div>
+            
+            <div class="nav-actions">
+                <div class="search-box">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" placeholder="Buscar..." class="search-input">
+                </div>
+                <button class="nav-toggle" id="navToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="inicio">
+        <div class="hero-bg">
+            <div class="hero-gradient"></div>
+            <div class="hero-particles" id="particles"></div>
+            <div class="hero-pattern"></div>
+        </div>
+        
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-badge animate-fade-up">
+                    <i data-lucide="leaf"></i>
+                    <span>Instituto de Investigaciones Ambientales del Pacífico</span>
+                </div>
+                
+                <h1 class="hero-title animate-fade-up delay-1">
+                    <span class="title-line">Chocó</span>
+                    <span class="title-line accent">Biogeográfico</span>
+                </h1>
+                
+                <p class="hero-description animate-fade-up delay-2">
+                    La región del Pacífico es una de las seis regiones naturales de Colombia. 
+                    Comprende casi la totalidad del departamento del Chocó, y las zonas costeras 
+                    de los departamentos del Valle del Cauca, Cauca y Nariño.
+                </p>
+                
+                <div class="hero-stats animate-fade-up delay-3">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i data-lucide="map"></i></div>
+                        <div class="stat-value" data-count="7">0</div>
+                        <div class="stat-label">Departamentos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i data-lucide="users"></i></div>
+                        <div class="stat-value" data-count="7" data-suffix="M">0</div>
+                        <div class="stat-label">Población</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i data-lucide="building-2"></i></div>
+                        <div class="stat-value" data-count="92">0</div>
+                        <div class="stat-label">Municipios</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i data-lucide="ruler"></i></div>
+                        <div class="stat-value" data-count="233946" data-format="true">0</div>
+                        <div class="stat-label">Km² Área Total</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i data-lucide="home"></i></div>
+                        <div class="stat-value" data-count="174">0</div>
+                        <div class="stat-label">Comunidades</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i data-lucide="shield"></i></div>
+                        <div class="stat-value" data-count="232">0</div>
+                        <div class="stat-label">Resguardos Indígenas</div>
+                    </div>
+                </div>
+                
+                <div class="hero-actions animate-fade-up delay-4">
+                    <a href="#modulos" class="btn btn-primary">
+                        <span>Explorar Módulos</span>
+                        <i data-lucide="arrow-down"></i>
+                    </a>
+                    <a href="#geovisor" class="btn btn-outline">
+                        <span>Ver Geovisor</span>
+                        <i data-lucide="globe"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="hero-map animate-fade-left delay-2">
+                <div class="map-container">
+                    <div class="map-header">
+                        <span class="map-title">Titulación Colectiva en el Chocó Biogeográfico</span>
+                    </div>
+                    <div id="heroMap" class="map-view"></div>
+                    <div class="map-legend">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #F5A623;"></span>
+                            <span>Resguardos Indígenas</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #E67E22;"></span>
+                            <span>Título de Comunidades Negras</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #BDC3C7;"></span>
+                            <span>Área sin Titulación</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="scroll-indicator">
+            <div class="scroll-mouse">
+                <div class="scroll-wheel"></div>
+            </div>
+            <span>Desplázate para explorar</span>
+        </div>
+    </section>
+
+    <!-- Modules Overview Section -->
+    <section class="modules-section" id="modulos">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">Plataforma Integral</span>
+                <h2 class="section-title">Módulos del Sistema</h2>
+                <p class="section-description">
+                    VIGIIAP ofrece un conjunto completo de herramientas para la gestión 
+                    y visualización de información ambiental del Chocó Biogeográfico.
+                </p>
+            </div>
+            
+            <div class="modules-grid">
+                <!-- Mapas Module -->
+                <div class="module-card" data-module="mapas">
+                    <div class="module-icon">
+                        <i data-lucide="map-pin"></i>
+                    </div>
+                    <div class="module-content">
+                        <h3 class="module-title">Mapas</h3>
+                        <p class="module-description">Repositorio completo de mapas temáticos del Chocó Biogeográfico</p>
+                        <ul class="module-features">
+                            <li><i data-lucide="check"></i> Listado de mapas</li>
+                            <li><i data-lucide="check"></i> Etiquetas temáticas</li>
+                            <li><i data-lucide="check"></i> Citas bibliográficas</li>
+                            <li><i data-lucide="check"></i> Múltiples formatos</li>
+                        </ul>
+                        <a href="#mapas" class="module-link">
+                            <span>Explorar</span>
+                            <i data-lucide="arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="module-decoration"></div>
+                </div>
+                
+                <!-- Documentos Module -->
+                <div class="module-card" data-module="documentos">
+                    <div class="module-icon">
+                        <i data-lucide="file-text"></i>
+                    </div>
+                    <div class="module-content">
+                        <h3 class="module-title">Documentos</h3>
+                        <p class="module-description">Protocolos, formatos, guías y estadísticas geográficas</p>
+                        <ul class="module-features">
+                            <li><i data-lucide="check"></i> Protocolos oficiales</li>
+                            <li><i data-lucide="check"></i> Formatos de campo</li>
+                            <li><i data-lucide="check"></i> Guías técnicas</li>
+                            <li><i data-lucide="check"></i> Excel estadísticos</li>
+                        </ul>
+                        <a href="#documentos" class="module-link">
+                            <span>Explorar</span>
+                            <i data-lucide="arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="module-decoration"></div>
+                </div>
+                
+                <!-- Geovisor Module -->
+                <div class="module-card" data-module="geovisor">
+                    <div class="module-icon">
+                        <i data-lucide="globe"></i>
+                    </div>
+                    <div class="module-content">
+                        <h3 class="module-title">Geovisor</h3>
+                        <p class="module-description">Visualización interactiva de información geoespacial</p>
+                        <ul class="module-features">
+                            <li><i data-lucide="check"></i> SIAT-PC integrado</li>
+                            <li><i data-lucide="check"></i> Capas interactivas</li>
+                            <li><i data-lucide="check"></i> Análisis espacial</li>
+                            <li><i data-lucide="check"></i> Exportación de datos</li>
+                        </ul>
+                        <a href="#geovisor" class="module-link">
+                            <span>Explorar</span>
+                            <i data-lucide="arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="module-decoration"></div>
+                </div>
+                
+                <!-- Herramientas Module -->
+                <div class="module-card" data-module="herramientas">
+                    <div class="module-icon">
+                        <i data-lucide="settings"></i>
+                    </div>
+                    <div class="module-content">
+                        <h3 class="module-title">Herramientas</h3>
+                        <p class="module-description">Aplicaciones y tableros para captura y visualización</p>
+                        <ul class="module-features">
+                            <li><i data-lucide="check"></i> Geoformularios</li>
+                            <li><i data-lucide="check"></i> Apps móviles</li>
+                            <li><i data-lucide="check"></i> Tableros de control</li>
+                            <li><i data-lucide="check"></i> Reportes dinámicos</li>
+                        </ul>
+                        <a href="#herramientas" class="module-link">
+                            <span>Explorar</span>
+                            <i data-lucide="arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="module-decoration"></div>
+                </div>
+                
+                <!-- Solicitudes Module -->
+                <div class="module-card" data-module="solicitudes">
+                    <div class="module-icon">
+                        <i data-lucide="clipboard-list"></i>
+                    </div>
+                    <div class="module-content">
+                        <h3 class="module-title">Solicitudes</h3>
+                        <p class="module-description">Formatos y gestión de solicitudes cartográficas</p>
+                        <ul class="module-features">
+                            <li><i data-lucide="check"></i> Solicitudes cartográficas</li>
+                            <li><i data-lucide="check"></i> Seguimiento en línea</li>
+                            <li><i data-lucide="check"></i> Formatos descargables</li>
+                            <li><i data-lucide="check"></i> Historial de solicitudes</li>
+                        </ul>
+                        <a href="#solicitudes" class="module-link">
+                            <span>Explorar</span>
+                            <i data-lucide="arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="module-decoration"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mapas Section -->
+    <section class="detail-section mapas-section" id="mapas">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag"><i data-lucide="map-pin"></i> Módulo</span>
+                <h2 class="section-title">Repositorio de Mapas</h2>
+                <p class="section-description">
+                    Accede a nuestra colección completa de mapas temáticos del Chocó Biogeográfico, 
+                    con diferentes formatos y opciones de descarga.
+                </p>
+            </div>
+            
+            <div class="maps-interface">
+                <!-- Filters -->
+                <div class="maps-sidebar">
+                    <div class="filter-section">
+                        <h4 class="filter-title">
+                            <i data-lucide="filter"></i>
+                            Filtros
+                        </h4>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">Categoría Temática</label>
+                            <select class="filter-select" id="categoryFilter">
+                                <option value="">Todas las categorías</option>
+                                <option value="biodiversidad">Biodiversidad</option>
+                                <option value="hidrografia">Hidrografía</option>
+                                <option value="suelos">Suelos</option>
+                                <option value="cobertura">Cobertura Vegetal</option>
+                                <option value="comunidades">Comunidades</option>
+                                <option value="resguardos">Resguardos Indígenas</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">Departamento</label>
+                            <select class="filter-select" id="deptFilter">
+                                <option value="">Todos</option>
+                                <option value="choco">Chocó</option>
+                                <option value="valle">Valle del Cauca</option>
+                                <option value="cauca">Cauca</option>
+                                <option value="narino">Nariño</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">Formato</label>
+                            <div class="format-options">
+                                <label class="format-option">
+                                    <input type="checkbox" value="pdf" checked>
+                                    <span>PDF</span>
+                                </label>
+                                <label class="format-option">
+                                    <input type="checkbox" value="jpg" checked>
+                                    <span>JPG</span>
+                                </label>
+                                <label class="format-option">
+                                    <input type="checkbox" value="shp">
+                                    <span>SHP</span>
+                                </label>
+                                <label class="format-option">
+                                    <input type="checkbox" value="geojson">
+                                    <span>GeoJSON</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">Año</label>
+                            <input type="range" min="2015" max="2024" value="2024" class="filter-range" id="yearFilter">
+                            <div class="range-labels">
+                                <span>2015</span>
+                                <span id="yearValue">2024</span>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-primary btn-block" onclick="applyFilters()">
+                            <i data-lucide="search"></i>
+                            Aplicar Filtros
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Maps Grid -->
+                <div class="maps-content">
+                    <div class="maps-toolbar">
+                        <div class="maps-count">
+                            <span id="mapsCount">24</span> mapas encontrados
+                        </div>
+                        <div class="maps-view-toggle">
+                            <button class="view-btn active" data-view="grid">
+                                <i data-lucide="grid-3x3"></i>
+                            </button>
+                            <button class="view-btn" data-view="list">
+                                <i data-lucide="list"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="maps-grid" id="mapsGrid">
+                        <!-- Map cards will be generated by JS -->
+                    </div>
+                    
+                    <div class="maps-pagination">
+                        <button class="page-btn" disabled><i data-lucide="chevron-left"></i></button>
+                        <button class="page-btn active">1</button>
+                        <button class="page-btn">2</button>
+                        <button class="page-btn">3</button>
+                        <button class="page-btn"><i data-lucide="chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentos Section -->
+    <section class="detail-section documentos-section" id="documentos">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag"><i data-lucide="file-text"></i> Módulo</span>
+                <h2 class="section-title">Centro de Documentos</h2>
+                <p class="section-description">
+                    Protocolos, formatos, guías técnicas y datos estadísticos para la gestión 
+                    de información ambiental.
+                </p>
+            </div>
+            
+            <div class="docs-categories">
+                <div class="doc-category" data-category="protocolos">
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i data-lucide="book-open"></i>
+                        </div>
+                        <div class="category-info">
+                            <h3>Protocolos</h3>
+                            <span>12 documentos</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="category-toggle"></i>
+                    </div>
+                    <div class="category-content">
+                        <div class="doc-list">
+                            <div class="doc-item">
+                                <div class="doc-icon"><i data-lucide="file-text"></i></div>
+                                <div class="doc-info">
+                                    <span class="doc-name">Protocolo de Levantamiento de Información en Campo</span>
+                                    <span class="doc-meta">PDF • 2.4 MB • Actualizado: Nov 2024</span>
+                                </div>
+                                <div class="doc-actions">
+                                    <button class="doc-btn" title="Vista previa"><i data-lucide="eye"></i></button>
+                                    <button class="doc-btn" title="Descargar"><i data-lucide="download"></i></button>
+                                </div>
+                            </div>
+                            <div class="doc-item">
+                                <div class="doc-icon"><i data-lucide="file-text"></i></div>
+                                <div class="doc-info">
+                                    <span class="doc-name">Protocolo de Entrega de Información Geográfica</span>
+                                    <span class="doc-meta">PDF • 1.8 MB • Actualizado: Oct 2024</span>
+                                </div>
+                                <div class="doc-actions">
+                                    <button class="doc-btn" title="Vista previa"><i data-lucide="eye"></i></button>
+                                    <button class="doc-btn" title="Descargar"><i data-lucide="download"></i></button>
+                                </div>
+                            </div>
+                            <div class="doc-item">
+                                <div class="doc-icon"><i data-lucide="file-text"></i></div>
+                                <div class="doc-info">
+                                    <span class="doc-name">Protocolo de Muestreo de Biodiversidad</span>
+                                    <span class="doc-meta">PDF • 3.1 MB • Actualizado: Sep 2024</span>
+                                </div>
+                                <div class="doc-actions">
+                                    <button class="doc-btn" title="Vista previa"><i data-lucide="eye"></i></button>
+                                    <button class="doc-btn" title="Descargar"><i data-lucide="download"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="doc-category" data-category="formatos">
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i data-lucide="clipboard"></i>
+                        </div>
+                        <div class="category-info">
+                            <h3>Formatos</h3>
+                            <span>8 documentos</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="category-toggle"></i>
+                    </div>
+                    <div class="category-content">
+                        <div class="doc-list">
+                            <div class="doc-item">
+                                <div class="doc-icon"><i data-lucide="file-spreadsheet"></i></div>
+                                <div class="doc-info">
+                                    <span class="doc-name">Formato de Captura de Datos en Campo</span>
+                                    <span class="doc-meta">XLSX • 156 KB • Actualizado: Nov 2024</span>
+                                </div>
+                                <div class="doc-actions">
+                                    <button class="doc-btn" title="Vista previa"><i data-lucide="eye"></i></button>
+                                    <button class="doc-btn" title="Descargar"><i data-lucide="download"></i></button>
+                                </div>
+                            </div>
+                            <div class="doc-item">
+                                <div class="doc-icon"><i data-lucide="file-spreadsheet"></i></div>
+                                <div class="doc-info">
+                                    <span class="doc-name">Formato de Entrega de Información</span>
+                                    <span class="doc-meta">XLSX • 98 KB • Actualizado: Oct 2024</span>
+                                </div>
+                                <div class="doc-actions">
+                                    <button class="doc-btn" title="Vista previa"><i data-lucide="eye"></i></button>
+                                    <button class="doc-btn" title="Descargar"><i data-lucide="download"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="doc-category" data-category="guias">
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i data-lucide="book-marked"></i>
+                        </div>
+                        <div class="category-info">
+                            <h3>Guías Técnicas</h3>
+                            <span>6 documentos</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="category-toggle"></i>
+                    </div>
+                    <div class="category-content">
+                        <div class="doc-list">
+                            <div class="doc-item">
+                                <div class="doc-icon"><i data-lucide="file-text"></i></div>
+                                <div class="doc-info">
+                                    <span class="doc-name">Guía de Uso del Geovisor SIAT-PC</span>
+                                    <span class="doc-meta">PDF • 4.2 MB • Actualizado: Nov 2024</span>
+                                </div>
+                                <div class="doc-actions">
+                                    <button class="doc-btn" title="Vista previa"><i data-lucide="eye"></i></button>
+                                    <button class="doc-btn" title="Descargar"><i data-lucide="download"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="doc-category" data-category="estadisticas">
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i data-lucide="bar-chart-3"></i>
+                        </div>
+                        <div class="category-info">
+                            <h3>Datos Estadísticos</h3>
+                            <span>15 archivos</span>
+                        </div>
+                        <i data-lucide="chevron-down" class="category-toggle"></i>
+                    </div>
+                    <div class="category-content">
+                        <div class="doc-list">
+                            <div class="doc-item">
+                                <div class="doc-icon"><i data-lucide="file-spreadsheet"></i></div>
+                                <div class="doc-info">
+                                    <span class="doc-name">Estadísticas de Biodiversidad - Chocó Biogeográfico</span>
+                                    <span class="doc-meta">XLSX • 2.8 MB • Actualizado: Dic 2024</span>
+                                </div>
+                                <div class="doc-actions">
+                                    <button class="doc-btn" title="Vista previa"><i data-lucide="eye"></i></button>
+                                    <button class="doc-btn" title="Descargar"><i data-lucide="download"></i></button>
+                                </div>
+                            </div>
+                            <div class="doc-item">
+                                <div class="doc-icon"><i data-lucide="file-spreadsheet"></i></div>
+                                <div class="doc-info">
+                                    <span class="doc-name">Censo de Comunidades Afrodescendientes</span>
+                                    <span class="doc-meta">XLSX • 1.5 MB • Actualizado: Nov 2024</span>
+                                </div>
+                                <div class="doc-actions">
+                                    <button class="doc-btn" title="Vista previa"><i data-lucide="eye"></i></button>
+                                    <button class="doc-btn" title="Descargar"><i data-lucide="download"></i></button>
+                                </div>
+                            </div>
+                            <div class="doc-item">
+                                <div class="doc-icon"><i data-lucide="file-spreadsheet"></i></div>
+                                <div class="doc-info">
+                                    <span class="doc-name">Resguardos Indígenas - Datos Territoriales</span>
+                                    <span class="doc-meta">XLSX • 980 KB • Actualizado: Oct 2024</span>
+                                </div>
+                                <div class="doc-actions">
+                                    <button class="doc-btn" title="Vista previa"><i data-lucide="eye"></i></button>
+                                    <button class="doc-btn" title="Descargar"><i data-lucide="download"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Geovisor Section -->
+    <section class="detail-section geovisor-section" id="geovisor">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag"><i data-lucide="globe"></i> Módulo</span>
+                <h2 class="section-title">Geovisor SIAT-PC</h2>
+                <p class="section-description">
+                    Explora el territorio del Chocó Biogeográfico a través de nuestro 
+                    Sistema de Información Ambiental Territorial.
+                </p>
+            </div>
+            
+            <div class="geovisor-container">
+                <div class="geovisor-sidebar">
+                    <div class="layers-panel">
+                        <h4 class="panel-title">
+                            <i data-lucide="layers"></i>
+                            Capas Disponibles
+                        </h4>
+                        
+                        <div class="layer-group">
+                            <div class="layer-group-header">
+                                <span>Límites Administrativos</span>
+                                <i data-lucide="chevron-down"></i>
+                            </div>
+                            <div class="layer-group-content">
+                                <label class="layer-item">
+                                    <input type="checkbox" checked data-layer="departamentos">
+                                    <span class="layer-color" style="background: #2C5530;"></span>
+                                    <span>Departamentos</span>
+                                </label>
+                                <label class="layer-item">
+                                    <input type="checkbox" data-layer="municipios">
+                                    <span class="layer-color" style="background: #4A7C59;"></span>
+                                    <span>Municipios</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="layer-group">
+                            <div class="layer-group-header">
+                                <span>Territorios Colectivos</span>
+                                <i data-lucide="chevron-down"></i>
+                            </div>
+                            <div class="layer-group-content">
+                                <label class="layer-item">
+                                    <input type="checkbox" checked data-layer="resguardos">
+                                    <span class="layer-color" style="background: #F5A623;"></span>
+                                    <span>Resguardos Indígenas</span>
+                                </label>
+                                <label class="layer-item">
+                                    <input type="checkbox" checked data-layer="comunidades">
+                                    <span class="layer-color" style="background: #E67E22;"></span>
+                                    <span>Comunidades Negras</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="layer-group">
+                            <div class="layer-group-header">
+                                <span>Ecosistemas</span>
+                                <i data-lucide="chevron-down"></i>
+                            </div>
+                            <div class="layer-group-content">
+                                <label class="layer-item">
+                                    <input type="checkbox" data-layer="bosques">
+                                    <span class="layer-color" style="background: #27AE60;"></span>
+                                    <span>Bosques</span>
+                                </label>
+                                <label class="layer-item">
+                                    <input type="checkbox" data-layer="humedales">
+                                    <span class="layer-color" style="background: #3498DB;"></span>
+                                    <span>Humedales</span>
+                                </label>
+                                <label class="layer-item">
+                                    <input type="checkbox" data-layer="manglares">
+                                    <span class="layer-color" style="background: #1ABC9C;"></span>
+                                    <span>Manglares</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="layer-group">
+                            <div class="layer-group-header">
+                                <span>Hidrografía</span>
+                                <i data-lucide="chevron-down"></i>
+                            </div>
+                            <div class="layer-group-content">
+                                <label class="layer-item">
+                                    <input type="checkbox" data-layer="rios">
+                                    <span class="layer-color" style="background: #2980B9;"></span>
+                                    <span>Ríos Principales</span>
+                                </label>
+                                <label class="layer-item">
+                                    <input type="checkbox" data-layer="cuencas">
+                                    <span class="layer-color" style="background: #5DADE2;"></span>
+                                    <span>Cuencas Hidrográficas</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tools-panel">
+                        <h4 class="panel-title">
+                            <i data-lucide="wrench"></i>
+                            Herramientas
+                        </h4>
+                        <div class="tool-buttons">
+                            <button class="tool-btn" title="Medir distancia">
+                                <i data-lucide="ruler"></i>
+                            </button>
+                            <button class="tool-btn" title="Medir área">
+                                <i data-lucide="square"></i>
+                            </button>
+                            <button class="tool-btn" title="Dibujar">
+                                <i data-lucide="pencil"></i>
+                            </button>
+                            <button class="tool-btn" title="Imprimir">
+                                <i data-lucide="printer"></i>
+                            </button>
+                            <button class="tool-btn" title="Exportar">
+                                <i data-lucide="download"></i>
+                            </button>
+                            <button class="tool-btn" title="Compartir">
+                                <i data-lucide="share-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="geovisor-map">
+                    <div id="geovisorMap" class="map-full"></div>
+                    <div class="map-controls">
+                        <button class="map-control-btn" id="zoomIn" title="Acercar">
+                            <i data-lucide="plus"></i>
+                        </button>
+                        <button class="map-control-btn" id="zoomOut" title="Alejar">
+                            <i data-lucide="minus"></i>
+                        </button>
+                        <button class="map-control-btn" id="resetView" title="Vista inicial">
+                            <i data-lucide="home"></i>
+                        </button>
+                        <button class="map-control-btn" id="fullscreen" title="Pantalla completa">
+                            <i data-lucide="maximize"></i>
+                        </button>
+                    </div>
+                    <div class="map-info-panel">
+                        <div class="coords">
+                            <span id="latCoord">Lat: 5.0°N</span>
+                            <span id="lonCoord">Lon: -76.5°W</span>
+                        </div>
+                        <div class="scale">Escala: 1:500,000</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Herramientas Section -->
+    <section class="detail-section herramientas-section" id="herramientas">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag"><i data-lucide="settings"></i> Módulo</span>
+                <h2 class="section-title">Herramientas</h2>
+                <p class="section-description">
+                    Aplicaciones y tableros interactivos para la captura y visualización 
+                    de información ambiental.
+                </p>
+            </div>
+            
+            <div class="tools-grid">
+                <!-- Geoformularios -->
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <div class="tool-icon-large">
+                            <i data-lucide="clipboard-check"></i>
+                        </div>
+                        <span class="tool-badge">Web App</span>
+                    </div>
+                    <div class="tool-body">
+                        <h3>Geoformularios</h3>
+                        <p>Formularios digitales con capacidad de captura georreferenciada para trabajo de campo.</p>
+                        <ul class="tool-features">
+                            <li><i data-lucide="map-pin"></i> Geolocalización automática</li>
+                            <li><i data-lucide="camera"></i> Captura de fotografías</li>
+                            <li><i data-lucide="wifi-off"></i> Modo offline</li>
+                            <li><i data-lucide="cloud"></i> Sincronización en la nube</li>
+                        </ul>
+                    </div>
+                    <div class="tool-footer">
+                        <a href="#" class="btn btn-primary">
+                            <i data-lucide="external-link"></i>
+                            Acceder
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Tableros de Control -->
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <div class="tool-icon-large">
+                            <i data-lucide="layout-dashboard"></i>
+                        </div>
+                        <span class="tool-badge">Dashboard</span>
+                    </div>
+                    <div class="tool-body">
+                        <h3>Tableros de Control</h3>
+                        <p>Visualización en tiempo real de indicadores ambientales y territoriales.</p>
+                        <ul class="tool-features">
+                            <li><i data-lucide="bar-chart-3"></i> Gráficos interactivos</li>
+                            <li><i data-lucide="refresh-cw"></i> Actualización en tiempo real</li>
+                            <li><i data-lucide="filter"></i> Filtros dinámicos</li>
+                            <li><i data-lucide="download"></i> Exportación de reportes</li>
+                        </ul>
+                    </div>
+                    <div class="tool-footer">
+                        <a href="#" class="btn btn-primary">
+                            <i data-lucide="external-link"></i>
+                            Acceder
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- App Móvil -->
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <div class="tool-icon-large">
+                            <i data-lucide="smartphone"></i>
+                        </div>
+                        <span class="tool-badge">Mobile</span>
+                    </div>
+                    <div class="tool-body">
+                        <h3>Aplicación Móvil</h3>
+                        <p>Aplicación nativa para Android e iOS para captura de datos en campo.</p>
+                        <ul class="tool-features">
+                            <li><i data-lucide="map"></i> GPS de alta precisión</li>
+                            <li><i data-lucide="battery-charging"></i> Bajo consumo de batería</li>
+                            <li><i data-lucide="database"></i> Almacenamiento local</li>
+                            <li><i data-lucide="shield-check"></i> Datos seguros</li>
+                        </ul>
+                    </div>
+                    <div class="tool-footer">
+                        <div class="app-buttons">
+                            <a href="#" class="store-btn">
+                                <i data-lucide="play"></i>
+                                <span>Google Play</span>
+                            </a>
+                            <a href="#" class="store-btn">
+                                <i data-lucide="apple"></i>
+                                <span>App Store</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reportes -->
+                <div class="tool-card">
+                    <div class="tool-header">
+                        <div class="tool-icon-large">
+                            <i data-lucide="file-bar-chart"></i>
+                        </div>
+                        <span class="tool-badge">Analytics</span>
+                    </div>
+                    <div class="tool-body">
+                        <h3>Generador de Reportes</h3>
+                        <p>Sistema automatizado para la generación de informes personalizados.</p>
+                        <ul class="tool-features">
+                            <li><i data-lucide="file-text"></i> Plantillas predefinidas</li>
+                            <li><i data-lucide="calendar"></i> Programación automática</li>
+                            <li><i data-lucide="mail"></i> Envío por correo</li>
+                            <li><i data-lucide="file-type"></i> Múltiples formatos</li>
+                        </ul>
+                    </div>
+                    <div class="tool-footer">
+                        <a href="#" class="btn btn-primary">
+                            <i data-lucide="external-link"></i>
+                            Acceder
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solicitudes Section -->
+    <section class="detail-section solicitudes-section" id="solicitudes">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag"><i data-lucide="clipboard-list"></i> Módulo</span>
+                <h2 class="section-title">Solicitudes</h2>
+                <p class="section-description">
+                    Gestiona tus solicitudes de información cartográfica y realiza 
+                    seguimiento en línea.
+                </p>
+            </div>
+            
+            <div class="solicitudes-container">
+                <div class="solicitud-form-container">
+                    <div class="form-header">
+                        <h3><i data-lucide="plus-circle"></i> Nueva Solicitud</h3>
+                    </div>
+                    
+                    <form class="solicitud-form" id="solicitudForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tipoSolicitud">Tipo de Solicitud</label>
+                                <select id="tipoSolicitud" required>
+                                    <option value="">Seleccione...</option>
+                                    <option value="cartografia">Cartografía Temática</option>
+                                    <option value="datos">Datos Geoespaciales</option>
+                                    <option value="analisis">Análisis Espacial</option>
+                                    <option value="capacitacion">Capacitación</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="prioridad">Prioridad</label>
+                                <select id="prioridad" required>
+                                    <option value="normal">Normal</option>
+                                    <option value="alta">Alta</option>
+                                    <option value="urgente">Urgente</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="nombre">Nombre Completo</label>
+                                <input type="text" id="nombre" placeholder="Ingrese su nombre" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Correo Electrónico</label>
+                                <input type="email" id="email" placeholder="correo@ejemplo.com" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="institucion">Institución/Organización</label>
+                                <input type="text" id="institucion" placeholder="Nombre de la institución">
+                            </div>
+                            <div class="form-group">
+                                <label for="telefono">Teléfono</label>
+                                <input type="tel" id="telefono" placeholder="+57 300 000 0000">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="descripcion">Descripción de la Solicitud</label>
+                            <textarea id="descripcion" rows="4" placeholder="Describa detalladamente su solicitud..." required></textarea>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="areaInteres">Área de Interés</label>
+                            <input type="text" id="areaInteres" placeholder="Ej: Municipio de Quibdó, Río Atrato, etc.">
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label>Archivos Adjuntos (opcional)</label>
+                            <div class="file-upload-area" id="fileUpload">
+                                <i data-lucide="upload-cloud"></i>
+                                <p>Arrastra archivos aquí o <span>haz clic para seleccionar</span></p>
+                                <small>Máximo 10MB por archivo. Formatos: PDF, DOCX, SHP, KML, KMZ</small>
+                            </div>
+                            <input type="file" id="fileInput" multiple accept=".pdf,.docx,.shp,.kml,.kmz" hidden>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-outline" onclick="resetForm()">
+                                <i data-lucide="x"></i>
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i data-lucide="send"></i>
+                                Enviar Solicitud
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="solicitudes-tracking">
+                    <div class="tracking-header">
+                        <h3><i data-lucide="search"></i> Consultar Estado</h3>
+                    </div>
+                    
+                    <div class="tracking-search">
+                        <div class="search-input-group">
+                            <input type="text" id="trackingNumber" placeholder="Número de radicado (Ej: SOL-2024-001234)">
+                            <button class="btn btn-primary" onclick="trackSolicitud()">
+                                <i data-lucide="search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="tracking-result" id="trackingResult" style="display: none;">
+                        <div class="tracking-status">
+                            <div class="status-icon success">
+                                <i data-lucide="check-circle"></i>
+                            </div>
+                            <div class="status-info">
+                                <span class="status-label">Estado Actual</span>
+                                <span class="status-value">En Proceso</span>
+                            </div>
+                        </div>
+                        
+                        <div class="tracking-timeline">
+                            <div class="timeline-item completed">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <span class="timeline-date">15 Nov 2024 - 10:30 AM</span>
+                                    <span class="timeline-title">Solicitud Recibida</span>
+                                </div>
+                            </div>
+                            <div class="timeline-item completed">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <span class="timeline-date">16 Nov 2024 - 2:15 PM</span>
+                                    <span class="timeline-title">En Revisión</span>
+                                </div>
+                            </div>
+                            <div class="timeline-item active">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <span class="timeline-date">18 Nov 2024 - 9:00 AM</span>
+                                    <span class="timeline-title">En Proceso de Elaboración</span>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <span class="timeline-date">Pendiente</span>
+                                    <span class="timeline-title">Control de Calidad</span>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <span class="timeline-date">Pendiente</span>
+                                    <span class="timeline-title">Listo para Entrega</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="formats-download">
+                        <h4><i data-lucide="download"></i> Formatos Descargables</h4>
+                        <div class="format-list">
+                            <a href="#" class="format-item">
+                                <i data-lucide="file-text"></i>
+                                <span>Formato de Solicitud Cartográfica</span>
+                                <small>PDF</small>
+                            </a>
+                            <a href="#" class="format-item">
+                                <i data-lucide="file-text"></i>
+                                <span>Formato de Solicitud de Datos</span>
+                                <small>PDF</small>
+                            </a>
+                            <a href="#" class="format-item">
+                                <i data-lucide="file-spreadsheet"></i>
+                                <span>Matriz de Requerimientos</span>
+                                <small>XLSX</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-wave">
+            <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+                <path d="M0,60 C240,120 480,0 720,60 C960,120 1200,0 1440,60 L1440,120 L0,120 Z" fill="currentColor"/>
+            </svg>
+        </div>
+        
+        <div class="footer-content">
+            <div class="footer-container">
+                <div class="footer-main">
+                    <div class="footer-brand">
+                        <div class="footer-logo">
+                            <svg viewBox="0 0 50 50" fill="none">
+                                <rect x="5" y="5" width="40" height="40" rx="5" stroke="currentColor" stroke-width="2"/>
+                                <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="currentColor" font-size="14" font-weight="bold">IIAP</text>
+                            </svg>
+                            <span>VIGIIAP</span>
+                        </div>
+                        <p>Visor y Gestor de Información Ambiental del Instituto de Investigaciones Ambientales del Pacífico.</p>
+                        <div class="footer-social">
+                            <a href="#" title="Facebook"><i data-lucide="facebook"></i></a>
+                            <a href="#" title="Twitter"><i data-lucide="twitter"></i></a>
+                            <a href="#" title="Instagram"><i data-lucide="instagram"></i></a>
+                            <a href="#" title="YouTube"><i data-lucide="youtube"></i></a>
+                        </div>
+                    </div>
+                    
+                    <div class="footer-links">
+                        <div class="footer-column">
+                            <h4>Módulos</h4>
+                            <ul>
+                                <li><a href="#mapas">Mapas</a></li>
+                                <li><a href="#documentos">Documentos</a></li>
+                                <li><a href="#geovisor">Geovisor</a></li>
+                                <li><a href="#herramientas">Herramientas</a></li>
+                                <li><a href="#solicitudes">Solicitudes</a></li>
+                            </ul>
+                        </div>
+                        
+                        <div class="footer-column">
+                            <h4>Recursos</h4>
+                            <ul>
+                                <li><a href="#">Guía de Usuario</a></li>
+                                <li><a href="#">Preguntas Frecuentes</a></li>
+                                <li><a href="#">API Documentation</a></li>
+                                <li><a href="#">Términos de Uso</a></li>
+                            </ul>
+                        </div>
+                        
+                        <div class="footer-column">
+                            <h4>Contacto</h4>
+                            <ul class="contact-list">
+                                <li>
+                                    <i data-lucide="map-pin"></i>
+                                    <span>Quibdó, Chocó, Colombia</span>
+                                </li>
+                                <li>
+                                    <i data-lucide="phone"></i>
+                                    <span>+57 (4) 671 1127</span>
+                                </li>
+                                <li>
+                                    <i data-lucide="mail"></i>
+                                    <span>info@iiap.org.co</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="footer-bottom">
+                    <p>&copy; 2024 IIAP - Instituto de Investigaciones Ambientales del Pacífico. Todos los derechos reservados.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal for Map Preview -->
+    <div class="modal" id="mapModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="modal-header">
+                <h3 id="modalTitle">Título del Mapa</h3>
+            </div>
+            <div class="modal-body">
+                <img id="modalImage" src="" alt="Vista previa del mapa">
+            </div>
+            <div class="modal-footer">
+                <div class="modal-meta">
+                    <span id="modalCategory"></span>
+                    <span id="modalDate"></span>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-outline">
+                        <i data-lucide="quote"></i>
+                        Citar
+                    </button>
+                    <button class="btn btn-primary">
+                        <i data-lucide="download"></i>
+                        Descargar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Main JS -->
+    <script src="app.js"></script>
+</body>
+</html>
