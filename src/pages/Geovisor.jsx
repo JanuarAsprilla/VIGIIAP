@@ -246,7 +246,7 @@ export default function Geovisor() {
   const currentTile = TILE_LAYERS.find((t) => t.id === activeBasemap) || TILE_LAYERS[0]
 
   return (
-    <div className="-m-6 h-[calc(100vh-56px-49px)] relative">
+    <div className="-m-4 lg:-m-6 h-[calc(100vh-56px-64px)] lg:h-[calc(100vh-56px-49px)] relative">
       {/* ── Map ── */}
       <MapContainer
         ref={mapRef}

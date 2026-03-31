@@ -1,6 +1,6 @@
 import {
-  MapPin, FileText, Globe, Settings, ClipboardList,
-  Map, Users, Building2, Ruler, Home, Shield,
+  Home, Map, FileText, Globe, Wrench, ClipboardList,
+  LayoutGrid, Users, Building2, Shield,
 } from 'lucide-react'
 
 // =====================================================
@@ -18,101 +18,99 @@ export const ROUTES = {
 }
 
 // =====================================================
-// Navigation links
+// Sidebar navigation
 // =====================================================
 
 export const NAV_LINKS = [
-  { label: 'Inicio', path: ROUTES.HOME },
-  { label: 'Mapas', path: ROUTES.MAPAS },
-  { label: 'Documentos', path: ROUTES.DOCUMENTOS },
-  { label: 'Geovisor', path: ROUTES.GEOVISOR },
-  { label: 'Herramientas', path: ROUTES.HERRAMIENTAS },
-  { label: 'Solicitudes', path: ROUTES.SOLICITUDES },
+  { label: 'Inicio', path: ROUTES.HOME, icon: Home },
+  { label: 'Mapas', path: ROUTES.MAPAS, icon: Map },
+  { label: 'Documentos', path: ROUTES.DOCUMENTOS, icon: FileText },
+  { label: 'Geovisor', path: ROUTES.GEOVISOR, icon: Globe },
+  { label: 'Herramientas', path: ROUTES.HERRAMIENTAS, icon: Wrench },
+  { label: 'Solicitudes', path: ROUTES.SOLICITUDES, icon: ClipboardList },
 ]
 
 // =====================================================
-// Module definitions (for the modules grid)
+// Module cards (Home page — diseño Figma)
 // =====================================================
 
 export const MODULES = [
   {
     id: 'mapas',
-    title: 'Mapas',
-    description: 'Repositorio completo de mapas temáticos del Chocó Biogeográfico',
-    icon: MapPin,
+    title: 'Catálogo de Mapas',
+    description: 'Visualiza capas temáticas de biodiversidad, suelos y redes hídricas.',
+    icon: Map,
     path: ROUTES.MAPAS,
-    features: [
-      'Listado de mapas',
-      'Etiquetas temáticas',
-      'Citas bibliográficas',
-      'Múltiples formatos',
-    ],
+    action: 'EXPLORAR',
   },
   {
     id: 'documentos',
-    title: 'Documentos',
-    description: 'Protocolos, formatos, guías y estadísticas geográficas',
+    title: 'Biblioteca Documental',
+    description: 'Planes de ordenamiento, decretos y estudios técnicos regionales.',
     icon: FileText,
     path: ROUTES.DOCUMENTOS,
-    features: [
-      'Protocolos oficiales',
-      'Formatos de campo',
-      'Guías técnicas',
-      'Excel estadísticos',
-    ],
+    action: 'CONSULTAR',
   },
   {
     id: 'geovisor',
-    title: 'Geovisor',
-    description: 'Visualización interactiva de información geoespacial',
+    title: 'Geovisor 3D',
+    description: 'Herramienta interactiva de análisis espacial en tiempo real.',
     icon: Globe,
     path: ROUTES.GEOVISOR,
-    features: [
-      'SIAT-PC integrado',
-      'Capas interactivas',
-      'Análisis espacial',
-      'Exportación de datos',
-    ],
+    action: 'LANZAR APP',
   },
   {
     id: 'herramientas',
-    title: 'Herramientas',
-    description: 'Aplicaciones y tableros para captura y visualización',
-    icon: Settings,
+    title: 'Herramientas SIG',
+    description: 'Calculadoras de área, convertidores y motores de consulta avanzada.',
+    icon: Wrench,
     path: ROUTES.HERRAMIENTAS,
-    features: [
-      'Geoformularios',
-      'Apps móviles',
-      'Tableros de control',
-      'Reportes dinámicos',
-    ],
-  },
-  {
-    id: 'solicitudes',
-    title: 'Solicitudes',
-    description: 'Formatos y gestión de solicitudes cartográficas',
-    icon: ClipboardList,
-    path: ROUTES.SOLICITUDES,
-    features: [
-      'Solicitudes cartográficas',
-      'Seguimiento en línea',
-      'Formatos descargables',
-      'Historial de solicitudes',
-    ],
+    action: 'ACCEDER',
   },
 ]
 
 // =====================================================
-// Regional statistics (for Hero section — used later)
+// Regional statistics (Home page — Cifras del Territorio)
 // =====================================================
 
 export const STATS = [
-  { icon: Map, value: 7, label: 'Departamentos' },
-  { icon: Users, value: 7, suffix: 'M', label: 'Población' },
-  { icon: Building2, value: 92, label: 'Municipios' },
-  { icon: Ruler, value: 233946, label: 'Km² Área Total', format: true },
-  { icon: Home, value: 174, label: 'Comunidades' },
-  { icon: Shield, value: 232, label: 'Resguardos Indígenas' },
+  { icon: LayoutGrid, value: '05', label: 'Departamentos' },
+  { icon: Users, value: '1.2M', label: 'Población' },
+  { icon: Building2, value: '124', label: 'Municipios' },
+  { icon: Shield, value: '32', label: 'Áreas Protegidas' },
+]
+
+// =====================================================
+// News articles (Home page)
+// =====================================================
+
+export const NEWS = [
+  {
+    id: 1,
+    tag: 'ACTUALIZACIÓN DE DATOS',
+    title: 'Publicada nueva capa cartográfica de Reservas Naturales de la Sociedad Civil 2024.',
+    excerpt: 'La actualización incluye 14 nuevas reservas en el departamento del Chocó, sumando más de...',
+    time: 'Hace 2 horas',
+    author: 'Geoportal Regional',
+  },
+  {
+    id: 2,
+    tag: 'EVENTO REGIONAL',
+    title: 'Encuentro de Planificadores Territoriales: Desafíos del cambio climático en el litoral Pacífico.',
+    excerpt: 'Representantes de 4 departamentos se reunirán en Quibdó para unificar criterios de resiliencia...',
+    time: 'Hace 1 día',
+    author: 'Evento',
+  },
+]
+
+// =====================================================
+// System status (Home page widget)
+// =====================================================
+
+export const SYSTEM_STATUS = [
+  { label: 'Capas Vectoriales', value: '452 Activadas' },
+  { label: 'Uptime Geovisor', value: '99.8% Mensual' },
+  { label: 'Sincronización SIG', value: 'Hace 15 min' },
 ]
 
 // =====================================================
