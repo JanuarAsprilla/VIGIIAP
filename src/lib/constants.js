@@ -114,3 +114,106 @@ export const STATS = [
   { icon: Home, value: 174, label: 'Comunidades' },
   { icon: Shield, value: 232, label: 'Resguardos Indígenas' },
 ]
+
+// =====================================================
+// Mapas module data
+// =====================================================
+
+export const MAP_CATEGORIES = [
+  { value: '', label: 'Todas las categorías' },
+  { value: 'biodiversidad', label: 'Biodiversidad y Especies' },
+  { value: 'hidrologia', label: 'Hidrología' },
+  { value: 'planificacion', label: 'Planificación' },
+  { value: 'ecosistemas', label: 'Ecosistemas' },
+  { value: 'cobertura', label: 'Cobertura Vegetal' },
+  { value: 'comunidades', label: 'Comunidades' },
+]
+
+export const MAP_DEPARTMENTS = [
+  { value: '', label: 'Todo el Chocó' },
+  { value: 'choco', label: 'Chocó' },
+  { value: 'valle', label: 'Valle del Cauca' },
+  { value: 'cauca', label: 'Cauca' },
+  { value: 'narino', label: 'Nariño' },
+  { value: 'costa-norte', label: 'Costa Norte (Chocó)' },
+]
+
+export const MAP_FORMATS = [
+  { value: '', label: 'Todos los formatos' },
+  { value: 'shp', label: 'SHP' },
+  { value: 'pdf', label: 'PDF' },
+  { value: 'geojson', label: 'GeoJSON' },
+  { value: 'tif', label: 'TIF' },
+  { value: 'jpg', label: 'JPG' },
+]
+
+export const MAP_YEARS = [
+  { value: '', label: 'Todos los años' },
+  { value: '2024', label: '2024 - Reciente' },
+  { value: '2023', label: '2023' },
+  { value: '2022', label: '2022' },
+  { value: '2021', label: '2021' },
+]
+
+export const SAMPLE_MAPS = [
+  {
+    id: 'MAPA_REF_01',
+    category: 'Ecosistemas v.2024',
+    title: 'Mapa de Cobertura Vegetal y Uso de la Tierra',
+    excerpt: 'Análisis detallado de los estratos vegetales del Chocó...',
+    formats: ['SHP', 'PDF', 'JPG'],
+    badge: 'SHP + PDF',
+    badgeColor: 'primary',
+    date: 'Sep 2023',
+  },
+  {
+    id: 'MAPA_REF_02',
+    category: 'Hidrología',
+    title: 'Cuenca del Río Atrato: Dinámica Fluvial',
+    excerpt: 'Cartografía multitemporal de la red hídrica principal y sus...',
+    formats: ['SHP', 'PDF', 'JPG'],
+    badge: 'GeoJSON',
+    badgeColor: 'orange',
+    date: 'Jun 2024',
+  },
+  {
+    id: 'MAPA_REF_03',
+    category: 'Planificación',
+    title: 'Mapa de Conflictos de Uso del Suelo 2023',
+    excerpt: 'Identificación de áreas con sobreuso y subuso del suelo en...',
+    formats: ['SHP', 'PDF', 'JPG'],
+    badge: 'TIF',
+    badgeColor: 'primary',
+    date: 'Ene 2024',
+  },
+  {
+    id: 'MAPA_REF_04',
+    category: 'Ecosistemas v.2024',
+    title: 'Zonificación Ambiental del Pacífico Norte',
+    excerpt: 'Delimitación de áreas de conservación y uso sostenible...',
+    formats: ['SHP', 'PDF', 'JPG'],
+    badge: 'SHP + PDF',
+    badgeColor: 'primary',
+    date: 'Mar 2024',
+  },
+  {
+    id: 'MAPA_REF_05',
+    category: 'Hidrología',
+    title: 'Red Hídrica y Cuencas Hidrográficas Sector Atrato',
+    excerpt: 'Mapeo completo de ríos tributarios y microcuencas del...',
+    formats: ['SHP', 'PDF'],
+    badge: 'GeoJSON',
+    badgeColor: 'orange',
+    date: 'Abr 2024',
+  },
+  {
+    id: 'MAPA_REF_06',
+    category: 'Planificación',
+    title: 'Áreas de Reserva Forestal del Pacífico',
+    excerpt: 'Cartografía oficial de las zonas de reserva forestal...',
+    formats: ['PDF', 'TIF'],
+    badge: 'TIF',
+    badgeColor: 'primary',
+    date: 'Feb 2024',
+  },
+]
