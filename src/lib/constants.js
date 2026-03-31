@@ -217,3 +217,112 @@ export const SAMPLE_MAPS = [
     date: 'Feb 2024',
   },
 ]
+
+// =====================================================
+// Documentos module data
+// =====================================================
+
+export const DOC_CATEGORIES = [
+  {
+    id: 'protocolos',
+    title: 'Protocolos Ambientales',
+    subtitle: '12 documentos actualizados',
+    icon: 'Waves',
+    color: 'border-l-primary-800',
+    docs: [
+      {
+        name: 'Protocolo_Monitoreo_Biodiversidad_V2.pdf',
+        type: 'pdf',
+        size: '4.2 MB',
+        updated: '12 Oct 2023',
+      },
+      {
+        name: 'Guía_Ética_Trabajo_Comunitario.docx',
+        type: 'docx',
+        size: '1.8 MB',
+        updated: '05 Sep 2023',
+      },
+      {
+        name: 'Protocolo_Muestreo_Suelos_V3.pdf',
+        type: 'pdf',
+        size: '3.1 MB',
+        updated: '22 Ago 2023',
+      },
+      {
+        name: 'Manual_Seguridad_Campo.pdf',
+        type: 'pdf',
+        size: '2.5 MB',
+        updated: '14 Jul 2023',
+      },
+    ],
+  },
+  {
+    id: 'formatos',
+    title: 'Formatos y Plantillas',
+    subtitle: '8 recursos disponibles',
+    icon: 'FileInput',
+    color: 'border-l-gold-400',
+    docs: [
+      {
+        name: 'Formato_Captura_Datos_Campo_V4.xlsx',
+        type: 'xlsx',
+        size: '156 KB',
+        updated: '10 Nov 2023',
+      },
+      {
+        name: 'Plantilla_Informe_Técnico.docx',
+        type: 'docx',
+        size: '98 KB',
+        updated: '08 Oct 2023',
+      },
+    ],
+  },
+  {
+    id: 'guias',
+    title: 'Guías Técnicas Geográficas',
+    subtitle: '15 manuales detallados',
+    icon: 'BookOpen',
+    color: 'border-l-primary-500',
+    docs: [
+      {
+        name: 'Guía_Uso_Geovisor_SIAT_PC.pdf',
+        type: 'pdf',
+        size: '4.2 MB',
+        updated: '15 Nov 2023',
+      },
+      {
+        name: 'Manual_PostGIS_Básico.pdf',
+        type: 'pdf',
+        size: '6.8 MB',
+        updated: '20 Sep 2023',
+      },
+      {
+        name: 'Guía_Procesamiento_Imágenes_Satelitales.pdf',
+        type: 'pdf',
+        size: '5.1 MB',
+        updated: '03 Ago 2023',
+      },
+    ],
+  },
+  {
+    id: 'estadisticos',
+    title: 'Datos Estadísticos y Reportes',
+    subtitle: '4 informes anuales',
+    icon: 'TrendingUp',
+    color: 'border-l-primary-300',
+    docs: [
+      {
+        name: 'Estadísticas_Biodiversidad_2023.xlsx',
+        type: 'xlsx',
+        size: '2.8 MB',
+        updated: '20 Dic 2023',
+      },
+      {
+        name: 'Reporte_Anual_Deforestación_Chocó.pdf',
+        type: 'pdf',
+        size: '7.4 MB',
+        updated: '15 Dic 2023',
+      },
+    ],
+  },
+]

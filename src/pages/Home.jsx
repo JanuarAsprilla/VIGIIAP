@@ -59,7 +59,7 @@ function HeroSection() {
           {/* Description */}
           <motion.p
             {...fadeUp(0.3)}
-            className="text-lg text-white/80 max-w-[540px] leading-relaxed mb-8 xl:mx-0 mx-auto"
+            className="text-lg text-white/80 max-w-135 leading-relaxed mb-8 xl:mx-0 mx-auto"
           >
             La región del Pacífico es una de las seis regiones naturales de Colombia.
             Comprende casi la totalidad del departamento del Chocó, y las zonas costeras
