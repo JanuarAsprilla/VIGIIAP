@@ -326,3 +326,59 @@ export const DOC_CATEGORIES = [
     ],
   },
 ]
+
+// =====================================================
+// Solicitudes module data
+// =====================================================
+
+export const SOLICITUDES_KPIS = [
+  { label: 'Total Activas', value: '124' },
+  { label: 'En Revisión', value: '32' },
+  { label: 'Aprobadas', value: '89%' },
+  { label: 'Tiempo Promedio', value: '5.2d' },
+]
+
+export const SOLICITUDES_TABLE = [
+  {
+    id: '#VIG-2024-089',
+    tipo: 'Certificado de Uso de Suelo',
+    subtipo: 'Predio rural - Quibdó',
+    fecha: '12 Oct 2023',
+    estado: 'En Proceso',
+    estadoColor: 'yellow',
+  },
+  {
+    id: '#VIG-2024-085',
+    tipo: 'Consulta de Linderos',
+    subtipo: 'Resguardo Indígena',
+    fecha: '10 Oct 2023',
+    estado: 'Aprobado',
+    estadoColor: 'green',
+  },
+  {
+    id: '#VIG-2024-082',
+    tipo: 'Estudio Técnico Ambiental',
+    subtipo: 'Zona de Protección',
+    fecha: '08 Oct 2023',
+    estado: 'Rechazado',
+    estadoColor: 'red',
+  },
+  {
+    id: '#VIG-2024-079',
+    tipo: 'Validación Cartográfica',
+    subtipo: 'Cuenca Media Atrato',
+    fecha: '05 Oct 2023',
+    estado: 'En Proceso',
+    estadoColor: 'yellow',
+  },
+]
+
+export const TRAMITE_TYPES = [
+  { value: '', label: 'Seleccione una opción' },
+  { value: 'uso-suelo', label: 'Certificado de Uso de Suelo' },
+  { value: 'linderos', label: 'Consulta de Linderos' },
+  { value: 'estudio-ambiental', label: 'Estudio Técnico Ambiental' },
+  { value: 'validacion', label: 'Validación Cartográfica' },
+  { value: 'aprovechamiento', label: 'Permiso de Aprovechamiento Forestal' },
+  { value: 'otro', label: 'Otro' },
+]
