@@ -149,7 +149,7 @@ export default function Home() {
     <>
       <div className="space-y-8">
         {/* Ocultar hero cuando hay búsqueda activa */}
-        {!q && <HeroBanner />}
+        {!query.trim() && <HeroBanner />}
 
         {/* Módulos filtrados */}
         {filteredModules.length > 0 ? (
@@ -158,26 +158,26 @@ export default function Home() {
               <ModuleCard key={mod.id} module={mod} index={i} />
             ))}
           </div>
-        ) : !q && null}
+        ) : !query.trim() ? null : null}
 
         {/* Mostrar mensaje solo cuando hay query sin resultados totales */}
-        {q && filteredModules.length === 0 && filteredNews.length === 0 && (
+        {query.trim() && filteredModules.length === 0 && filteredNews.length === 0 && (
           <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
             <SearchX className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm">No se encontraron resultados para <strong className="text-text">"{query}"</strong></p>
           </motion.div>
         )}
 
-        {!q && <StatsSection />}
+        {!query.trim() && <StatsSection />}
 
         {/* Noticias filtradas */}
         {filteredNews.length > 0 && (
           <motion.div {...fadeUp(0.5)}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display text-xl font-bold text-text">
-                {q ? `Noticias — "${query}"` : 'Noticias Territoriales'}
+                {query.trim() ? `Noticias — "${query}"` : 'Noticias Territoriales'}
               </h2>
-              {!q && (
+              {!query.trim() && (
                 <Link
                   to="/noticias"
                   className="text-xs font-bold uppercase tracking-wider text-text-muted hover:text-primary-800 no-underline transition-colors"
