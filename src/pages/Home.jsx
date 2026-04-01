@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, Crosshair, BookOpen, Activity, Plus } from 'lucide-react'
-import Preloader from '@/components/Preloader'
 import { MODULES, STATS, NEWS, SYSTEM_STATUS } from '@/lib/constants'
 
 // ── Animation helper ──
@@ -201,7 +200,7 @@ function SystemStatus() {
 export default function Home() {
   return (
     <>
-      <Preloader />
+
 
       <div className="space-y-8">
         <HeroBanner />

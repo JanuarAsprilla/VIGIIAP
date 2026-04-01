@@ -1,6 +1,31 @@
+import { useLocation } from 'react-router-dom'
 import { Search, Bell, Settings, Menu } from 'lucide-react'
 
+// ── Search placeholders per route ──
+const SEARCH_PLACEHOLDERS = {
+  '/': 'Buscar mapas, veredas o documentos...',
+  '/mapas': 'Buscar mapas, capas o territorios...',
+  '/documentos': 'Buscar por nombre, tipo o fecha...',
+  '/geovisor': 'Buscar coordenadas, lugar o capa...',
+  '/herramientas': 'Buscar herramienta o capa...',
+  '/solicitudes': 'Buscar trámites o expedientes...',
+}
+
+// ── TopBar active tab labels ──
+const PAGE_LABELS = {
+  '/': null,
+  '/mapas': null,
+  '/documentos': null,
+  '/geovisor': 'Geovisor',
+  '/herramientas': null,
+  '/solicitudes': null,
+}
+
 export default function TopBar({ onMenuToggle }) {
+  const location = useLocation()
+  const placeholder = SEARCH_PLACEHOLDERS[location.pathname] || SEARCH_PLACEHOLDERS['/']
+  const activeLabel = PAGE_LABELS[location.pathname]
+
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-border">
       <div className="flex items-center justify-between h-14 px-4 lg:px-6">
@@ -15,24 +40,37 @@ export default function TopBar({ onMenuToggle }) {
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Mobile logo — shown instead of search on small screens */}
+          {/* Mobile logo */}
           <span className="lg:hidden text-sm font-bold text-text tracking-wide">
             VIGIIAP
           </span>
 
-          {/* Search — desktop */}
-          <div className="hidden lg:flex items-center gap-2 bg-bg-alt rounded-lg px-3 py-2 w-full max-w-md">
-            <Search className="w-4 h-4 text-text-muted shrink-0" />
-            <input
-              type="text"
-              placeholder="Buscar mapas, veredas o documentos..."
-              className="bg-transparent border-none outline-none text-sm text-text w-full placeholder:text-text-muted"
-            />
+          {/* Desktop: brand + search */}
+          <div className="hidden lg:flex items-center gap-4 flex-1">
+            {/* Mini brand in topbar (like Figma) */}
+            
+
+            {/* Search */}
+            <div className="flex items-center gap-2 bg-bg-alt rounded-lg px-3 py-2 w-full max-w-md">
+              <Search className="w-4 h-4 text-text-muted shrink-0" />
+              <input
+                type="text"
+                placeholder={placeholder}
+                className="bg-transparent border-none outline-none text-sm text-text w-full placeholder:text-text-muted"
+              />
+            </div>
           </div>
         </div>
 
         {/* ── Right actions ── */}
         <div className="flex items-center gap-2 lg:gap-4 ml-4">
+          {/* Active page label (e.g. "Geovisor" underlined) */}
+          {activeLabel && (
+            <span className="hidden md:inline text-sm font-bold text-text border-b-2 border-primary-800 pb-0.5">
+              {activeLabel}
+            </span>
+          )}
+
           {/* Support links — desktop only */}
           <div className="hidden md:flex items-center gap-4 text-sm">
             <a href="#" className="text-text-light hover:text-primary-800 no-underline transition-colors">
