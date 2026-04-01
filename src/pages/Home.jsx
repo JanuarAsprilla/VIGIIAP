@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Crosshair, BookOpen, Activity, Plus } from 'lucide-react'
-import { MODULES, STATS, NEWS, SYSTEM_STATUS } from '@/lib/constants'
+import { ArrowRight, Crosshair, BookOpen, Plus } from 'lucide-react'
+import { MODULES, STATS, NEWS,} from '@/lib/constants'
 
 // ── Animation helper ──
 const fadeUp = (delay = 0) => ({
@@ -168,33 +168,7 @@ function NewsSection() {
   )
 }
 
-// ── System Status Widget ──
-function SystemStatus() {
-  return (
-    <motion.div {...fadeUp(0.55)}>
-      <div className="bg-white border border-border rounded-xl p-5">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-text mb-4">
-          <Activity className="w-4 h-4 text-primary-700" />
-          Estado del Sistema
-        </h3>
-        <div className="space-y-3">
-          {SYSTEM_STATUS.map((item) => (
-            <div
-              key={item.label}
-              className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
-            >
-              <span className="text-sm font-medium text-text">{item.label}</span>
-              <span className="text-sm text-text-muted">{item.value}</span>
-            </div>
-          ))}
-        </div>
-        <button className="w-full mt-4 py-2 border border-border rounded-lg text-xs font-bold uppercase tracking-wider text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors">
-          Reporte Técnico Completo
-        </button>
-      </div>
-    </motion.div>
-  )
-}
+
 
 // ── Home Page ──
 export default function Home() {
@@ -213,10 +187,9 @@ export default function Home() {
 
         <StatsSection />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+        
           <NewsSection />
-          <SystemStatus />
-        </div>
+        
       </div>
 
       <button className="fixed bottom-20 lg:bottom-6 right-6 w-12 h-12 bg-primary-800 text-white rounded-full shadow-elevated flex items-center justify-center hover:bg-primary-700 hover:shadow-float hover:scale-105 transition-all z-30">

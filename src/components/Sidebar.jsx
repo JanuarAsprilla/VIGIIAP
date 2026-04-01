@@ -1,15 +1,15 @@
 import { NavLink, Link } from 'react-router-dom'
-import { PlusCircle, Settings, LogOut, LogIn, X } from 'lucide-react'
+import { PlusCircle, Settings, LogOut, X } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Sidebar({ mobileOpen, onClose }) {
-  const { isAuthenticated, user, logout } = useAuth()
+  const { isAuthenticated, logout } = useAuth()
 
   const sidebarContent = (
     <>
-      {/* ── Logo ── */}
+      {/* Logo */}
       <div className="px-5 py-5 border-b border-border flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 no-underline" onClick={onClose}>
           <div className="w-9 h-9 bg-primary-800 rounded-lg flex items-center justify-center">
@@ -17,9 +17,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
           </div>
           <div className="leading-tight">
             <span className="block text-sm font-bold text-text tracking-wide">VIGIIAP</span>
-            <span className="block text-[0.65rem] text-text-muted uppercase tracking-wider">
-              Chocó Biogeográfico
-            </span>
+            <span className="block text-[0.65rem] text-text-muted uppercase tracking-wider">Chocó Biogeográfico</span>
           </div>
         </Link>
         <button
@@ -30,7 +28,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
         </button>
       </div>
 
-      {/* ── Navigation ── */}
+      {/* Navigation */}
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         {NAV_LINKS.map((link) => (
           <NavLink
@@ -52,48 +50,35 @@ export default function Sidebar({ mobileOpen, onClose }) {
         ))}
       </nav>
 
-      {/* ── Bottom actions ── */}
-      <div className="p-3 border-t border-border space-y-1">
-        {isAuthenticated ? (
-          <>
-            <button className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
-              <PlusCircle className="w-4 h-4" />
-              <span>Nuevo Análisis</span>
-            </button>
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-text-light hover:bg-bg-alt transition-colors">
-              <Settings className="w-[18px] h-[18px]" />
-              <span>Configuración</span>
-            </button>
-            <button
-              onClick={logout}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-orange-500 hover:bg-orange-500/5 transition-colors"
-            >
-              <LogOut className="w-[18px] h-[18px]" />
-              <span>Cerrar Sesión</span>
-            </button>
-          </>
-        ) : (
-          <Link
-            to="/login"
-            onClick={onClose}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold no-underline hover:bg-primary-700 transition-colors"
+      {/* Bottom — solo cuando hay sesión */}
+      {isAuthenticated && (
+        <div className="p-3 border-t border-border space-y-1">
+          <button className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
+            <PlusCircle className="w-4 h-4" />
+            <span>Nuevo Análisis</span>
+          </button>
+          <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-text-light hover:bg-bg-alt transition-colors">
+            <Settings className="w-[18px] h-[18px]" />
+            <span>Configuración</span>
+          </button>
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-orange-500 hover:bg-orange-500/5 transition-colors"
           >
-            <LogIn className="w-4 h-4" />
-            <span>Iniciar Sesión</span>
-          </Link>
-        )}
-      </div>
+            <LogOut className="w-[18px] h-[18px]" />
+            <span>Cerrar Sesión</span>
+          </button>
+        </div>
+      )}
     </>
   )
 
   return (
     <>
-      {/* Desktop */}
       <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[200px] bg-white border-r border-border flex-col z-40">
         {sidebarContent}
       </aside>
 
-      {/* Mobile drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <>

@@ -1,5 +1,6 @@
-import { Link, useLocation } from 'react-router-dom'
-import { Search, Bell, Settings, Menu, LogIn } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Search, Bell, Settings, Menu, LogIn, LogOut, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
 const SEARCH_PLACEHOLDERS = {
@@ -17,9 +18,31 @@ const PAGE_LABELS = {
 
 export default function TopBar({ onMenuToggle }) {
   const location = useLocation()
-  const { isAuthenticated, user } = useAuth()
+  const navigate = useNavigate()
+  const { isAuthenticated, user, logout } = useAuth()
   const placeholder = SEARCH_PLACEHOLDERS[location.pathname] || SEARCH_PLACEHOLDERS['/']
   const activeLabel = PAGE_LABELS[location.pathname]
+
+  // Profile dropdown state
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef(null)
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleLogout = () => {
+    logout()
+    setDropdownOpen(false)
+    navigate('/')
+  }
 
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-border">
@@ -57,35 +80,61 @@ export default function TopBar({ onMenuToggle }) {
             </span>
           )}
 
-          <div className="hidden md:flex items-center gap-4 text-sm">
-            <a href="#" className="text-text-light hover:text-primary-800 no-underline transition-colors">Soporte</a>
-            <a href="#" className="text-text-light hover:text-primary-800 no-underline transition-colors">Ayuda</a>
-          </div>
+          {/* Solo para usuarios logueados */}
+          {isAuthenticated && (
+            <>
+              <div className="hidden md:flex items-center gap-4 text-sm">
+                <a href="#" className="text-text-light hover:text-primary-800 no-underline transition-colors">Soporte</a>
+                <a href="#" className="text-text-light hover:text-primary-800 no-underline transition-colors">Ayuda</a>
+              </div>
 
-          <button className="relative p-2 text-text-muted hover:text-text hover:bg-bg-alt rounded-lg transition-colors">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full" />
-          </button>
+              <button className="relative p-2 text-text-muted hover:text-text hover:bg-bg-alt rounded-lg transition-colors">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full" />
+              </button>
 
-          <button className="hidden lg:flex p-2 text-text-muted hover:text-text hover:bg-bg-alt rounded-lg transition-colors">
-            <Settings className="w-5 h-5" />
-          </button>
+              <button className="hidden lg:flex p-2 text-text-muted hover:text-text hover:bg-bg-alt rounded-lg transition-colors">
+                <Settings className="w-5 h-5" />
+              </button>
+            </>
+          )}
 
-          {/* User profile or login button */}
+          {/* Profile dropdown or Login */}
           {isAuthenticated ? (
-            <button className="flex items-center gap-2.5 pl-3 lg:pl-4 border-l border-border">
-              <div className="text-right hidden sm:block">
-                <span className="block text-sm font-medium text-text leading-tight">
-                  {user.name}
-                </span>
-                <span className="block text-[0.7rem] text-text-muted uppercase tracking-wider">
-                  {user.role}
-                </span>
-              </div>
-              <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-800 rounded-full flex items-center justify-center shrink-0">
-                <span className="text-white text-sm font-bold">{user.initials}</span>
-              </div>
-            </button>
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-2 pl-3 lg:pl-4 border-l border-border"
+              >
+                <div className="text-right hidden sm:block">
+                  <span className="block text-sm font-medium text-text leading-tight">{user.name}</span>
+                  <span className="block text-[0.7rem] text-text-muted uppercase tracking-wider">{user.role}</span>
+                </div>
+                <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-800 rounded-full flex items-center justify-center shrink-0">
+                  <span className="text-white text-sm font-bold">{user.initials}</span>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-text-muted hidden sm:block transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown */}
+              {dropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 w-56 bg-white border border-border rounded-xl shadow-float overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-border">
+                    <p className="text-sm font-semibold text-text">{user.name}</p>
+                    <p className="text-xs text-text-muted">{user.email}</p>
+                  </div>
+                  <div className="py-1">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-orange-600 hover:bg-orange-50 transition-colors text-left"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Cerrar Sesión
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <Link
               to="/login"

@@ -4,7 +4,6 @@ import { AuthProvider } from './contexts/AuthContext'
 import MainLayout from './layouts/MainLayout'
 import Preloader from './components/Preloader'
 
-// Lazy load pages
 const Home = lazy(() => import('./pages/Home'))
 const Mapas = lazy(() => import('./pages/Mapas'))
 const Documentos = lazy(() => import('./pages/Documentos'))
@@ -13,6 +12,10 @@ const Herramientas = lazy(() => import('./pages/Herramientas'))
 const Solicitudes = lazy(() => import('./pages/Solicitudes'))
 const Login = lazy(() => import('./pages/auth/Login'))
 const SolicitarAcceso = lazy(() => import('./pages/auth/SolicitarAcceso'))
+const RecuperarPassword = lazy(() => import('./pages/auth/RecuperarPassword'))
+const GuiaUsuario = lazy(() => import('./pages/recursos/GuiaUsuario'))
+const FAQ = lazy(() => import('./pages/recursos/FAQ'))
+const Terminos = lazy(() => import('./pages/recursos/Terminos'))
 
 function PageLoader() {
   return (
@@ -33,19 +36,18 @@ export default function App() {
     return () => clearTimeout(timer)
   }, [])
 
-  if (!appReady) {
-    return <Preloader />
-  }
+  if (!appReady) return <Preloader />
 
   return (
     <AuthProvider>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Auth pages — sin sidebar/topbar */}
+          {/* Auth — sin layout */}
           <Route path="/login" element={<Login />} />
           <Route path="/solicitar-acceso" element={<SolicitarAcceso />} />
+          <Route path="/recuperar-password" element={<RecuperarPassword />} />
 
-          {/* App pages — con dashboard layout */}
+          {/* App — con dashboard layout */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/mapas" element={<Mapas />} />
@@ -53,6 +55,9 @@ export default function App() {
             <Route path="/geovisor" element={<Geovisor />} />
             <Route path="/herramientas" element={<Herramientas />} />
             <Route path="/solicitudes" element={<Solicitudes />} />
+            <Route path="/guia-usuario" element={<GuiaUsuario />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/terminos" element={<Terminos />} />
           </Route>
         </Routes>
       </Suspense>

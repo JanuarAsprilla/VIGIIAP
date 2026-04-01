@@ -12,10 +12,9 @@ const socialLinks = [
 
 // ── Links de recursos ──
 const resourceLinks = [
-  { label: 'Guía de Usuario', href: '#' },
-  { label: 'Preguntas Frecuentes', href: '#' },
-  { label: 'API Documentation', href: '#' },
-  { label: 'Términos de Uso', href: '#' },
+  { label: 'Guía de Usuario', href: '/recursos/guia-usuario' },
+  { label: 'Preguntas Frecuentes', href: '/recursos/faq' },
+  { label: 'Términos de Uso', href: '/recursos/terminos' },
 ]
 
 export default function Footer() {
