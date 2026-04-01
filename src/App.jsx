@@ -1,8 +1,10 @@
 import { Routes, Route } from 'react-router-dom'
 import { lazy, Suspense, useState, useEffect } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
+import { SearchProvider } from './contexts/SearchContext'
 import MainLayout from './layouts/MainLayout'
 import Preloader from './components/Preloader'
+
 
 const Home = lazy(() => import('./pages/Home'))
 const Mapas = lazy(() => import('./pages/Mapas'))
@@ -16,6 +18,8 @@ const RecuperarPassword = lazy(() => import('./pages/auth/RecuperarPassword'))
 const GuiaUsuario = lazy(() => import('./pages/recursos/GuiaUsuario'))
 const FAQ = lazy(() => import('./pages/recursos/FAQ'))
 const Terminos = lazy(() => import('./pages/recursos/Terminos'))
+const Noticias = lazy(() => import('./pages/Noticias'))
+const NoticiaDetalle = lazy(() => import('./pages/NoticiaDetalle'))
 
 function PageLoader() {
   return (
@@ -39,6 +43,7 @@ export default function App() {
   if (!appReady) return <Preloader />
 
   return (
+    <SearchProvider>
     <AuthProvider>
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -58,9 +63,12 @@ export default function App() {
             <Route path="/guia-usuario" element={<GuiaUsuario />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/terminos" element={<Terminos />} />
+            <Route path="/noticias" element={<Noticias />} />
+            <Route path="/noticias/:slug" element={<NoticiaDetalle />} />
           </Route>
         </Routes>
       </Suspense>
     </AuthProvider>
+    </SearchProvider>
   )
 }

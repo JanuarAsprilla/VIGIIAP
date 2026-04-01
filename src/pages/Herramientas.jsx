@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Scaling, Target, ArrowLeftRight, Layers,
-  TriangleRight, Eye, Minus as MinusIcon,
+  TriangleRight, Eye, Minus as MinusIcon, SearchX,
 } from 'lucide-react'
+import { useSearch } from '@/contexts/SearchContext'
+import { matches } from '@/lib/search'
 
 // ── Animation helper ──
 const fadeUp = (delay = 0) => ({
@@ -296,8 +298,22 @@ function ResumenActividad() {
   )
 }
 
+// Metadata for filtering
+const TOOLS_META = [
+  { id: 'calculadora', tag: 'Geometría', title: 'Calculadora de Áreas y Perímetros', Component: CalculadoraAreas },
+  { id: 'buffers', tag: 'Procesamiento', title: 'Generador de Buffers', Component: GeneradorBuffers },
+  { id: 'conversor', tag: 'Geodésico', title: 'Conversor de Coordenadas', Component: ConversorCoordenadas },
+  { id: 'superposicion', tag: 'Análisis Espacial', title: 'Analizador de Superposición', Component: AnalizadorSuperposicion },
+]
+
 // ── Main Herramientas Page ──
 export default function Herramientas() {
+  const { query } = useSearch()
+
+  const filteredTools = TOOLS_META.filter((t) =>
+    matches([t.title, t.tag], query)
+  )
+
   return (
     <div className="space-y-8">
       {/* ── Header ── */}
@@ -313,16 +329,22 @@ export default function Herramientas() {
         </div>
       </motion.div>
 
-      {/* ── Tools Grid 2x2 ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <CalculadoraAreas />
-        <GeneradorBuffers />
-        <ConversorCoordenadas />
-        <AnalizadorSuperposicion />
-      </div>
+      {/* ── Tools Grid ── */}
+      {filteredTools.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredTools.map(({ id, Component }) => (
+            <Component key={id} />
+          ))}
+        </div>
+      ) : (
+        <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
+          <SearchX className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No se encontraron herramientas para <strong className="text-text">"{query}"</strong></p>
+        </motion.div>
+      )}
 
       {/* ── Activity Summary ── */}
-      <ResumenActividad />
+      {!q && <ResumenActividad />}
     </div>
   )
 }

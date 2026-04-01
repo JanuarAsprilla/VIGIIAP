@@ -67,7 +67,7 @@ html {
 
 body {
   font-family: var(--font-body);
-  font-size: clamp(18px, 2.5vw, 20px);
+  font-size: clamp(14px, 2vw, 16px);
   background: var(--color-bg);
   color: var(--color-text);
   line-height: 1.65;
@@ -100,7 +100,7 @@ body {
    ===================================================== */
 
 /* Ensure readable minimums */
-.text-sm { font-size: clamp(1rem, 2vw, 1.125rem); line-height: 1.5; }
+.text-sm { font-size: clamp(0.875rem, 1.5vw, 1rem); line-height: 1.5; }
 
 /* Module page headers */
 .page-header-tag {
@@ -113,39 +113,39 @@ body {
 
 .page-header-title {
   font-family: var(--font-display);
-  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.2;
 }
 
 .page-header-description {
-  font-size: clamp(1rem, 2vw, 1.1rem);
+  font-size: clamp(0.9rem, 1.5vw, 1rem);
   color: var(--color-text-light);
   line-height: 1.7;
 }
 
 /* Card content readable */
 .card-title {
-  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
   font-weight: 700;
   line-height: 1.4;
 }
 
 .card-text {
-  font-size: clamp(0.99rem, 2vw, 1rem);
+  font-size: clamp(0.85rem, 1.5vw, 0.95rem);
   line-height: 1.6;
   color: var(--color-text-muted);
 }
 
 /* Table text */
 .table-header {
-  font-size: clamp(0.85rem, 1.5vw, 0.9rem);
+  font-size: clamp(0.75rem, 1.2vw, 0.85rem);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .table-cell {
-  font-size: clamp(0.95rem, 2vw, 1remtext);
+  font-size: clamp(0.8rem, 1.5vw, 0.9rem);
 }

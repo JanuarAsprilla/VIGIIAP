@@ -9,6 +9,8 @@ import {
   MAP_CATEGORIES, MAP_DEPARTMENTS, MAP_FORMATS,
   MAP_YEARS, SAMPLE_MAPS,
 } from '@/lib/constants'
+import { useSearch } from '@/contexts/SearchContext'
+import { matches } from '@/lib/search'
 
 // ── Animation helper ──
 const fadeUp = (delay = 0) => ({
@@ -130,12 +132,17 @@ function FilterChip({ label, onRemove }) {
 
 // ── Main Page ──
 export default function Mapas() {
+  const { query } = useSearch()
   const [filters, setFilters] = useState({
     category: 'biodiversidad',
     department: '',
     format: '',
     year: '2024',
   })
+
+  const filteredMaps = SAMPLE_MAPS.filter((m) =>
+    matches([m.title, m.category, m.excerpt], query)
+  )
 
   const activeChips = []
   if (filters.category) {
@@ -209,18 +216,18 @@ export default function Mapas() {
       </motion.div>
 
       {/* Map Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {SAMPLE_MAPS.map((map, i) => (
-          <MapCard key={map.id} map={map} index={i} />
-        ))}
-      </div>
-
-      {/* Second row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {SAMPLE_MAPS.map((map, i) => (
-          <MapCard key={`row2-${map.id}`} map={map} index={i + 6} />
-        ))}
-      </div>
+      {filteredMaps.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredMaps.map((map, i) => (
+            <MapCard key={map.id} map={map} index={i} />
+          ))}
+        </div>
+      ) : (
+        <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
+          <Map className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No se encontraron mapas para <strong className="text-text">"{query}"</strong></p>
+        </motion.div>
+      )}
 
       {/* Pagination */}
       <motion.div {...fadeUp(0.3)} className="flex flex-col items-center gap-3">

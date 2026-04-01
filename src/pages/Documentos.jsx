@@ -7,6 +7,8 @@ import {
   Headphones,
 } from 'lucide-react'
 import { DOC_CATEGORIES } from '@/lib/constants'
+import { useSearch } from '@/contexts/SearchContext'
+import { matches } from '@/lib/search'
 
 // ── Animation helper ──
 const fadeUp = (delay = 0) => ({
@@ -183,11 +185,23 @@ function SupportCTA() {
 
 // ── Main Documentos Page ──
 export default function Documentos() {
+  const { query, setQuery } = useSearch()
   const [openId, setOpenId] = useState('protocolos')
-  const [searchQuery, setSearchQuery] = useState('')
+
+  // Filter categories and their docs by search query
+  const filteredCategories = DOC_CATEGORIES.map((cat) => ({
+    ...cat,
+    docs: cat.docs.filter((d) => matches([d.name, cat.title], query)),
+  })).filter((cat) => cat.docs.length > 0 || matches([cat.title], query))
+
+  // Auto-expand categories that have matches when searching
+  const getIsOpen = (catId) => {
+    if (query.trim()) return filteredCategories.some((c) => c.id === catId)
+    return openId === catId
+  }
 
   const toggleCategory = (id) => {
-    setOpenId(openId === id ? '' : id)
+    if (!query.trim()) setOpenId(openId === id ? '' : id)
   }
 
   return (
@@ -212,14 +226,14 @@ export default function Documentos() {
         {...fadeUp(0.1)}
         className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
       >
-        {/* Search input */}
+        {/* Search input — synced with TopBar */}
         <div className="flex items-center gap-2 bg-white border border-border rounded-lg px-4 py-2.5 flex-1">
           <Search className="w-4 h-4 text-text-muted shrink-0" />
           <input
             type="text"
             placeholder="Buscar por nombre, tipo o fecha..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             className="bg-transparent border-none outline-none text-sm text-text w-full placeholder:text-text-muted"
           />
         </div>
@@ -239,15 +253,20 @@ export default function Documentos() {
 
       {/* ── Document Categories (Accordions) ── */}
       <div className="space-y-4">
-        {DOC_CATEGORIES.map((cat, i) => (
+        {filteredCategories.length > 0 ? filteredCategories.map((cat, i) => (
           <CategoryAccordion
             key={cat.id}
             category={cat}
-            isOpen={openId === cat.id}
+            isOpen={getIsOpen(cat.id)}
             onToggle={() => toggleCategory(cat.id)}
             index={i}
           />
-        ))}
+        )) : (
+          <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
+            <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p className="text-sm">No se encontraron documentos para <strong className="text-text">"{query}"</strong></p>
+          </motion.div>
+        )}
       </div>
 
       {/* ── Support CTA ── */}

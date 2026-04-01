@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Crosshair, BookOpen, Plus } from 'lucide-react'
-import { MODULES, STATS, NEWS,} from '@/lib/constants'
+import { ArrowRight, Crosshair, BookOpen, Plus, SearchX } from 'lucide-react'
+import { MODULES, STATS, NEWS } from '@/lib/constants'
+import { useAuth } from '@/contexts/AuthContext'
+import { useSearch } from '@/contexts/SearchContext'
+import { matches } from '@/lib/search'
 
 // ── Animation helper ──
 const fadeUp = (delay = 0) => ({
@@ -48,12 +51,13 @@ function HeroBanner() {
             Abrir Geovisor
           </Link>
           
-           <a href="#"
+          <Link
+            to="/guia-usuario"
             className="inline-flex items-center gap-2 px-5 py-2.5 border border-white/30 text-white rounded-lg text-sm font-semibold no-underline hover:bg-white/10 transition-colors"
           >
             <BookOpen className="w-4 h-4" />
             Ver Tutoriales
-          </a>
+          </Link>
         </div>
       </div>
     </motion.div>
@@ -128,73 +132,91 @@ function StatsSection() {
   )
 }
 
-// ── News Section ──
-function NewsSection() {
-  return (
-    <motion.div {...fadeUp(0.5)}>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-display text-xl font-bold text-text">
-          Noticias Territoriales
-        </h2>
-        <a href="#" className="text-xs font-bold uppercase tracking-wider text-text-muted hover:text-primary-800 no-underline transition-colors">
-          Ver Todas
-        </a>
-      </div>
-
-      <div className="space-y-4">
-        {NEWS.map((article) => (
-          <div
-            key={article.id}
-            className="bg-white border border-border rounded-xl p-5 hover:shadow-card transition-shadow"
-          >
-            <span className="inline-block text-[0.65rem] font-bold uppercase tracking-wider text-primary-700 mb-2">
-              {article.tag}
-            </span>
-            <h3 className="text-sm font-bold text-text leading-snug mb-2">
-              {article.title}
-            </h3>
-            <p className="text-sm text-text-muted leading-relaxed mb-3">
-              {article.excerpt}
-            </p>
-            <div className="flex items-center gap-2 text-xs text-text-muted">
-              <span>{article.time}</span>
-              <span>·</span>
-              <span>Autor: {article.author}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </motion.div>
-  )
-}
-
-
 
 // ── Home Page ──
 export default function Home() {
+  const { isAuthenticated } = useAuth()
+  const { query } = useSearch()
+
+  const filteredModules = MODULES.filter((m) =>
+    matches([m.title, m.description, m.action], query)
+  )
+  const filteredNews = NEWS.filter((a) =>
+    matches([a.title, a.excerpt, a.tag, a.author], query)
+  )
+
   return (
     <>
-
-
       <div className="space-y-8">
-        <HeroBanner />
+        {/* Ocultar hero cuando hay búsqueda activa */}
+        {!q && <HeroBanner />}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {MODULES.map((mod, i) => (
-            <ModuleCard key={mod.id} module={mod} index={i} />
-          ))}
-        </div>
+        {/* Módulos filtrados */}
+        {filteredModules.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {filteredModules.map((mod, i) => (
+              <ModuleCard key={mod.id} module={mod} index={i} />
+            ))}
+          </div>
+        ) : !q && null}
 
-        <StatsSection />
+        {/* Mostrar mensaje solo cuando hay query sin resultados totales */}
+        {q && filteredModules.length === 0 && filteredNews.length === 0 && (
+          <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
+            <SearchX className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p className="text-sm">No se encontraron resultados para <strong className="text-text">"{query}"</strong></p>
+          </motion.div>
+        )}
 
-        
-          <NewsSection />
-        
+        {!q && <StatsSection />}
+
+        {/* Noticias filtradas */}
+        {filteredNews.length > 0 && (
+          <motion.div {...fadeUp(0.5)}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-xl font-bold text-text">
+                {q ? `Noticias — "${query}"` : 'Noticias Territoriales'}
+              </h2>
+              {!q && (
+                <Link
+                  to="/noticias"
+                  className="text-xs font-bold uppercase tracking-wider text-text-muted hover:text-primary-800 no-underline transition-colors"
+                >
+                  Ver Todas
+                </Link>
+              )}
+            </div>
+            <div className="space-y-4">
+              {filteredNews.map((article) => (
+                <Link
+                  key={article.id}
+                  to={`/noticias/${article.slug || article.id}`}
+                  className="block bg-white border border-border rounded-xl p-5 hover:shadow-card transition-shadow no-underline group"
+                >
+                  <span className="inline-block text-[0.65rem] font-bold uppercase tracking-wider text-primary-700 mb-2">
+                    {article.tag}
+                  </span>
+                  <h3 className="text-sm font-bold text-text leading-snug mb-2 group-hover:text-primary-800 transition-colors">
+                    {article.title}
+                  </h3>
+                  <p className="text-sm text-text-muted leading-relaxed mb-3">{article.excerpt}</p>
+                  <div className="flex items-center gap-2 text-xs text-text-muted">
+                    <span>{article.time}</span>
+                    <span>·</span>
+                    <span>Autor: {article.author}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
 
-      <button className="fixed bottom-20 lg:bottom-6 right-6 w-12 h-12 bg-primary-800 text-white rounded-full shadow-elevated flex items-center justify-center hover:bg-primary-700 hover:shadow-float hover:scale-105 transition-all z-30">
-        <Plus className="w-5 h-5" />
-      </button>
+      {isAuthenticated && (
+        <button className="fixed bottom-20 lg:bottom-6 right-6 w-12 h-12 bg-primary-800 text-white rounded-full shadow-elevated flex items-center justify-center hover:bg-primary-700 hover:shadow-float hover:scale-105 transition-all z-30">
+          <Plus className="w-5 h-5" />
+        </button>
+      )}
     </>
   )
 }

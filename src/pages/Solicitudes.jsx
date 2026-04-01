@@ -8,6 +8,8 @@ import {
 import {
   SOLICITUDES_KPIS, SOLICITUDES_TABLE, TRAMITE_TYPES,
 } from '@/lib/constants'
+import { useSearch } from '@/contexts/SearchContext'
+import { matches } from '@/lib/search'
 
 // ── Animation helper ──
 const fadeUp = (delay = 0) => ({
@@ -39,7 +41,7 @@ function StatusBadge({ estado, color }) {
 }
 
 // ── Solicitudes Table ──
-function SolicitudesTable() {
+function SolicitudesTable({ rows }) {
   return (
     <motion.div
       {...fadeUp(0.2)}
@@ -77,7 +79,7 @@ function SolicitudesTable() {
             </tr>
           </thead>
           <tbody>
-            {SOLICITUDES_TABLE.map((sol, i) => (
+            {rows.length > 0 ? rows.map((sol) => (
               <tr
                 key={sol.id}
                 className="border-b border-border last:border-b-0 hover:bg-bg-alt/30 transition-colors"
@@ -106,14 +108,20 @@ function SolicitudesTable() {
                   </button>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan={5} className="px-6 py-10 text-center text-sm text-text-muted">
+                  No se encontraron solicitudes para la búsqueda actual.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Pagination footer */}
       <div className="flex items-center justify-between px-6 py-3 border-t border-border bg-bg-alt/30">
-        <span className="text-xs text-text-muted">Mostrando 4 de 24 solicitudes</span>
+        <span className="text-xs text-text-muted">Mostrando {rows.length} de 24 solicitudes</span>
         <div className="flex items-center gap-1">
           <button
             disabled
@@ -244,6 +252,11 @@ function BottomStats() {
 
 // ── Main Solicitudes Page ──
 export default function Solicitudes() {
+  const { query } = useSearch()
+  const filteredRows = SOLICITUDES_TABLE.filter((s) =>
+    matches([s.id, s.tipo, s.subtipo, s.estado], query)
+  )
+
   return (
     <div className="space-y-8">
       {/* ── Header ── */}
@@ -282,7 +295,7 @@ export default function Solicitudes() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         {/* Left: Table */}
         <div className="space-y-6">
-          <SolicitudesTable />
+          <SolicitudesTable rows={filteredRows} />
         </div>
 
         {/* Right: Form + Help */}

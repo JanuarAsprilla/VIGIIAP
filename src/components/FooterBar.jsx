@@ -12,9 +12,9 @@ const socialLinks = [
 
 // ── Links de recursos ──
 const resourceLinks = [
-  { label: 'Guía de Usuario', href: '/recursos/guia-usuario' },
-  { label: 'Preguntas Frecuentes', href: '/recursos/faq' },
-  { label: 'Términos de Uso', href: '/recursos/terminos' },
+  { label: 'Guía de Usuario', href: '/guia-usuario' },
+  { label: 'Preguntas Frecuentes', href: '/faq' },
+  { label: 'Términos de Uso', href: '/terminos' },
 ]
 
 export default function Footer() {
@@ -104,12 +104,12 @@ export default function Footer() {
                 <ul className="space-y-2">
                   {resourceLinks.map((link) => (
                     <li key={link.label}>
-                      <a
-                        href={link.href}
+                      <Link
+                        to={link.href}
                         className="text-white/70 hover:text-primary-300 text-sm no-underline transition-colors"
                       >
                         {link.label}
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>
