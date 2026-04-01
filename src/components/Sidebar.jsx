@@ -1,9 +1,12 @@
 import { NavLink, Link } from 'react-router-dom'
-import { PlusCircle, Settings, LogOut, X } from 'lucide-react'
+import { PlusCircle, Settings, LogOut, LogIn, X } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
+import { useAuth } from '@/contexts/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Sidebar({ mobileOpen, onClose }) {
+  const { isAuthenticated, user, logout } = useAuth()
+
   const sidebarContent = (
     <>
       {/* ── Logo ── */}
@@ -13,16 +16,12 @@ export default function Sidebar({ mobileOpen, onClose }) {
             <span className="text-white font-bold text-sm">V</span>
           </div>
           <div className="leading-tight">
-            <span className="block text-sm font-bold text-text tracking-wide">
-              VIGIIAP
-            </span>
+            <span className="block text-sm font-bold text-text tracking-wide">VIGIIAP</span>
             <span className="block text-[0.65rem] text-text-muted uppercase tracking-wider">
               Chocó Biogeográfico
             </span>
           </div>
         </Link>
-
-        {/* Close button — only mobile */}
         <button
           onClick={onClose}
           className="lg:hidden p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"
@@ -55,36 +54,49 @@ export default function Sidebar({ mobileOpen, onClose }) {
 
       {/* ── Bottom actions ── */}
       <div className="p-3 border-t border-border space-y-1">
-        <button className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
-          <PlusCircle className="w-4 h-4" />
-          <span>Nuevo Análisis</span>
-        </button>
-
-        <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-text-light hover:bg-bg-alt transition-colors">
-          <Settings className="w-[18px] h-[18px]" />
-          <span>Configuración</span>
-        </button>
-
-        <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-orange-500 hover:bg-orange-500/5 transition-colors">
-          <LogOut className="w-[18px] h-[18px]" />
-          <span>Cerrar Sesión</span>
-        </button>
+        {isAuthenticated ? (
+          <>
+            <button className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
+              <PlusCircle className="w-4 h-4" />
+              <span>Nuevo Análisis</span>
+            </button>
+            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-text-light hover:bg-bg-alt transition-colors">
+              <Settings className="w-[18px] h-[18px]" />
+              <span>Configuración</span>
+            </button>
+            <button
+              onClick={logout}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-orange-500 hover:bg-orange-500/5 transition-colors"
+            >
+              <LogOut className="w-[18px] h-[18px]" />
+              <span>Cerrar Sesión</span>
+            </button>
+          </>
+        ) : (
+          <Link
+            to="/login"
+            onClick={onClose}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold no-underline hover:bg-primary-700 transition-colors"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>Iniciar Sesión</span>
+          </Link>
+        )}
       </div>
     </>
   )
 
   return (
     <>
-      {/* ── Desktop Sidebar (always visible >= 1024px) ── */}
+      {/* Desktop */}
       <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[200px] bg-white border-r border-border flex-col z-40">
         {sidebarContent}
       </aside>
 
-      {/* ── Mobile Drawer (< 1024px) ── */}
+      {/* Mobile drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <>
-            {/* Overlay */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -92,8 +104,6 @@ export default function Sidebar({ mobileOpen, onClose }) {
               className="fixed inset-0 z-50 bg-black/40 lg:hidden"
               onClick={onClose}
             />
-
-            {/* Drawer */}
             <motion.aside
               initial={{ x: -260 }}
               animate={{ x: 0 }}

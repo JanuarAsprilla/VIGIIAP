@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { lazy, Suspense, useState, useEffect } from 'react'
+import { AuthProvider } from './contexts/AuthContext'
 import MainLayout from './layouts/MainLayout'
 import Preloader from './components/Preloader'
 
@@ -10,6 +11,8 @@ const Documentos = lazy(() => import('./pages/Documentos'))
 const Geovisor = lazy(() => import('./pages/Geovisor'))
 const Herramientas = lazy(() => import('./pages/Herramientas'))
 const Solicitudes = lazy(() => import('./pages/Solicitudes'))
+const Login = lazy(() => import('./pages/auth/Login'))
+const SolicitarAcceso = lazy(() => import('./pages/auth/SolicitarAcceso'))
 
 function PageLoader() {
   return (
@@ -26,7 +29,6 @@ export default function App() {
   const [appReady, setAppReady] = useState(false)
 
   useEffect(() => {
-    // Preloader solo la primera vez que se abre el sitio
     const timer = setTimeout(() => setAppReady(true), 2200)
     return () => clearTimeout(timer)
   }, [])
@@ -36,17 +38,24 @@ export default function App() {
   }
 
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/mapas" element={<Mapas />} />
-          <Route path="/documentos" element={<Documentos />} />
-          <Route path="/geovisor" element={<Geovisor />} />
-          <Route path="/herramientas" element={<Herramientas />} />
-          <Route path="/solicitudes" element={<Solicitudes />} />
-        </Route>
-      </Routes>
-    </Suspense>
+    <AuthProvider>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Auth pages — sin sidebar/topbar */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/solicitar-acceso" element={<SolicitarAcceso />} />
+
+          {/* App pages — con dashboard layout */}
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/mapas" element={<Mapas />} />
+            <Route path="/documentos" element={<Documentos />} />
+            <Route path="/geovisor" element={<Geovisor />} />
+            <Route path="/herramientas" element={<Herramientas />} />
+            <Route path="/solicitudes" element={<Solicitudes />} />
+          </Route>
+        </Routes>
+      </Suspense>
+    </AuthProvider>
   )
 }
