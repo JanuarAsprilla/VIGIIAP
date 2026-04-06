@@ -145,7 +145,10 @@ export const MAP_YEARS = [
 export const SAMPLE_MAPS = [
   {
     id: 'MAPA_REF_01',
-    category: 'Ecosistemas v.2024',
+    categoryKey: 'cobertura',
+    category: 'Cobertura Vegetal',
+    department: 'choco',
+    year: '2023',
     title: 'Mapa de Cobertura Vegetal y Uso de la Tierra',
     excerpt: 'Análisis detallado de los estratos vegetales del Chocó con clasificación por tipo de cobertura.',
     formats: ['PDF', 'IMG'],
@@ -156,7 +159,10 @@ export const SAMPLE_MAPS = [
   },
   {
     id: 'MAPA_REF_02',
+    categoryKey: 'hidrologia',
     category: 'Hidrología',
+    department: 'choco',
+    year: '2024',
     title: 'Cuenca del Río Atrato: Dinámica Fluvial',
     excerpt: 'Cartografía multitemporal de la red hídrica principal y sus afluentes en la cuenca del Atrato.',
     formats: ['PDF', 'IMG'],
@@ -167,7 +173,10 @@ export const SAMPLE_MAPS = [
   },
   {
     id: 'MAPA_REF_03',
+    categoryKey: 'planificacion',
     category: 'Planificación',
+    department: 'narino',
+    year: '2023',
     title: 'Mapa de Conflictos de Uso del Suelo 2023',
     excerpt: 'Identificación de áreas con sobreuso y subuso del suelo en municipios del Pacífico colombiano.',
     formats: ['PDF', 'IMG'],
@@ -178,7 +187,10 @@ export const SAMPLE_MAPS = [
   },
   {
     id: 'MAPA_REF_04',
-    category: 'Ecosistemas v.2024',
+    categoryKey: 'ecosistemas',
+    category: 'Ecosistemas',
+    department: 'valle',
+    year: '2024',
     title: 'Zonificación Ambiental del Pacífico Norte',
     excerpt: 'Delimitación de áreas de conservación y uso sostenible con criterios ambientales integrados.',
     formats: ['PDF', 'IMG'],
@@ -189,7 +201,10 @@ export const SAMPLE_MAPS = [
   },
   {
     id: 'MAPA_REF_05',
+    categoryKey: 'hidrologia',
     category: 'Hidrología',
+    department: 'choco',
+    year: '2024',
     title: 'Red Hídrica y Cuencas Hidrográficas Sector Atrato',
     excerpt: 'Mapeo completo de ríos tributarios y microcuencas del sector medio y bajo del río Atrato.',
     formats: ['PDF'],
@@ -200,7 +215,10 @@ export const SAMPLE_MAPS = [
   },
   {
     id: 'MAPA_REF_06',
+    categoryKey: 'planificacion',
     category: 'Planificación',
+    department: 'cauca',
+    year: '2024',
     title: 'Áreas de Reserva Forestal del Pacífico',
     excerpt: 'Cartografía oficial de las zonas de reserva forestal con delimitación legal actualizada.',
     formats: ['PDF', 'IMG'],
