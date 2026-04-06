@@ -134,15 +134,22 @@ function FilterChip({ label, onRemove }) {
 export default function Mapas() {
   const { query } = useSearch()
   const [filters, setFilters] = useState({
-    category: 'biodiversidad',
+    category: '',
     department: '',
     format: '',
-    year: '2024',
+    year: '',
   })
+  const [page, setPage] = useState(1)
+  const PER_PAGE = 6
 
-  const filteredMaps = SAMPLE_MAPS.filter((m) =>
-    matches([m.title, m.category, m.excerpt], query)
-  )
+  const filteredMaps = SAMPLE_MAPS.filter((m) => {
+    if (!matches([m.title, m.category, m.excerpt], query)) return false
+    if (filters.category && m.categoryKey !== filters.category) return false
+    if (filters.department && m.department !== filters.department) return false
+    if (filters.year && m.year !== filters.year) return false
+    if (filters.format && !m.formats.some((f) => f.toLowerCase() === filters.format)) return false
+    return true
+  })
 
   const activeChips = []
   if (filters.category) {
@@ -159,8 +166,16 @@ export default function Mapas() {
     if (fmt) activeChips.push({ key: 'format', label: fmt.label })
   }
 
-  const removeChip = (key) => setFilters((prev) => ({ ...prev, [key]: '' }))
-  const clearAllFilters = () => setFilters({ category: '', department: '', format: '', year: '' })
+  const totalPages = Math.max(1, Math.ceil(filteredMaps.length / PER_PAGE))
+  const safePage = Math.min(page, totalPages)
+  const pagedMaps = filteredMaps.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
+
+  const updateFilter = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }))
+    setPage(1)
+  }
+  const removeChip = (key) => { setFilters((prev) => ({ ...prev, [key]: '' })); setPage(1) }
+  const clearAllFilters = () => { setFilters({ category: '', department: '', format: '', year: '' }); setPage(1) }
 
   return (
     <div className="space-y-8">
@@ -197,10 +212,10 @@ export default function Mapas() {
         </div>
 
         <div className="flex flex-wrap gap-4">
-          <FilterSelect label="Categoría" options={MAP_CATEGORIES} value={filters.category} onChange={(v) => setFilters({ ...filters, category: v })} />
-          <FilterSelect label="Departamento / Subregión" options={MAP_DEPARTMENTS} value={filters.department} onChange={(v) => setFilters({ ...filters, department: v })} />
-          <FilterSelect label="Formato" options={MAP_FORMATS} value={filters.format} onChange={(v) => setFilters({ ...filters, format: v })} />
-          <FilterSelect label="Año de Publicación" options={MAP_YEARS} value={filters.year} onChange={(v) => setFilters({ ...filters, year: v })} />
+          <FilterSelect label="Categoría" options={MAP_CATEGORIES} value={filters.category} onChange={(v) => updateFilter('category', v)} />
+          <FilterSelect label="Departamento / Subregión" options={MAP_DEPARTMENTS} value={filters.department} onChange={(v) => updateFilter('department', v)} />
+          <FilterSelect label="Formato" options={MAP_FORMATS} value={filters.format} onChange={(v) => updateFilter('format', v)} />
+          <FilterSelect label="Año de Publicación" options={MAP_YEARS} value={filters.year} onChange={(v) => updateFilter('year', v)} />
         </div>
 
         {activeChips.length > 0 && (
@@ -216,38 +231,52 @@ export default function Mapas() {
       </motion.div>
 
       {/* Map Cards Grid */}
-      {filteredMaps.length > 0 ? (
+      {pagedMaps.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredMaps.map((map, i) => (
+          {pagedMaps.map((map, i) => (
             <MapCard key={map.id} map={map} index={i} />
           ))}
         </div>
       ) : (
         <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
           <Map className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No se encontraron mapas para <strong className="text-text">"{query}"</strong></p>
+          <p className="text-sm">No se encontraron mapas{query && <> para <strong className="text-text">"{query}"</strong></>}</p>
         </motion.div>
       )}
 
       {/* Pagination */}
-      <motion.div {...fadeUp(0.3)} className="flex flex-col items-center gap-3">
-        <div className="flex items-center gap-2">
-          <button disabled className="w-9 h-9 rounded-lg border border-border bg-white text-text-muted flex items-center justify-center opacity-50">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          {[1, 2, 3].map((n) => (
-            <button key={n} className={`w-9 h-9 rounded-lg border text-sm font-medium flex items-center justify-center transition-colors ${n === 1 ? 'bg-primary-800 border-primary-800 text-white' : 'border-border bg-white text-text-light hover:bg-primary-800 hover:border-primary-800 hover:text-white'}`}>
-              {n}
+      {totalPages > 1 && (
+        <motion.div {...fadeUp(0.3)} className="flex flex-col items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="w-9 h-9 rounded-lg border border-border bg-white text-text-muted flex items-center justify-center disabled:opacity-40 hover:enabled:bg-primary-800 hover:enabled:border-primary-800 hover:enabled:text-white transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
             </button>
-          ))}
-          <span className="text-text-muted text-sm px-1">...</span>
-          <button className="w-9 h-9 rounded-lg border border-border bg-white text-text-light text-sm font-medium flex items-center justify-center hover:bg-primary-800 hover:border-primary-800 hover:text-white transition-colors">12</button>
-          <button className="w-9 h-9 rounded-lg border border-border bg-white text-text-light flex items-center justify-center hover:bg-primary-800 hover:border-primary-800 hover:text-white transition-colors">
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-        <span className="text-sm text-text-muted">Mostrando 12 de 1,248 resultados</span>
-      </motion.div>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                onClick={() => setPage(n)}
+                className={`w-9 h-9 rounded-lg border text-sm font-medium flex items-center justify-center transition-colors ${n === safePage ? 'bg-primary-800 border-primary-800 text-white' : 'border-border bg-white text-text-light hover:bg-primary-800 hover:border-primary-800 hover:text-white'}`}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="w-9 h-9 rounded-lg border border-border bg-white text-text-light flex items-center justify-center disabled:opacity-40 hover:enabled:bg-primary-800 hover:enabled:border-primary-800 hover:enabled:text-white transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <span className="text-sm text-text-muted">
+            Mostrando {(safePage - 1) * PER_PAGE + 1}–{Math.min(safePage * PER_PAGE, filteredMaps.length)} de {filteredMaps.length} resultados
+          </span>
+        </motion.div>
+      )}
     </div>
   )
 }
