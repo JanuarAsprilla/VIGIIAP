@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, X, Edit2, Trash2, Download,
-  FileText, File, Image, Send,
+  FileText, File, Image, Send, Upload, CheckCircle,
+  AlertCircle, Link as LinkIcon,
 } from 'lucide-react'
 
 const fadeUp = (d = 0) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4, delay: d, ease: [0.22, 1, 0.36, 1] } })
@@ -16,23 +17,120 @@ const panelAnim = {
 const CATEGORIES = ['Cartografía', 'Estudios Ambientales', 'Normativa', 'Informes Técnicos', 'Biodiversidad', 'Hidrología']
 const TIPOS = ['PDF', 'IMG', 'Geovisor']
 
+// Accepted MIME types per document type
+const ACCEPT = {
+  PDF:      '.pdf,application/pdf',
+  IMG:      '.jpg,.jpeg,.png,.webp,image/*',
+  Geovisor: null, // URL link instead of file
+}
+
 const MOCK_DOCS = [
-  { id: 1, nombre: 'Mapa Base Chocó 2024', categoria: 'Cartografía', tipo: 'PDF', autor: 'Equipo Cartográfico', fecha: '15 Mar 2026', tamano: '4.2 MB', descargas: 142 },
-  { id: 2, nombre: 'Estudio Cobertura Vegetal 2024', categoria: 'Estudios Ambientales', tipo: 'PDF', autor: 'Laboratorio SIG', fecha: '10 Mar 2026', tamano: '8.7 MB', descargas: 98 },
-  { id: 3, nombre: 'Red Hidrográfica Pacífico', categoria: 'Hidrología', tipo: 'IMG', autor: 'Equipo Hidrografía', fecha: '05 Mar 2026', tamano: '12.1 MB', descargas: 67 },
-  { id: 4, nombre: 'Zonificación Ambiental 2023', categoria: 'Cartografía', tipo: 'PDF', autor: 'Gestión Territorial', fecha: '28 Feb 2026', tamano: '6.3 MB', descargas: 215 },
-  { id: 5, nombre: 'Informe de Biodiversidad Q4-2025', categoria: 'Biodiversidad', tipo: 'PDF', autor: 'Equipo Biodiversidad', fecha: '20 Feb 2026', tamano: '3.8 MB', descargas: 54 },
-  { id: 6, nombre: 'Normativa Ambiental Chocó 2024', categoria: 'Normativa', tipo: 'PDF', autor: 'Jurídica IIAP', fecha: '15 Feb 2026', tamano: '2.1 MB', descargas: 183 },
-  { id: 7, nombre: 'Geovisor — Cuencas Hidrográficas', categoria: 'Hidrología', tipo: 'Geovisor', autor: 'Geoportal Regional', fecha: '10 Feb 2026', tamano: '—', descargas: 312 },
-  { id: 8, nombre: 'Imagen Satelital Atrato 2025', categoria: 'Cartografía', tipo: 'IMG', autor: 'Teledetección IIAP', fecha: '05 Feb 2026', tamano: '22.4 MB', descargas: 78 },
+  { id: 1, nombre: 'Mapa Base Chocó 2024',          categoria: 'Cartografía',         tipo: 'PDF',     autor: 'Equipo Cartográfico',    fecha: '15 Mar 2026', tamano: '4.2 MB',  descargas: 142, url: null },
+  { id: 2, nombre: 'Estudio Cobertura Vegetal 2024', categoria: 'Estudios Ambientales',tipo: 'PDF',     autor: 'Laboratorio SIG',        fecha: '10 Mar 2026', tamano: '8.7 MB',  descargas: 98,  url: null },
+  { id: 3, nombre: 'Red Hidrográfica Pacífico',      categoria: 'Hidrología',          tipo: 'IMG',     autor: 'Equipo Hidrografía',     fecha: '05 Mar 2026', tamano: '12.1 MB', descargas: 67,  url: null },
+  { id: 4, nombre: 'Zonificación Ambiental 2023',    categoria: 'Cartografía',         tipo: 'PDF',     autor: 'Gestión Territorial',    fecha: '28 Feb 2026', tamano: '6.3 MB',  descargas: 215, url: null },
+  { id: 5, nombre: 'Informe Biodiversidad Q4-2025',  categoria: 'Biodiversidad',       tipo: 'PDF',     autor: 'Equipo Biodiversidad',   fecha: '20 Feb 2026', tamano: '3.8 MB',  descargas: 54,  url: null },
+  { id: 6, nombre: 'Normativa Ambiental Chocó 2024', categoria: 'Normativa',           tipo: 'PDF',     autor: 'Jurídica IIAP',          fecha: '15 Feb 2026', tamano: '2.1 MB',  descargas: 183, url: null },
+  { id: 7, nombre: 'Geovisor — Cuencas Hidrográficas',categoria: 'Hidrología',        tipo: 'Geovisor',autor: 'Geoportal Regional',     fecha: '10 Feb 2026', tamano: '—',       descargas: 312, url: '/geovisor' },
+  { id: 8, nombre: 'Imagen Satelital Atrato 2025',   categoria: 'Cartografía',         tipo: 'IMG',     autor: 'Teledetección IIAP',     fecha: '05 Feb 2026', tamano: '22.4 MB', descargas: 78,  url: null },
 ]
 
-const EMPTY_FORM = { nombre: '', categoria: CATEGORIES[0], tipo: TIPOS[0], autor: '', fecha: '', tamano: '' }
+const EMPTY_FORM = { nombre: '', categoria: CATEGORIES[0], tipo: TIPOS[0], autor: '', fecha: '', url: '' }
 
 const TipoIcon = ({ tipo }) => {
   if (tipo === 'PDF') return <FileText className="w-4 h-4 text-red-500" />
   if (tipo === 'IMG') return <Image className="w-4 h-4 text-blue-500" />
   return <File className="w-4 h-4 text-primary-600" />
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+}
+
+// ── Dropzone component ──
+function FileDropzone({ tipo, onFile, currentFile, editing }) {
+  const inputRef = useRef(null)
+  const [dragging, setDragging] = useState(false)
+  const accept = ACCEPT[tipo]
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault()
+    setDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file) onFile(file)
+  }, [onFile])
+
+  const handleChange = (e) => {
+    const file = e.target.files[0]
+    if (file) onFile(file)
+  }
+
+  if (tipo === 'Geovisor') return null
+
+  return (
+    <div>
+      <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+        Archivo <span className="text-orange-500">*</span>
+        {editing && <span className="ml-2 font-normal text-text-muted normal-case tracking-normal">— sube un nuevo archivo para reemplazar</span>}
+      </label>
+
+      {currentFile ? (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-xl"
+        >
+          <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-text truncate">{currentFile.name}</p>
+            <p className="text-xs text-text-muted">{formatBytes(currentFile.size)}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onFile(null)}
+            className="p-1 rounded-lg text-text-muted hover:text-red-500 transition-colors shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </motion.div>
+      ) : (
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+          onClick={() => inputRef.current?.click()}
+          className={`relative flex flex-col items-center justify-center gap-2 px-4 py-8 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+            dragging
+              ? 'border-primary-600 bg-primary-50 scale-[1.01]'
+              : 'border-border hover:border-primary-400 hover:bg-bg-alt/60'
+          }`}
+        >
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${dragging ? 'bg-primary-100' : 'bg-bg-alt'}`}>
+            <Upload className={`w-5 h-5 transition-colors ${dragging ? 'text-primary-700' : 'text-text-muted'}`} />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold text-text">
+              {dragging ? 'Suelta el archivo aquí' : 'Arrastra y suelta o haz clic'}
+            </p>
+            <p className="text-xs text-text-muted mt-0.5">
+              {tipo === 'PDF' ? 'Solo archivos PDF' : 'JPG, PNG, WebP'}
+            </p>
+          </div>
+          <input
+            ref={inputRef}
+            type="file"
+            accept={accept}
+            onChange={handleChange}
+            className="sr-only"
+          />
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function GestionDocumentos() {
@@ -44,6 +142,7 @@ export default function GestionDocumentos() {
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [formErrors, setFormErrors] = useState({})
+  const [uploadedFile, setUploadedFile] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   const filtered = docs.filter((d) => {
@@ -58,13 +157,15 @@ export default function GestionDocumentos() {
     setEditing(null)
     setForm(EMPTY_FORM)
     setFormErrors({})
+    setUploadedFile(null)
     setShowModal(true)
   }
 
   const openEdit = (d) => {
     setEditing(d)
-    setForm({ nombre: d.nombre, categoria: d.categoria, tipo: d.tipo, autor: d.autor, fecha: d.fecha, tamano: d.tamano })
+    setForm({ nombre: d.nombre, categoria: d.categoria, tipo: d.tipo, autor: d.autor, fecha: d.fecha, url: d.url || '' })
     setFormErrors({})
+    setUploadedFile(null)
     setShowModal(true)
   }
 
@@ -72,6 +173,8 @@ export default function GestionDocumentos() {
     const e = {}
     if (!form.nombre.trim()) e.nombre = 'Requerido'
     if (!form.autor.trim()) e.autor = 'Requerido'
+    if (form.tipo !== 'Geovisor' && !editing && !uploadedFile) e.archivo = 'Debes seleccionar un archivo'
+    if (form.tipo === 'Geovisor' && !form.url.trim()) e.url = 'Debes ingresar la URL del Geovisor'
     return e
   }
 
@@ -79,10 +182,23 @@ export default function GestionDocumentos() {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setFormErrors(e); return }
+
+    const tamano = uploadedFile ? formatBytes(uploadedFile.size) : (editing?.tamano || '—')
+    const fileName = uploadedFile?.name
+
     if (editing) {
-      setDocs((prev) => prev.map((d) => d.id === editing.id ? { ...d, ...form } : d))
+      setDocs((prev) => prev.map((d) => d.id === editing.id
+        ? { ...d, ...form, tamano, ...(fileName ? { fileName } : {}) }
+        : d
+      ))
     } else {
-      setDocs((prev) => [...prev, { id: prev.length + 1, ...form, descargas: 0 }])
+      setDocs((prev) => [...prev, {
+        id: prev.length + 1,
+        ...form,
+        tamano,
+        fileName,
+        descargas: 0,
+      }])
     }
     setShowModal(false)
   }
@@ -92,7 +208,6 @@ export default function GestionDocumentos() {
     setDeleteTarget(null)
   }
 
-  // Totals by category
   const byCategory = CATEGORIES.map((c) => ({ label: c, count: docs.filter((d) => d.categoria === c).length })).filter((c) => c.count > 0)
 
   return (
@@ -113,7 +228,7 @@ export default function GestionDocumentos() {
         </button>
       </motion.div>
 
-      {/* Category summary */}
+      {/* Category pills */}
       <motion.div {...fadeUp(0.06)} className="flex flex-wrap gap-2">
         {byCategory.map((c) => (
           <button
@@ -168,7 +283,10 @@ export default function GestionDocumentos() {
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
                       <TipoIcon tipo={d.tipo} />
-                      <p className="text-sm font-semibold text-text">{d.nombre}</p>
+                      <div>
+                        <p className="text-sm font-semibold text-text">{d.nombre}</p>
+                        {d.fileName && <p className="text-[0.6rem] text-text-muted">{d.fileName}</p>}
+                      </div>
                     </div>
                   </td>
                   <td className="px-5 py-3.5">
@@ -208,17 +326,64 @@ export default function GestionDocumentos() {
       <AnimatePresence>
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false) }}>
-            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-              <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-                <h3 className="text-base font-bold text-text">{editing ? 'Editar Documento' : 'Nuevo Documento'}</h3>
+            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-border sticky top-0 bg-white z-10">
+                <h3 className="text-base font-bold text-text">{editing ? 'Editar Documento' : 'Subir Nuevo Documento'}</h3>
                 <button onClick={() => setShowModal(false)} className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"><X className="w-5 h-5" /></button>
               </div>
               <form onSubmit={handleSave} className="p-6 space-y-4">
+
+                {/* Tipo selector first — determines what upload UI shows */}
+                <div className="grid grid-cols-3 gap-2">
+                  {TIPOS.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => { setForm((f) => ({ ...f, tipo: t, url: '' })); setUploadedFile(null); setFormErrors({}) }}
+                      className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all ${form.tipo === t ? 'bg-primary-800 text-white border-primary-800' : 'bg-white text-text-muted border-border hover:border-primary-400'}`}
+                    >
+                      {t === 'PDF' && <FileText className="w-4 h-4" />}
+                      {t === 'IMG' && <Image className="w-4 h-4" />}
+                      {t === 'Geovisor' && <File className="w-4 h-4" />}
+                      {t}
+                    </button>
+                  ))}
+                </div>
+
+                {/* File dropzone or Geovisor URL */}
+                <FileDropzone
+                  tipo={form.tipo}
+                  onFile={setUploadedFile}
+                  currentFile={uploadedFile}
+                  editing={!!editing}
+                />
+                {form.tipo === 'Geovisor' && (
+                  <div>
+                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5 flex items-center gap-1">
+                      <LinkIcon className="w-3 h-3" /> URL del Geovisor <span className="text-orange-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={form.url}
+                      onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
+                      placeholder="/geovisor o URL externa"
+                      className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.url ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                    />
+                    {formErrors.url && <p className="text-xs text-red-500 mt-1">{formErrors.url}</p>}
+                  </div>
+                )}
+                {formErrors.archivo && (
+                  <div className="flex items-center gap-2 text-red-500 text-xs">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {formErrors.archivo}
+                  </div>
+                )}
+
+                {/* Metadata fields */}
                 {[
                   { key: 'nombre', label: 'Nombre del Documento', required: true },
                   { key: 'autor', label: 'Autor / Responsable', required: true },
-                  { key: 'fecha', label: 'Fecha', required: false },
-                  { key: 'tamano', label: 'Tamaño (ej. 4.2 MB)', required: false },
+                  { key: 'fecha', label: 'Fecha (ej. 15 Abr 2026)', required: false },
                 ].map(({ key, label, required }) => (
                   <div key={key}>
                     <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
@@ -233,25 +398,19 @@ export default function GestionDocumentos() {
                     {formErrors[key] && <p className="text-xs text-red-500 mt-1">{formErrors[key]}</p>}
                   </div>
                 ))}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Categoría</label>
-                    <select value={form.categoria} onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
-                      {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Tipo</label>
-                    <select value={form.tipo} onChange={(e) => setForm((f) => ({ ...f, tipo: e.target.value }))} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
-                      {TIPOS.map((t) => <option key={t}>{t}</option>)}
-                    </select>
-                  </div>
+
+                <div>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Categoría</label>
+                  <select value={form.categoria} onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
+                    {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+                  </select>
                 </div>
+
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors">Cancelar</button>
                   <button type="submit" className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
                     <Send className="w-4 h-4" />
-                    {editing ? 'Guardar' : 'Agregar'}
+                    {editing ? 'Guardar Cambios' : 'Subir Documento'}
                   </button>
                 </div>
               </form>
