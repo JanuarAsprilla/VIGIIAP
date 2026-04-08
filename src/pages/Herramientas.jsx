@@ -344,7 +344,7 @@ export default function Herramientas() {
       )}
 
       {/* ── Activity Summary ── */}
-      {!q && <ResumenActividad />}
+      {!query && <ResumenActividad />}
     </div>
   )
 }
