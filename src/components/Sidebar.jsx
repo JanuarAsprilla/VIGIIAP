@@ -147,11 +147,6 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
         </div>
       </div>
 
-      {/* ── User card ── */}
-      <AnimatePresence>
-        {isAuthenticated && user && <UserMiniCard user={user} />}
-      </AnimatePresence>
-
       {/* ── Navigation ── */}
       <nav className="flex-1 py-3 px-3 overflow-y-auto">
         <p className="px-3 pb-2 text-[0.58rem] font-bold uppercase tracking-[0.14em] text-text-muted/60">

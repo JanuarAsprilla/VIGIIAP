@@ -151,6 +151,30 @@ body {
 }
 
 /* =====================================================
+   Ambient Background Orbs
+   ===================================================== */
+
+@keyframes orb-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(40px, -30px) scale(1.08); }
+  66%       { transform: translate(-20px, 20px) scale(0.95); }
+}
+@keyframes orb-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%       { transform: translate(-50px, 30px) scale(1.1); }
+  70%       { transform: translate(30px, -40px) scale(0.92); }
+}
+@keyframes orb-drift-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  30%       { transform: translate(30px, 50px) scale(1.06); }
+  65%       { transform: translate(-40px, -20px) scale(0.97); }
+}
+
+.orb-1 { animation: orb-drift-1 20s ease-in-out infinite; }
+.orb-2 { animation: orb-drift-2 25s ease-in-out infinite; }
+.orb-3 { animation: orb-drift-3 30s ease-in-out infinite; }
+
+/* =====================================================
    3D & Motion — Design Premium System
    ===================================================== */
 
