@@ -1,5 +1,5 @@
 import {
-  Home, Map, FileText, Globe, Wrench, ClipboardList,
+  Home, Map, FileText, Globe, Wrench, ClipboardList, Newspaper,
   LayoutGrid, Users, Building2, Shield,
 } from 'lucide-react'
 
@@ -22,12 +22,13 @@ export const ROUTES = {
 // =====================================================
 
 export const NAV_LINKS = [
-  { label: 'Inicio', path: ROUTES.HOME, icon: Home },
-  { label: 'Mapas', path: ROUTES.MAPAS, icon: Map },
-  { label: 'Documentos', path: ROUTES.DOCUMENTOS, icon: FileText },
-  { label: 'Geovisor', path: ROUTES.GEOVISOR, icon: Globe },
+  { label: 'Inicio',       path: ROUTES.HOME,         icon: Home },
+  { label: 'Mapas',        path: ROUTES.MAPAS,        icon: Map },
+  { label: 'Documentos',   path: ROUTES.DOCUMENTOS,   icon: FileText },
+  { label: 'Geovisor',     path: ROUTES.GEOVISOR,     icon: Globe },
   { label: 'Herramientas', path: ROUTES.HERRAMIENTAS, icon: Wrench },
-  { label: 'Solicitudes', path: ROUTES.SOLICITUDES, icon: ClipboardList },
+  { label: 'Solicitudes',  path: ROUTES.SOLICITUDES,  icon: ClipboardList },
+  { label: 'Noticias',     path: '/noticias',          icon: Newspaper },
 ]
 
 // =====================================================
