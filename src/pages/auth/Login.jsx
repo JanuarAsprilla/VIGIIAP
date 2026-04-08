@@ -19,8 +19,13 @@ export default function Login() {
     e.preventDefault()
     setError('')
     try {
-      await login(email, password)
-      navigate(from, { replace: true })
+      const loggedUser = await login(email, password)
+      // Administrador SIG → panel admin; resto → destino original o inicio
+      if (loggedUser.role === 'Administrador SIG') {
+        navigate('/admin', { replace: true })
+      } else {
+        navigate(from === '/admin' ? '/' : from, { replace: true })
+      }
     } catch (err) {
       setError(err.message || 'Error al iniciar sesión')
     }
@@ -159,7 +164,32 @@ export default function Login() {
           </div>
         </div>
 
-        <p className="text-center text-white/40 text-xs mt-6">
+        {/* Demo credentials */}
+        <div className="mt-4 bg-white/8 backdrop-blur-sm border border-white/15 rounded-xl p-4">
+          <p className="text-[0.65rem] font-bold uppercase tracking-wider text-white/50 mb-2.5">
+            Credenciales de prueba
+          </p>
+          <div className="space-y-1.5">
+            {[
+              { label: 'Administrador SIG', email: 'admin@iiap.org.co',         pass: 'admin1234', color: 'bg-red-400/80'    },
+              { label: 'Investigador',       email: 'investigador@iiap.org.co',  pass: 'inv1234',   color: 'bg-gold-400/80'   },
+              { label: 'Público',            email: 'cualquier correo',          pass: 'cualquier', color: 'bg-primary-400/80'},
+            ].map((c) => (
+              <button
+                key={c.label}
+                type="button"
+                onClick={() => { setEmail(c.email === 'cualquier correo' ? 'usuario@ejemplo.co' : c.email); setPassword(c.pass === 'cualquier' ? '123456' : c.pass) }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-left"
+              >
+                <span className={`w-2 h-2 rounded-full shrink-0 ${c.color}`} />
+                <span className="text-[0.7rem] font-bold text-white/70">{c.label}</span>
+                <span className="text-[0.65rem] text-white/40 ml-auto truncate">{c.email}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <p className="text-center text-white/35 text-xs mt-4">
           © {new Date().getFullYear()} IIAP — Instituto de Investigaciones Ambientales del Pacífico
         </p>
       </motion.div>

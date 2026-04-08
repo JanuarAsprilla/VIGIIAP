@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
-import { PlusCircle, LogOut, X, Sparkles } from 'lucide-react'
+import { PlusCircle, LogOut, X, Sparkles, Lock, Shield } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
+import { ROLES } from '@/contexts/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
+
+// Rutas que requieren Investigador o Admin
+const PROTECTED_PATHS = ['/mapas', '/documentos', '/geovisor', '/herramientas', '/solicitudes']
 
 // ── Stagger presets ──
 const navContainer = {
@@ -15,13 +19,26 @@ const navItemVariant = {
   animate: { opacity: 1, x: 0, transition: { ease: [0.22, 1, 0.36, 1], duration: 0.4 } },
 }
 
-// ── Single nav link with animated pill + icon micro-anim ──
-function SidebarLink({ link, onClose }) {
+// ── Single nav link with animated pill + role-aware lock ──
+function SidebarLink({ link, onClose, userRole }) {
+  const isLocked = PROTECTED_PATHS.includes(link.path) && userRole === ROLES.PUBLICO
+
+  if (isLocked) {
+    return (
+      <motion.div variants={navItemVariant}>
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-text-muted/50 cursor-not-allowed select-none">
+          <link.icon className="w-[17px] h-[17px] shrink-0 opacity-40" aria-hidden="true" />
+          <span className="truncate">{link.label}</span>
+          <Lock className="w-3 h-3 ml-auto shrink-0 opacity-40" aria-hidden="true" />
+        </div>
+      </motion.div>
+    )
+  }
+
   return (
     <NavLink to={link.path} end={link.path === '/'} onClick={onClose} className="block no-underline">
       {({ isActive }) => (
         <motion.div variants={navItemVariant} className="relative">
-          {/* Animated background pill — shared layoutId slides between items */}
           {isActive && (
             <motion.div
               layoutId="nav-pill"
@@ -29,7 +46,6 @@ function SidebarLink({ link, onClose }) {
               transition={{ type: 'spring', stiffness: 400, damping: 32 }}
             />
           )}
-
           <div className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors group ${
             isActive ? 'text-white' : 'text-text-light hover:text-text hover:bg-bg-alt'
           }`}>
@@ -45,8 +61,6 @@ function SidebarLink({ link, onClose }) {
               />
             </motion.div>
             <span className="truncate">{link.label}</span>
-
-            {/* Active accent dot */}
             {isActive && (
               <motion.span
                 className="ml-auto w-1.5 h-1.5 rounded-full bg-primary-300 shrink-0"
@@ -160,7 +174,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
           className="space-y-0.5"
         >
           {NAV_LINKS.map((link) => (
-            <SidebarLink key={link.path} link={link} onClose={onClose} />
+            <SidebarLink key={link.path} link={link} onClose={onClose} userRole={user?.role} />
           ))}
         </motion.div>
       </nav>
@@ -175,6 +189,21 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="p-3 space-y-1 border-t border-border/60"
           >
+            {/* Panel Admin — solo Administrador SIG */}
+            {user?.role === ROLES.ADMIN && (
+              <Link
+                to="/admin"
+                onClick={onClose}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-primary-800 bg-primary-50 border border-primary-200/70 hover:bg-primary-100 transition-colors no-underline mb-1"
+              >
+                <Shield className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span>Panel Admin</span>
+                <span className="ml-auto text-[0.55rem] font-bold uppercase tracking-wider bg-primary-800 text-white px-1.5 py-0.5 rounded-full">
+                  SIG
+                </span>
+              </Link>
+            )}
+
             {/* Nuevo Análisis — shimmer gradient button */}
             <div className="relative overflow-hidden rounded-xl">
               <div className="absolute inset-0 bg-gradient-to-br from-primary-700 to-primary-900" aria-hidden="true" />
