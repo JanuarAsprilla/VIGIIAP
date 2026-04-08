@@ -3,6 +3,9 @@ import { motion } from 'framer-motion'
 import {
   Scaling, Target, ArrowLeftRight, Layers,
   TriangleRight, Eye, Minus as MinusIcon, SearchX,
+  ClipboardList, Smartphone, BarChart3,
+  MapPin, Calendar, User, Camera, Lock,
+  Download, ExternalLink, TrendingUp, Droplets, TreePine, Wind,
 } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
@@ -260,6 +263,249 @@ function AnalizadorSuperposicion() {
   )
 }
 
+// ── 5. Geoformularios ──
+function Geoformularios() {
+  const [tipoObservacion, setTipoObservacion] = useState('')
+
+  return (
+    <ToolCard
+      tag="Captura en Campo"
+      title="Geoformularios"
+      icon={ClipboardList}
+      color="primary"
+      index={4}
+    >
+      <p className="text-sm text-text-muted leading-relaxed mb-4">
+        Formularios georreferenciados para captura estructurada de datos en campo.
+        Las plantillas configuradas desde el módulo de Administración aparecerán aquí.
+      </p>
+
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Tipo de observación */}
+          <div>
+            <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+              Tipo de observación
+            </label>
+            <select
+              value={tipoObservacion}
+              onChange={(e) => setTipoObservacion(e.target.value)}
+              className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+            >
+              <option value="">Seleccionar...</option>
+              <option value="flora">Flora y Vegetación</option>
+              <option value="fauna">Fauna Silvestre</option>
+              <option value="agua">Calidad del Agua</option>
+              <option value="suelo">Uso del Suelo</option>
+              <option value="comunidad">Comunidades Humanas</option>
+            </select>
+          </div>
+
+          {/* Coordenadas */}
+          <div>
+            <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+              Coordenadas (GPS)
+            </label>
+            <div className="flex items-center gap-2 px-3 py-2.5 bg-bg-alt border border-border rounded-lg text-sm text-text-muted">
+              <MapPin className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span className="font-mono text-xs">4.8213° N, 76.7324° W</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Fecha */}
+          <div>
+            <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+              Fecha de captura
+            </label>
+            <div className="flex items-center gap-2 px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text">
+              <Calendar className="w-4 h-4 text-text-muted shrink-0" aria-hidden="true" />
+              <span>2026-04-07</span>
+            </div>
+          </div>
+
+          {/* Observador */}
+          <div>
+            <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+              Observador
+            </label>
+            <div className="flex items-center gap-2 px-3 py-2.5 bg-bg-alt border border-border rounded-lg text-sm text-text-muted">
+              <User className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span className="text-xs">Asignado desde sesión</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Adjuntar evidencia */}
+        <div className="flex items-center gap-2 p-3 border-2 border-dashed border-border rounded-lg text-text-muted hover:border-primary-300 transition-colors cursor-pointer">
+          <Camera className="w-4 h-4 shrink-0" aria-hidden="true" />
+          <span className="text-sm">Adjuntar foto o evidencia de campo</span>
+        </div>
+
+        {/* Nota admin + botón */}
+        <div className="flex items-start gap-2 bg-primary-50 border border-primary-200 rounded-lg px-3 py-2.5">
+          <Lock className="w-3.5 h-3.5 text-primary-700 shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="text-xs text-primary-800 leading-relaxed">
+            Las plantillas personalizadas se gestionan desde el{' '}
+            <span className="font-semibold">Módulo de Administración</span>.
+          </p>
+        </div>
+
+        <button className="w-full px-6 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
+          Iniciar Captura
+        </button>
+      </div>
+    </ToolCard>
+  )
+}
+
+// ── 6. Aplicaciones Móviles ──
+function AplicacionesMoviles() {
+  const apps = [
+    {
+      nombre: 'VIGIIAP Field',
+      descripcion: 'Captura de datos en campo con soporte offline y sincronización automática.',
+      plataformas: ['Android'],
+      estado: 'desarrollo',
+    },
+    {
+      nombre: 'VIGIIAP Offline',
+      descripcion: 'Visualización de capas y mapas sin conexión a internet para zonas remotas.',
+      plataformas: ['Android', 'iOS'],
+      estado: 'desarrollo',
+    },
+    {
+      nombre: 'VIGIIAP Monitor',
+      descripcion: 'Seguimiento de indicadores ambientales en tiempo real desde dispositivos móviles.',
+      plataformas: ['Android', 'iOS'],
+      estado: 'planeado',
+    },
+  ]
+
+  return (
+    <ToolCard
+      tag="Movilidad"
+      title="Aplicaciones Móviles"
+      icon={Smartphone}
+      color="orange"
+      index={5}
+    >
+      <p className="text-sm text-text-muted leading-relaxed mb-4">
+        Aplicaciones del IIAP para trabajo en campo, monitoreo remoto
+        y acceso a datos sin conexión.
+      </p>
+
+      <div className="space-y-3">
+        {apps.map((app) => (
+          <div
+            key={app.nombre}
+            className="flex items-start gap-3 p-3 bg-bg-alt rounded-lg border border-border"
+          >
+            <div className="w-9 h-9 bg-primary-800 rounded-lg flex items-center justify-center shrink-0">
+              <Smartphone className="w-4 h-4 text-white" aria-hidden="true" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-sm font-bold text-text">{app.nombre}</span>
+                <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                  app.estado === 'desarrollo'
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-primary-100 text-primary-700'
+                }`}>
+                  {app.estado === 'desarrollo' ? 'En desarrollo' : 'Planificado'}
+                </span>
+              </div>
+              <p className="text-xs text-text-muted leading-relaxed mb-1.5">{app.descripcion}</p>
+              <div className="flex items-center gap-1.5">
+                {app.plataformas.map((p) => (
+                  <span
+                    key={p}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-border rounded text-[0.65rem] font-semibold text-text-muted"
+                  >
+                    <Download className="w-3 h-3" aria-hidden="true" />
+                    {p}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <p className="text-xs text-text-muted text-center pt-1">
+          Las apps estarán disponibles para descarga en la Fase 2 del sistema.
+        </p>
+      </div>
+    </ToolCard>
+  )
+}
+
+// ── 7. Tableros de Control (Reportes) ──
+function TablerosControl() {
+  const indicadores = [
+    { icon: TreePine, label: 'Cobertura Forestal', valor: '68.4%', tendencia: '+1.2%', color: 'text-primary-700', bg: 'bg-primary-50' },
+    { icon: Droplets, label: 'Calidad Hídrica', valor: '82/100', tendencia: '+3pts', color: 'text-blue-600', bg: 'bg-blue-50' },
+    { icon: Wind, label: 'Calidad del Aire', valor: 'Buena', tendencia: 'Estable', color: 'text-teal-600', bg: 'bg-teal-50' },
+    { icon: TrendingUp, label: 'Biodiversidad', valor: '1,240 sp.', tendencia: '+18 sp.', color: 'text-gold-500', bg: 'bg-amber-50' },
+  ]
+
+  return (
+    <ToolCard
+      tag="Reportes"
+      title="Tableros de Control"
+      icon={BarChart3}
+      color="gold"
+      index={6}
+    >
+      <p className="text-sm text-text-muted leading-relaxed mb-4">
+        Indicadores ambientales consolidados del Chocó Biogeográfico.
+        Los reportes personalizados se configuran desde el Módulo de Administración.
+      </p>
+
+      {/* KPI grid */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        {indicadores.map((ind) => (
+          <div key={ind.label} className={`rounded-lg p-3 ${ind.bg}`}>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <ind.icon className={`w-3.5 h-3.5 ${ind.color}`} aria-hidden="true" />
+              <span className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">{ind.label}</span>
+            </div>
+            <div className="flex items-end justify-between">
+              <span className={`text-lg font-bold ${ind.color}`}>{ind.valor}</span>
+              <span className="text-[0.65rem] font-semibold text-primary-600 bg-primary-100 px-1.5 py-0.5 rounded">
+                {ind.tendencia}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Barra de progreso — Avance monitoreo */}
+      <div className="space-y-2 mb-4">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-text">Avance del monitoreo anual</span>
+          <span className="text-xs font-bold text-primary-800">73%</span>
+        </div>
+        <div className="w-full h-2 bg-border rounded-full overflow-hidden">
+          <div className="h-full w-[73%] bg-gradient-to-r from-primary-600 to-primary-400 rounded-full" />
+        </div>
+        <p className="text-xs text-text-muted">Q3 2026 — 876 de 1,200 muestras procesadas</p>
+      </div>
+
+      <div className="flex gap-2">
+        <button className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
+          <BarChart3 className="w-4 h-4" aria-hidden="true" />
+          Ver Tablero
+        </button>
+        <button className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors">
+          <ExternalLink className="w-4 h-4" aria-hidden="true" />
+          Exportar
+        </button>
+      </div>
+    </ToolCard>
+  )
+}
+
 // ── Activity Summary ──
 function ResumenActividad() {
   return (
@@ -298,12 +544,15 @@ function ResumenActividad() {
   )
 }
 
-// Metadata for filtering
+// Metadata para filtrado por búsqueda global
 const TOOLS_META = [
-  { id: 'calculadora', tag: 'Geometría', title: 'Calculadora de Áreas y Perímetros', Component: CalculadoraAreas },
-  { id: 'buffers', tag: 'Procesamiento', title: 'Generador de Buffers', Component: GeneradorBuffers },
-  { id: 'conversor', tag: 'Geodésico', title: 'Conversor de Coordenadas', Component: ConversorCoordenadas },
-  { id: 'superposicion', tag: 'Análisis Espacial', title: 'Analizador de Superposición', Component: AnalizadorSuperposicion },
+  { id: 'calculadora',   tag: 'Geometría',        title: 'Calculadora de Áreas y Perímetros', Component: CalculadoraAreas },
+  { id: 'buffers',       tag: 'Procesamiento',     title: 'Generador de Buffers',               Component: GeneradorBuffers },
+  { id: 'conversor',     tag: 'Geodésico',         title: 'Conversor de Coordenadas',           Component: ConversorCoordenadas },
+  { id: 'superposicion', tag: 'Análisis Espacial', title: 'Analizador de Superposición',        Component: AnalizadorSuperposicion },
+  { id: 'geoformularios',  tag: 'Captura en Campo', title: 'Geoformularios',                   Component: Geoformularios },
+  { id: 'apps-moviles',    tag: 'Movilidad',        title: 'Aplicaciones Móviles',             Component: AplicacionesMoviles },
+  { id: 'tableros',        tag: 'Reportes',         title: 'Tableros de Control',              Component: TablerosControl },
 ]
 
 // ── Main Herramientas Page ──
