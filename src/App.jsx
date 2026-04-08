@@ -5,6 +5,7 @@ import { SearchProvider } from './contexts/SearchContext'
 import { UIProvider } from './contexts/UIContext'
 import MainLayout from './layouts/MainLayout'
 import RequireAuth from './components/RequireAuth'
+import ErrorBoundary from './components/ErrorBoundary'
 import Preloader from './components/Preloader'
 
 
@@ -48,6 +49,7 @@ export default function App() {
     <AuthProvider>
     <UIProvider>
     <SearchProvider>
+      <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Auth — sin layout */}
@@ -76,6 +78,7 @@ export default function App() {
           </Route>
         </Routes>
       </Suspense>
+      </ErrorBoundary>
     </SearchProvider>
     </UIProvider>
     </AuthProvider>
