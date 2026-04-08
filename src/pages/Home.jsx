@@ -1,10 +1,12 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, Crosshair, BookOpen, Plus, SearchX } from 'lucide-react'
 import { MODULES, STATS, NEWS } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
+import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
 
 // ── Animation helper ──
 const fadeUp = (delay = 0) => ({
@@ -137,6 +139,7 @@ function StatsSection() {
 export default function Home() {
   const { isAuthenticated } = useAuth()
   const { query } = useSearch()
+  const [showModal, setShowModal] = useState(false)
 
   const filteredModules = MODULES.filter((m) =>
     matches([m.title, m.description, m.action], query)
@@ -213,10 +216,18 @@ export default function Home() {
       </div>
 
       {isAuthenticated && (
-        <button className="fixed bottom-20 lg:bottom-6 right-6 w-12 h-12 bg-primary-800 text-white rounded-full shadow-elevated flex items-center justify-center hover:bg-primary-700 hover:shadow-float hover:scale-105 transition-all z-30">
-          <Plus className="w-5 h-5" />
+        <button
+          onClick={() => setShowModal(true)}
+          aria-label="Nuevo análisis territorial"
+          className="fixed bottom-20 lg:bottom-6 right-6 w-12 h-12 bg-primary-800 text-white rounded-full shadow-elevated flex items-center justify-center hover:bg-primary-700 hover:shadow-float hover:scale-105 transition-all z-30"
+        >
+          <Plus className="w-5 h-5" aria-hidden="true" />
         </button>
       )}
+
+      <AnimatePresence>
+        {showModal && <NuevoAnalisisModal onClose={() => setShowModal(false)} />}
+      </AnimatePresence>
     </>
   )
 }

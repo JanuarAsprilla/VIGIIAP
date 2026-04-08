@@ -420,6 +420,32 @@ export const TRAMITE_TYPES = [
 // Noticias (full data for listing + detail)
 // =====================================================
 
+// =====================================================
+// Nuevo Análisis modal — tipos y áreas
+// =====================================================
+
+export const ANALYSIS_TYPES = [
+  { value: '', label: 'Seleccione un tipo' },
+  { value: 'cobertura', label: 'Cobertura Vegetal' },
+  { value: 'hidrologia', label: 'Análisis Hidrológico' },
+  { value: 'biodiversidad', label: 'Biodiversidad y Especies' },
+  { value: 'conflictos', label: 'Conflictos de Uso del Suelo' },
+  { value: 'zonificacion', label: 'Zonificación Ambiental' },
+  { value: 'otro', label: 'Otro' },
+]
+
+export const ANALYSIS_DEPARTMENTS = [
+  { value: '', label: 'Todo el Chocó Biogeográfico' },
+  { value: 'choco', label: 'Chocó' },
+  { value: 'valle', label: 'Valle del Cauca' },
+  { value: 'cauca', label: 'Cauca' },
+  { value: 'narino', label: 'Nariño' },
+]
+
+// =====================================================
+// Noticias (full data for listing + detail)
+// =====================================================
+
 export const ALL_NEWS = [
   {
     id: 1,

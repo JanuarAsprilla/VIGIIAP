@@ -4,7 +4,7 @@ import Sidebar from '@/components/Sidebar'
 import TopBar from '@/components/TopBar'
 import FooterBar from '@/components/FooterBar'
 import BottomTabs from '@/components/BottomTabs'
-import { useSearch } from '@/contexts/SearchContext'
+import { useUI } from '@/contexts/UIContext'
 
 const DENSITY_PADDING = {
   compact: 'flex-1 p-2 lg:p-3 pb-20 lg:pb-3',
@@ -15,7 +15,7 @@ const DENSITY_PADDING = {
 export default function MainLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
-  const { density } = useSearch()
+  const { density } = useUI()
 
   // Geovisor uses special layout (no padding, no footer)
   const isGeovisor = location.pathname === '/geovisor'

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSearch } from '@/contexts/SearchContext'
+import { useUI } from '@/contexts/UIContext'
 import { ALL_NEWS } from '@/lib/constants'
 
 const SEARCH_PLACEHOLDERS = {
@@ -145,7 +146,7 @@ function NotificacionesPanel({ onClose, read, setRead }) {
 
 // ── Ajustes Panel ──
 function AjustesPanel({ onClose }) {
-  const { density, setDensity } = useSearch()
+  const { density, setDensity } = useUI()
   const [notifications, setNotifications] = useState(true)
 
   return (
@@ -236,15 +237,22 @@ export default function TopBar({ onMenuToggle }) {
     setQuery('')
   }, [location.pathname, setQuery])
 
-  // Cerrar panels al clic fuera
+  // Cerrar panels al clic fuera o tecla Escape
   useEffect(() => {
     function handleClickOutside(e) {
       const insidePanel = panelRef.current?.contains(e.target)
       const insideDropdown = dropdownRef.current?.contains(e.target)
       if (!insidePanel && !insideDropdown) setActivePanel(null)
     }
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') setActivePanel(null)
+    }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
   }, [])
 
   const togglePanel = (panel) => setActivePanel((prev) => (prev === panel ? null : panel))
@@ -262,9 +270,10 @@ export default function TopBar({ onMenuToggle }) {
         <div className="flex items-center gap-3 flex-1">
           <button
             onClick={onMenuToggle}
+            aria-label="Abrir menú de navegación"
             className="lg:hidden p-2 -ml-2 text-text hover:bg-bg-alt rounded-lg transition-colors"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-5 h-5" aria-hidden="true" />
           </button>
           <span className="lg:hidden text-sm font-bold text-text tracking-wide">VIGIIAP</span>
 
@@ -282,10 +291,10 @@ export default function TopBar({ onMenuToggle }) {
               {query && (
                 <button
                   onClick={() => setQuery('')}
+                  aria-label="Limpiar búsqueda"
                   className="text-text-muted hover:text-text transition-colors shrink-0"
-                  title="Limpiar búsqueda"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
               )}
             </div>
@@ -330,9 +339,11 @@ export default function TopBar({ onMenuToggle }) {
               <div className="relative">
                 <button
                   onClick={() => togglePanel('notificaciones')}
+                  aria-label="Notificaciones"
+                  aria-expanded={activePanel === 'notificaciones'}
                   className={`relative p-2 rounded-lg transition-colors ${activePanel === 'notificaciones' ? 'bg-primary-50 text-primary-800' : 'text-text-muted hover:text-text hover:bg-bg-alt'}`}
                 >
-                  <Bell className="w-5 h-5" />
+                  <Bell className="w-5 h-5" aria-hidden="true" />
                   {hasUnread && (
                     <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full" />
                   )}
@@ -350,9 +361,11 @@ export default function TopBar({ onMenuToggle }) {
               <div className="hidden lg:block relative">
                 <button
                   onClick={() => togglePanel('ajustes')}
+                  aria-label="Ajustes rápidos"
+                  aria-expanded={activePanel === 'ajustes'}
                   className={`p-2 rounded-lg transition-colors ${activePanel === 'ajustes' ? 'bg-primary-50 text-primary-800' : 'text-text-muted hover:text-text hover:bg-bg-alt'}`}
                 >
-                  <Settings className="w-5 h-5" />
+                  <Settings className="w-5 h-5" aria-hidden="true" />
                 </button>
                 {activePanel === 'ajustes' && (
                   <AjustesPanel onClose={() => setActivePanel(null)} />
