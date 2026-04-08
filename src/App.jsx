@@ -2,7 +2,9 @@ import { Routes, Route } from 'react-router-dom'
 import { lazy, Suspense, useState, useEffect } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
 import { SearchProvider } from './contexts/SearchContext'
+import { UIProvider } from './contexts/UIContext'
 import MainLayout from './layouts/MainLayout'
+import RequireAuth from './components/RequireAuth'
 import Preloader from './components/Preloader'
 
 
@@ -43,8 +45,9 @@ export default function App() {
   if (!appReady) return <Preloader />
 
   return (
-    <SearchProvider>
     <AuthProvider>
+    <UIProvider>
+    <SearchProvider>
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Auth — sin layout */}
@@ -54,21 +57,27 @@ export default function App() {
 
           {/* App — con dashboard layout */}
           <Route element={<MainLayout />}>
+            {/* Rutas públicas */}
             <Route path="/" element={<Home />} />
-            <Route path="/mapas" element={<Mapas />} />
-            <Route path="/documentos" element={<Documentos />} />
-            <Route path="/geovisor" element={<Geovisor />} />
-            <Route path="/herramientas" element={<Herramientas />} />
-            <Route path="/solicitudes" element={<Solicitudes />} />
             <Route path="/guia-usuario" element={<GuiaUsuario />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/terminos" element={<Terminos />} />
             <Route path="/noticias" element={<Noticias />} />
             <Route path="/noticias/:slug" element={<NoticiaDetalle />} />
+
+            {/* Rutas protegidas — requieren sesión activa */}
+            <Route element={<RequireAuth />}>
+              <Route path="/mapas" element={<Mapas />} />
+              <Route path="/documentos" element={<Documentos />} />
+              <Route path="/geovisor" element={<Geovisor />} />
+              <Route path="/herramientas" element={<Herramientas />} />
+              <Route path="/solicitudes" element={<Solicitudes />} />
+            </Route>
           </Route>
         </Routes>
       </Suspense>
-    </AuthProvider>
     </SearchProvider>
+    </UIProvider>
+    </AuthProvider>
   )
 }

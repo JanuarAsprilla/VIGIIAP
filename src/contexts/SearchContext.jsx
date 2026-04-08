@@ -4,14 +4,18 @@ const SearchContext = createContext(null)
 
 export function SearchProvider({ children }) {
   const [query, setQuery] = useState('')
-  const [density, setDensity] = useState('normal') // 'compact' | 'normal' | 'comodo'
+
   return (
-    <SearchContext.Provider value={{ query, setQuery, density, setDensity }}>
+    <SearchContext.Provider value={{ query, setQuery }}>
       {children}
     </SearchContext.Provider>
   )
 }
 
 export function useSearch() {
-  return useContext(SearchContext)
+  const context = useContext(SearchContext)
+  if (!context) {
+    throw new Error('useSearch debe usarse dentro de SearchProvider')
+  }
+  return context
 }
