@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Layers, Monitor, Sun, CheckCircle } from 'lucide-react'
 import { useUI } from '@/contexts/UIContext'
@@ -11,8 +10,7 @@ const DENSITY_OPTIONS = [
 ]
 
 export default function AjustesPanel({ onClose }) {
-  const { density, setDensity } = useUI()
-  const [notifications, setNotifications] = useState(true)
+  const { density, setDensity, notifications, setNotifications } = useUI()
 
   return (
     <motion.div

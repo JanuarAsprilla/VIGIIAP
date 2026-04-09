@@ -72,7 +72,7 @@ export default function TopBar({ onMenuToggle }) {
   const location  = useLocation()
   const navigate  = useNavigate()
   const { isAuthenticated, user, logout } = useAuth()
-  const { openPalette }                   = useUI()
+  const { openPalette, notifications }     = useUI()
   const { query, setQuery }               = useSearch()
 
   const placeholder = SEARCH_PLACEHOLDERS[location.pathname] ?? SEARCH_PLACEHOLDERS['/']
@@ -88,7 +88,7 @@ export default function TopBar({ onMenuToggle }) {
 
   const notifItems  = ALL_NEWS.slice(0, NOTIF_COUNT)
   const unreadCount = notifItems.filter((n) => !readIds.includes(n.id)).length
-  const hasUnread   = unreadCount > 0
+  const hasUnread   = notifications && unreadCount > 0
 
   // Limpiar búsqueda y cerrar mobile search al navegar
   useEffect(() => {

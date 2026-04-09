@@ -467,7 +467,7 @@ function WelcomeStrip({ user }) {
 
 // ── Home Page ──
 export default function Home() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const { query } = useSearch()
   const [showModal, setShowModal] = useState(false)
 
@@ -485,7 +485,7 @@ export default function Home() {
         {!query.trim() && <HeroBanner />}
 
         {/* Welcome strip (authenticated, no search) */}
-        {isAuthenticated && !query.trim() && <WelcomeStrip user={{ name: 'Carlos Rentería', role: 'Investigador' }} />}
+        {isAuthenticated && !query.trim() && <WelcomeStrip user={user} />}
 
         {/* Módulos */}
         {filteredModules.length > 0 && (
