@@ -21,14 +21,17 @@ function useLocalStorage(key, defaultValue) {
 
 export function UIProvider({ children }) {
   const [density, setDensity]           = useLocalStorage('vigiiap_density', 'normal')
-  const [notifications, setNotifications] = useLocalStorage('vigiiap_notif_enabled', true)
+  const [notifications, setNotifications]   = useLocalStorage('vigiiap_notif_enabled', true)
+  const [notifPrefs, setNotifPrefs]         = useLocalStorage('vigiiap_notif_prefs', {
+    noticias: true, solicitudes: true, mapas: false, email: true,
+  })
   const [paletteOpen, setPaletteOpen]   = useState(false)
 
   const openPalette  = useCallback(() => setPaletteOpen(true),  [])
   const closePalette = useCallback(() => setPaletteOpen(false), [])
 
   return (
-    <UIContext.Provider value={{ density, setDensity, notifications, setNotifications, paletteOpen, openPalette, closePalette }}>
+    <UIContext.Provider value={{ density, setDensity, notifications, setNotifications, notifPrefs, setNotifPrefs, paletteOpen, openPalette, closePalette }}>
       {children}
     </UIContext.Provider>
   )

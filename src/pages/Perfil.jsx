@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUI } from '@/contexts/UIContext'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 
 // ── Section wrapper ──
 function Section({ title, description, children }) {
@@ -144,12 +144,7 @@ function CambiarPassword() {
 
 // ── Notificaciones section ──
 function Notificaciones() {
-  const [prefs, setPrefs] = useState({
-    noticias: true,
-    solicitudes: true,
-    mapas: false,
-    email: true,
-  })
+  const { notifPrefs: prefs, setNotifPrefs: setPrefs } = useUI()
 
   const toggle = (k) => setPrefs((p) => ({ ...p, [k]: !p[k] }))
 
@@ -372,8 +367,8 @@ export default function Perfil() {
           <h3 className="font-semibold text-text">Acciones de Cuenta</h3>
         </div>
         <div className="divide-y divide-border">
-          <a
-            href="/solicitudes"
+          <Link
+            to="/solicitudes"
             className="flex items-center justify-between px-6 py-4 hover:bg-bg-alt transition-colors no-underline group"
           >
             <div className="flex items-center gap-3">
@@ -388,7 +383,7 @@ export default function Perfil() {
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary-800 transition-colors" />
-          </a>
+          </Link>
 
           <button
             onClick={handleLogout}
