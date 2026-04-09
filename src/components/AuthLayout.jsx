@@ -78,8 +78,9 @@ function GlobeDecor() {
               transition={{ delay: 1.0 + i * 0.1, duration: 0.3, type: 'spring' }}
               style={{ transformOrigin: `${pt.cx}px ${pt.cy}px` }} />
             {pt.p && (
-              <motion.circle cx={pt.cx} cy={pt.cy} r={pt.r}
+              <motion.circle cx={pt.cx} cy={pt.cy}
                 fill="none" stroke={pt.c} strokeWidth="0.8"
+                initial={{ r: pt.r, opacity: 0.8 }}
                 animate={{ r: [pt.r, pt.r + 6], opacity: [0.8, 0] }}
                 transition={{ duration: 2, repeat: Infinity, delay: i * 0.4 }} />
             )}

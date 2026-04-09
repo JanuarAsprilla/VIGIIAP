@@ -140,10 +140,11 @@ function Globe() {
           />
           {pt.pulse && (
             <motion.circle
-              cx={pt.cx} cy={pt.cy} r={pt.r}
+              cx={pt.cx} cy={pt.cy}
               fill="none"
               stroke={pt.color}
               strokeWidth="0.8"
+              initial={{ r: pt.r, opacity: 0.8 }}
               animate={{ r: [pt.r, pt.r + 6], opacity: [0.8, 0] }}
               transition={{ duration: 1.8, repeat: Infinity, delay: i * 0.3 }}
             />

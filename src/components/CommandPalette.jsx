@@ -16,9 +16,9 @@ import { useEffect, useRef, useCallback, useState, useMemo, useId } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Search, Home, Map, FileText, Globe, Wrench,
+  Search, Home, Map as MapIcon, FileText, Globe, Wrench,
   ClipboardList, Newspaper, UserCircle, BookOpen,
-  HelpCircle, FileCheck, ArrowRight, Clock,
+  HelpCircle, FileCheck, ArrowRight,
   Keyboard, X,
 } from 'lucide-react'
 import { useUI } from '@/contexts/UIContext'
@@ -29,7 +29,7 @@ import { NAV_LINKS, ALL_NEWS } from '@/lib/constants'
 // Static catalogue — entries that always show
 // ─────────────────────────────────────────────
 
-const MODULE_ICONS = { Home, Map, FileText, Globe, Wrench, ClipboardList, Newspaper }
+const MODULE_ICONS = { Home, Map: MapIcon, FileText, Globe, Wrench, ClipboardList, Newspaper }
 
 function buildCatalogue(isAuthenticated) {
   const modules = NAV_LINKS.map((link) => ({
