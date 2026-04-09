@@ -10,6 +10,7 @@ import { DOC_CATEGORIES } from '@/lib/constants'
 import { useSearch } from '@/contexts/SearchContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { matches } from '@/lib/search'
+import { useToast, ToastContainer } from '@/components/Toast'
 
 // ── Animation helper ──
 const fadeUp = (delay = 0) => ({
@@ -150,7 +151,7 @@ function PreviewModal({ doc, categoryTitle, onClose }) {
 }
 
 // ── Document Table Row ──
-function DocRow({ doc, onPreview }) {
+function DocRow({ doc, onPreview, onDownload }) {
   return (
     <tr className="border-b border-border last:border-b-0 hover:bg-bg-alt/50 transition-colors">
       <td className="py-3 pr-4">
@@ -179,23 +180,13 @@ function DocRow({ doc, onPreview }) {
           >
             <Eye className="w-4 h-4" />
           </button>
-          {doc.url ? (
-            <a
-              href={doc.url}
-              download={doc.name}
-              className="w-8 h-8 rounded-lg border border-border bg-white flex items-center justify-center text-text-muted hover:bg-primary-800 hover:border-primary-800 hover:text-white transition-colors"
-              title="Descargar"
-            >
-              <Download className="w-4 h-4" />
-            </a>
-          ) : (
-            <span
-              className="w-8 h-8 rounded-lg border border-border bg-white flex items-center justify-center text-text-muted/40 cursor-not-allowed"
-              title="Archivo no disponible aún"
-            >
-              <Download className="w-4 h-4" />
-            </span>
-          )}
+          <button
+            onClick={() => onDownload(doc)}
+            className="w-8 h-8 rounded-lg border border-border bg-white flex items-center justify-center text-text-muted hover:bg-primary-800 hover:border-primary-800 hover:text-white transition-colors"
+            title="Descargar"
+          >
+            <Download className="w-4 h-4" />
+          </button>
         </div>
       </td>
     </tr>
@@ -203,7 +194,7 @@ function DocRow({ doc, onPreview }) {
 }
 
 // ── Accordion Category ──
-function CategoryAccordion({ category, isOpen, onToggle, index, onPreview }) {
+function CategoryAccordion({ category, isOpen, onToggle, index, onPreview, onDownload }) {
   const Icon = categoryIcons[category.icon] || FileText
 
   return (
@@ -250,7 +241,7 @@ function CategoryAccordion({ category, isOpen, onToggle, index, onPreview }) {
                 </thead>
                 <tbody>
                   {category.docs.map((doc, i) => (
-                    <DocRow key={i} doc={doc} onPreview={(d) => onPreview(d, category.title)} />
+                    <DocRow key={i} doc={doc} onPreview={(d) => onPreview(d, category.title)} onDownload={onDownload} />
                   ))}
                 </tbody>
               </table>
@@ -539,6 +530,17 @@ export default function Documentos() {
   useClickOutside(filterRef, () => setShowFilter(false))
   useClickOutside(sortRef, () => setShowSort(false))
 
+  const { toasts, toast, dismiss } = useToast()
+  const handleDownload = (doc) => {
+    if (doc.url) {
+      const a = document.createElement('a')
+      a.href = doc.url
+      a.download = doc.name
+      a.click()
+    }
+    toast(`Descargando "${doc.name}"`, 'success')
+  }
+
   const toggleType = (type) => {
     setActiveTypes((prev) =>
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
@@ -727,6 +729,7 @@ export default function Documentos() {
             onToggle={() => toggleCategory(cat.id)}
             index={i}
             onPreview={(doc, catTitle) => { setPreviewDoc(doc); setPreviewCategory(catTitle) }}
+            onDownload={handleDownload}
           />
         )) : (
           <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
@@ -768,6 +771,8 @@ export default function Documentos() {
           <SoporteDocumentalModal onClose={() => setShowSoporte(false)} />
         )}
       </AnimatePresence>
+
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>
   )
 }

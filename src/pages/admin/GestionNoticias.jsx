@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, X, Edit2, Trash2, Eye, EyeOff,
-  Send, Globe, Clock,
+  Send, Globe, Clock, ImagePlus, Image,
 } from 'lucide-react'
 import { ALL_NEWS } from '@/lib/constants'
 
@@ -18,6 +18,68 @@ const CATEGORIES = ['Ambiente', 'Social', 'Tecnología', 'Capacitación', 'Inves
 const TAGS = ['ACTUALIZACIÓN DE DATOS', 'EVENTO REGIONAL', 'TECNOLOGÍA', 'CAPACITACIÓN', 'INVESTIGACIÓN']
 const EMPTY_FORM = { title: '', excerpt: '', content: '', tag: TAGS[0], category: CATEGORIES[0], author: '', date: '', published: true }
 
+// ── Thumbnail Dropzone ──
+function ThumbnailDropzone({ file, previewUrl, onChange, onRemove }) {
+  const inputRef = useRef(null)
+  const [dragging, setDragging] = useState(false)
+
+  const handleFile = useCallback((f) => {
+    if (!f || !f.type.startsWith('image/')) return
+    onChange(f, URL.createObjectURL(f))
+  }, [onChange])
+
+  const onDrop = useCallback((e) => {
+    e.preventDefault(); setDragging(false)
+    handleFile(e.dataTransfer.files[0])
+  }, [handleFile])
+
+  if (previewUrl) {
+    return (
+      <div className="relative w-full h-36 rounded-xl overflow-hidden border border-border group">
+        <img src={previewUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="px-3 py-1.5 bg-white text-text text-xs font-semibold rounded-lg hover:bg-bg-alt transition-colors"
+          >
+            Cambiar
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files[0])} />
+      </div>
+    )
+  }
+
+  return (
+    <div
+      onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={onDrop}
+      onClick={() => inputRef.current?.click()}
+      className={`w-full h-36 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${
+        dragging ? 'border-primary-800 bg-primary-50' : 'border-border bg-bg-alt/40 hover:border-primary-400 hover:bg-primary-50/30'
+      }`}
+    >
+      <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
+        <ImagePlus className="w-5 h-5 text-primary-700" />
+      </div>
+      <p className="text-xs text-text-muted text-center">
+        <span className="font-semibold text-primary-800">Seleccionar imagen</span> o arrastrar aquí<br />
+        <span className="text-[0.65rem]">JPG, PNG, WEBP · máx. 5 MB</span>
+      </p>
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files[0])} />
+    </div>
+  )
+}
+
 export default function GestionNoticias() {
   const [noticias, setNoticias] = useState(() =>
     ALL_NEWS.map((n) => ({ ...n, published: true }))
@@ -30,6 +92,8 @@ export default function GestionNoticias() {
   const [formErrors, setFormErrors] = useState({})
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [preview, setPreview] = useState(null)
+  const [thumbnail, setThumbnail] = useState(null)   // File object
+  const [thumbUrl, setThumbUrl] = useState('')        // object URL for preview
 
   const filtered = noticias.filter((n) => {
     const q = search.toLowerCase()
@@ -42,6 +106,8 @@ export default function GestionNoticias() {
     setEditing(null)
     setForm(EMPTY_FORM)
     setFormErrors({})
+    setThumbnail(null)
+    setThumbUrl('')
     setShowModal(true)
   }
 
@@ -49,6 +115,8 @@ export default function GestionNoticias() {
     setEditing(n)
     setForm({ title: n.title, excerpt: n.excerpt, content: n.content, tag: n.tag, category: n.category, author: n.author, date: n.date, published: n.published })
     setFormErrors({})
+    setThumbnail(null)
+    setThumbUrl(n.thumbUrl || '')
     setShowModal(true)
   }
 
@@ -65,11 +133,11 @@ export default function GestionNoticias() {
     const e = validate()
     if (Object.keys(e).length) { setFormErrors(e); return }
     if (editing) {
-      setNoticias((prev) => prev.map((n) => n.id === editing.id ? { ...n, ...form } : n))
+      setNoticias((prev) => prev.map((n) => n.id === editing.id ? { ...n, ...form, thumbUrl: thumbUrl || n.thumbUrl } : n))
     } else {
       const newId = noticias.length + 1
       const slug = form.title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').slice(0, 50)
-      setNoticias((prev) => [...prev, { id: newId, slug, tagColor: 'primary', time: 'Ahora', ...form }])
+      setNoticias((prev) => [...prev, { id: newId, slug, tagColor: 'primary', time: 'Ahora', thumbUrl, ...form }])
     }
     setShowModal(false)
   }
@@ -129,12 +197,19 @@ export default function GestionNoticias() {
           <div className="col-span-2 py-12 text-center text-sm text-text-muted">Sin resultados</div>
         )}
         {filtered.map((n) => (
-          <div key={n.id} className="bg-white border border-border rounded-xl p-5 space-y-3">
+          <div key={n.id} className="bg-white border border-border rounded-xl overflow-hidden">
+            {n.thumbUrl && (
+              <div className="h-32 w-full overflow-hidden">
+                <img src={n.thumbUrl} alt={n.title} className="w-full h-full object-cover" />
+              </div>
+            )}
+            <div className={`p-5 space-y-3 ${!n.thumbUrl ? '' : ''}`}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[0.6rem] font-bold uppercase tracking-wider bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full">{n.tag}</span>
                   <span className="text-[0.6rem] text-text-muted">{n.category}</span>
+                  {n.thumbUrl && <Image className="w-3 h-3 text-text-muted" title="Tiene imagen de portada" />}
                 </div>
                 <p className="text-sm font-bold text-text line-clamp-2">{n.title}</p>
                 <p className="text-xs text-text-muted mt-0.5">{n.author} · {n.date || n.time}</p>
@@ -176,6 +251,7 @@ export default function GestionNoticias() {
                 </button>
               </div>
             </div>
+            </div>{/* end p-5 */}
           </div>
         ))}
       </motion.div>
@@ -228,6 +304,18 @@ export default function GestionNoticias() {
                 ))}
 
                 <div>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Imagen de Portada <span className="text-text-muted font-normal normal-case">(opcional)</span>
+                  </label>
+                  <ThumbnailDropzone
+                    file={thumbnail}
+                    previewUrl={thumbUrl}
+                    onChange={(f, url) => { setThumbnail(f); setThumbUrl(url) }}
+                    onRemove={() => { setThumbnail(null); setThumbUrl('') }}
+                  />
+                </div>
+
+                <div>
                   <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Contenido completo</label>
                   <textarea
                     rows={6}
@@ -270,6 +358,11 @@ export default function GestionNoticias() {
                 <span className="text-sm font-bold text-text-muted">Vista Previa</span>
                 <button onClick={() => setPreview(null)} className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"><X className="w-5 h-5" /></button>
               </div>
+              {preview.thumbUrl && (
+                <div className="h-48 w-full overflow-hidden">
+                  <img src={preview.thumbUrl} alt={preview.title} className="w-full h-full object-cover" />
+                </div>
+              )}
               <div className="p-6">
                 <span className="text-[0.6rem] font-bold uppercase tracking-widest bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full">{preview.tag}</span>
                 <h2 className="font-display text-xl font-bold text-text mt-3 mb-2">{preview.title}</h2>
