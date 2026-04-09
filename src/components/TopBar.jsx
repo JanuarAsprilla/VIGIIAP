@@ -11,6 +11,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { useUI } from '@/contexts/UIContext'
+import { Command } from 'lucide-react'
 import { ALL_NEWS } from '@/lib/constants'
 
 const NOTIF_COUNT = 3
@@ -331,6 +332,7 @@ export default function TopBar({ onMenuToggle }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { isAuthenticated, user, logout } = useAuth()
+  const { openPalette } = useUI()
   const { query, setQuery } = useSearch()
   const placeholder = SEARCH_PLACEHOLDERS[location.pathname] || SEARCH_PLACEHOLDERS['/']
   const activeLabel = PAGE_LABELS[location.pathname]
@@ -412,24 +414,40 @@ export default function TopBar({ onMenuToggle }) {
 
           <div className="hidden lg:flex items-center gap-4 flex-1">
             <span className="text-sm font-bold text-text tracking-wide shrink-0">VIGIIAP</span>
-            <div className="flex items-center gap-2 bg-bg-alt rounded-lg px-3 py-2 w-full max-w-md">
-              <Search className="w-4 h-4 text-text-muted shrink-0" aria-hidden="true" />
-              <input
-                type="text"
-                placeholder={placeholder}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="bg-transparent border-none outline-none text-sm text-text w-full placeholder:text-text-muted"
-              />
-              {query && (
-                <button
-                  onClick={() => setQuery('')}
-                  aria-label="Limpiar búsqueda"
-                  className="text-text-muted hover:text-text transition-colors shrink-0"
-                >
-                  <X className="w-3.5 h-3.5" aria-hidden="true" />
-                </button>
-              )}
+
+            {/* Search / Command palette trigger */}
+            <div className="flex items-center gap-2 flex-1 max-w-md">
+              {/* Inline search for page-level filtering */}
+              <div className="flex items-center gap-2 bg-bg-alt rounded-lg px-3 py-2 flex-1">
+                <Search className="w-4 h-4 text-text-muted shrink-0" aria-hidden="true" />
+                <input
+                  type="text"
+                  placeholder={placeholder}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="bg-transparent border-none outline-none text-sm text-text w-full placeholder:text-text-muted"
+                />
+                {query && (
+                  <button
+                    onClick={() => setQuery('')}
+                    aria-label="Limpiar búsqueda"
+                    className="text-text-muted hover:text-text transition-colors shrink-0"
+                  >
+                    <X className="w-3.5 h-3.5" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+
+              {/* Command palette trigger */}
+              <button
+                onClick={openPalette}
+                aria-label="Abrir búsqueda global (Cmd+K)"
+                title="Búsqueda global"
+                className="flex items-center gap-1.5 px-2.5 py-2 bg-bg-alt border border-border rounded-lg text-text-muted hover:text-primary-800 hover:border-primary-300 transition-colors shrink-0"
+              >
+                <Command className="w-3.5 h-3.5" aria-hidden="true" />
+                <kbd className="text-[0.6rem] font-mono font-bold">K</kbd>
+              </button>
             </div>
           </div>
         </div>

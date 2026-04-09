@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar from '@/components/Sidebar'
 import TopBar from '@/components/TopBar'
 import FooterBar from '@/components/FooterBar'
 import BottomTabs from '@/components/BottomTabs'
+import CommandPalette from '@/components/CommandPalette'
 import { useUI } from '@/contexts/UIContext'
 
 const DENSITY_PADDING = {
@@ -30,7 +31,19 @@ function AmbientBackground() {
 export default function MainLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
-  const { density } = useUI()
+  const { density, openPalette } = useUI()
+
+  // Global keyboard shortcut: Cmd+K / Ctrl+K
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        openPalette()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [openPalette])
 
   const isGeovisor = location.pathname === '/geovisor'
   const mainPad = DENSITY_PADDING[density] || DENSITY_PADDING.normal
@@ -71,6 +84,7 @@ export default function MainLayout() {
       </div>
 
       <BottomTabs />
+      <CommandPalette />
     </div>
   )
 }
