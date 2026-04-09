@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { LogIn, Mail, Lock, Eye, EyeOff, AlertCircle, ChevronRight } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import AuthLayout from '@/components/AuthLayout'
+import { validateEmail, validatePassword } from '@/lib/validators'
 
 const DEMO_CREDS = [
   { label: 'Administrador SIG', email: 'admin@iiap.org.co',        pass: 'admin1234', dot: 'bg-red-400'     },
@@ -54,10 +55,10 @@ export default function Login() {
 
   const validate = () => {
     const e = {}
-    if (!email.trim()) e.email = 'El correo es requerido'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Correo no válido'
-    if (!password) e.password = 'La contraseña es requerida'
-    else if (password.length < 6) e.password = 'Mínimo 6 caracteres'
+    const emailErr    = validateEmail(email)
+    const passwordErr = validatePassword(password, 6)
+    if (emailErr)    e.email    = emailErr
+    if (passwordErr) e.password = passwordErr
     return e
   }
 

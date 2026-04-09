@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, ArrowLeft, CheckCircle, Send, KeyRound, AlertCircle, ShieldCheck } from 'lucide-react'
 import AuthLayout from '@/components/AuthLayout'
+import { validateEmail } from '@/lib/validators'
 
 const STEPS = [
   { id: 'email',    label: 'Correo',    icon: Mail        },
@@ -17,9 +18,9 @@ export default function RecuperarPassword() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    const emailErr = validateEmail(email)
+    if (emailErr) { setError(emailErr); return }
     setError('')
-    if (!email.trim()) { setError('Ingrese su correo electrónico'); return }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('Correo no válido'); return }
     setStep('enviado')
   }
 

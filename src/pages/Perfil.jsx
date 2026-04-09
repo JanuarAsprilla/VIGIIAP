@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { validatePassword, validatePasswordMatch } from '@/lib/validators'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   User, Mail, Building2, Shield, Bell, Palette,
@@ -50,10 +51,11 @@ function CambiarPassword() {
 
   const validate = () => {
     const e = {}
-    if (!form.actual) e.actual = 'Ingrese su contraseña actual'
-    if (!form.nueva) e.nueva = 'Ingrese la nueva contraseña'
-    else if (form.nueva.length < 8) e.nueva = 'Mínimo 8 caracteres'
-    if (form.nueva !== form.confirmar) e.confirmar = 'Las contraseñas no coinciden'
+    if (!form.actual)         e.actual    = 'Ingrese su contraseña actual'
+    const nuevaErr            = validatePassword(form.nueva, 8)
+    if (nuevaErr)             e.nueva     = nuevaErr
+    const confirmarErr        = validatePasswordMatch(form.nueva, form.confirmar)
+    if (confirmarErr)         e.confirmar = confirmarErr
     return e
   }
 

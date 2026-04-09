@@ -15,67 +15,9 @@
 import { useEffect, useRef, useCallback, useState, useMemo, useId } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  Search, Home, Map as MapIcon, FileText, Globe, Wrench,
-  ClipboardList, Newspaper, UserCircle, BookOpen,
-  HelpCircle, FileCheck, ArrowRight,
-  Keyboard, X,
-} from 'lucide-react'
-import { useUI } from '@/contexts/UIContext'
-import { useAuth } from '@/contexts/AuthContext'
-import { NAV_LINKS, ALL_NEWS } from '@/lib/constants'
-
-// ─────────────────────────────────────────────
-// Static catalogue — entries that always show
-// ─────────────────────────────────────────────
-
-const MODULE_ICONS = { Home, Map: MapIcon, FileText, Globe, Wrench, ClipboardList, Newspaper }
-
-function buildCatalogue(isAuthenticated) {
-  const modules = NAV_LINKS.map((link) => ({
-    id:       `mod-${link.path}`,
-    group:    'Módulos',
-    label:    link.label,
-    keywords: link.label.toLowerCase(),
-    icon:     link.icon,
-    to:       link.path,
-  }))
-
-  const actions = [
-    isAuthenticated && {
-      id: 'act-perfil', group: 'Acciones', label: 'Mi Perfil',
-      keywords: 'perfil cuenta usuario', icon: UserCircle, to: '/perfil',
-    },
-    isAuthenticated && {
-      id: 'act-solicitudes', group: 'Acciones', label: 'Mis Solicitudes',
-      keywords: 'solicitudes trámites expedientes', icon: ClipboardList, to: '/solicitudes',
-    },
-    {
-      id: 'act-guia', group: 'Recursos', label: 'Guía de Usuario',
-      keywords: 'guia ayuda manual documentacion', icon: BookOpen, to: '/guia-usuario',
-    },
-    {
-      id: 'act-faq', group: 'Recursos', label: 'Preguntas Frecuentes',
-      keywords: 'faq preguntas frecuentes ayuda', icon: HelpCircle, to: '/faq',
-    },
-    {
-      id: 'act-terminos', group: 'Recursos', label: 'Términos y Condiciones',
-      keywords: 'terminos condiciones privacidad politica', icon: FileCheck, to: '/terminos',
-    },
-  ].filter(Boolean)
-
-  const news = ALL_NEWS.slice(0, 5).map((n) => ({
-    id:       `new-${n.id}`,
-    group:    'Noticias',
-    label:    n.title,
-    meta:     n.tag,
-    keywords: `${n.title} ${n.tag} ${n.author ?? ''}`.toLowerCase(),
-    icon:     Newspaper,
-    to:       `/noticias/${n.slug}`,
-  }))
-
-  return [...modules, ...actions, ...news]
-}
+import { Search, ArrowRight, Keyboard, X } from 'lucide-react'
+import { useUI }       from '@/contexts/UIContext'
+import { useCatalogue } from '@/hooks/useCatalogue'
 
 // ─────────────────────────────────────────────
 // Highlight matched text
@@ -159,23 +101,22 @@ const PANEL_ANIM = {
 
 export default function CommandPalette() {
   const { paletteOpen, closePalette } = useUI()
-  const { isAuthenticated }           = useAuth()
   const navigate                      = useNavigate()
 
-  const [query,        setQuery]        = useState('')
-  const [activeIndex,  setActiveIndex]  = useState(0)
+  const [query,       setQuery]       = useState('')
+  const [activeIndex, setActiveIndex] = useState(0)
 
-  const inputRef     = useRef(null)
-  const listRef      = useRef(null)
-  const panelRef     = useRef(null)
+  const inputRef  = useRef(null)
+  const listRef   = useRef(null)
+  const panelRef  = useRef(null)
 
   const baseId    = useId()
   const inputId   = `${baseId}-input`
   const listboxId = `${baseId}-listbox`
   const itemId    = (i) => `${baseId}-item-${i}`
 
-  // Build catalogue once per auth state change
-  const catalogue = useMemo(() => buildCatalogue(isAuthenticated), [isAuthenticated])
+  // Catálogo provisto por el hook — desacoplado de la presentación
+  const catalogue = useCatalogue()
 
   // Filter results — reset active index on each change
   const results = useMemo(() => {

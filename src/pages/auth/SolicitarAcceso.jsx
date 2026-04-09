@@ -6,6 +6,10 @@ import {
   Building2, FileText, Briefcase, AlertCircle,
 } from 'lucide-react'
 import AuthLayout from '@/components/AuthLayout'
+import {
+  validateEmail, validateRequired, validateMinLength,
+  validateSelect, validateCheckbox,
+} from '@/lib/validators'
 
 const ROLES = [
   { value: '',              label: 'Seleccione el perfil de acceso...' },
@@ -51,14 +55,18 @@ export default function SolicitarAcceso() {
 
   const validate = () => {
     const e = {}
-    if (!form.nombre.trim()) e.nombre = 'El nombre es requerido'
-    if (!form.email.trim()) e.email = 'El correo es requerido'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Correo no válido'
-    if (!form.institucion.trim()) e.institucion = 'La institución es requerida'
-    if (!form.rol) e.rol = 'Seleccione un perfil de acceso'
-    if (!form.motivo.trim()) e.motivo = 'Describa el motivo de la solicitud'
-    else if (form.motivo.trim().length < 30) e.motivo = 'Mínimo 30 caracteres'
-    if (!form.terminos) e.terminos = 'Debe aceptar los términos para continuar'
+    const nombreErr     = validateRequired(form.nombre,     'El nombre completo')
+    const emailErr      = validateEmail(form.email)
+    const institucionErr= validateRequired(form.institucion,'La institución')
+    const rolErr        = validateSelect(form.rol,          'un perfil de acceso')
+    const motivoErr     = validateMinLength(form.motivo, 30,'El motivo')
+    const terminosErr   = validateCheckbox(form.terminos,   'Debe aceptar los términos para continuar')
+    if (nombreErr)      e.nombre     = nombreErr
+    if (emailErr)       e.email      = emailErr
+    if (institucionErr) e.institucion= institucionErr
+    if (rolErr)         e.rol        = rolErr
+    if (motivoErr)      e.motivo     = motivoErr
+    if (terminosErr)    e.terminos   = terminosErr
     return e
   }
 
