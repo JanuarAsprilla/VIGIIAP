@@ -1,297 +1,266 @@
 import { useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
-import { PlusCircle, LogOut, X, Map, FileText, Globe, ChevronRight, CheckCircle } from 'lucide-react'
+import { PlusCircle, LogOut, X, Sparkles, Lock, Shield } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
+import { ROLES } from '@/contexts/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
+import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
 
-const ANALYSIS_TYPES = [
-  { value: '', label: 'Seleccione un tipo' },
-  { value: 'cobertura', label: 'Cobertura Vegetal' },
-  { value: 'hidrologia', label: 'Análisis Hidrológico' },
-  { value: 'biodiversidad', label: 'Biodiversidad y Especies' },
-  { value: 'conflictos', label: 'Conflictos de Uso del Suelo' },
-  { value: 'zonificacion', label: 'Zonificación Ambiental' },
-  { value: 'otro', label: 'Otro' },
-]
+// Rutas que requieren Investigador o Admin
+const PROTECTED_PATHS = ['/mapas', '/documentos', '/geovisor', '/herramientas', '/solicitudes']
 
-const DEPARTMENTS = [
-  { value: '', label: 'Todo el Chocó Biogeográfico' },
-  { value: 'choco', label: 'Chocó' },
-  { value: 'valle', label: 'Valle del Cauca' },
-  { value: 'cauca', label: 'Cauca' },
-  { value: 'narino', label: 'Nariño' },
-]
+// ── Stagger presets ──
+const navContainer = {
+  animate: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } },
+}
+const navItemVariant = {
+  initial: { opacity: 0, x: -14 },
+  animate: { opacity: 1, x: 0, transition: { ease: [0.22, 1, 0.36, 1], duration: 0.4 } },
+}
 
-// ── Nuevo Análisis Modal ──
-function NuevoAnalisisModal({ onClose }) {
-  const [step, setStep] = useState('form') // 'form' | 'success'
-  const [form, setForm] = useState({ nombre: '', tipo: '', departamento: '', notas: '' })
-  const [errors, setErrors] = useState({})
+// ── Single nav link with animated pill + role-aware lock ──
+function SidebarLink({ link, onClose, userRole }) {
+  const isLocked = PROTECTED_PATHS.includes(link.path) && userRole === ROLES.PUBLICO
 
-  const validate = () => {
-    const e = {}
-    if (!form.nombre.trim()) e.nombre = 'Requerido'
-    if (!form.tipo) e.tipo = 'Requerido'
-    return e
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const e2 = validate()
-    if (Object.keys(e2).length) { setErrors(e2); return }
-    setStep('success')
-  }
-
-  const set = (key, val) => {
-    setForm((prev) => ({ ...prev, [key]: val }))
-    setErrors((prev) => ({ ...prev, [key]: undefined }))
+  if (isLocked) {
+    return (
+      <motion.div variants={navItemVariant}>
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-text-muted/50 cursor-not-allowed select-none">
+          <link.icon className="w-[17px] h-[17px] shrink-0 opacity-40" aria-hidden="true" />
+          <span className="truncate">{link.label}</span>
+          <Lock className="w-3 h-3 ml-auto shrink-0 opacity-40" aria-hidden="true" />
+        </div>
+      </motion.div>
+    )
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/40"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="relative bg-white rounded-2xl shadow-float w-full max-w-md overflow-hidden"
-      >
-        {step === 'success' ? (
-          /* ── Success state ── */
-          <div className="p-8 text-center">
-            <div className="w-14 h-14 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-7 h-7 text-primary-800" />
-            </div>
-            <h3 className="font-display text-xl font-bold text-text mb-2">Análisis Creado</h3>
-            <p className="text-sm text-text-muted mb-2">
-              <strong className="text-text">"{form.nombre}"</strong> ha sido registrado correctamente.
-            </p>
-            <p className="text-xs text-text-muted mb-6">
-              El equipo técnico procesará su solicitud en las próximas 24 horas hábiles.
-            </p>
-            <button
-              onClick={onClose}
-              className="w-full py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors"
+    <NavLink to={link.path} end={link.path === '/'} onClick={onClose} className="block no-underline">
+      {({ isActive }) => (
+        <motion.div variants={navItemVariant} className="relative">
+          {isActive && (
+            <motion.div
+              layoutId="nav-pill"
+              className="absolute inset-0 bg-primary-800 rounded-xl"
+              transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+            />
+          )}
+          <div className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors group ${
+            isActive ? 'text-white' : 'text-text-light hover:text-text hover:bg-bg-alt'
+          }`}>
+            <motion.div
+              whileHover={{ scale: 1.18, rotate: isActive ? 0 : -8 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 18 }}
             >
-              Entendido
-            </button>
+              <link.icon
+                className={`w-[17px] h-[17px] shrink-0 transition-colors ${
+                  isActive ? 'text-white' : 'text-text-muted group-hover:text-primary-700'
+                }`}
+                aria-hidden="true"
+              />
+            </motion.div>
+            <span className="truncate">{link.label}</span>
+            {isActive && (
+              <motion.span
+                className="ml-auto w-1.5 h-1.5 rounded-full bg-primary-300 shrink-0"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.18, type: 'spring' }}
+              />
+            )}
           </div>
-        ) : (
-          /* ── Form state ── */
-          <>
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-primary-800 rounded-lg flex items-center justify-center">
-                  <PlusCircle className="w-4.5 h-4.5 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-text leading-tight">Nuevo Análisis</h3>
-                  <p className="text-xs text-text-muted">Solicitud de análisis territorial</p>
-                </div>
-              </div>
-              <button
+        </motion.div>
+      )}
+    </NavLink>
+  )
+}
+
+// ── User mini card ──
+function UserMiniCard({ user }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      className="mx-3 mt-2.5 mb-0.5"
+    >
+      <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 border border-primary-200/70">
+        <div className="flex items-center gap-2.5">
+          <div className="relative shrink-0">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-900 rounded-lg flex items-center justify-center shadow-sm">
+              <span className="text-white text-xs font-bold">{user.initials}</span>
+            </div>
+            <span
+              className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white"
+              aria-label="En línea"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold text-primary-900 truncate leading-tight">{user.name}</p>
+            <p className="text-[0.6rem] text-primary-700/70 uppercase tracking-wider truncate">{user.role}</p>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+// ── Sidebar inner content (stateless, receives all props) ──
+function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }) {
+  return (
+    <div className="flex flex-col h-full">
+
+      {/* ── Logo area ── */}
+      <div className="relative overflow-hidden px-4 pt-5 pb-4 border-b border-border/60">
+        {/* Subtle topographic circles texture */}
+        <svg
+          className="absolute inset-0 w-full h-full opacity-[0.05]"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <defs>
+            <pattern id="topo" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+              <circle cx="20" cy="20" r="14" fill="none" stroke="#1B4332" strokeWidth="1"/>
+              <circle cx="20" cy="20" r="8"  fill="none" stroke="#1B4332" strokeWidth="0.8"/>
+              <circle cx="20" cy="20" r="3"  fill="none" stroke="#1B4332" strokeWidth="0.6"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#topo)"/>
+        </svg>
+
+        <div className="relative flex items-center justify-between">
+          <Link to="/" onClick={onClose} className="flex items-center gap-2.5 no-underline group">
+            {/* Gradient logo mark */}
+            <motion.div
+              whileHover={{ scale: 1.06, rotate: -2 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+              className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-900 rounded-xl flex items-center justify-center shadow-sm shrink-0"
+            >
+              <span className="text-white font-bold text-sm font-display">V</span>
+            </motion.div>
+
+            <div className="leading-tight">
+              <span className="block text-sm font-bold text-text tracking-wide group-hover:text-primary-800 transition-colors">
+                VIGIIAP
+              </span>
+              <span className="block text-[0.6rem] text-text-muted uppercase tracking-wider">
+                Chocó Biogeográfico
+              </span>
+            </div>
+          </Link>
+
+          <button
+            onClick={onClose}
+            className="lg:hidden p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"
+            aria-label="Cerrar menú"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Navigation ── */}
+      <nav className="flex-1 py-3 px-3 overflow-y-auto">
+        <p className="px-3 pb-2 text-[0.58rem] font-bold uppercase tracking-[0.14em] text-text-muted/60">
+          Módulos
+        </p>
+
+        <motion.div
+          variants={navContainer}
+          initial="initial"
+          animate="animate"
+          className="space-y-0.5"
+        >
+          {NAV_LINKS.map((link) => (
+            <SidebarLink key={link.path} link={link} onClose={onClose} userRole={user?.role} />
+          ))}
+        </motion.div>
+      </nav>
+
+      {/* ── Bottom actions ── */}
+      <AnimatePresence>
+        {isAuthenticated && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="p-3 space-y-1 border-t border-border/60"
+          >
+            {/* Panel Admin — solo Administrador SIG */}
+            {user?.role === ROLES.ADMIN && (
+              <Link
+                to="/admin"
                 onClick={onClose}
-                className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-primary-800 bg-primary-50 border border-primary-200/70 hover:bg-primary-100 transition-colors no-underline mb-1"
               >
-                <X className="w-5 h-5" />
-              </button>
+                <Shield className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span>Panel Admin</span>
+                <span className="ml-auto text-[0.55rem] font-bold uppercase tracking-wider bg-primary-800 text-white px-1.5 py-0.5 rounded-full">
+                  SIG
+                </span>
+              </Link>
+            )}
+
+            {/* Nuevo Análisis — shimmer gradient button */}
+            <div className="relative overflow-hidden rounded-xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-700 to-primary-900" aria-hidden="true" />
+              <motion.button
+                onClick={onOpenModal}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 24 }}
+                className="btn-shimmer relative w-full flex items-center gap-2 px-3 py-2.5 text-white text-sm font-semibold"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-primary-200 shrink-0" aria-hidden="true" />
+                <span>Nuevo Análisis</span>
+                <PlusCircle className="w-3.5 h-3.5 ml-auto text-primary-300 shrink-0" aria-hidden="true" />
+              </motion.button>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {/* Nombre */}
-              <div>
-                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                  Nombre del análisis <span className="text-orange-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej. Cobertura Cuenca Atrato 2026"
-                  value={form.nombre}
-                  onChange={(e) => set('nombre', e.target.value)}
-                  className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${errors.nombre ? 'border-red-400 focus:border-red-400' : 'border-border focus:border-primary-800'}`}
-                />
-                {errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre}</p>}
-              </div>
-
-              {/* Tipo */}
-              <div>
-                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                  Tipo de análisis <span className="text-orange-500">*</span>
-                </label>
-                <select
-                  value={form.tipo}
-                  onChange={(e) => set('tipo', e.target.value)}
-                  className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${errors.tipo ? 'border-red-400 focus:border-red-400' : 'border-border focus:border-primary-800'}`}
-                >
-                  {ANALYSIS_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-                {errors.tipo && <p className="text-xs text-red-500 mt-1">{errors.tipo}</p>}
-              </div>
-
-              {/* Departamento */}
-              <div>
-                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                  Área de interés
-                </label>
-                <select
-                  value={form.departamento}
-                  onChange={(e) => set('departamento', e.target.value)}
-                  className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
-                >
-                  {DEPARTMENTS.map((d) => (
-                    <option key={d.value} value={d.value}>{d.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Notas */}
-              <div>
-                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                  Notas adicionales
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Describa el objetivo del análisis o capas de interés..."
-                  value={form.notas}
-                  onChange={(e) => set('notas', e.target.value)}
-                  className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition resize-none"
-                />
-              </div>
-
-              {/* Capas sugeridas */}
-              {form.tipo && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="flex flex-wrap gap-2 pt-1"
-                >
-                  <span className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted w-full">
-                    Capas recomendadas
-                  </span>
-                  {['Mapas Temáticos', 'Geovisor SIAT-PC', 'Red Hídrica'].map((c) => (
-                    <span key={c} className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-50 text-primary-800 rounded-full text-xs font-medium">
-                      <ChevronRight className="w-3 h-3" />
-                      {c}
-                    </span>
-                  ))}
-                </motion.div>
-              )}
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors"
-                >
-                  Iniciar Análisis
-                </button>
-              </div>
-            </form>
-          </>
+            {/* Cerrar sesión */}
+            <motion.button
+              onClick={onLogout}
+              whileHover={{ x: 4 }}
+              whileTap={{ x: 0 }}
+              transition={{ type: 'spring', stiffness: 400 }}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-text-muted hover:text-orange-500 hover:bg-orange-500/5 transition-colors"
+            >
+              <LogOut className="w-[17px] h-[17px] shrink-0" aria-hidden="true" />
+              <span>Cerrar Sesión</span>
+            </motion.button>
+          </motion.div>
         )}
-      </motion.div>
+      </AnimatePresence>
     </div>
   )
 }
 
+// ── Main export ──
 export default function Sidebar({ mobileOpen, onClose }) {
-  const { isAuthenticated, logout } = useAuth()
+  const { isAuthenticated, user, logout } = useAuth()
   const [showModal, setShowModal] = useState(false)
 
-  const sidebarContent = (
-    <>
-      {/* Logo */}
-      <div className="px-5 py-5 border-b border-border flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5 no-underline" onClick={onClose}>
-          <div className="w-9 h-9 bg-primary-800 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">V</span>
-          </div>
-          <div className="leading-tight">
-            <span className="block text-sm font-bold text-text tracking-wide">VIGIIAP</span>
-            <span className="block text-[0.65rem] text-text-muted uppercase tracking-wider">
-              Chocó Biogeográfico
-            </span>
-          </div>
-        </Link>
-        <button
-          onClick={onClose}
-          className="lg:hidden p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
+  const handleLogout = () => {
+    logout()
+    onClose?.()
+  }
 
-      {/* Navigation */}
-      <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-        {NAV_LINKS.map((link) => (
-          <NavLink
-            key={link.path}
-            to={link.path}
-            end={link.path === '/'}
-            onClick={onClose}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium no-underline transition-colors ${
-                isActive
-                  ? 'bg-primary-50 text-primary-800 border border-primary-200'
-                  : 'text-text-light hover:bg-bg-alt hover:text-text border border-transparent'
-              }`
-            }
-          >
-            <link.icon className="w-[18px] h-[18px] shrink-0" />
-            <span>{link.label}</span>
-          </NavLink>
-        ))}
-      </nav>
-
-      {/* Bottom — SOLO cuando hay sesión activa */}
-      {isAuthenticated && (
-        <div className="p-3 border-t border-border space-y-1">
-          <button
-            onClick={() => setShowModal(true)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Nuevo Análisis</span>
-          </button>
-          <button
-            onClick={() => { logout(); onClose?.(); }}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-orange-500 hover:bg-orange-500/5 transition-colors"
-          >
-            <LogOut className="w-[18px] h-[18px]" />
-            <span>Cerrar Sesión</span>
-          </button>
-        </div>
-      )}
-    </>
-  )
+  const innerProps = {
+    onClose,
+    onOpenModal: () => setShowModal(true),
+    onLogout: handleLogout,
+    user,
+    isAuthenticated,
+  }
 
   return (
     <>
       {/* Desktop */}
-      <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[200px] bg-white border-r border-border flex-col z-40">
-        {sidebarContent}
+      <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[210px] bg-white border-r border-border flex-col z-40">
+        <SidebarInner {...innerProps} />
       </aside>
 
       {/* Mobile */}
@@ -299,26 +268,29 @@ export default function Sidebar({ mobileOpen, onClose }) {
         {mobileOpen && (
           <>
             <motion.div
+              key="overlay"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/40 lg:hidden"
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] lg:hidden"
               onClick={onClose}
             />
             <motion.aside
+              key="drawer"
               initial={{ x: -260 }}
               animate={{ x: 0 }}
               exit={{ x: -260 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
               className="fixed top-0 left-0 bottom-0 w-[240px] bg-white z-50 flex flex-col shadow-float lg:hidden"
             >
-              {sidebarContent}
+              <SidebarInner {...innerProps} />
             </motion.aside>
           </>
         )}
       </AnimatePresence>
 
-      {/* Nuevo Análisis Modal */}
+      {/* Modal */}
       <AnimatePresence>
         {showModal && (
           <NuevoAnalisisModal onClose={() => setShowModal(false)} />

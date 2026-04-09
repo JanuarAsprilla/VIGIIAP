@@ -4,11 +4,13 @@ import {
   FileText, Search, SlidersHorizontal, ArrowUpDown,
   ChevronUp, ChevronDown, Eye, Download,
   Waves, FileInput, BookOpen, TrendingUp,
-  Headphones, X, Check, AlertCircle,
+  Headphones, X, Check, AlertCircle, Send, CheckCircle,
 } from 'lucide-react'
 import { DOC_CATEGORIES } from '@/lib/constants'
 import { useSearch } from '@/contexts/SearchContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { matches } from '@/lib/search'
+import { useToast, ToastContainer } from '@/components/Toast'
 
 // ── Animation helper ──
 const fadeUp = (delay = 0) => ({
@@ -149,7 +151,7 @@ function PreviewModal({ doc, categoryTitle, onClose }) {
 }
 
 // ── Document Table Row ──
-function DocRow({ doc, onPreview }) {
+function DocRow({ doc, onPreview, onDownload }) {
   return (
     <tr className="border-b border-border last:border-b-0 hover:bg-bg-alt/50 transition-colors">
       <td className="py-3 pr-4">
@@ -178,23 +180,13 @@ function DocRow({ doc, onPreview }) {
           >
             <Eye className="w-4 h-4" />
           </button>
-          {doc.url ? (
-            <a
-              href={doc.url}
-              download={doc.name}
-              className="w-8 h-8 rounded-lg border border-border bg-white flex items-center justify-center text-text-muted hover:bg-primary-800 hover:border-primary-800 hover:text-white transition-colors"
-              title="Descargar"
-            >
-              <Download className="w-4 h-4" />
-            </a>
-          ) : (
-            <span
-              className="w-8 h-8 rounded-lg border border-border bg-white flex items-center justify-center text-text-muted/40 cursor-not-allowed"
-              title="Archivo no disponible aún"
-            >
-              <Download className="w-4 h-4" />
-            </span>
-          )}
+          <button
+            onClick={() => onDownload(doc)}
+            className="w-8 h-8 rounded-lg border border-border bg-white flex items-center justify-center text-text-muted hover:bg-primary-800 hover:border-primary-800 hover:text-white transition-colors"
+            title="Descargar"
+          >
+            <Download className="w-4 h-4" />
+          </button>
         </div>
       </td>
     </tr>
@@ -202,7 +194,7 @@ function DocRow({ doc, onPreview }) {
 }
 
 // ── Accordion Category ──
-function CategoryAccordion({ category, isOpen, onToggle, index, onPreview }) {
+function CategoryAccordion({ category, isOpen, onToggle, index, onPreview, onDownload }) {
   const Icon = categoryIcons[category.icon] || FileText
 
   return (
@@ -249,7 +241,7 @@ function CategoryAccordion({ category, isOpen, onToggle, index, onPreview }) {
                 </thead>
                 <tbody>
                   {category.docs.map((doc, i) => (
-                    <DocRow key={i} doc={doc} onPreview={(d) => onPreview(d, category.title)} />
+                    <DocRow key={i} doc={doc} onPreview={(d) => onPreview(d, category.title)} onDownload={onDownload} />
                   ))}
                 </tbody>
               </table>
@@ -261,8 +253,225 @@ function CategoryAccordion({ category, isOpen, onToggle, index, onPreview }) {
   )
 }
 
+// ── Modal Soporte Documental ──
+const CONSULTA_TYPES = [
+  { value: '', label: 'Seleccione el tipo de consulta' },
+  { value: 'documento-no-encontrado', label: 'Documento no encontrado' },
+  { value: 'formato-requerido', label: 'Formato o plantilla requerida' },
+  { value: 'acceso-restringido', label: 'Problema de acceso a documento' },
+  { value: 'documento-desactualizado', label: 'Documento desactualizado' },
+  { value: 'otro', label: 'Otro' },
+]
+
+function SoporteDocumentalModal({ onClose }) {
+  const { user, isAuthenticated } = useAuth()
+  const [step, setStep] = useState('form') // 'form' | 'success'
+  const [form, setForm] = useState({
+    nombre: isAuthenticated ? user.name : '',
+    correo: isAuthenticated ? user.email : '',
+    tipo: '',
+    descripcion: '',
+  })
+  const [errors, setErrors] = useState({})
+
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [onClose])
+
+  const set = (key, val) => {
+    setForm((prev) => ({ ...prev, [key]: val }))
+    setErrors((prev) => ({ ...prev, [key]: undefined }))
+  }
+
+  const validate = () => {
+    const e = {}
+    if (!form.nombre.trim()) e.nombre = 'Requerido'
+    if (!form.correo.trim()) e.correo = 'Requerido'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) e.correo = 'Correo no válido'
+    if (!form.tipo) e.tipo = 'Requerido'
+    if (!form.descripcion.trim()) e.descripcion = 'Requerido'
+    else if (form.descripcion.trim().length < 20) e.descripcion = 'Mínimo 20 caracteres'
+    return e
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    const e2 = validate()
+    if (Object.keys(e2).length) { setErrors(e2); return }
+    setStep('success')
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="soporte-modal-title"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+      >
+        {step === 'success' ? (
+          <div className="p-10 text-center">
+            <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5">
+              <CheckCircle className="w-8 h-8 text-primary-800" />
+            </div>
+            <h3 className="font-display text-xl font-bold text-text mb-2">Solicitud Enviada</h3>
+            <p className="text-sm text-text-muted leading-relaxed mb-2">
+              Su consulta fue recibida correctamente. El equipo de gestión documental
+              del IIAP le responderá a{' '}
+              <strong className="text-text">{form.correo}</strong>{' '}
+              en un plazo máximo de 24 horas hábiles.
+            </p>
+            <p className="text-xs text-text-muted mb-8">
+              También puede comunicarse directamente a{' '}
+              <a href="mailto:soportegis@iiap.org.co" className="text-primary-800 hover:underline">
+                soportegis@iiap.org.co
+              </a>
+            </p>
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors"
+            >
+              Entendido
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-primary-800 rounded-lg flex items-center justify-center">
+                  <Headphones className="w-4 h-4 text-white" aria-hidden="true" />
+                </div>
+                <div>
+                  <h3 id="soporte-modal-title" className="text-base font-bold text-text leading-tight">
+                    Soporte Documental
+                  </h3>
+                  <p className="text-xs text-text-muted">Gestión de Datos — IIAP</p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                aria-label="Cerrar"
+                className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Nombre */}
+                <div>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Nombre <span className="text-orange-500" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.nombre}
+                    onChange={(e) => set('nombre', e.target.value)}
+                    placeholder="Su nombre completo"
+                    readOnly={isAuthenticated}
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
+                      isAuthenticated ? 'bg-bg-alt cursor-default' : 'bg-white focus:border-primary-800'
+                    } ${errors.nombre ? 'border-red-400' : 'border-border'}`}
+                  />
+                  {errors.nombre && <p className="text-xs text-red-500 mt-1" role="alert">{errors.nombre}</p>}
+                </div>
+
+                {/* Correo */}
+                <div>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Correo <span className="text-orange-500" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={form.correo}
+                    onChange={(e) => set('correo', e.target.value)}
+                    placeholder="su@correo.com"
+                    readOnly={isAuthenticated}
+                    className={`w-full px-3 py-2.5 border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
+                      isAuthenticated ? 'bg-bg-alt cursor-default' : 'bg-white focus:border-primary-800'
+                    } ${errors.correo ? 'border-red-400' : 'border-border'}`}
+                  />
+                  {errors.correo && <p className="text-xs text-red-500 mt-1" role="alert">{errors.correo}</p>}
+                </div>
+              </div>
+
+              {/* Tipo de consulta */}
+              <div>
+                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  Tipo de consulta <span className="text-orange-500" aria-hidden="true">*</span>
+                </label>
+                <select
+                  value={form.tipo}
+                  onChange={(e) => set('tipo', e.target.value)}
+                  className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${errors.tipo ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                >
+                  {CONSULTA_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+                {errors.tipo && <p className="text-xs text-red-500 mt-1" role="alert">{errors.tipo}</p>}
+              </div>
+
+              {/* Descripción */}
+              <div>
+                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  Descripción <span className="text-orange-500" aria-hidden="true">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  value={form.descripcion}
+                  onChange={(e) => set('descripcion', e.target.value)}
+                  placeholder="Describa con detalle el documento o formato que necesita, incluyendo el período, territorio o tema de interés..."
+                  className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition resize-none ${errors.descripcion ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                />
+                <div className="flex items-center justify-between mt-1">
+                  {errors.descripcion
+                    ? <p className="text-xs text-red-500" role="alert">{errors.descripcion}</p>
+                    : <span />
+                  }
+                  <span className="text-xs text-text-muted ml-auto">{form.descripcion.length} / 500</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors"
+                >
+                  <Send className="w-4 h-4" aria-hidden="true" />
+                  Enviar Solicitud
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+      </motion.div>
+    </div>
+  )
+}
+
 // ── Support CTA ──
-function SupportCTA() {
+function SupportCTA({ onContactar }) {
   return (
     <motion.div
       {...fadeUp(0.5)}
@@ -277,8 +486,11 @@ function SupportCTA() {
           técnicas, contacte con nuestra oficina de gestión de datos.
         </p>
         <div>
-          <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-primary-900 rounded-lg text-sm font-semibold hover:bg-primary-800 hover:text-white transition-colors border border-primary-200">
-            <Headphones className="w-4 h-4" />
+          <button
+            onClick={onContactar}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-primary-900 rounded-lg text-sm font-semibold hover:bg-primary-800 hover:text-white transition-colors border border-primary-200"
+          >
+            <Headphones className="w-4 h-4" aria-hidden="true" />
             Contactar Soporte
           </button>
         </div>
@@ -301,6 +513,7 @@ function useClickOutside(ref, handler) {
 export default function Documentos() {
   const { query, setQuery } = useSearch()
   const [openId, setOpenId] = useState('protocolos')
+  const [showSoporte, setShowSoporte] = useState(false)
 
   // Filter & sort state
   const [activeTypes, setActiveTypes] = useState([])
@@ -316,6 +529,17 @@ export default function Documentos() {
   const sortRef = useRef(null)
   useClickOutside(filterRef, () => setShowFilter(false))
   useClickOutside(sortRef, () => setShowSort(false))
+
+  const { toasts, toast, dismiss } = useToast()
+  const handleDownload = (doc) => {
+    if (doc.url) {
+      const a = document.createElement('a')
+      a.href = doc.url
+      a.download = doc.name
+      a.click()
+    }
+    toast(`Descargando "${doc.name}"`, 'success')
+  }
 
   const toggleType = (type) => {
     setActiveTypes((prev) =>
@@ -369,8 +593,7 @@ export default function Documentos() {
           <Search className="w-4 h-4 text-text-muted shrink-0" />
           <input
             type="text"
-            placeholder="Buscar por nom
-            bre, tipo o fecha..."
+            placeholder="Buscar por nombre, tipo o fecha..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="bg-transparent border-none outline-none text-sm text-text w-full placeholder:text-text-muted"
@@ -505,6 +728,7 @@ export default function Documentos() {
             onToggle={() => toggleCategory(cat.id)}
             index={i}
             onPreview={(doc, catTitle) => { setPreviewDoc(doc); setPreviewCategory(catTitle) }}
+            onDownload={handleDownload}
           />
         )) : (
           <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
@@ -527,7 +751,7 @@ export default function Documentos() {
       </div>
 
       {/* Support CTA */}
-      <SupportCTA />
+      <SupportCTA onContactar={() => setShowSoporte(true)} />
 
       {/* Preview Modal */}
       <AnimatePresence>
@@ -539,6 +763,15 @@ export default function Documentos() {
           />
         )}
       </AnimatePresence>
+
+      {/* Soporte Documental Modal */}
+      <AnimatePresence>
+        {showSoporte && (
+          <SoporteDocumentalModal onClose={() => setShowSoporte(false)} />
+        )}
+      </AnimatePresence>
+
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>
   )
 }
