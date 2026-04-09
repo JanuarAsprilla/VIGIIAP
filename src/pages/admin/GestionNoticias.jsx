@@ -5,28 +5,31 @@ import {
   Send, Globe, Clock, ImagePlus, Image,
 } from 'lucide-react'
 import { ALL_NEWS } from '@/lib/constants'
+import { fadeUpSm, panelAnim } from '@/lib/animations'
 
-const fadeUp = (d = 0) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4, delay: d, ease: [0.22, 1, 0.36, 1] } })
-const panelAnim = {
-  initial: { opacity: 0, scale: 0.96, y: 10 },
-  animate: { opacity: 1, scale: 1, y: 0 },
-  exit:    { opacity: 0, scale: 0.96, y: 10 },
-  transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
-}
+const fadeUp = fadeUpSm
+
+// Límite de thumbnail (Fase 2: validar también en backend)
+const MAX_THUMBNAIL_BYTES = 2 * 1024 * 1024 // 2 MB
 
 const CATEGORIES = ['Ambiente', 'Social', 'Tecnología', 'Capacitación', 'Investigación']
 const TAGS = ['ACTUALIZACIÓN DE DATOS', 'EVENTO REGIONAL', 'TECNOLOGÍA', 'CAPACITACIÓN', 'INVESTIGACIÓN']
 const EMPTY_FORM = { title: '', excerpt: '', content: '', tag: TAGS[0], category: CATEGORIES[0], author: '', date: '', published: true }
 
 // ── Thumbnail Dropzone ──
-function ThumbnailDropzone({ file, previewUrl, onChange, onRemove }) {
+function ThumbnailDropzone({ file, previewUrl, onChange, onRemove, onError }) {
   const inputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
 
   const handleFile = useCallback((f) => {
     if (!f || !f.type.startsWith('image/')) return
+    if (f.size > MAX_THUMBNAIL_BYTES) {
+      onError?.('La imagen supera el límite de 2 MB')
+      return
+    }
+    onError?.(null)
     onChange(f, URL.createObjectURL(f))
-  }, [onChange])
+  }, [onChange, onError])
 
   const onDrop = useCallback((e) => {
     e.preventDefault(); setDragging(false)
@@ -94,6 +97,7 @@ export default function GestionNoticias() {
   const [preview, setPreview] = useState(null)
   const [thumbnail, setThumbnail] = useState(null)   // File object
   const [thumbUrl, setThumbUrl] = useState('')        // object URL for preview
+  const [thumbError, setThumbError] = useState(null)
 
   const filtered = noticias.filter((n) => {
     const q = search.toLowerCase()
@@ -311,8 +315,12 @@ export default function GestionNoticias() {
                     file={thumbnail}
                     previewUrl={thumbUrl}
                     onChange={(f, url) => { setThumbnail(f); setThumbUrl(url) }}
-                    onRemove={() => { setThumbnail(null); setThumbUrl('') }}
+                    onRemove={() => { setThumbnail(null); setThumbUrl(''); setThumbError(null) }}
+                    onError={setThumbError}
                   />
+                  {thumbError && (
+                    <p className="text-xs text-red-500 mt-1">{thumbError}</p>
+                  )}
                 </div>
 
                 <div>

@@ -3,19 +3,16 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Users, ClipboardList, FileText, Newspaper,
-  TrendingUp, TrendingDown, CheckCircle, XCircle, Clock,
+  TrendingUp, TrendingDown, CheckCircle, XCircle,
   ArrowRight, Zap, AlertTriangle,
 } from 'lucide-react'
 import {
   ADMIN_DASHBOARD_KPIS, ADMIN_ACTIVITY_LOG, SOLICITUDES_TABLE, ADMIN_MOCK_USERS,
 } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
+import { fadeUpSm } from '@/lib/animations'
 
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 18 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] },
-})
+const fadeUp = fadeUpSm
 
 const KPI_ICONS = [Users, ClipboardList, FileText, Newspaper]
 

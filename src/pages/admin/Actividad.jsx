@@ -6,7 +6,9 @@ import {
 } from 'lucide-react'
 import { ADMIN_ACTIVITY_LOG } from '@/lib/constants'
 
-const fadeUp = (d = 0) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4, delay: d, ease: [0.22, 1, 0.36, 1] } })
+import { fadeUpSm } from '@/lib/animations'
+
+const fadeUp = fadeUpSm
 
 const TYPE_STYLES = {
   success: { badge: 'bg-green-100 text-green-700', label: 'Éxito' },

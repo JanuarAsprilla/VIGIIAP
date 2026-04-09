@@ -1,3 +1,15 @@
+// Fase 2: reemplazar con llamadas a /api/admin/mapas
+export const ADMIN_MOCK_MAPAS = [
+  { id: 1, nombre: 'Red Hidrográfica del Pacífico',     tematica: 'Hidrología',       escala: '1:100.000', autor: 'Equipo Hidrografía',  fecha: '15 Mar 2026', visible: true,  consultas: 418, formato: 'PDF',     url: null    },
+  { id: 2, nombre: 'Mapa Base Chocó Biogeográfico',     tematica: 'Cartografía Base', escala: '1:250.000', autor: 'Equipo Cartográfico', fecha: '10 Mar 2026', visible: true,  consultas: 634, formato: 'IMG',     url: null    },
+  { id: 3, nombre: 'Distribución de Especies Endémicas',tematica: 'Biodiversidad',    escala: '1:50.000',  autor: 'Lab. Biodiversidad',  fecha: '05 Mar 2026', visible: true,  consultas: 287, formato: 'PDF',     url: null    },
+  { id: 4, nombre: 'Zonificación Ambiental 2024',       tematica: 'Zonificación',     escala: '1:100.000', autor: 'Gestión Territorial', fecha: '28 Feb 2026', visible: true,  consultas: 512, formato: 'PDF',     url: null    },
+  { id: 5, nombre: 'Infraestructura Vial — Quibdó',     tematica: 'Infraestructura',  escala: '1:25.000',  autor: 'SIG Institucional',   fecha: '20 Feb 2026', visible: false, consultas: 156, formato: 'IMG',     url: null    },
+  { id: 6, nombre: 'Zonas de Riesgo por Inundación',    tematica: 'Riesgo',           escala: '1:50.000',  autor: 'Gestión del Riesgo',  fecha: '15 Feb 2026', visible: true,  consultas: 329, formato: 'PDF',     url: null    },
+  { id: 7, nombre: 'Cobertura Vegetal 2024',            tematica: 'Biodiversidad',    escala: '1:100.000', autor: 'Teledetección IIAP',  fecha: '10 Feb 2026', visible: true,  consultas: 445, formato: 'PDF',     url: null    },
+  { id: 8, nombre: 'Áreas Protegidas del Chocó',        tematica: 'Zonificación',     escala: '1:250.000', autor: 'SIG Institucional',   fecha: '05 Feb 2026', visible: true,  consultas: 597, formato: 'Geovisor',url: '/geovisor' },
+]
+
 export const MAP_CATEGORIES = [
   { value: '', label: 'Todas las categorías' },
   { value: 'biodiversidad', label: 'Biodiversidad y Especies' },

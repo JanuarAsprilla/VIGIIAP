@@ -1,3 +1,15 @@
+// Fase 2: reemplazar con llamadas a /api/admin/documentos
+export const ADMIN_MOCK_DOCS = [
+  { id: 1, nombre: 'Mapa Base Chocó 2024',           categoria: 'Cartografía',          tipo: 'PDF',     autor: 'Equipo Cartográfico',  fecha: '15 Mar 2026', tamano: '4.2 MB',  descargas: 142, url: null },
+  { id: 2, nombre: 'Estudio Cobertura Vegetal 2024',  categoria: 'Estudios Ambientales', tipo: 'PDF',     autor: 'Laboratorio SIG',      fecha: '10 Mar 2026', tamano: '8.7 MB',  descargas: 98,  url: null },
+  { id: 3, nombre: 'Red Hidrográfica Pacífico',       categoria: 'Hidrología',           tipo: 'IMG',     autor: 'Equipo Hidrografía',   fecha: '05 Mar 2026', tamano: '12.1 MB', descargas: 67,  url: null },
+  { id: 4, nombre: 'Zonificación Ambiental 2023',     categoria: 'Cartografía',          tipo: 'PDF',     autor: 'Gestión Territorial',  fecha: '28 Feb 2026', tamano: '6.3 MB',  descargas: 215, url: null },
+  { id: 5, nombre: 'Informe Biodiversidad Q4-2025',   categoria: 'Biodiversidad',        tipo: 'PDF',     autor: 'Equipo Biodiversidad', fecha: '20 Feb 2026', tamano: '3.8 MB',  descargas: 54,  url: null },
+  { id: 6, nombre: 'Normativa Ambiental Chocó 2024',  categoria: 'Normativa',            tipo: 'PDF',     autor: 'Jurídica IIAP',        fecha: '15 Feb 2026', tamano: '2.1 MB',  descargas: 183, url: null },
+  { id: 7, nombre: 'Geovisor — Cuencas Hidrográficas',categoria: 'Hidrología',           tipo: 'Geovisor',autor: 'Geoportal Regional',   fecha: '10 Feb 2026', tamano: '—',       descargas: 312, url: '/geovisor' },
+  { id: 8, nombre: 'Imagen Satelital Atrato 2025',    categoria: 'Cartografía',          tipo: 'IMG',     autor: 'Teledetección IIAP',   fecha: '05 Feb 2026', tamano: '22.4 MB', descargas: 78,  url: null },
+]
+
 export const DOC_CATEGORIES = [
   {
     id: 'protocolos',

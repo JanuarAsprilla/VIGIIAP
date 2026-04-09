@@ -5,37 +5,28 @@ import {
   FileText, File, Image, Send, Upload, CheckCircle,
   AlertCircle, Link as LinkIcon,
 } from 'lucide-react'
+import { fadeUpSm, panelAnim } from '@/lib/animations'
+import { ADMIN_MOCK_DOCS } from '@/lib/constants'
 
-const fadeUp = (d = 0) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4, delay: d, ease: [0.22, 1, 0.36, 1] } })
-const panelAnim = {
-  initial: { opacity: 0, scale: 0.96, y: 10 },
-  animate: { opacity: 1, scale: 1, y: 0 },
-  exit:    { opacity: 0, scale: 0.96, y: 10 },
-  transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
-}
+const fadeUp = fadeUpSm
 
 const CATEGORIES = ['Cartografía', 'Estudios Ambientales', 'Normativa', 'Informes Técnicos', 'Biodiversidad', 'Hidrología']
 const TIPOS = ['PDF', 'IMG', 'Geovisor']
 
-// Accepted MIME types per document type
+// MIME types y límites de tamaño aceptados por tipo de documento
 const ACCEPT = {
   PDF:      '.pdf,application/pdf',
   IMG:      '.jpg,.jpeg,.png,.webp,image/*',
-  Geovisor: null, // URL link instead of file
+  Geovisor: null,
+}
+const MAX_SIZE_BYTES = {
+  PDF: 20 * 1024 * 1024,  // 20 MB
+  IMG: 25 * 1024 * 1024,  // 25 MB
 }
 
-const MOCK_DOCS = [
-  { id: 1, nombre: 'Mapa Base Chocó 2024',          categoria: 'Cartografía',         tipo: 'PDF',     autor: 'Equipo Cartográfico',    fecha: '15 Mar 2026', tamano: '4.2 MB',  descargas: 142, url: null },
-  { id: 2, nombre: 'Estudio Cobertura Vegetal 2024', categoria: 'Estudios Ambientales',tipo: 'PDF',     autor: 'Laboratorio SIG',        fecha: '10 Mar 2026', tamano: '8.7 MB',  descargas: 98,  url: null },
-  { id: 3, nombre: 'Red Hidrográfica Pacífico',      categoria: 'Hidrología',          tipo: 'IMG',     autor: 'Equipo Hidrografía',     fecha: '05 Mar 2026', tamano: '12.1 MB', descargas: 67,  url: null },
-  { id: 4, nombre: 'Zonificación Ambiental 2023',    categoria: 'Cartografía',         tipo: 'PDF',     autor: 'Gestión Territorial',    fecha: '28 Feb 2026', tamano: '6.3 MB',  descargas: 215, url: null },
-  { id: 5, nombre: 'Informe Biodiversidad Q4-2025',  categoria: 'Biodiversidad',       tipo: 'PDF',     autor: 'Equipo Biodiversidad',   fecha: '20 Feb 2026', tamano: '3.8 MB',  descargas: 54,  url: null },
-  { id: 6, nombre: 'Normativa Ambiental Chocó 2024', categoria: 'Normativa',           tipo: 'PDF',     autor: 'Jurídica IIAP',          fecha: '15 Feb 2026', tamano: '2.1 MB',  descargas: 183, url: null },
-  { id: 7, nombre: 'Geovisor — Cuencas Hidrográficas',categoria: 'Hidrología',        tipo: 'Geovisor',autor: 'Geoportal Regional',     fecha: '10 Feb 2026', tamano: '—',       descargas: 312, url: '/geovisor' },
-  { id: 8, nombre: 'Imagen Satelital Atrato 2025',   categoria: 'Cartografía',         tipo: 'IMG',     autor: 'Teledetección IIAP',     fecha: '05 Feb 2026', tamano: '22.4 MB', descargas: 78,  url: null },
-]
-
 const EMPTY_FORM = { nombre: '', categoria: CATEGORIES[0], tipo: TIPOS[0], autor: '', fecha: '', url: '' }
+
+// Fase 2: reemplazar con llamadas a /api/admin/documentos
 
 const TipoIcon = ({ tipo }) => {
   if (tipo === 'PDF') return <FileText className="w-4 h-4 text-red-500" />
@@ -52,21 +43,32 @@ function formatBytes(bytes) {
 }
 
 // ── Dropzone component ──
-function FileDropzone({ tipo, onFile, currentFile, editing }) {
+function FileDropzone({ tipo, onFile, currentFile, editing, onError }) {
   const inputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
   const accept = ACCEPT[tipo]
 
+  const validateAndAccept = useCallback((file) => {
+    if (!file) return
+    const maxBytes = MAX_SIZE_BYTES[tipo]
+    if (maxBytes && file.size > maxBytes) {
+      onError?.(`El archivo supera el límite de ${tipo === 'PDF' ? '20 MB' : '25 MB'}`)
+      return
+    }
+    onError?.(null)
+    onFile(file)
+  }, [tipo, onFile, onError])
+
   const handleDrop = useCallback((e) => {
     e.preventDefault()
     setDragging(false)
-    const file = e.dataTransfer.files[0]
-    if (file) onFile(file)
-  }, [onFile])
+    validateAndAccept(e.dataTransfer.files[0])
+  }, [validateAndAccept])
 
   const handleChange = (e) => {
-    const file = e.target.files[0]
-    if (file) onFile(file)
+    validateAndAccept(e.target.files[0])
+    // reset value so the same file can be re-selected after error
+    e.target.value = ''
   }
 
   if (tipo === 'Geovisor') return null
@@ -134,7 +136,7 @@ function FileDropzone({ tipo, onFile, currentFile, editing }) {
 }
 
 export default function GestionDocumentos() {
-  const [docs, setDocs] = useState(MOCK_DOCS)
+  const [docs, setDocs] = useState(ADMIN_MOCK_DOCS)
   const [search, setSearch] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
   const [filtroTipo, setFiltroTipo] = useState('')
@@ -143,6 +145,7 @@ export default function GestionDocumentos() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [formErrors, setFormErrors] = useState({})
   const [uploadedFile, setUploadedFile] = useState(null)
+  const [uploadError, setUploadError] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   const filtered = docs.filter((d) => {
@@ -158,6 +161,7 @@ export default function GestionDocumentos() {
     setForm(EMPTY_FORM)
     setFormErrors({})
     setUploadedFile(null)
+    setUploadError(null)
     setShowModal(true)
   }
 
@@ -166,6 +170,7 @@ export default function GestionDocumentos() {
     setForm({ nombre: d.nombre, categoria: d.categoria, tipo: d.tipo, autor: d.autor, fecha: d.fecha, url: d.url || '' })
     setFormErrors({})
     setUploadedFile(null)
+    setUploadError(null)
     setShowModal(true)
   }
 
@@ -304,11 +309,11 @@ export default function GestionDocumentos() {
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-1">
-                      <button onClick={() => openEdit(d)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors" title="Editar">
-                        <Edit2 className="w-3.5 h-3.5" />
+                      <button onClick={() => openEdit(d)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors" aria-label={`Editar ${d.nombre}`}>
+                        <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
-                      <button onClick={() => setDeleteTarget(d)} className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors" title="Eliminar">
-                        <Trash2 className="w-3.5 h-3.5" />
+                      <button onClick={() => setDeleteTarget(d)} className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors" aria-label={`Eliminar ${d.nombre}`}>
+                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
                     </div>
                   </td>
@@ -356,7 +361,14 @@ export default function GestionDocumentos() {
                   onFile={setUploadedFile}
                   currentFile={uploadedFile}
                   editing={!!editing}
+                  onError={setUploadError}
                 />
+                {uploadError && (
+                  <div className="flex items-center gap-2 text-red-500 text-xs">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    {uploadError}
+                  </div>
+                )}
                 {form.tipo === 'Geovisor' && (
                   <div>
                     <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5 flex items-center gap-1">

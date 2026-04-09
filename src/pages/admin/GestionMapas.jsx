@@ -5,35 +5,25 @@ import {
   Layers, Send, Upload, CheckCircle, AlertCircle,
   FileText, Image, Link as LinkIcon,
 } from 'lucide-react'
+import { fadeUpSm, panelAnim } from '@/lib/animations'
+import { ADMIN_MOCK_MAPAS } from '@/lib/constants'
 
-const fadeUp = (d = 0) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4, delay: d, ease: [0.22, 1, 0.36, 1] } })
-const panelAnim = {
-  initial: { opacity: 0, scale: 0.96, y: 10 },
-  animate: { opacity: 1, scale: 1, y: 0 },
-  exit:    { opacity: 0, scale: 0.96, y: 10 },
-  transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
-}
+const fadeUp = fadeUpSm
 
 const TEMATICAS = ['Hidrología', 'Cartografía Base', 'Biodiversidad', 'Zonificación', 'Infraestructura', 'Riesgo']
 const ESCALES   = ['1:10.000', '1:25.000', '1:50.000', '1:100.000', '1:250.000', '1:500.000']
 const FORMATOS  = ['PDF', 'IMG', 'Geovisor']
 
+// MIME types y límites de tamaño aceptados por formato
 const ACCEPT = {
   PDF:      '.pdf,application/pdf',
   IMG:      '.jpg,.jpeg,.png,.webp,image/*',
   Geovisor: null,
 }
-
-const MOCK_MAPAS = [
-  { id: 1, nombre: 'Red Hidrográfica del Pacífico',    tematica: 'Hidrología',       escala: '1:100.000', autor: 'Equipo Hidrografía',    fecha: '15 Mar 2026', visible: true, consultas: 418, formato: 'PDF',     url: null },
-  { id: 2, nombre: 'Mapa Base Chocó Biogeográfico',    tematica: 'Cartografía Base', escala: '1:250.000', autor: 'Equipo Cartográfico',   fecha: '10 Mar 2026', visible: true, consultas: 634, formato: 'IMG',     url: null },
-  { id: 3, nombre: 'Distribución de Especies Endémicas',tematica: 'Biodiversidad',   escala: '1:50.000',  autor: 'Lab. Biodiversidad',    fecha: '05 Mar 2026', visible: true, consultas: 287, formato: 'PDF',     url: null },
-  { id: 4, nombre: 'Zonificación Ambiental 2024',      tematica: 'Zonificación',     escala: '1:100.000', autor: 'Gestión Territorial',   fecha: '28 Feb 2026', visible: true, consultas: 512, formato: 'PDF',     url: null },
-  { id: 5, nombre: 'Infraestructura Vial — Quibdó',    tematica: 'Infraestructura',  escala: '1:25.000',  autor: 'SIG Institucional',     fecha: '20 Feb 2026', visible: false,consultas: 156, formato: 'IMG',     url: null },
-  { id: 6, nombre: 'Zonas de Riesgo por Inundación',   tematica: 'Riesgo',           escala: '1:50.000',  autor: 'Gestión del Riesgo',    fecha: '15 Feb 2026', visible: true, consultas: 329, formato: 'PDF',     url: null },
-  { id: 7, nombre: 'Cobertura Vegetal 2024',           tematica: 'Biodiversidad',    escala: '1:100.000', autor: 'Teledetección IIAP',    fecha: '10 Feb 2026', visible: true, consultas: 445, formato: 'PDF',     url: null },
-  { id: 8, nombre: 'Áreas Protegidas del Chocó',       tematica: 'Zonificación',     escala: '1:250.000', autor: 'SIG Institucional',     fecha: '05 Feb 2026', visible: true, consultas: 597, formato: 'Geovisor',url: '/geovisor' },
-]
+const MAX_SIZE_BYTES = {
+  PDF: 20 * 1024 * 1024,  // 20 MB
+  IMG: 25 * 1024 * 1024,  // 25 MB
+}
 
 const EMPTY_FORM = { nombre: '', tematica: TEMATICAS[0], escala: ESCALES[2], autor: '', fecha: '', visible: true, formato: 'PDF', url: '' }
 
@@ -55,17 +45,27 @@ function formatBytes(bytes) {
 }
 
 // ── Dropzone ──
-function FileDropzone({ formato, onFile, currentFile, editing }) {
+function FileDropzone({ formato, onFile, currentFile, editing, onError }) {
   const inputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
   const accept = ACCEPT[formato]
 
+  const validateAndAccept = useCallback((file) => {
+    if (!file) return
+    const maxBytes = MAX_SIZE_BYTES[formato]
+    if (maxBytes && file.size > maxBytes) {
+      onError?.(`El archivo supera el límite de ${formato === 'PDF' ? '20 MB' : '25 MB'}`)
+      return
+    }
+    onError?.(null)
+    onFile(file)
+  }, [formato, onFile, onError])
+
   const handleDrop = useCallback((e) => {
     e.preventDefault()
     setDragging(false)
-    const file = e.dataTransfer.files[0]
-    if (file) onFile(file)
-  }, [onFile])
+    validateAndAccept(e.dataTransfer.files[0])
+  }, [validateAndAccept])
 
   if (!accept) return null
 
@@ -118,7 +118,7 @@ function FileDropzone({ formato, onFile, currentFile, editing }) {
             ref={inputRef}
             type="file"
             accept={accept}
-            onChange={(e) => { const f = e.target.files[0]; if (f) onFile(f) }}
+            onChange={(e) => { validateAndAccept(e.target.files[0]); e.target.value = '' }}
             className="sr-only"
           />
         </div>
@@ -128,7 +128,7 @@ function FileDropzone({ formato, onFile, currentFile, editing }) {
 }
 
 export default function GestionMapas() {
-  const [mapas, setMapas] = useState(MOCK_MAPAS)
+  const [mapas, setMapas] = useState(ADMIN_MOCK_MAPAS)
   const [search, setSearch] = useState('')
   const [filtroTematica, setFiltroTematica] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -136,6 +136,7 @@ export default function GestionMapas() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [formErrors, setFormErrors] = useState({})
   const [uploadedFile, setUploadedFile] = useState(null)
+  const [uploadError, setUploadError] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   const filtered = mapas.filter((m) => {
@@ -150,6 +151,7 @@ export default function GestionMapas() {
     setForm(EMPTY_FORM)
     setFormErrors({})
     setUploadedFile(null)
+    setUploadError(null)
     setShowModal(true)
   }
 
@@ -158,6 +160,7 @@ export default function GestionMapas() {
     setForm({ nombre: m.nombre, tematica: m.tematica, escala: m.escala, autor: m.autor, fecha: m.fecha, visible: m.visible, formato: m.formato, url: m.url || '' })
     setFormErrors({})
     setUploadedFile(null)
+    setUploadError(null)
     setShowModal(true)
   }
 
@@ -266,9 +269,9 @@ export default function GestionMapas() {
               <button
                 onClick={() => toggleVisible(m.id)}
                 className={`shrink-0 p-1.5 rounded-lg transition-colors ${m.visible ? 'text-primary-700 hover:bg-primary-50' : 'text-text-muted hover:bg-bg-alt'}`}
-                title={m.visible ? 'Visible — clic para ocultar' : 'Oculta'}
+                aria-label={m.visible ? `Ocultar ${m.nombre}` : `Mostrar ${m.nombre}`}
               >
-                {m.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                {m.visible ? <Eye className="w-4 h-4" aria-hidden="true" /> : <EyeOff className="w-4 h-4" aria-hidden="true" />}
               </button>
             </div>
             <div className="flex items-center justify-between">
@@ -277,11 +280,11 @@ export default function GestionMapas() {
                 <span className="text-xs text-text-muted">{m.consultas.toLocaleString()} consultas</span>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors" title="Editar">
-                  <Edit2 className="w-3.5 h-3.5" />
+                <button onClick={() => openEdit(m)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors" aria-label={`Editar ${m.nombre}`}>
+                  <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
-                <button onClick={() => setDeleteTarget(m)} className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors" title="Eliminar">
-                  <Trash2 className="w-3.5 h-3.5" />
+                <button onClick={() => setDeleteTarget(m)} className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors" aria-label={`Eliminar ${m.nombre}`}>
+                  <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -326,7 +329,14 @@ export default function GestionMapas() {
                   onFile={setUploadedFile}
                   currentFile={uploadedFile}
                   editing={!!editing}
+                  onError={setUploadError}
                 />
+                {uploadError && (
+                  <div className="flex items-center gap-2 text-red-500 text-xs">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    {uploadError}
+                  </div>
+                )}
                 {form.formato === 'Geovisor' && (
                   <div>
                     <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5 flex items-center gap-1">

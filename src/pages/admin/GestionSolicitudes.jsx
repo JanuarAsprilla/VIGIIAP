@@ -6,28 +6,11 @@ import {
   User, FileText, MessageSquare,
 } from 'lucide-react'
 import { SOLICITUDES_TABLE } from '@/lib/constants'
+import { fadeUpSm, panelAnim, drawerAnim } from '@/lib/animations'
 
-const fadeUp = (d = 0) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4, delay: d, ease: [0.22, 1, 0.36, 1] } })
-const panelAnim = {
-  initial: { opacity: 0, scale: 0.96, y: 10 },
-  animate: { opacity: 1, scale: 1, y: 0 },
-  exit:    { opacity: 0, scale: 0.96, y: 10 },
-  transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
-}
-const drawerAnim = {
-  initial: { x: '100%' },
-  animate: { x: 0 },
-  exit:    { x: '100%' },
-  transition: { type: 'spring', damping: 28, stiffness: 320 },
-}
+const fadeUp = fadeUpSm
 
 const ESTADO_BADGE = {
-  'En Proceso': 'bg-yellow-100 text-yellow-700',
-  'Aprobado':   'bg-green-100 text-green-700',
-  'Rechazado':  'bg-red-100 text-red-600',
-}
-
-const ESTADO_COLORS = {
   'En Proceso': 'bg-yellow-100 text-yellow-700',
   'Aprobado':   'bg-green-100 text-green-700',
   'Rechazado':  'bg-red-100 text-red-600',
@@ -179,7 +162,7 @@ export default function GestionSolicitudes() {
                     </select>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ESTADO_COLORS[s.estado]}`}>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ESTADO_BADGE[s.estado]}`}>
                       {s.estado}
                     </span>
                   </td>

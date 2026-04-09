@@ -6,27 +6,17 @@ import {
   Shield, User, Clock, Activity, Copy, Check,
 } from 'lucide-react'
 import { ADMIN_MOCK_USERS, ADMIN_ACTIVITY_LOG } from '@/lib/constants'
+import { ROLES } from '@/contexts/AuthContext'
+import { fadeUpSm, panelAnim, drawerAnim } from '@/lib/animations'
 
-const fadeUp = (d = 0) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4, delay: d, ease: [0.22, 1, 0.36, 1] } })
+const fadeUp = fadeUpSm
 
-const ROLES_LIST = ['Administrador SIG', 'Investigador', 'Público']
+// Source of truth para roles: sincronizado con AuthContext
+const ROLES_LIST = [ROLES.ADMIN, ROLES.INVESTIGADOR, ROLES.PUBLICO]
 const ROLE_COLORS = {
-  'Administrador SIG': 'bg-primary-100 text-primary-800',
-  'Investigador':      'bg-blue-100 text-blue-700',
-  'Público':           'bg-gray-100 text-gray-600',
-}
-
-const panelAnim = {
-  initial: { opacity: 0, scale: 0.96, y: 10 },
-  animate: { opacity: 1, scale: 1, y: 0 },
-  exit:    { opacity: 0, scale: 0.96, y: 10 },
-  transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
-}
-const drawerAnim = {
-  initial: { x: '100%' },
-  animate: { x: 0 },
-  exit:    { x: '100%' },
-  transition: { type: 'spring', damping: 28, stiffness: 320 },
+  [ROLES.ADMIN]:        'bg-primary-100 text-primary-800',
+  [ROLES.INVESTIGADOR]: 'bg-blue-100 text-blue-700',
+  [ROLES.PUBLICO]:      'bg-gray-100 text-gray-600',
 }
 
 // ── User detail drawer ──
@@ -413,11 +403,11 @@ export default function Usuarios() {
                   <td className="px-5 py-3.5 text-sm text-text-muted">{u.ultimoAcceso}</td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-1.5">
-                      <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors" title="Editar">
-                        <Edit2 className="w-3.5 h-3.5" />
+                      <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors" aria-label={`Editar ${u.nombre}`}>
+                        <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
-                      <button onClick={() => setDeleteTarget(u)} className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors" title="Eliminar">
-                        <Trash2 className="w-3.5 h-3.5" />
+                      <button onClick={() => setDeleteTarget(u)} className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors" aria-label={`Eliminar usuario ${u.nombre}`}>
+                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
                     </div>
                   </td>
