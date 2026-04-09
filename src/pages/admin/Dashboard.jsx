@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import {
   Users, ClipboardList, FileText, Newspaper,
   TrendingUp, TrendingDown, CheckCircle, XCircle, Clock,
-  ArrowRight, Zap,
+  ArrowRight, Zap, AlertTriangle,
 } from 'lucide-react'
 import {
   ADMIN_DASHBOARD_KPIS, ADMIN_ACTIVITY_LOG, SOLICITUDES_TABLE, ADMIN_MOCK_USERS,
@@ -46,6 +46,94 @@ function KPICards() {
         )
       })}
     </div>
+  )
+}
+
+// ── Gráfico de Solicitudes por Estado ──
+function SolicitudesChart() {
+  const estados = [
+    { label: 'En Proceso', color: 'bg-yellow-400', textColor: 'text-yellow-700', bg: 'bg-yellow-50' },
+    { label: 'Aprobado',   color: 'bg-green-500',  textColor: 'text-green-700',  bg: 'bg-green-50'  },
+    { label: 'Rechazado',  color: 'bg-red-400',    textColor: 'text-red-600',    bg: 'bg-red-50'    },
+  ]
+  const total = SOLICITUDES_TABLE.length
+  const bars = estados.map((e) => ({
+    ...e,
+    count: SOLICITUDES_TABLE.filter((s) => s.estado === e.label).length,
+  }))
+  const maxCount = Math.max(...bars.map((b) => b.count), 1)
+
+  // Simulated weekly trend (last 6 weeks)
+  const weeklyData = [2, 4, 3, 6, 5, 8]
+  const weeklyMax = Math.max(...weeklyData)
+
+  return (
+    <motion.div {...fadeUp(0.28)} className="bg-white border border-border rounded-xl p-5">
+      <h3 className="text-sm font-bold text-text mb-4">Solicitudes por Estado</h3>
+
+      {/* Bar chart */}
+      <div className="flex items-end gap-3 mb-4 h-24">
+        {bars.map((b) => (
+          <div key={b.label} className="flex-1 flex flex-col items-center gap-1">
+            <span className={`text-xs font-bold ${b.textColor}`}>{b.count}</span>
+            <div className="w-full flex items-end justify-center" style={{ height: '60px' }}>
+              <motion.div
+                initial={{ height: 0 }}
+                animate={{ height: `${(b.count / maxCount) * 60}px` }}
+                transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className={`w-full rounded-t-lg ${b.color}`}
+              />
+            </div>
+            <span className="text-[0.55rem] font-semibold text-text-muted text-center leading-tight">{b.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <hr className="border-border mb-4" />
+
+      {/* Weekly sparkline */}
+      <div>
+        <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2">Tendencia — últimas 6 semanas</p>
+        <div className="flex items-end gap-1.5 h-10">
+          {weeklyData.map((v, i) => (
+            <div key={i} className="flex-1 flex items-end" style={{ height: '40px' }}>
+              <motion.div
+                initial={{ height: 0 }}
+                animate={{ height: `${(v / weeklyMax) * 40}px` }}
+                transition={{ duration: 0.6, delay: 0.4 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+                className={`w-full rounded-sm ${i === weeklyData.length - 1 ? 'bg-primary-800' : 'bg-primary-200'}`}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-between mt-1">
+          <span className="text-[0.55rem] text-text-muted">Sem 1</span>
+          <span className="text-[0.55rem] text-text-muted">Hoy</span>
+        </div>
+      </div>
+
+      <p className="text-xs text-text-muted mt-3 text-right">{total} solicitudes en total</p>
+    </motion.div>
+  )
+}
+
+// ── Alertas — solicitudes sin atender ──
+function AlertasSolicitudes() {
+  const pendientes = SOLICITUDES_TABLE.filter((s) => s.estado === 'En Proceso')
+  if (pendientes.length === 0) return null
+  return (
+    <motion.div {...fadeUp(0.15)} className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-amber-800">
+          {pendientes.length} solicitud{pendientes.length > 1 ? 'es' : ''} pendiente{pendientes.length > 1 ? 's' : ''} de respuesta
+        </p>
+        <p className="text-xs text-amber-700 mt-0.5">Revisa y asigna revisor en Gestión de Solicitudes</p>
+      </div>
+      <Link to="/admin/solicitudes" className="shrink-0 text-xs font-bold text-amber-800 hover:text-amber-900 no-underline flex items-center gap-1 whitespace-nowrap">
+        Ver <ArrowRight className="w-3 h-3" />
+      </Link>
+    </motion.div>
   )
 }
 
@@ -214,6 +302,9 @@ export default function Dashboard() {
       {/* KPIs */}
       <KPICards />
 
+      {/* Alerta solicitudes */}
+      <AlertasSolicitudes />
+
       {/* Quick Actions */}
       <QuickActions />
 
@@ -223,7 +314,10 @@ export default function Dashboard() {
           <SolicitudesPendientes />
           <ActividadReciente />
         </div>
-        <RolesChart />
+        <div className="space-y-6">
+          <RolesChart />
+          <SolicitudesChart />
+        </div>
       </div>
     </div>
   )

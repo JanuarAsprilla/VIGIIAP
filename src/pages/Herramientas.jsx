@@ -157,48 +157,217 @@ function GeneradorBuffers() {
   )
 }
 
+// ── Magna-Sirgas Colombia West (EPSG:3115) projection math ──
+const TM = {
+  a: 6378137.0,
+  f: 1 / 298.257222101,
+  k0: 1.0,
+  lon0: -77.0,
+  lat0: 4.0,
+  FE: 1000000,
+  FN: 1000000,
+}
+
+function mArc(phi, e2) {
+  const e4 = e2 * e2; const e6 = e2 * e4
+  return TM.a * (
+    (1 - e2/4 - 3*e4/64 - 5*e6/256) * phi
+    - (3*e2/8 + 3*e4/32 + 45*e6/1024) * Math.sin(2*phi)
+    + (15*e4/256 + 45*e6/1024) * Math.sin(4*phi)
+    - (35*e6/3072) * Math.sin(6*phi)
+  )
+}
+
+function wgs84ToMagna(latD, lonD) {
+  const r = Math.PI / 180
+  const { a, f, k0, lon0, lat0, FE, FN } = TM
+  const e2 = 2*f - f*f; const ep2 = e2/(1-e2)
+  const lat = latD*r; const lon = lonD*r
+  const N = a / Math.sqrt(1 - e2*Math.sin(lat)**2)
+  const T = Math.tan(lat)**2; const C = ep2*Math.cos(lat)**2
+  const A = (lon - lon0*r) * Math.cos(lat)
+  const M = mArc(lat, e2); const M0 = mArc(lat0*r, e2)
+  const x = FE + k0*N*(A + (1-T+C)*A**3/6 + (5-18*T+T**2+72*C-58*ep2)*A**5/120)
+  const y = FN + k0*(M - M0 + N*Math.tan(lat)*(A**2/2 + (5-T+9*C+4*C**2)*A**4/24 + (61-58*T+T**2+600*C-330*ep2)*A**6/720))
+  return { x: Math.round(x*100)/100, y: Math.round(y*100)/100 }
+}
+
+function magnaToWgs84(X, Y) {
+  const r = Math.PI / 180; const d = 180 / Math.PI
+  const { a, f, k0, lon0, lat0, FE, FN } = TM
+  const e2 = 2*f - f*f; const e4 = e2*e2; const e6 = e2*e4; const ep2 = e2/(1-e2)
+  const M0 = mArc(lat0*r, e2)
+  const M1 = M0 + (Y - FN)/k0
+  const e1 = (1 - Math.sqrt(1-e2)) / (1 + Math.sqrt(1-e2))
+  const mu = M1 / (a*(1 - e2/4 - 3*e4/64 - 5*e6/256))
+  const lat1 = mu
+    + (3*e1/2 - 27*e1**3/32)*Math.sin(2*mu)
+    + (21*e1**2/16 - 55*e1**4/32)*Math.sin(4*mu)
+    + (151*e1**3/96)*Math.sin(6*mu)
+    + (1097*e1**4/512)*Math.sin(8*mu)
+  const N1 = a/Math.sqrt(1 - e2*Math.sin(lat1)**2)
+  const R1 = a*(1-e2)/Math.pow(1 - e2*Math.sin(lat1)**2, 1.5)
+  const T1 = Math.tan(lat1)**2; const C1 = ep2*Math.cos(lat1)**2
+  const D = (X - FE)/(N1*k0)
+  const lat = lat1 - (N1*Math.tan(lat1)/R1)*(D**2/2 - (5+3*T1+10*C1-4*C1**2-9*ep2)*D**4/24 + (61+90*T1+298*C1+45*T1**2-252*ep2-3*C1**2)*D**6/720)
+  const lon = lon0*r + (D - (1+2*T1+C1)*D**3/6 + (5-2*C1+28*T1-3*C1**2+8*ep2+24*T1**2)*D**5/120)/Math.cos(lat1)
+  return { lat: Math.round(lat*d*1e6)/1e6, lon: Math.round(lon*d*1e6)/1e6 }
+}
+
 // ── 3. Conversor de Coordenadas ──
 function ConversorCoordenadas() {
+  const [modo, setModo] = useState('wgs2magna') // 'wgs2magna' | 'magna2wgs'
+  const [latInput, setLatInput] = useState('4.8213')
+  const [lonInput, setLonInput] = useState('-76.7324')
+  const [xInput, setXInput] = useState('1042482')
+  const [yInput, setYInput] = useState('1120943')
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  const convert = () => {
+    setError(''); setResult(null)
+    try {
+      if (modo === 'wgs2magna') {
+        const lat = parseFloat(latInput); const lon = parseFloat(lonInput)
+        if (isNaN(lat) || isNaN(lon)) throw new Error('Ingresa valores numéricos válidos')
+        if (lat < -4 || lat > 14) throw new Error('Latitud fuera del territorio colombiano')
+        if (lon < -82 || lon > -66) throw new Error('Longitud fuera del territorio colombiano')
+        setResult(wgs84ToMagna(lat, lon))
+      } else {
+        const x = parseFloat(xInput.replace(/\./g, '').replace(',', '.'))
+        const y = parseFloat(yInput.replace(/\./g, '').replace(',', '.'))
+        if (isNaN(x) || isNaN(y)) throw new Error('Ingresa valores numéricos válidos')
+        setResult(magnaToWgs84(x, y))
+      }
+    } catch(e) { setError(e.message) }
+  }
+
+  const copyResult = () => {
+    if (!result) return
+    const text = modo === 'wgs2magna'
+      ? `X: ${result.x.toLocaleString('es-CO')} | Y: ${result.y.toLocaleString('es-CO')}`
+      : `Lat: ${result.lat}° | Lon: ${result.lon}°`
+    navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800) })
+  }
+
   return (
-    <ToolCard
-      tag="Geodésico"
-      title="Conversor de Coordenadas"
-      icon={ArrowLeftRight}
-      color="gold"
-      index={2}
-    >
-      <div className="space-y-4">
-        {/* Origin */}
-        <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
-          <span className="block text-[0.6rem] font-bold uppercase tracking-wider text-primary-700 mb-1">
-            Origen (WGS84)
-          </span>
-          <p className="text-sm font-mono font-bold text-primary-900">
-            4.8213° N, 76.7324° W
-          </p>
-        </div>
+    <ToolCard tag="Geodésico" title="Conversor de Coordenadas" icon={ArrowLeftRight} color="gold" index={2}>
+      {/* Mode toggle */}
+      <div className="flex gap-1 p-1 bg-bg-alt rounded-xl mb-4">
+        {[
+          { id: 'wgs2magna', label: 'WGS84 → Magna' },
+          { id: 'magna2wgs', label: 'Magna → WGS84' },
+        ].map((m) => (
+          <button
+            key={m.id}
+            onClick={() => { setModo(m.id); setResult(null); setError('') }}
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${modo === m.id ? 'bg-white text-primary-800 shadow-sm' : 'text-text-muted hover:text-text'}`}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Arrow indicator */}
-        <div className="flex justify-center">
-          <div className="w-8 h-8 bg-gold-400 rounded-full flex items-center justify-center">
-            <TriangleRight className="w-4 h-4 text-white rotate-90" />
+      <div className="space-y-3">
+        {modo === 'wgs2magna' ? (
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: 'Latitud (°N)', val: latInput, set: setLatInput, ph: 'ej. 4.8213' },
+              { label: 'Longitud (°W)', val: lonInput, set: setLonInput, ph: 'ej. -76.7324' },
+            ].map(({ label, val, set, ph }) => (
+              <div key={label}>
+                <label className="block text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">{label}</label>
+                <input
+                  type="text"
+                  value={val}
+                  onChange={(e) => { set(e.target.value); setResult(null) }}
+                  placeholder={ph}
+                  className="w-full px-3 py-2 bg-white border border-border rounded-lg text-sm font-mono focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                />
+              </div>
+            ))}
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: 'X — Este (m)', val: xInput, set: setXInput, ph: 'ej. 1042482' },
+              { label: 'Y — Norte (m)', val: yInput, set: setYInput, ph: 'ej. 1120943' },
+            ].map(({ label, val, set, ph }) => (
+              <div key={label}>
+                <label className="block text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">{label}</label>
+                <input
+                  type="text"
+                  value={val}
+                  onChange={(e) => { set(e.target.value); setResult(null) }}
+                  placeholder={ph}
+                  className="w-full px-3 py-2 bg-white border border-border rounded-lg text-sm font-mono focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
-        {/* Destination */}
-        <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
-          <span className="block text-[0.6rem] font-bold uppercase tracking-wider text-primary-700 mb-1">
-            Destino (Magna-Sirgas)
-          </span>
-          <p className="text-sm font-mono font-bold text-primary-900">
-            X: 1.042.482 | Y: 1.120.943
-          </p>
-        </div>
-
-        {/* Action button */}
-        <button className="w-full px-6 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
-          Convertir Punto
+        <button
+          onClick={convert}
+          className="w-full flex items-center justify-center gap-2 px-6 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors"
+        >
+          <ArrowLeftRight className="w-4 h-4" />
+          Convertir
         </button>
+
+        {error && (
+          <div className="flex items-center gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 font-medium">
+            <span>⚠</span>{error}
+          </div>
+        )}
+
+        {result && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-primary-50 border border-primary-200 rounded-lg p-4"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[0.6rem] font-bold uppercase tracking-wider text-primary-700">
+                {modo === 'wgs2magna' ? 'Magna-Sirgas Colombia Oeste (EPSG:3115)' : 'WGS84 (EPSG:4326)'}
+              </span>
+              <button
+                onClick={copyResult}
+                className="text-[0.6rem] font-bold uppercase tracking-wider text-primary-700 hover:text-primary-900 transition-colors"
+              >
+                {copied ? '✓ Copiado' : 'Copiar'}
+              </button>
+            </div>
+            {modo === 'wgs2magna' ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[0.6rem] text-primary-700 mb-0.5">X — Este</p>
+                  <p className="text-sm font-mono font-bold text-primary-900">{result.x.toLocaleString('es-CO', { maximumFractionDigits: 2 })} m</p>
+                </div>
+                <div>
+                  <p className="text-[0.6rem] text-primary-700 mb-0.5">Y — Norte</p>
+                  <p className="text-sm font-mono font-bold text-primary-900">{result.y.toLocaleString('es-CO', { maximumFractionDigits: 2 })} m</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[0.6rem] text-primary-700 mb-0.5">Latitud</p>
+                  <p className="text-sm font-mono font-bold text-primary-900">{result.lat}°</p>
+                </div>
+                <div>
+                  <p className="text-[0.6rem] text-primary-700 mb-0.5">Longitud</p>
+                  <p className="text-sm font-mono font-bold text-primary-900">{result.lon}°</p>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        <p className="text-[0.6rem] text-text-muted text-center">
+          Sistema de referencia: MAGNA-SIRGAS / Colombia Oeste · Meridiano central −77°
+        </p>
       </div>
     </ToolCard>
   )
