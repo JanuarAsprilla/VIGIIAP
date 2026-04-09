@@ -401,21 +401,28 @@ function StatsSection() {
 }
 
 // ── News Card ──
-function NewsCard({ article }) {
+function NewsCard({ article, featured }) {
   return (
-    <Card3D className="bg-white border border-border rounded-xl cursor-pointer">
+    <Card3D className={`bg-white border border-border rounded-xl cursor-pointer ${featured ? 'lg:col-span-2' : ''}`}>
       <Link
         to={`/noticias/${article.slug || article.id}`}
         className="block p-5 no-underline group h-full"
       >
         <div style={{ transform: 'translateZ(8px)' }}>
-          <span className="inline-block text-[0.65rem] font-bold uppercase tracking-wider text-primary-700 mb-2.5 bg-primary-50 px-2 py-0.5 rounded-full">
-            {article.tag}
-          </span>
-          <h3 className="text-sm font-bold text-text leading-snug mb-2 group-hover:text-primary-800 transition-colors">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="inline-block text-[0.65rem] font-bold uppercase tracking-wider text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full">
+              {article.tag}
+            </span>
+            {featured && (
+              <span className="text-[0.6rem] font-bold uppercase tracking-widest text-gold-500 bg-amber-50 px-2 py-0.5 rounded-full">
+                Destacada
+              </span>
+            )}
+          </div>
+          <h3 className={`font-bold text-text leading-snug mb-2 group-hover:text-primary-800 transition-colors ${featured ? 'text-base' : 'text-sm'}`}>
             {article.title}
           </h3>
-          <p className="text-sm text-text-muted leading-relaxed mb-4">{article.excerpt}</p>
+          <p className="text-sm text-text-muted leading-relaxed mb-4 line-clamp-2">{article.excerpt}</p>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs text-text-muted">
               <span>{article.time}</span>
@@ -429,6 +436,32 @@ function NewsCard({ article }) {
         </div>
       </Link>
     </Card3D>
+  )
+}
+
+// ── Welcome strip (authenticated) ──
+function WelcomeStrip({ user }) {
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Buenos días' : hour < 18 ? 'Buenas tardes' : 'Buenas noches'
+  const firstName = user?.name?.split(' ')[0] || 'Investigador'
+  return (
+    <motion.div
+      {...{ initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay: 0.15 } }}
+      className="flex items-center gap-4 bg-white border border-border rounded-xl px-5 py-4"
+    >
+      <div className="w-10 h-10 bg-gradient-to-br from-primary-700 to-primary-950 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+        <span className="text-white font-bold text-sm">{firstName[0]}</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-text">{greeting}, {firstName}</p>
+        <p className="text-xs text-text-muted truncate">{user?.role || 'Sesión activa'} · VIGIIAP</p>
+      </div>
+      <Link to="/herramientas"
+        className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-800 text-white rounded-lg text-xs font-semibold hover:bg-primary-700 no-underline transition-colors">
+        <Plus className="w-3.5 h-3.5" />
+        Nuevo análisis
+      </Link>
+    </motion.div>
   )
 }
 
@@ -451,9 +484,17 @@ export default function Home() {
         {/* Hero */}
         {!query.trim() && <HeroBanner />}
 
+        {/* Welcome strip (authenticated, no search) */}
+        {isAuthenticated && !query.trim() && <WelcomeStrip user={{ name: 'Carlos Rentería', role: 'Investigador' }} />}
+
         {/* Módulos */}
         {filteredModules.length > 0 && (
           <section>
+            {!query.trim() && (
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-display text-xl font-bold text-text">Módulos del Sistema</h2>
+              </div>
+            )}
             {query.trim() && (
               <p className="text-xs font-bold uppercase tracking-wider text-text-muted mb-4">
                 Módulos — "{query}"
@@ -498,9 +539,9 @@ export default function Home() {
                 </Link>
               )}
             </div>
-            <div className="space-y-4">
-              {filteredNews.map((article) => (
-                <NewsCard key={article.id} article={article} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {filteredNews.map((article, i) => (
+                <NewsCard key={article.id} article={article} featured={i === 0 && !query.trim()} />
               ))}
             </div>
           </motion.section>
