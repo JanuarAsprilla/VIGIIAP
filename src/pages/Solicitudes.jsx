@@ -431,6 +431,25 @@ function NuevaSolicitudForm({ formRef }) {
     e.preventDefault()
     const e2 = validate()
     if (Object.keys(e2).length) { setErrors(e2); return }
+
+    // Persist to localStorage so "Mis Solicitudes" can show it
+    const tipoLabel = TRAMITE_TYPES.find((t) => t.value === form.tipo)?.label || form.tipo
+    const newEntry = {
+      id: `#VIG-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
+      tipo: tipoLabel,
+      subtipo: form.descripcion.trim().slice(0, 50) + (form.descripcion.length > 50 ? '…' : ''),
+      fecha: new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }),
+      estado: 'En Proceso',
+      estadoColor: 'yellow',
+      solicitante: form.nombre,
+      notas: 'Su solicitud fue recibida y está siendo procesada por el equipo técnico del IIAP.',
+      timeline: ['Recibida', 'En Revisión', 'En Proceso'],
+    }
+    try {
+      const prev = JSON.parse(localStorage.getItem('vigiiap_mis_solicitudes') || '[]')
+      localStorage.setItem('vigiiap_mis_solicitudes', JSON.stringify([newEntry, ...prev]))
+    } catch (_) {}
+
     setStep('success')
   }
 
@@ -614,6 +633,59 @@ function NuevaSolicitudForm({ formRef }) {
   )
 }
 
+// ── Mis Solicitudes (localStorage) ──
+function MisSolicitudes({ onVerDetalle }) {
+  const [mis, setMis] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('vigiiap_mis_solicitudes') || '[]') } catch { return [] }
+  })
+
+  const clear = () => {
+    localStorage.removeItem('vigiiap_mis_solicitudes')
+    setMis([])
+  }
+
+  if (mis.length === 0) return null
+
+  return (
+    <motion.div {...fadeUp(0.3)} className="bg-white border border-border rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+        <div>
+          <h3 className="text-sm font-bold text-text">Mis Solicitudes</h3>
+          <p className="text-[0.65rem] text-text-muted mt-0.5">Enviadas desde este dispositivo</p>
+        </div>
+        <button
+          onClick={clear}
+          className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted hover:text-red-500 transition-colors"
+        >
+          Limpiar
+        </button>
+      </div>
+      <div className="divide-y divide-border max-h-72 overflow-y-auto">
+        {mis.map((s) => (
+          <div key={s.id} className="flex items-center gap-3 px-5 py-3 hover:bg-bg-alt/30 transition-colors">
+            <div className="flex-1 min-w-0">
+              <p className="text-[0.6rem] font-bold text-primary-800">{s.id}</p>
+              <p className="text-xs font-semibold text-text truncate">{s.tipo}</p>
+              <p className="text-[0.6rem] text-text-muted">{s.fecha}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
+                {s.estado}
+              </span>
+              <button
+                onClick={() => onVerDetalle(s)}
+                className="p-1 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
+
 // ── Help CTA ──
 function AyudaCTA() {
   return (
@@ -750,9 +822,10 @@ export default function Solicitudes() {
           />
         </div>
 
-        {/* Right: Form + Help */}
+        {/* Right: Form + Mis Solicitudes + Help */}
         <div className="space-y-6">
           <NuevaSolicitudForm formRef={formRef} />
+          <MisSolicitudes onVerDetalle={setDetalleItem} />
           <AyudaCTA />
         </div>
       </div>

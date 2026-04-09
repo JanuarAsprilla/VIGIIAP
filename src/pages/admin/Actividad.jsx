@@ -19,6 +19,12 @@ const MODULOS = [...new Set(ADMIN_ACTIVITY_LOG.map((l) => l.modulo))]
 const TIPOS   = ['success', 'error', 'warning', 'info']
 const PAGE_SIZE = 8
 
+const MES_MAP = { Ene: 0, Feb: 1, Mar: 2, Abr: 3, May: 4, Jun: 5, Jul: 6, Ago: 7, Sep: 8, Oct: 9, Nov: 10, Dic: 11 }
+function parseFecha(str) {
+  const [d, m, y] = str.split(' ')
+  return new Date(Number(y), MES_MAP[m] ?? 0, Number(d))
+}
+
 // Extend mock log with more entries for demo
 const EXTENDED_LOG = [
   ...ADMIN_ACTIVITY_LOG,
@@ -34,6 +40,8 @@ export default function Actividad() {
   const [search, setSearch] = useState('')
   const [filtroTipo, setFiltroTipo] = useState('')
   const [filtroModulo, setFiltroModulo] = useState('')
+  const [desde, setDesde] = useState('')
+  const [hasta, setHasta] = useState('')
   const [page, setPage] = useState(1)
 
   const filtered = EXTENDED_LOG.filter((l) => {
@@ -41,7 +49,10 @@ export default function Actividad() {
     const matchQ = !q || l.usuario.toLowerCase().includes(q) || l.accion.toLowerCase().includes(q) || (l.detalle || '').toLowerCase().includes(q)
     const matchT = !filtroTipo || l.tipo === filtroTipo
     const matchM = !filtroModulo || l.modulo === filtroModulo
-    return matchQ && matchT && matchM
+    const fechaLog = parseFecha(l.fecha)
+    const matchDesde = !desde || fechaLog >= new Date(desde + 'T00:00:00')
+    const matchHasta = !hasta  || fechaLog <= new Date(hasta  + 'T23:59:59')
+    return matchQ && matchT && matchM && matchDesde && matchHasta
   })
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
@@ -118,6 +129,32 @@ export default function Actividad() {
           <option value="">Todos los módulos</option>
           {MODULOS.map((m) => <option key={m}>{m}</option>)}
         </select>
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-text-muted shrink-0" />
+          <input
+            type="date"
+            value={desde}
+            onChange={(e) => { setDesde(e.target.value); setPage(1) }}
+            className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
+            title="Desde"
+          />
+          <span className="text-text-muted text-sm">–</span>
+          <input
+            type="date"
+            value={hasta}
+            onChange={(e) => { setHasta(e.target.value); setPage(1) }}
+            className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
+            title="Hasta"
+          />
+          {(desde || hasta) && (
+            <button
+              onClick={() => { setDesde(''); setHasta(''); setPage(1) }}
+              className="text-xs text-text-muted hover:text-primary-800 transition-colors whitespace-nowrap"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
       </motion.div>
 
       {/* Table */}

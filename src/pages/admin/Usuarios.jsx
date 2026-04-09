@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Plus, Search, X, Send, ChevronDown, Trash2, Edit2,
-  CheckCircle, XCircle, UserPlus,
+  Plus, Search, X, Send, Trash2, Edit2,
+  CheckCircle, XCircle, UserPlus, Mail,
+  Shield, User, Clock, Activity, Copy, Check,
 } from 'lucide-react'
-import { ADMIN_MOCK_USERS } from '@/lib/constants'
+import { ADMIN_MOCK_USERS, ADMIN_ACTIVITY_LOG } from '@/lib/constants'
 
 const fadeUp = (d = 0) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4, delay: d, ease: [0.22, 1, 0.36, 1] } })
 
@@ -21,6 +22,225 @@ const panelAnim = {
   exit:    { opacity: 0, scale: 0.96, y: 10 },
   transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
 }
+const drawerAnim = {
+  initial: { x: '100%' },
+  animate: { x: 0 },
+  exit:    { x: '100%' },
+  transition: { type: 'spring', damping: 28, stiffness: 320 },
+}
+
+// ── User detail drawer ──
+function UserDrawer({ user, onClose }) {
+  const activity = ADMIN_ACTIVITY_LOG.filter((l) =>
+    l.usuario.toLowerCase().includes(user.nombre.split(' ')[0].toLowerCase())
+  ).slice(0, 5)
+
+  const typeStyles = {
+    success: 'bg-green-100 text-green-700',
+    error:   'bg-red-100 text-red-600',
+    warning: 'bg-amber-100 text-amber-700',
+    info:    'bg-primary-100 text-primary-700',
+  }
+
+  return (
+    <>
+      <motion.div
+        key="overlay"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
+        onClick={onClose}
+      />
+      <motion.div key="drawer" {...drawerAnim} className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-sm bg-white shadow-2xl flex flex-col">
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-border bg-gradient-to-br from-primary-50 to-white">
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-primary-600 to-primary-900 rounded-2xl flex items-center justify-center shadow-md">
+              <span className="text-white text-lg font-bold">{user.initials}</span>
+            </div>
+            <button onClick={onClose} className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <h3 className="text-base font-bold text-text">{user.nombre}</h3>
+          <p className="text-xs text-text-muted mt-0.5">{user.correo}</p>
+          <div className="flex items-center gap-2 mt-3">
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ROLE_COLORS[user.rol]}`}>{user.rol}</span>
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${user.estado === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+              {user.estado}
+            </span>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* Meta */}
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { icon: User,    label: 'ID',              value: user.id },
+              { icon: Clock,   label: 'Último acceso',   value: user.ultimoAcceso },
+            ].map(({ icon: Ic, label, value }) => (
+              <div key={label} className="bg-bg-alt rounded-xl p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Ic className="w-3 h-3 text-text-muted" />
+                  <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">{label}</p>
+                </div>
+                <p className="text-xs font-semibold text-text">{value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Permissions summary */}
+          <div>
+            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-2">Permisos del Rol</p>
+            <div className="space-y-1.5">
+              {user.rol === 'Administrador SIG' && (
+                <>
+                  {['Panel de Administración', 'Gestión de Usuarios', 'Gestión de Contenido', 'Todos los módulos'].map((p) => (
+                    <div key={p} className="flex items-center gap-2 text-xs text-text">
+                      <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />{p}
+                    </div>
+                  ))}
+                </>
+              )}
+              {user.rol === 'Investigador' && (
+                <>
+                  {['Mapas y Documentos', 'Geovisor', 'Herramientas SIG', 'Solicitudes'].map((p) => (
+                    <div key={p} className="flex items-center gap-2 text-xs text-text">
+                      <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />{p}
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2 text-xs text-text-muted">
+                    <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />Panel de Administración
+                  </div>
+                </>
+              )}
+              {user.rol === 'Público' && (
+                <>
+                  <div className="flex items-center gap-2 text-xs text-text">
+                    <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />Noticias
+                  </div>
+                  {['Mapas', 'Documentos', 'Herramientas', 'Geovisor', 'Solicitudes'].map((p) => (
+                    <div key={p} className="flex items-center gap-2 text-xs text-text-muted">
+                      <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />{p}
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Recent activity */}
+          <div>
+            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-2">Actividad Reciente</p>
+            {activity.length > 0 ? (
+              <div className="space-y-2">
+                {activity.map((log) => (
+                  <div key={log.id} className="flex items-start gap-2.5 p-2.5 bg-bg-alt rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-text truncate">{log.accion}</p>
+                      <p className="text-[0.6rem] text-text-muted">{log.modulo} · {log.hora}</p>
+                    </div>
+                    <span className={`text-[0.55rem] font-bold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${typeStyles[log.tipo]}`}>
+                      {log.tipo}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-text-muted italic">Sin actividad registrada</p>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </>
+  )
+}
+
+// ── Invite modal ──
+function InviteModal({ onClose }) {
+  const [email, setEmail] = useState('')
+  const [rol, setRol] = useState('Investigador')
+  const [step, setStep] = useState('form') // 'form' | 'sent'
+  const [copied, setCopied] = useState(false)
+  const fakeLink = `https://vigiiap.iiap.org.co/invitacion/${btoa(email || 'usuario').slice(0, 12)}`
+
+  const handleSend = (e) => {
+    e.preventDefault()
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return
+    setStep('sent')
+  }
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(fakeLink)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1800)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-border">
+          <h3 className="text-base font-bold text-text">Invitar Usuario</h3>
+          <button onClick={onClose} className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"><X className="w-5 h-5" /></button>
+        </div>
+
+        {step === 'form' ? (
+          <form onSubmit={handleSend} className="p-6 space-y-4">
+            <div>
+              <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                Correo electrónico <span className="text-orange-500">*</span>
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="usuario@dominio.com"
+                  className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Rol a asignar</label>
+              <select value={rol} onChange={(e) => setRol(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
+                {ROLES_LIST.map((r) => <option key={r}>{r}</option>)}
+              </select>
+            </div>
+            <p className="text-xs text-text-muted">Se enviará un correo con un enlace de activación. El enlace expira en 48 horas.</p>
+            <div className="flex gap-3 pt-1">
+              <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors">Cancelar</button>
+              <button type="submit" className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
+                <Send className="w-4 h-4" /> Enviar Invitación
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="p-6 text-center space-y-4">
+            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+              <CheckCircle className="w-7 h-7 text-green-600" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-text mb-1">¡Invitación enviada!</h4>
+              <p className="text-xs text-text-muted">Correo enviado a <strong className="text-text">{email}</strong> con rol <strong className="text-text">{rol}</strong>.</p>
+            </div>
+            <div className="bg-bg-alt rounded-xl p-3 text-left">
+              <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">Enlace de activación</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-mono text-text-muted truncate flex-1">{fakeLink}</p>
+                <button onClick={copyLink} className="shrink-0 p-1.5 rounded-lg hover:bg-white transition-colors">
+                  {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5 text-text-muted" />}
+                </button>
+              </div>
+            </div>
+            <button onClick={onClose} className="w-full py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">Cerrar</button>
+          </div>
+        )}
+      </motion.div>
+    </div>
+  )
+}
 
 export default function Usuarios() {
   const [users, setUsers] = useState(ADMIN_MOCK_USERS)
@@ -28,8 +248,10 @@ export default function Usuarios() {
   const [filtroRol, setFiltroRol] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [detailUser, setDetailUser] = useState(null)
   const [form, setForm] = useState({ nombre: '', correo: '', rol: 'Público', estado: 'Activo' })
   const [formErrors, setFormErrors] = useState({})
 
@@ -75,8 +297,7 @@ export default function Usuarios() {
     } else {
       const newId = `USR-${String(users.length + 1).padStart(3, '0')}`
       setUsers((prev) => [...prev, {
-        id: newId,
-        ...form,
+        id: newId, ...form,
         ultimoAcceso: 'Hoy',
         initials: form.nombre.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(),
       }])
@@ -105,19 +326,28 @@ export default function Usuarios() {
           <h1 className="font-display text-2xl font-bold text-text mt-0.5">Gestión de Usuarios</h1>
           <p className="text-sm text-text-muted mt-1">{users.length} usuarios registrados en el sistema</p>
         </div>
-        <button
-          onClick={openCreate}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors shrink-0"
-        >
-          <UserPlus className="w-4 h-4" aria-hidden="true" />
-          Nuevo Usuario
-        </button>
+        <div className="flex gap-2 shrink-0">
+          <button
+            onClick={() => setShowInvite(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-border text-text rounded-xl text-sm font-semibold hover:border-primary-800 hover:text-primary-800 transition-colors"
+          >
+            <Mail className="w-4 h-4" />
+            Invitar
+          </button>
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors"
+          >
+            <UserPlus className="w-4 h-4" />
+            Nuevo Usuario
+          </button>
+        </div>
       </motion.div>
 
       {/* Filters */}
       <motion.div {...fadeUp(0.08)} className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" aria-hidden="true" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
             placeholder="Buscar por nombre o correo..."
@@ -126,19 +356,11 @@ export default function Usuarios() {
             className="w-full pl-9 pr-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
           />
         </div>
-        <select
-          value={filtroRol}
-          onChange={(e) => setFiltroRol(e.target.value)}
-          className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
-        >
+        <select value={filtroRol} onChange={(e) => setFiltroRol(e.target.value)} className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition">
           <option value="">Todos los roles</option>
           {ROLES_LIST.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
-        <select
-          value={filtroEstado}
-          onChange={(e) => setFiltroEstado(e.target.value)}
-          className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
-        >
+        <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition">
           <option value="">Todos los estados</option>
           <option value="Activo">Activo</option>
           <option value="Inactivo">Inactivo</option>
@@ -152,9 +374,7 @@ export default function Usuarios() {
             <thead>
               <tr className="border-b border-border bg-bg-alt/50">
                 {['Usuario', 'Correo', 'Rol', 'Estado', 'Último Acceso', 'Acciones'].map((h) => (
-                  <th key={h} className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted px-5 py-3">
-                    {h}
-                  </th>
+                  <th key={h} className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted px-5 py-3">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -165,30 +385,27 @@ export default function Usuarios() {
               {filtered.map((u) => (
                 <tr key={u.id} className="border-b border-border last:border-b-0 hover:bg-bg-alt/30 transition-colors">
                   <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2.5">
+                    <button
+                      onClick={() => setDetailUser(u)}
+                      className="flex items-center gap-2.5 text-left group"
+                    >
                       <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-primary-900 rounded-lg flex items-center justify-center shrink-0">
                         <span className="text-white text-xs font-bold">{u.initials}</span>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-text">{u.nombre}</p>
+                        <p className="text-sm font-semibold text-text group-hover:text-primary-800 transition-colors">{u.nombre}</p>
                         <p className="text-[0.65rem] text-text-muted">{u.id}</p>
                       </div>
-                    </div>
+                    </button>
                   </td>
                   <td className="px-5 py-3.5 text-sm text-text-muted">{u.correo}</td>
                   <td className="px-5 py-3.5">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ROLE_COLORS[u.rol]}`}>
-                      {u.rol}
-                    </span>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ROLE_COLORS[u.rol]}`}>{u.rol}</span>
                   </td>
                   <td className="px-5 py-3.5">
                     <button
                       onClick={() => toggleEstado(u.id)}
-                      className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${
-                        u.estado === 'Activo'
-                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                          : 'bg-red-100 text-red-600 hover:bg-red-200'
-                      }`}
+                      className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${u.estado === 'Activo' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}
                     >
                       {u.estado}
                     </button>
@@ -196,18 +413,10 @@ export default function Usuarios() {
                   <td className="px-5 py-3.5 text-sm text-text-muted">{u.ultimoAcceso}</td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => openEdit(u)}
-                        className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
-                        title="Editar"
-                      >
+                      <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors" title="Editar">
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
-                      <button
-                        onClick={() => setDeleteTarget(u)}
-                        className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
-                        title="Eliminar"
-                      >
+                      <button onClick={() => setDeleteTarget(u)} className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors" title="Eliminar">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -222,13 +431,20 @@ export default function Usuarios() {
         </div>
       </motion.div>
 
+      {/* User detail drawer */}
+      <AnimatePresence>
+        {detailUser && <UserDrawer user={detailUser} onClose={() => setDetailUser(null)} />}
+      </AnimatePresence>
+
+      {/* Invite modal */}
+      <AnimatePresence>
+        {showInvite && <InviteModal onClose={() => setShowInvite(false)} />}
+      </AnimatePresence>
+
       {/* Create/Edit Modal */}
       <AnimatePresence>
         {showModal && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-            onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false) }}
-          >
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false) }}>
             <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
               <div className="flex items-center justify-between px-6 py-5 border-b border-border">
                 <h3 className="text-base font-bold text-text">{editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
@@ -257,11 +473,7 @@ export default function Usuarios() {
                 ))}
                 <div>
                   <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Rol</label>
-                  <select
-                    value={form.rol}
-                    onChange={(e) => setForm((f) => ({ ...f, rol: e.target.value }))}
-                    className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
-                  >
+                  <select value={form.rol} onChange={(e) => setForm((f) => ({ ...f, rol: e.target.value }))} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
                     {ROLES_LIST.map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
