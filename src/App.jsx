@@ -21,6 +21,8 @@ const NoticiaDetalle  = lazy(() => import('./pages/NoticiaDetalle'))
 const GuiaUsuario     = lazy(() => import('./pages/recursos/GuiaUsuario'))
 const FAQ             = lazy(() => import('./pages/recursos/FAQ'))
 const Terminos        = lazy(() => import('./pages/recursos/Terminos'))
+const Perfil          = lazy(() => import('./pages/Perfil'))
+const NotFound        = lazy(() => import('./pages/NotFound'))
 
 // ── Auth ──
 const Login           = lazy(() => import('./pages/auth/Login'))
@@ -77,8 +79,9 @@ export default function App() {
             <Route path="/noticias"      element={<Noticias />} />
             <Route path="/noticias/:slug" element={<NoticiaDetalle />} />
 
-            {/* Requiere Investigador o Admin */}
+            {/* Requiere auth */}
             <Route element={<RequireInvestigador />}>
+              <Route path="/perfil"       element={<Perfil />} />
               <Route path="/mapas"        element={<Mapas />} />
               <Route path="/documentos"   element={<Documentos />} />
               <Route path="/geovisor"     element={<Geovisor />} />
@@ -86,6 +89,9 @@ export default function App() {
               <Route path="/solicitudes"  element={<Solicitudes />} />
             </Route>
           </Route>
+
+          {/* ── 404 ── */}
+          <Route path="*" element={<NotFound />} />
 
           {/* ── Panel Admin (AdminLayout) — solo Administrador SIG ── */}
           <Route element={<RequireAdmin />}>

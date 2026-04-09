@@ -6,7 +6,7 @@ import {
   ChevronDown, X, Phone, Mail, Clock,
   HelpCircle, ExternalLink, CheckCircle,
   Sun, Monitor, Layers, ClipboardList, BookOpen,
-  BellOff,
+  BellOff, UserCircle,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSearch } from '@/contexts/SearchContext'
@@ -286,6 +286,14 @@ function ProfileDropdown({ user, onClose, onLogout }) {
 
       {/* Links */}
       <div className="py-1">
+        <Link
+          to="/perfil"
+          onClick={onClose}
+          className="flex items-center gap-3 px-4 py-2.5 text-sm text-text hover:bg-bg-alt transition-colors no-underline"
+        >
+          <UserCircle className="w-4 h-4 text-text-muted" aria-hidden="true" />
+          Mi Perfil
+        </Link>
         <Link
           to="/solicitudes"
           onClick={onClose}
