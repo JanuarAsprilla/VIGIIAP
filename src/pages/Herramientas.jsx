@@ -1,14 +1,16 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Scaling, Target, ArrowLeftRight, Layers,
   TriangleRight, Eye, Minus as MinusIcon, SearchX,
   ClipboardList, Smartphone, BarChart3,
   MapPin, Calendar, User, Camera, Lock,
   Download, ExternalLink, TrendingUp, Droplets, TreePine, Wind,
+  X, Send, CheckCircle, PlusCircle, Loader2, ChevronRight,
 } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
+import { useToast, ToastContainer } from '@/components/Toast'
 
 // ── Animation helper ──
 const fadeUp = (delay = 0) => ({
@@ -52,46 +54,87 @@ function ToolCard({ tag, title, icon: Icon, color, children, index }) {
   )
 }
 
+// ── Mock data for tools ──
+const CAPAS = [
+  { value: '', label: 'Seleccionar poligonal...' },
+  { value: 'reserva', label: 'Reserva_Natural_A1.shp',         area: 48320.7, perimetro: 892.4 },
+  { value: 'amort',   label: 'Zona_Amortiguamiento_B2.shp',    area: 12840.2, perimetro: 441.6 },
+  { value: 'lote',    label: 'Lote_Comunidad_C3.shp',           area: 3271.5,  perimetro: 218.9 },
+]
+
 // ── 1. Calculadora de Áreas y Perímetros ──
 function CalculadoraAreas() {
+  const [capa, setCapa] = useState('')
+  const [unidad, setUnidad] = useState('ha')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState(null)
+
+  const UNIDAD_FACTOR = { ha: 1, 'km2': 0.01, 'm2': 10000 }
+  const UNIDAD_LABEL  = { ha: 'ha', 'km2': 'km²', 'm2': 'm²' }
+
+  const calcular = () => {
+    if (!capa) return
+    setLoading(true); setResult(null)
+    setTimeout(() => {
+      const found = CAPAS.find((c) => c.value === capa)
+      const f = UNIDAD_FACTOR[unidad] || 1
+      setResult({ area: (found.area * f).toFixed(2), perimetro: found.perimetro.toFixed(1), poligonos: 1, crs: 'MAGNA-SIRGAS / Colombia Oeste' })
+      setLoading(false)
+    }, 900)
+  }
+
   return (
-    <ToolCard
-      tag="Geometría"
-      title="Calculadora de Áreas y Perímetros"
-      icon={Scaling}
-      color="primary"
-      index={0}
-    >
+    <ToolCard tag="Geometría" title="Calculadora de Áreas y Perímetros" icon={Scaling} color="primary" index={0}>
       <div className="space-y-4">
-        {/* Two selects */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-              Capa de Entrada
-            </label>
-            <select className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition">
-              <option>Seleccionar poligonal...</option>
-              <option>Reserva_Natural_A1.shp</option>
-              <option>Zona_Amortiguamiento_B2.shp</option>
-              <option>Lote_Comunidad_C3.shp</option>
+            <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Capa de Entrada</label>
+            <select value={capa} onChange={(e) => { setCapa(e.target.value); setResult(null) }} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition">
+              {CAPAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-              Sistema de Unidades
-            </label>
-            <select className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition">
-              <option>Hectáreas (ha)</option>
-              <option>Kilómetros² (km²)</option>
-              <option>Metros² (m²)</option>
+            <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Sistema de Unidades</label>
+            <select value={unidad} onChange={(e) => { setUnidad(e.target.value); setResult(null) }} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition">
+              <option value="ha">Hectáreas (ha)</option>
+              <option value="km2">Kilómetros² (km²)</option>
+              <option value="m2">Metros² (m²)</option>
             </select>
           </div>
         </div>
 
-        {/* Action button */}
-        <button className="w-full sm:w-auto px-6 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
-          Calcular Geometría
+        <button
+          onClick={calcular}
+          disabled={!capa || loading}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Scaling className="w-4 h-4" />}
+          {loading ? 'Calculando...' : 'Calcular Geometría'}
         </button>
+
+        <AnimatePresence>
+          {result && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="bg-primary-50 border border-primary-200 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle className="w-4 h-4 text-primary-700" />
+                <span className="text-[0.6rem] font-bold uppercase tracking-wider text-primary-700">Resultado del Cálculo</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Área Total', value: `${Number(result.area).toLocaleString('es-CO')} ${UNIDAD_LABEL[unidad]}` },
+                  { label: 'Perímetro', value: `${result.perimetro} km` },
+                  { label: 'Polígonos', value: result.poligonos },
+                  { label: 'CRS', value: result.crs },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-white rounded-lg px-3 py-2 border border-primary-100">
+                    <p className="text-[0.55rem] font-bold uppercase tracking-wider text-primary-600 mb-0.5">{label}</p>
+                    <p className="text-xs font-bold text-text">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </ToolCard>
   )
@@ -100,58 +143,82 @@ function CalculadoraAreas() {
 // ── 2. Generador de Buffers ──
 function GeneradorBuffers() {
   const [tipoBorde, setTipoBorde] = useState('redondeado')
+  const [distancia, setDistancia] = useState(500)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState(null)
+
+  const generar = () => {
+    setLoading(true); setResult(null)
+    setTimeout(() => {
+      const d = Number(distancia) || 500
+      const areaBuffer = (Math.PI * (d / 1000) ** 2).toFixed(3)
+      setResult({ distancia: d, area: areaBuffer, entidades: 3, tipo: tipoBorde })
+      setLoading(false)
+    }, 800)
+  }
 
   return (
-    <ToolCard
-      tag="Procesamiento"
-      title="Generador de Buffers"
-      icon={Target}
-      color="orange"
-      index={1}
-    >
+    <ToolCard tag="Procesamiento" title="Generador de Buffers" icon={Target} color="orange" index={1}>
       <p className="text-sm text-text-muted leading-relaxed mb-4">
         Crea áreas de influencia alrededor de entidades geográficas lineales o puntuales.
       </p>
 
       <div className="space-y-4">
-        {/* Distance input */}
         <div>
-          <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-            Distancia (mts)
-          </label>
+          <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Distancia (m)</label>
           <input
             type="number"
-            defaultValue={500}
+            value={distancia}
+            onChange={(e) => { setDistancia(e.target.value); setResult(null) }}
+            min={1}
             className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
           />
         </div>
 
-        {/* Border type toggle */}
         <div>
-          <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-            Tipo de Borde
-          </label>
+          <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Tipo de Borde</label>
           <div className="flex gap-2">
             {['Redondeado', 'Plano'].map((tipo) => (
-              <button
-                key={tipo}
-                onClick={() => setTipoBorde(tipo.toLowerCase())}
-                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                  tipoBorde === tipo.toLowerCase()
-                    ? 'bg-primary-800 text-white border-primary-800'
-                    : 'bg-white text-text border-border hover:border-primary-300'
-                }`}
-              >
+              <button key={tipo} onClick={() => { setTipoBorde(tipo.toLowerCase()); setResult(null) }}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${tipoBorde === tipo.toLowerCase() ? 'bg-primary-800 text-white border-primary-800' : 'bg-white text-text border-border hover:border-primary-300'}`}>
                 {tipo}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Action button */}
-        <button className="w-full px-6 py-2.5 border-2 border-primary-800 text-primary-800 rounded-lg text-sm font-semibold hover:bg-primary-800 hover:text-white transition-colors">
-          Generar Influencia
+        <button
+          onClick={generar}
+          disabled={loading}
+          className="w-full inline-flex items-center justify-center gap-2 px-6 py-2.5 border-2 border-primary-800 text-primary-800 rounded-lg text-sm font-semibold hover:bg-primary-800 hover:text-white disabled:opacity-50 transition-colors"
+        >
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
+          {loading ? 'Generando...' : 'Generar Influencia'}
         </button>
+
+        <AnimatePresence>
+          {result && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <CheckCircle className="w-4 h-4 text-amber-600" />
+                <span className="text-[0.6rem] font-bold uppercase tracking-wider text-amber-700">Buffer Generado</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: 'Radio', value: `${result.distancia} m` },
+                  { label: 'Área aprox.', value: `${result.area} km²` },
+                  { label: 'Entidades', value: result.entidades },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-white rounded-lg px-3 py-2 text-center border border-amber-100">
+                    <p className="text-[0.55rem] font-bold uppercase tracking-wider text-amber-600 mb-0.5">{label}</p>
+                    <p className="text-xs font-bold text-text">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </ToolCard>
   )
@@ -374,59 +441,93 @@ function ConversorCoordenadas() {
 }
 
 // ── 4. Analizador de Superposición ──
+const OVERLAP_RESULTS = {
+  interseccion: { area: '3,842.6 ha', porc: '7.9%', poligonos: 14, alerta: 'Conflicto detectado: títulos mineros superpuestos con reservas protegidas.' },
+  union:        { area: '60,318.4 ha', porc: '100%', poligonos: 38, alerta: null },
+  diferencia:   { area: '44,155.1 ha', porc: '92.1%', poligonos: 24, alerta: null },
+}
+
 function AnalizadorSuperposicion() {
   const [operacion, setOperacion] = useState('interseccion')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState(null)
+
+  const ejecutar = () => {
+    setLoading(true); setResult(null)
+    setTimeout(() => { setResult(OVERLAP_RESULTS[operacion]); setLoading(false) }, 1100)
+  }
 
   return (
-    <ToolCard
-      tag="Análisis Espacial"
-      title="Analizador de Superposición"
-      icon={Layers}
-      color="green"
-      index={3}
-    >
+    <ToolCard tag="Análisis Espacial" title="Analizador de Superposición" icon={Layers} color="green" index={3}>
       <p className="text-sm text-text-muted leading-relaxed mb-4">
-        Ejecuta procesos de intersección, unión y diferencia entre múltiples
-        capas territoriales para detectar conflictos de uso del suelo o áreas de
-        traslape legal.
+        Ejecuta procesos de intersección, unión y diferencia entre múltiples capas territoriales
+        para detectar conflictos de uso del suelo o áreas de traslape legal.
       </p>
 
       <div className="space-y-4">
-        {/* Layer selectors */}
         <div className="flex items-center gap-3">
-          <div className="flex-1 bg-bg-alt border border-border rounded-lg p-3 text-center">
-            <Layers className="w-5 h-5 text-text-muted mx-auto mb-1" />
-            <span className="block text-xs font-bold text-text">Capa A</span>
-            <span className="block text-[0.65rem] text-text-muted">Títulos Mineros</span>
-          </div>
-          <div className="flex-1 bg-bg-alt border border-border rounded-lg p-3 text-center">
-            <Layers className="w-5 h-5 text-text-muted mx-auto mb-1" />
-            <span className="block text-xs font-bold text-text">Capa B</span>
-            <span className="block text-[0.65rem] text-text-muted">Zonas Protegidas</span>
-          </div>
+          {[
+            { label: 'Capa A', sub: 'Títulos Mineros' },
+            { label: 'Capa B', sub: 'Zonas Protegidas' },
+          ].map(({ label, sub }) => (
+            <div key={label} className="flex-1 bg-bg-alt border border-border rounded-lg p-3 text-center">
+              <Layers className="w-5 h-5 text-text-muted mx-auto mb-1" />
+              <span className="block text-xs font-bold text-text">{label}</span>
+              <span className="block text-[0.65rem] text-text-muted">{sub}</span>
+            </div>
+          ))}
         </div>
 
-        {/* Operation buttons */}
         <div className="space-y-2">
           {[
             { id: 'interseccion', label: 'Intersección', icon: Eye },
-            { id: 'union', label: 'Unión', icon: TriangleRight },
-            { id: 'diferencia', label: 'Diferencia', icon: MinusIcon },
+            { id: 'union',        label: 'Unión',        icon: TriangleRight },
+            { id: 'diferencia',   label: 'Diferencia',   icon: MinusIcon },
           ].map(({ id, label, icon: OpIcon }) => (
-            <button
-              key={id}
-              onClick={() => setOperacion(id)}
-              className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-colors ${
-                operacion === id
-                  ? 'bg-primary-800 text-white border-primary-800'
-                  : 'bg-white text-text border-border hover:border-primary-300'
-              }`}
-            >
-              <OpIcon className="w-4 h-4" />
-              {label}
+            <button key={id} onClick={() => { setOperacion(id); setResult(null) }}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border transition-colors ${operacion === id ? 'bg-primary-800 text-white border-primary-800' : 'bg-white text-text border-border hover:border-primary-300'}`}>
+              <OpIcon className="w-4 h-4" />{label}
             </button>
           ))}
         </div>
+
+        <button onClick={ejecutar} disabled={loading}
+          className="w-full inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-50 transition-colors">
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
+          {loading ? 'Ejecutando análisis...' : 'Ejecutar Análisis'}
+        </button>
+
+        <AnimatePresence>
+          {result && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="bg-primary-50 border border-primary-200 rounded-xl p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-primary-700" />
+                <span className="text-[0.6rem] font-bold uppercase tracking-wider text-primary-700">
+                  {operacion.charAt(0).toUpperCase() + operacion.slice(1)} completada
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: 'Área resultante', value: result.area },
+                  { label: '% del total',     value: result.porc },
+                  { label: 'Polígonos',        value: result.poligonos },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-white rounded-lg px-3 py-2 text-center border border-primary-100">
+                    <p className="text-[0.55rem] font-bold uppercase tracking-wider text-primary-600 mb-0.5">{label}</p>
+                    <p className="text-xs font-bold text-text">{value}</p>
+                  </div>
+                ))}
+              </div>
+              {result.alerta && (
+                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-1">
+                  <span className="text-amber-500 text-xs mt-0.5">⚠</span>
+                  <p className="text-xs text-amber-700">{result.alerta}</p>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </ToolCard>
   )
@@ -713,6 +814,154 @@ function ResumenActividad() {
   )
 }
 
+// ── Modal: Solicitar Nueva Herramienta ──
+const TOOL_TYPES = [
+  { value: '', label: 'Seleccione el tipo de herramienta...' },
+  { value: 'analisis-espacial', label: 'Análisis Espacial' },
+  { value: 'conversion',        label: 'Conversión de Datos' },
+  { value: 'visualizacion',     label: 'Visualización Cartográfica' },
+  { value: 'campo',             label: 'Captura en Campo' },
+  { value: 'estadistica',       label: 'Estadística Ambiental' },
+  { value: 'otro',              label: 'Otro' },
+]
+
+function SolicitarHerramientaModal({ onClose }) {
+  const [step, setStep] = useState('form')
+  const [form, setForm] = useState({ nombre: '', tipo: '', descripcion: '', justificacion: '' })
+  const [errors, setErrors] = useState({})
+
+  const set = (k, v) => { setForm((p) => ({ ...p, [k]: v })); setErrors((p) => ({ ...p, [k]: undefined })) }
+
+  const validate = () => {
+    const e = {}
+    if (!form.nombre.trim()) e.nombre = 'Requerido'
+    if (!form.tipo) e.tipo = 'Requerido'
+    if (!form.descripcion.trim()) e.descripcion = 'Requerido'
+    else if (form.descripcion.trim().length < 20) e.descripcion = 'Mínimo 20 caracteres'
+    return e
+  }
+
+  const handleSubmit = (ev) => {
+    ev.preventDefault()
+    const e = validate()
+    if (Object.keys(e).length) { setErrors(e); return }
+    setStep('success')
+  }
+
+  useEffect(() => {
+    const fn = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', fn)
+    return () => document.removeEventListener('keydown', fn)
+  }, [onClose])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+      >
+        {step === 'success' ? (
+          <div className="p-10 text-center">
+            <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5">
+              <CheckCircle className="w-8 h-8 text-primary-800" />
+            </div>
+            <h3 className="font-display text-xl font-bold text-text mb-2">Solicitud Enviada</h3>
+            <p className="text-sm text-text-muted leading-relaxed mb-2">
+              Su solicitud para <strong className="text-text">"{form.nombre}"</strong> fue registrada.
+              El equipo SIG del IIAP la revisará y le notificará por correo.
+            </p>
+            <p className="text-xs text-text-muted mb-8">Tiempo estimado de respuesta: 3–5 días hábiles</p>
+            <button onClick={onClose} className="w-full py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
+              Entendido
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between px-6 py-5 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-primary-800 rounded-lg flex items-center justify-center">
+                  <PlusCircle className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-text leading-tight">Solicitar Nueva Herramienta</h3>
+                  <p className="text-xs text-text-muted">Equipo SIG — IIAP</p>
+                </div>
+              </div>
+              <button onClick={onClose} className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  Nombre de la herramienta <span className="text-orange-500">*</span>
+                </label>
+                <input type="text" value={form.nombre} onChange={(e) => set('nombre', e.target.value)}
+                  placeholder="ej. Análisis de Fragmentación de Hábitat"
+                  className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${errors.nombre ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                />
+                {errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre}</p>}
+              </div>
+
+              <div>
+                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  Tipo de herramienta <span className="text-orange-500">*</span>
+                </label>
+                <select value={form.tipo} onChange={(e) => set('tipo', e.target.value)}
+                  className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${errors.tipo ? 'border-red-400' : 'border-border focus:border-primary-800'}`}>
+                  {TOOL_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+                {errors.tipo && <p className="text-xs text-red-500 mt-1">{errors.tipo}</p>}
+              </div>
+
+              <div>
+                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  Descripción funcional <span className="text-orange-500">*</span>
+                </label>
+                <textarea rows={3} value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)}
+                  placeholder="¿Qué debería hacer esta herramienta? ¿Qué datos procesa?"
+                  className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${errors.descripcion ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                />
+                <div className="flex justify-between mt-1">
+                  {errors.descripcion ? <p className="text-xs text-red-500">{errors.descripcion}</p> : <span />}
+                  <span className="text-xs text-text-muted ml-auto">{form.descripcion.length}/300</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  Justificación o caso de uso <span className="text-text-muted font-normal normal-case">(opcional)</span>
+                </label>
+                <textarea rows={2} value={form.justificacion} onChange={(e) => set('justificacion', e.target.value)}
+                  placeholder="¿Para qué proyecto o investigación la necesita?"
+                  className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm resize-none focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={onClose}
+                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors">
+                  Cancelar
+                </button>
+                <button type="submit"
+                  className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
+                  <Send className="w-4 h-4" />
+                  Enviar Solicitud
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+      </motion.div>
+    </div>
+  )
+}
+
 // Metadata para filtrado por búsqueda global
 const TOOLS_META = [
   { id: 'calculadora',   tag: 'Geometría',        title: 'Calculadora de Áreas y Perímetros', Component: CalculadoraAreas },
@@ -727,6 +976,8 @@ const TOOLS_META = [
 // ── Main Herramientas Page ──
 export default function Herramientas() {
   const { query } = useSearch()
+  const [showSolicitar, setShowSolicitar] = useState(false)
+  const { toasts, toast, dismiss } = useToast()
 
   const filteredTools = TOOLS_META.filter((t) =>
     matches([t.title, t.tag], query)
@@ -735,23 +986,33 @@ export default function Herramientas() {
   return (
     <div className="space-y-8">
       {/* ── Header ── */}
-      <motion.div {...fadeUp(0)}>
-        <h1 className="font-display text-3xl md:text-4xl font-bold text-text leading-tight mb-3">
-          Caja de Herramientas de Análisis Territorial
-        </h1>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-0.5 bg-primary-800 rounded-full" />
-          <p className="text-sm text-text-muted leading-relaxed">
-            Herramientas avanzadas para procesamiento de datos espaciales y modelamiento geográfico.
-          </p>
+      <motion.div {...fadeUp(0)} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <span className="page-header-tag block mb-2">SIG · Análisis Territorial</span>
+          <h1 className="page-header-title mb-3">
+            Caja de Herramientas
+          </h1>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-0.5 bg-primary-800 rounded-full" />
+            <p className="text-sm text-text-muted leading-relaxed">
+              Herramientas avanzadas para procesamiento de datos espaciales y modelamiento geográfico.
+            </p>
+          </div>
         </div>
+        <button
+          onClick={() => setShowSolicitar(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-xl text-sm font-semibold text-text hover:border-primary-800 hover:text-primary-800 transition-colors shrink-0"
+        >
+          <PlusCircle className="w-4 h-4" />
+          Solicitar herramienta
+        </button>
       </motion.div>
 
       {/* ── Tools Grid ── */}
       {filteredTools.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredTools.map(({ id, Component }) => (
-            <Component key={id} />
+            <Component key={id} onToast={toast} />
           ))}
         </div>
       ) : (
@@ -763,6 +1024,15 @@ export default function Herramientas() {
 
       {/* ── Activity Summary ── */}
       {!query && <ResumenActividad />}
+
+      {/* ── Modal Solicitar ── */}
+      <AnimatePresence>
+        {showSolicitar && (
+          <SolicitarHerramientaModal onClose={() => setShowSolicitar(false)} />
+        )}
+      </AnimatePresence>
+
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>
   )
 }

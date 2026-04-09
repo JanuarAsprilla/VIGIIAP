@@ -593,8 +593,7 @@ export default function Documentos() {
           <Search className="w-4 h-4 text-text-muted shrink-0" />
           <input
             type="text"
-            placeholder="Buscar por nom
-            bre, tipo o fecha..."
+            placeholder="Buscar por nombre, tipo o fecha..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="bg-transparent border-none outline-none text-sm text-text w-full placeholder:text-text-muted"
