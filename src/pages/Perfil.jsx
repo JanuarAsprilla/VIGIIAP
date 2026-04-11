@@ -9,6 +9,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { useUI } from '@/contexts/UIContext'
 import { useNavigate, Link } from 'react-router-dom'
+import { useUpdatePassword } from '@/hooks/useUsuarios'
 
 // ── Section wrapper ──
 function Section({ title, description, children }) {
@@ -46,8 +47,10 @@ function CambiarPassword() {
   const [show, setShow] = useState({ actual: false, nueva: false, confirmar: false })
   const [errors, setErrors] = useState({})
   const [success, setSuccess] = useState(false)
+  const [serverError, setServerError] = useState('')
+  const updatePassword = useUpdatePassword()
 
-  const set = (k, v) => { setForm((p) => ({ ...p, [k]: v })); setErrors((p) => ({ ...p, [k]: undefined })) }
+  const set = (k, v) => { setForm((p) => ({ ...p, [k]: v })); setErrors((p) => ({ ...p, [k]: undefined })); setServerError('') }
 
   const validate = () => {
     const e = {}
@@ -59,13 +62,18 @@ function CambiarPassword() {
     return e
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
-    setSuccess(true)
-    setForm({ actual: '', nueva: '', confirmar: '' })
-    setTimeout(() => setSuccess(false), 4000)
+    try {
+      await updatePassword.mutateAsync({ currentPassword: form.actual, newPassword: form.nueva })
+      setSuccess(true)
+      setForm({ actual: '', nueva: '', confirmar: '' })
+      setTimeout(() => setSuccess(false), 4000)
+    } catch (err) {
+      setServerError(err.message ?? 'No se pudo actualizar la contraseña.')
+    }
   }
 
   const inputCls = (err) =>
@@ -112,6 +120,13 @@ function CambiarPassword() {
             Contraseña actualizada correctamente.
           </motion.div>
         )}
+        {serverError && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {serverError}
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <div>
@@ -133,9 +148,11 @@ function CambiarPassword() {
         <PasswordInput field="confirmar" placeholder="Repita la nueva contraseña" />
       </div>
 
-      <button type="submit"
-        className="flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-bold hover:bg-primary-700 transition-colors">
-        <Shield className="w-4 h-4" />
+      <button type="submit" disabled={updatePassword.isPending}
+        className="flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-bold hover:bg-primary-700 disabled:opacity-60 transition-colors">
+        {updatePassword.isPending
+          ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          : <Shield className="w-4 h-4" />}
         Actualizar contraseña
       </button>
     </form>

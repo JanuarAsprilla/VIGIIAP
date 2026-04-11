@@ -6,7 +6,7 @@ import {
   FileText, Image, Link as LinkIcon,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
-import { ADMIN_MOCK_MAPAS } from '@/lib/constants'
+import { useMapasList, useCreateMapa, useUpdateMapa, useDeleteMapa } from '@/hooks/useMapas'
 
 const fadeUp = fadeUpSm
 
@@ -128,7 +128,12 @@ function FileDropzone({ formato, onFile, currentFile, editing, onError }) {
 }
 
 export default function GestionMapas() {
-  const [mapas, setMapas] = useState(ADMIN_MOCK_MAPAS)
+  const { data } = useMapasList({ limit: 200 })
+  const mapas = data?.data ?? []
+  const createMapa = useCreateMapa()
+  const updateMapa = useUpdateMapa()
+  const deleteMapa = useDeleteMapa()
+
   const [search, setSearch] = useState('')
   const [filtroTematica, setFiltroTematica] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -141,7 +146,7 @@ export default function GestionMapas() {
 
   const filtered = mapas.filter((m) => {
     const q = search.toLowerCase()
-    const matchQ = !q || m.nombre.toLowerCase().includes(q) || m.autor.toLowerCase().includes(q)
+    const matchQ = !q || m.nombre.toLowerCase().includes(q) || (m.autor ?? '').toLowerCase().includes(q)
     const matchT = !filtroTematica || m.tematica === filtroTematica
     return matchQ && matchT
   })
@@ -173,32 +178,44 @@ export default function GestionMapas() {
     return e
   }
 
-  const handleSave = (ev) => {
+  const handleSave = async (ev) => {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setFormErrors(e); return }
 
-    const fileName = uploadedFile?.name
+    const payload = new FormData()
+    payload.append('titulo',    form.nombre)
+    payload.append('categoria', form.tematica)
+    payload.append('autor',     form.autor)
+    payload.append('anio',      new Date().getFullYear().toString())
+    if (uploadedFile) {
+      const field = form.formato === 'PDF' ? 'archivo_pdf' : 'archivo_img'
+      payload.append(field, uploadedFile)
+    }
+    if (form.formato === 'Geovisor') payload.append('geovisor_url', form.url)
 
     if (editing) {
-      setMapas((prev) => prev.map((m) => m.id === editing.id
-        ? { ...m, ...form, ...(fileName ? { fileName } : {}) }
-        : m
-      ))
+      await updateMapa.mutateAsync({ id: editing.id, formData: payload })
     } else {
-      setMapas((prev) => [...prev, { id: prev.length + 1, ...form, fileName, consultas: 0 }])
+      await createMapa.mutateAsync(payload)
     }
     setShowModal(false)
   }
 
-  const toggleVisible = (id) => setMapas((prev) => prev.map((m) => m.id === id ? { ...m, visible: !m.visible } : m))
+  const toggleVisible = async (id) => {
+    const m = mapas.find((x) => x.id === id)
+    if (!m) return
+    const fd = new FormData()
+    fd.append('activo', String(!m.visible))
+    await updateMapa.mutateAsync({ id, formData: fd })
+  }
 
-  const confirmDelete = () => {
-    setMapas((prev) => prev.filter((m) => m.id !== deleteTarget.id))
+  const confirmDelete = async () => {
+    await deleteMapa.mutateAsync(deleteTarget.id)
     setDeleteTarget(null)
   }
 
-  const totalConsultas = mapas.reduce((a, m) => a + m.consultas, 0)
+  const totalConsultas = 0
   const capasVisibles  = mapas.filter((m) => m.visible).length
 
   return (

@@ -3,59 +3,45 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Map, Filter, ChevronLeft, ChevronRight, X,
-  FileText, Image, Globe,
+  FileText, Image, Globe, Loader2,
 } from 'lucide-react'
-import {
-  MAP_CATEGORIES, MAP_DEPARTMENTS, MAP_FORMATS,
-  MAP_YEARS, SAMPLE_MAPS,
-} from '@/lib/constants'
+import { MAP_CATEGORIES, MAP_DEPARTMENTS, MAP_FORMATS, MAP_YEARS } from '@/lib/constants'
+import { useMapasList } from '@/hooks/useMapas'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { useToast, ToastContainer } from '@/components/Toast'
 
-// ── Animation helper ──
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] },
 })
 
-// ── Format icon mapping ──
 function FormatIcon({ format, geovisorLink, onDownload }) {
   if (format === 'GEOVISOR') {
     return (
-      <Link
-        to={geovisorLink || '/geovisor'}
+      <Link to={geovisorLink || '/geovisor'}
         className="flex flex-col items-center gap-1 text-primary-800/60 hover:text-primary-800 transition-colors no-underline"
-        title="Ver en Geovisor"
-      >
+        title="Ver en Geovisor">
         <Globe className="w-5 h-5" />
         <span className="text-[0.65rem] font-bold uppercase">Geovisor</span>
       </Link>
     )
   }
-
   const icons = { PDF: FileText, IMG: Image }
   const Icon = icons[format] || FileText
-
   return (
-    <button
-      onClick={onDownload}
+    <button onClick={onDownload}
       className="flex flex-col items-center gap-1 text-primary-800/60 hover:text-primary-800 transition-colors"
-      title={`Descargar ${format}`}
-    >
+      title={`Descargar ${format}`}>
       <Icon className="w-5 h-5" />
       <span className="text-[0.65rem] font-bold uppercase">{format}</span>
     </button>
   )
 }
 
-// ── Badge ──
 function FormatBadge({ text, color }) {
-  const colors = {
-    primary: 'bg-primary-800 text-white',
-    orange: 'bg-orange-500 text-white',
-  }
+  const colors = { primary: 'bg-primary-800 text-white', orange: 'bg-orange-500 text-white' }
   return (
     <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-[0.65rem] font-bold uppercase tracking-wider ${colors[color] || colors.primary}`}>
       {text}
@@ -63,61 +49,48 @@ function FormatBadge({ text, color }) {
   )
 }
 
-// ── Map Card ──
 function MapCard({ map, index, onDownload }) {
   const palette = ['#D8F3DC', '#E8F5E9', '#F1F8F1', '#E0F2E0', '#D4EDDA', '#EDF7ED']
   const bg = palette[index % palette.length]
-
   return (
-    <motion.div
-      {...fadeUp(0.1 + index * 0.05)}
-      className="bg-white border border-border rounded-xl overflow-hidden hover:shadow-card transition-shadow"
-    >
-      <div
-        className="h-48 relative"
-        style={{ background: `linear-gradient(135deg, ${bg}, ${bg}dd)` }}
-      >
+    <motion.div {...fadeUp(0.1 + index * 0.05)}
+      className="bg-white border border-border rounded-xl overflow-hidden hover:shadow-card transition-shadow">
+      <div className="h-48 relative" style={{ background: `linear-gradient(135deg, ${bg}, ${bg}dd)` }}>
         <FormatBadge text={map.badge} color={map.badgeColor} />
       </div>
-
       <div className="p-5">
         <span className="inline-block text-[0.7rem] font-bold uppercase tracking-wider text-primary-700 mb-1.5">
           {map.category}
         </span>
         <h3 className="card-title text-text leading-snug mb-2">{map.title}</h3>
         <p className="card-text mb-4">{map.excerpt}</p>
-
-        {/* Download + Geovisor icons */}
         <div className="flex items-center gap-5 pt-3 border-t border-border">
           {map.formats.map((fmt) => (
-            <FormatIcon key={fmt} format={fmt} onDownload={() => onDownload(map, fmt)} />
+            <FormatIcon key={fmt} format={fmt}
+              onDownload={() => onDownload(map, fmt)}
+              geovisorLink={map.geovisorLink} />
           ))}
-          <FormatIcon format="GEOVISOR" geovisorLink={map.geovisorLink} />
+          {!map.formats.includes('GEOVISOR') && (
+            <FormatIcon format="GEOVISOR" geovisorLink={map.geovisorLink} />
+          )}
         </div>
       </div>
     </motion.div>
   )
 }
 
-// ── Filter Select ──
 function FilterSelect({ label, options, value, onChange }) {
   return (
     <div className="flex-1 min-w-[180px]">
       <label className="table-header block text-text-muted mb-1.5">{label}</label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-[0.9rem] text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
-        ))}
+      <select value={value} onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-[0.9rem] text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition">
+        {options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
       </select>
     </div>
   )
 }
 
-// ── Filter Chip ──
 function FilterChip({ label, onRemove }) {
   return (
     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-800 text-white rounded-full text-xs font-semibold">
@@ -129,23 +102,24 @@ function FilterChip({ label, onRemove }) {
   )
 }
 
-// ── Main Page ──
 export default function Mapas() {
-  const { query } = useSearch()
-  const [filters, setFilters] = useState({
-    category: '',
-    department: '',
-    format: '',
-    year: '',
-  })
-  const [page, setPage] = useState(1)
+  const { query }    = useSearch()
+  const { toasts, toast, dismiss } = useToast()
+  const [filters, setFilters] = useState({ category: '', department: '', format: '', year: '' })
+  const [page, setPage]       = useState(1)
   const PER_PAGE = 6
 
-  const filteredMaps = SAMPLE_MAPS.filter((m) => {
+  // ── Datos reales ─────────────────────────────────────────────────────────────
+  const { data, isLoading, isError } = useMapasList({
+    categoria: filters.category || undefined,
+    anio:      filters.year     || undefined,
+    limit:     100,
+  })
+  const allMaps = data?.data ?? []
+
+  // Filtrado local (búsqueda global + filtros que el backend aún no tiene)
+  const filteredMaps = allMaps.filter((m) => {
     if (!matches([m.title, m.category, m.excerpt], query)) return false
-    if (filters.category && m.categoryKey !== filters.category) return false
-    if (filters.department && m.department !== filters.department) return false
-    if (filters.year && m.year !== filters.year) return false
     if (filters.format && !m.formats.some((f) => f.toLowerCase() === filters.format)) return false
     return true
   })
@@ -155,31 +129,24 @@ export default function Mapas() {
     const cat = MAP_CATEGORIES.find((c) => c.value === filters.category)
     if (cat) activeChips.push({ key: 'category', label: cat.label })
   }
-  if (filters.year) activeChips.push({ key: 'year', label: filters.year })
-  if (filters.department) {
-    const dept = MAP_DEPARTMENTS.find((d) => d.value === filters.department)
-    if (dept) activeChips.push({ key: 'department', label: dept.label })
-  }
+  if (filters.year)   activeChips.push({ key: 'year', label: filters.year })
   if (filters.format) {
     const fmt = MAP_FORMATS.find((f) => f.value === filters.format)
     if (fmt) activeChips.push({ key: 'format', label: fmt.label })
   }
 
   const totalPages = Math.max(1, Math.ceil(filteredMaps.length / PER_PAGE))
-  const safePage = Math.min(page, totalPages)
-  const pagedMaps = filteredMaps.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
+  const safePage   = Math.min(page, totalPages)
+  const pagedMaps  = filteredMaps.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
 
-  const { toasts, toast, dismiss } = useToast()
-
-  const updateFilter = (key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: value }))
-    setPage(1)
-  }
-  const removeChip = (key) => { setFilters((prev) => ({ ...prev, [key]: '' })); setPage(1) }
-  const clearAllFilters = () => { setFilters({ category: '', department: '', format: '', year: '' }); setPage(1) }
+  const updateFilter = (key, value) => { setFilters((p) => ({ ...p, [key]: value })); setPage(1) }
+  const removeChip   = (key)        => { setFilters((p) => ({ ...p, [key]: '' }));    setPage(1) }
+  const clearAll     = ()           => { setFilters({ category: '', department: '', format: '', year: '' }); setPage(1) }
 
   const handleDownload = (map, format) => {
-    toast(`Descargando "${map.title}" en ${format}`, 'success')
+    const url = format === 'PDF' ? map.archivo_pdf_url : map.archivo_img_url
+    if (url) window.open(url, '_blank', 'noopener')
+    else toast(`Descargando "${map.title}" en ${format}`, 'success')
   }
 
   return (
@@ -189,21 +156,20 @@ export default function Mapas() {
         <div>
           <span className="page-header-tag block mb-2">Cartografía Institucional</span>
           <h1 className="page-header-title mb-3">
-            Repositorio de{' '}
-            <span className="block">Mapas Temáticos</span>
+            Repositorio de <span className="block">Mapas Temáticos</span>
           </h1>
           <p className="page-header-description max-w-lg">
-            Explore y descargue la cartografía oficial del Chocó Biogeográfico.
-            Información científica curada para el análisis territorial y la toma de decisiones.
+            Explore y descargue la cartografía oficial. Información científica curada para el análisis territorial.
           </p>
         </div>
-
         <div className="flex items-center gap-3 bg-white border border-border rounded-xl px-5 py-4 shrink-0">
           <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
             <Map className="w-5 h-5 text-primary-800" />
           </div>
           <div>
-            <span className="block text-xl font-bold text-text">1,248</span>
+            <span className="block text-xl font-bold text-text">
+              {isLoading ? '—' : (data?.meta?.total ?? allMaps.length)}
+            </span>
             <span className="block table-header text-text-muted">Mapas Disponibles</span>
           </div>
         </div>
@@ -215,28 +181,35 @@ export default function Mapas() {
           <Filter className="w-4 h-4 text-text-muted" />
           <span className="table-header text-text-muted">Filtros Avanzados</span>
         </div>
-
         <div className="flex flex-wrap gap-4">
           <FilterSelect label="Categoría" options={MAP_CATEGORIES} value={filters.category} onChange={(v) => updateFilter('category', v)} />
           <FilterSelect label="Departamento / Subregión" options={MAP_DEPARTMENTS} value={filters.department} onChange={(v) => updateFilter('department', v)} />
           <FilterSelect label="Formato" options={MAP_FORMATS} value={filters.format} onChange={(v) => updateFilter('format', v)} />
           <FilterSelect label="Año de Publicación" options={MAP_YEARS} value={filters.year} onChange={(v) => updateFilter('year', v)} />
         </div>
-
         {activeChips.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-border">
             {activeChips.map((chip) => (
               <FilterChip key={chip.key} label={chip.label} onRemove={() => removeChip(chip.key)} />
             ))}
-            <button onClick={clearAllFilters} className="text-sm font-medium text-text-muted hover:text-primary-800 ml-auto transition-colors">
+            <button onClick={clearAll} className="text-sm font-medium text-text-muted hover:text-primary-800 ml-auto transition-colors">
               Limpiar todos los filtros
             </button>
           </div>
         )}
       </motion.div>
 
-      {/* Map Cards Grid */}
-      {pagedMaps.length > 0 ? (
+      {/* Content */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 text-primary-800 animate-spin" />
+        </div>
+      ) : isError ? (
+        <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
+          <Map className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No se pudo cargar los mapas. Verifique su conexión.</p>
+        </motion.div>
+      ) : pagedMaps.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {pagedMaps.map((map, i) => (
             <MapCard key={map.id} map={map} index={i} onDownload={handleDownload} />
@@ -253,27 +226,18 @@ export default function Mapas() {
       {totalPages > 1 && (
         <motion.div {...fadeUp(0.3)} className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={safePage === 1}
-              className="w-9 h-9 rounded-lg border border-border bg-white text-text-muted flex items-center justify-center disabled:opacity-40 hover:enabled:bg-primary-800 hover:enabled:border-primary-800 hover:enabled:text-white transition-colors"
-            >
+            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1}
+              className="w-9 h-9 rounded-lg border border-border bg-white text-text-muted flex items-center justify-center disabled:opacity-40 hover:enabled:bg-primary-800 hover:enabled:border-primary-800 hover:enabled:text-white transition-colors">
               <ChevronLeft className="w-4 h-4" />
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                onClick={() => setPage(n)}
-                className={`w-9 h-9 rounded-lg border text-sm font-medium flex items-center justify-center transition-colors ${n === safePage ? 'bg-primary-800 border-primary-800 text-white' : 'border-border bg-white text-text-light hover:bg-primary-800 hover:border-primary-800 hover:text-white'}`}
-              >
+              <button key={n} onClick={() => setPage(n)}
+                className={`w-9 h-9 rounded-lg border text-sm font-medium flex items-center justify-center transition-colors ${n === safePage ? 'bg-primary-800 border-primary-800 text-white' : 'border-border bg-white text-text-light hover:bg-primary-800 hover:border-primary-800 hover:text-white'}`}>
                 {n}
               </button>
             ))}
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safePage === totalPages}
-              className="w-9 h-9 rounded-lg border border-border bg-white text-text-light flex items-center justify-center disabled:opacity-40 hover:enabled:bg-primary-800 hover:enabled:border-primary-800 hover:enabled:text-white transition-colors"
-            >
+            <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
+              className="w-9 h-9 rounded-lg border border-border bg-white text-text-light flex items-center justify-center disabled:opacity-40 hover:enabled:bg-primary-800 hover:enabled:border-primary-800 hover:enabled:text-white transition-colors">
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

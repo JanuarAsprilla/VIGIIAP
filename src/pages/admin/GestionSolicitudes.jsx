@@ -5,8 +5,8 @@ import {
   Download, Filter, ChevronLeft, ChevronRight,
   User, FileText, MessageSquare,
 } from 'lucide-react'
-import { SOLICITUDES_TABLE } from '@/lib/constants'
 import { fadeUpSm, panelAnim, drawerAnim } from '@/lib/animations'
+import { useSolicitudesAdmin, useUpdateEstadoSolicitud } from '@/hooks/useSolicitudes'
 
 const fadeUp = fadeUpSm
 
@@ -27,9 +27,10 @@ const REVISORES = [
 const PAGE_SIZE = 5
 
 export default function GestionSolicitudes() {
-  const [solicitudes, setSolicitudes] = useState(() =>
-    SOLICITUDES_TABLE.map((s) => ({ ...s, revisor: 'Sin asignar', nota: '' }))
-  )
+  const { data } = useSolicitudesAdmin({ limit: 200 })
+  const solicitudes = data?.data ?? []
+  const updateEstado = useUpdateEstadoSolicitud()
+
   const [search, setSearch] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
   const [filtroTipo, setFiltroTipo] = useState('')
@@ -38,11 +39,11 @@ export default function GestionSolicitudes() {
   const [nota, setNota] = useState('')
   const [page, setPage] = useState(1)
 
-  const tipos = [...new Set(SOLICITUDES_TABLE.map((s) => s.tipo))]
+  const tipos = [...new Set(solicitudes.map((s) => s.tipo))]
 
   const filtered = solicitudes.filter((s) => {
     const q = search.toLowerCase()
-    const matchQ = !q || s.id.toLowerCase().includes(q) || s.tipo.toLowerCase().includes(q) || s.solicitante.toLowerCase().includes(q)
+    const matchQ = !q || s.id.toLowerCase().includes(q) || s.tipo.toLowerCase().includes(q) || (s.solicitante ?? '').toLowerCase().includes(q)
     const matchE = !filtroEstado || s.estado === filtroEstado
     const matchT = !filtroTipo || s.tipo === filtroTipo
     return matchQ && matchE && matchT
@@ -51,21 +52,18 @@ export default function GestionSolicitudes() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  const handleAction = () => {
+  const handleAction = async () => {
     const { type, sol } = accionModal
-    setSolicitudes((prev) => prev.map((s) =>
-      s.id === sol.id
-        ? { ...s, estado: type === 'approve' ? 'Aprobado' : 'Rechazado', estadoColor: type === 'approve' ? 'green' : 'red', notas: nota || s.notas }
-        : s
-    ))
-    if (selected?.id === sol.id) setSelected((prev) => ({ ...prev, estado: type === 'approve' ? 'Aprobado' : 'Rechazado' }))
+    const nuevoEstado = type === 'approve' ? 'Aprobado' : 'Rechazado'
+    await updateEstado.mutateAsync({ id: sol._id, estado: nuevoEstado, nota })
+    if (selected?._id === sol._id) setSelected((prev) => ({ ...prev, estado: nuevoEstado }))
     setAccionModal(null)
     setNota('')
   }
 
-  const handleRevisor = (id, revisor) => {
-    setSolicitudes((prev) => prev.map((s) => s.id === id ? { ...s, revisor } : s))
-    if (selected?.id === id) setSelected((prev) => ({ ...prev, revisor }))
+  const handleRevisor = (_id, _revisor) => {
+    // Revisor is a local UI concept — update locally only
+    if (selected?._id === _id) setSelected((prev) => ({ ...prev, revisor: _revisor }))
   }
 
   const exportCSV = () => {

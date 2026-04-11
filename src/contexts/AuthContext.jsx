@@ -1,90 +1,121 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import api from '@/lib/api'
+import queryClient from '@/lib/queryClient'
 
-// ── Role constants ──
+// ─── Mapeo de roles backend → etiquetas UI ────────────────────────────────────
 export const ROLES = {
-  ADMIN: 'Administrador SIG',
+  ADMIN:        'Administrador SIG',
   INVESTIGADOR: 'Investigador',
-  PUBLICO: 'Público',
+  PUBLICO:      'Público',
 }
 
-// ── Demo users (reemplazar con API real en Fase 2) ──
-const DEMO_USERS = {
-  'admin@iiap.org.co': {
-    name: 'Admin IIAP',
-    role: ROLES.ADMIN,
-    initials: 'AI',
-    email: 'admin@iiap.org.co',
-    _password: 'admin1234',
-  },
-  'carlos@iiap.org.co': {
-    name: 'Carlos Rentería',
-    role: ROLES.ADMIN,
-    initials: 'CR',
-    email: 'carlos@iiap.org.co',
-    _password: 'admin1234',
-  },
-  'investigador@iiap.org.co': {
-    name: 'Analista Territorial',
-    role: ROLES.INVESTIGADOR,
-    initials: 'AT',
-    email: 'investigador@iiap.org.co',
-    _password: 'inv1234',
-  },
-  'maria@iiap.org.co': {
-    name: 'María Valencia',
-    role: ROLES.INVESTIGADOR,
-    initials: 'MV',
-    email: 'maria@iiap.org.co',
-    _password: 'inv1234',
-  },
+const ROLE_MAP = {
+  admin_sig:    ROLES.ADMIN,
+  investigador: ROLES.INVESTIGADOR,
+  publico:      ROLES.PUBLICO,
 }
 
+function normalizeUser(raw) {
+  return {
+    id:          raw.id,
+    name:        raw.nombre,
+    email:       raw.email,
+    role:        ROLE_MAP[raw.rol] ?? ROLES.PUBLICO,
+    rol:         raw.rol,           // valor backend — útil para lógica interna
+    initials:    raw.nombre
+      ?.split(' ')
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() ?? '?',
+    institucion: raw.institucion ?? null,
+  }
+}
+
+// ─── Context ──────────────────────────────────────────────────────────────────
 const AuthContext = createContext(null)
 
+function loadPersistedUser() {
+  try {
+    const raw = localStorage.getItem('vigiiap_user')
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
+  const [user, setUser]       = useState(loadPersistedUser)
   const [loading, setLoading] = useState(false)
 
-  const login = useCallback(async (email, password) => {
-    setLoading(true)
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        setLoading(false)
-        const key = email.toLowerCase().trim()
-        const found = DEMO_USERS[key]
-
-        if (found) {
-          if (found._password === password) {
-            const { _password, ...safeUser } = found
-            setUser(safeUser)
-            resolve(safeUser)
-          } else {
-            reject(new Error('Contraseña incorrecta'))
-          }
-        } else if (email && password) {
-          // Cualquier otro → Público
-          const name = email.split('@')[0].replace(/[._-]/g, ' ')
-          const publicUser = {
-            name: name.charAt(0).toUpperCase() + name.slice(1),
-            role: ROLES.PUBLICO,
-            initials: name[0].toUpperCase(),
-            email,
-          }
-          setUser(publicUser)
-          resolve(publicUser)
-        } else {
-          reject(new Error('Credenciales requeridas'))
-        }
-      }, 700)
-    })
+  // Escucha el evento de logout forzado por el interceptor de axios (401)
+  useEffect(() => {
+    const handleForceLogout = () => {
+      setUser(null)
+      queryClient.clear()
+    }
+    window.addEventListener('vigiiap:logout', handleForceLogout)
+    return () => window.removeEventListener('vigiiap:logout', handleForceLogout)
   }, [])
 
-  const logout = useCallback(() => setUser(null), [])
+  const persistUser = (normalized) => {
+    localStorage.setItem('vigiiap_user', JSON.stringify(normalized))
+    setUser(normalized)
+  }
+
+  const clearSession = () => {
+    localStorage.removeItem('vigiiap_token')
+    localStorage.removeItem('vigiiap_user')
+    setUser(null)
+    queryClient.clear()
+  }
+
+  // ── Login ──
+  const login = useCallback(async (email, password) => {
+    setLoading(true)
+    try {
+      const { token, user: raw } = await api.post('/auth/login', { email, password })
+      localStorage.setItem('vigiiap_token', token)
+      const normalized = normalizeUser(raw)
+      persistUser(normalized)
+      return normalized
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // ── Registro ──
+  const register = useCallback(async (data) => {
+    return api.post('/auth/registro', data)
+  }, [])
+
+  // ── Logout ──
+  const logout = useCallback(() => {
+    clearSession()
+  }, [])
+
+  // ── Refrescar perfil desde la API ──
+  const refreshProfile = useCallback(async () => {
+    try {
+      const raw = await api.get('/auth/me')
+      const normalized = normalizeUser(raw)
+      persistUser(normalized)
+      return normalized
+    } catch {
+      clearSession()
+    }
+  }, [])
 
   return (
-    <AuthContext.Provider
-      value={{ user, isAuthenticated: !!user, loading, login, logout }}
-    >
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated: !!user,
+      loading,
+      login,
+      logout,
+      register,
+      refreshProfile,
+    }}>
       {children}
     </AuthContext.Provider>
   )

@@ -5,9 +5,10 @@ import {
   CheckCircle, XCircle, UserPlus, Mail,
   Shield, User, Clock, Activity, Copy, Check,
 } from 'lucide-react'
-import { ADMIN_MOCK_USERS, ADMIN_ACTIVITY_LOG } from '@/lib/constants'
+import { ADMIN_ACTIVITY_LOG } from '@/lib/constants'
 import { ROLES } from '@/contexts/AuthContext'
 import { fadeUpSm, panelAnim, drawerAnim } from '@/lib/animations'
+import { useUsuariosList, useUpdateUsuarioRol } from '@/hooks/useUsuarios'
 
 const fadeUp = fadeUpSm
 
@@ -233,7 +234,10 @@ function InviteModal({ onClose }) {
 }
 
 export default function Usuarios() {
-  const [users, setUsers] = useState(ADMIN_MOCK_USERS)
+  const { data } = useUsuariosList({ limit: 200 })
+  const users = data?.data ?? []
+  const updateRol = useUpdateUsuarioRol()
+
   const [search, setSearch] = useState('')
   const [filtroRol, setFiltroRol] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
@@ -275,35 +279,25 @@ export default function Usuarios() {
     return e
   }
 
-  const handleSave = (ev) => {
+  const handleSave = async (ev) => {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setFormErrors(e); return }
     if (editingUser) {
-      setUsers((prev) => prev.map((u) => u.id === editingUser.id
-        ? { ...u, ...form, initials: form.nombre.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase() }
-        : u
-      ))
-    } else {
-      const newId = `USR-${String(users.length + 1).padStart(3, '0')}`
-      setUsers((prev) => [...prev, {
-        id: newId, ...form,
-        ultimoAcceso: 'Hoy',
-        initials: form.nombre.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(),
-      }])
+      await updateRol.mutateAsync({ id: editingUser.id, rol: form.rol, activo: form.estado === 'Activo' })
     }
+    // Creating users is done via the invite flow — no direct creation endpoint
     setShowModal(false)
   }
 
-  const toggleEstado = (id) => {
-    setUsers((prev) => prev.map((u) => u.id === id
-      ? { ...u, estado: u.estado === 'Activo' ? 'Inactivo' : 'Activo' }
-      : u
-    ))
+  const toggleEstado = async (id) => {
+    const u = users.find((x) => x.id === id)
+    if (!u) return
+    await updateRol.mutateAsync({ id, rol: u.rol, activo: !u.activo })
   }
 
   const confirmDelete = () => {
-    setUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id))
+    // Backend deletion endpoint not yet implemented — close modal
     setDeleteTarget(null)
   }
 
