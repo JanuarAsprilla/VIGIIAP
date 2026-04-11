@@ -11,6 +11,7 @@ import {
 } from '@/lib/constants'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
+import { useToast, ToastContainer } from '@/components/Toast'
 
 // ── Animation helper ──
 const fadeUp = (delay = 0) => ({
@@ -20,7 +21,7 @@ const fadeUp = (delay = 0) => ({
 })
 
 // ── Format icon mapping ──
-function FormatIcon({ format, geovisorLink }) {
+function FormatIcon({ format, geovisorLink, onDownload }) {
   if (format === 'GEOVISOR') {
     return (
       <Link
@@ -34,14 +35,12 @@ function FormatIcon({ format, geovisorLink }) {
     )
   }
 
-  const icons = {
-    PDF: FileText,
-    IMG: Image,
-  }
+  const icons = { PDF: FileText, IMG: Image }
   const Icon = icons[format] || FileText
 
   return (
     <button
+      onClick={onDownload}
       className="flex flex-col items-center gap-1 text-primary-800/60 hover:text-primary-800 transition-colors"
       title={`Descargar ${format}`}
     >
@@ -65,7 +64,7 @@ function FormatBadge({ text, color }) {
 }
 
 // ── Map Card ──
-function MapCard({ map, index }) {
+function MapCard({ map, index, onDownload }) {
   const palette = ['#D8F3DC', '#E8F5E9', '#F1F8F1', '#E0F2E0', '#D4EDDA', '#EDF7ED']
   const bg = palette[index % palette.length]
 
@@ -91,7 +90,7 @@ function MapCard({ map, index }) {
         {/* Download + Geovisor icons */}
         <div className="flex items-center gap-5 pt-3 border-t border-border">
           {map.formats.map((fmt) => (
-            <FormatIcon key={fmt} format={fmt} />
+            <FormatIcon key={fmt} format={fmt} onDownload={() => onDownload(map, fmt)} />
           ))}
           <FormatIcon format="GEOVISOR" geovisorLink={map.geovisorLink} />
         </div>
@@ -170,12 +169,18 @@ export default function Mapas() {
   const safePage = Math.min(page, totalPages)
   const pagedMaps = filteredMaps.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
 
+  const { toasts, toast, dismiss } = useToast()
+
   const updateFilter = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
     setPage(1)
   }
   const removeChip = (key) => { setFilters((prev) => ({ ...prev, [key]: '' })); setPage(1) }
   const clearAllFilters = () => { setFilters({ category: '', department: '', format: '', year: '' }); setPage(1) }
+
+  const handleDownload = (map, format) => {
+    toast(`Descargando "${map.title}" en ${format}`, 'success')
+  }
 
   return (
     <div className="space-y-8">
@@ -234,7 +239,7 @@ export default function Mapas() {
       {pagedMaps.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {pagedMaps.map((map, i) => (
-            <MapCard key={map.id} map={map} index={i} />
+            <MapCard key={map.id} map={map} index={i} onDownload={handleDownload} />
           ))}
         </div>
       ) : (
@@ -277,6 +282,8 @@ export default function Mapas() {
           </span>
         </motion.div>
       )}
+
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>
   )
 }

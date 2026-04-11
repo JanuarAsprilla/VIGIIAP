@@ -1,168 +1,185 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { LogIn, Mail, Lock, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { LogIn, Mail, Lock, Eye, EyeOff, AlertCircle, ChevronRight } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import AuthLayout from '@/components/AuthLayout'
+import { validateEmail, validatePassword } from '@/lib/validators'
+
+const DEMO_CREDS = [
+  { label: 'Administrador SIG', email: 'admin@iiap.org.co',        pass: 'admin1234', dot: 'bg-red-400'     },
+  { label: 'Investigador',      email: 'investigador@iiap.org.co', pass: 'inv1234',   dot: 'bg-gold-400'    },
+  { label: 'Usuario Público',   email: 'usuario@ejemplo.co',       pass: '123456',    dot: 'bg-primary-400' },
+]
+
+function InputField({ label, icon: Icon, error, right, ...props }) {
+  return (
+    <div>
+      <label className="block text-[0.8rem] font-semibold text-text mb-1.5">{label}</label>
+      <div className="relative">
+        <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+        <input
+          {...props}
+          className={`w-full pl-10 ${right ? 'pr-11' : 'pr-4'} py-3 border rounded-xl text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 transition bg-white ${
+            error
+              ? 'border-red-400 focus:border-red-400 focus:ring-red-400/10'
+              : 'border-border focus:border-primary-800 focus:ring-primary-800/10'
+          }`}
+        />
+        {right}
+      </div>
+      <AnimatePresence>
+        {error && (
+          <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="text-xs text-red-500 mt-1 flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />{error}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
 
 export default function Login() {
-  const navigate = useNavigate()
-  const location = useLocation()
+  const navigate  = useNavigate()
+  const location  = useLocation()
   const { login, loading } = useAuth()
   const from = location.state?.from?.pathname || '/'
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
+  const [email, setEmail]             = useState('')
+  const [password, setPassword]       = useState('')
+  const [showPass, setShowPass]       = useState(false)
+  const [remember, setRemember]       = useState(false)
+  const [errors, setErrors]           = useState({})
+  const [serverError, setServerError] = useState('')
+
+  const validate = () => {
+    const e = {}
+    const emailErr    = validateEmail(email)
+    const passwordErr = validatePassword(password, 6)
+    if (emailErr)    e.email    = emailErr
+    if (passwordErr) e.password = passwordErr
+    return e
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
+    setServerError('')
+    const errs = validate()
+    if (Object.keys(errs).length) { setErrors(errs); return }
+    setErrors({})
     try {
-      await login(email, password)
-      navigate(from, { replace: true })
+      const user = await login(email, password)
+      navigate(user.role === 'Administrador SIG' ? '/admin' : (from === '/admin' ? '/' : from), { replace: true })
     } catch (err) {
-      setError(err.message || 'Error al iniciar sesión')
+      setServerError(err.message || 'Credenciales incorrectas. Intente de nuevo.')
     }
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-900 via-primary-800 to-primary-700 flex items-center justify-center p-6">
-      <div
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
+  const fillDemo = (cred) => {
+    setEmail(cred.email); setPassword(cred.pass)
+    setErrors({}); setServerError('')
+  }
 
-      {/* FAB — volver al inicio */}
-      <Link
-        to="/"
-        className="fixed top-6 left-6 z-10 flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white text-sm font-medium no-underline hover:bg-white/20 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Volver al inicio
+  return (
+    <AuthLayout>
+      {/* Heading */}
+      <div className="mb-8">
+        <h2 className="font-display text-2xl font-bold text-text mb-1">Bienvenido</h2>
+        <p className="text-sm text-text-muted">Ingrese sus credenciales para acceder al portal territorial</p>
+      </div>
+
+      {/* Server error */}
+      <AnimatePresence>
+        {serverError && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-5 text-sm">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{serverError}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <InputField
+          label="Correo Electrónico"
+          icon={Mail}
+          type="email"
+          value={email}
+          onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })) }}
+          placeholder="usuario@iiap.org.co"
+          error={errors.email}
+          autoComplete="email"
+        />
+
+        <InputField
+          label="Contraseña"
+          icon={Lock}
+          type={showPass ? 'text' : 'password'}
+          value={password}
+          onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })) }}
+          placeholder="••••••••"
+          error={errors.password}
+          autoComplete="current-password"
+          right={
+            <button type="button" onClick={() => setShowPass(!showPass)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors">
+              {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          }
+        />
+
+        <div className="flex items-center justify-between pt-1">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)}
+              className="w-4 h-4 accent-primary-800 rounded" />
+            <span className="text-sm text-text-muted select-none">Recordarme</span>
+          </label>
+          <Link to="/recuperar-password"
+            className="text-sm font-semibold text-primary-800 no-underline hover:text-primary-600 transition-colors">
+            ¿Olvidó su contraseña?
+          </Link>
+        </div>
+
+        <button type="submit" disabled={loading}
+          className="w-full flex items-center justify-center gap-2 py-3 bg-primary-800 text-white rounded-xl text-sm font-bold hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors mt-2 shadow-sm">
+          {loading
+            ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            : <><LogIn className="w-4 h-4" />Iniciar Sesión</>
+          }
+        </button>
+      </form>
+
+      {/* Divider */}
+      <div className="flex items-center gap-4 my-6">
+        <div className="flex-1 h-px bg-border" />
+        <span className="text-xs text-text-muted uppercase tracking-wider">o</span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
+
+      {/* Register link */}
+      <Link to="/solicitar-acceso"
+        className="flex items-center justify-between w-full px-4 py-3 border-2 border-border rounded-xl text-sm font-semibold text-text no-underline hover:border-primary-800 hover:text-primary-800 transition-colors group">
+        <span>¿No tiene cuenta? Solicitar acceso</span>
+        <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary-800 transition-colors" />
       </Link>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative w-full max-w-md"
-      >
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/20">
-            <span className="text-white font-bold text-xl">V</span>
-          </div>
-          <h1 className="font-display text-3xl font-bold text-white mb-1">VIGIIAP</h1>
-          <p className="text-white/60 text-sm">
-            Sistema de Información Territorial del Chocó Biogeográfico
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-float p-8">
-          <div className="mb-6">
-            <h2 className="text-xl font-bold text-text mb-1">Iniciar Sesión</h2>
-            <p className="text-sm text-text-muted">
-              Ingrese sus credenciales para acceder al portal
-            </p>
-          </div>
-
-          {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-4 text-sm">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-text mb-1.5">Correo Electrónico</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-text-muted" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="usuario@iiap.org.co"
-                  required
-                  className="w-full pl-10 pr-4 py-3 bg-bg-alt border border-border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-text mb-1.5">Contraseña</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-text-muted" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full pl-10 pr-12 py-3 bg-bg-alt border border-border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
-                <input type="checkbox" className="accent-primary-800 rounded" />
-                <span>Recordarme</span>
-              </label>
-              <Link
-                to="/recuperar-password"
-                className="text-sm font-medium text-primary-800 no-underline hover:text-primary-600 transition-colors"
-              >
-                ¿Olvidó su contraseña?
-              </Link>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-primary-800 text-white rounded-lg text-sm font-bold hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <LogIn className="w-4.5 h-4.5" />
-                  Iniciar Sesión
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-text-muted uppercase tracking-wider">o</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
-          <div className="text-center">
-            <p className="text-sm text-text-muted mb-3">¿No tiene una cuenta?</p>
-            <Link
-              to="/solicitar-acceso"
-              className="inline-flex items-center justify-center w-full py-3 border-2 border-border text-text rounded-lg text-sm font-semibold no-underline hover:border-primary-800 hover:text-primary-800 transition-colors"
-            >
-              Solicitar Acceso
-            </Link>
-          </div>
-        </div>
-
-        <p className="text-center text-white/40 text-xs mt-6">
-          © {new Date().getFullYear()} IIAP — Instituto de Investigaciones Ambientales del Pacífico
+      {/* Demo credentials */}
+      <div className="mt-6 bg-bg-alt rounded-xl p-4 border border-border">
+        <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-3">
+          Acceso de demostración
         </p>
-      </motion.div>
-    </div>
+        <div className="space-y-1.5">
+          {DEMO_CREDS.map((c) => (
+            <button key={c.label} type="button" onClick={() => fillDemo(c)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white border border-border hover:border-primary-300 hover:bg-primary-50/30 transition-colors text-left">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${c.dot}`} />
+              <span className="text-xs font-semibold text-text">{c.label}</span>
+              <span className="text-[0.65rem] text-text-muted ml-auto truncate">{c.email}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </AuthLayout>
   )
 }
