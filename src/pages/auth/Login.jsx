@@ -1,15 +1,32 @@
 import { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogIn, Mail, Lock, Eye, EyeOff, AlertCircle, ChevronRight } from 'lucide-react'
+import {
+  LogIn, Mail, Lock, Eye, EyeOff, AlertCircle,
+  ChevronRight, Building2, Globe, User,
+} from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import AuthLayout from '@/components/AuthLayout'
 import { validateEmail, validatePassword } from '@/lib/validators'
 
-const DEMO_CREDS = [
-  { label: 'Administrador SIG', email: 'admin@iiap.org.co',        pass: 'admin1234', dot: 'bg-red-400'     },
-  { label: 'Investigador',      email: 'investigador@iiap.org.co', pass: 'inv1234',   dot: 'bg-gold-400'    },
-  { label: 'Usuario Público',   email: 'usuario@ejemplo.co',       pass: '123456',    dot: 'bg-primary-400' },
+// ─── Tipos de acceso ──────────────────────────────────────────────────────────
+const MODOS = [
+  {
+    id:     'institucional',
+    icon:   Building2,
+    label:  'Soy del Instituto / Institución',
+    desc:   'Investigadores, personal IIAP y aliados',
+    color:  'border-primary-800 bg-primary-50 text-primary-900',
+    active: 'border-primary-800 ring-2 ring-primary-800/20 bg-primary-50',
+  },
+  {
+    id:    'visitante',
+    icon:  Globe,
+    label: 'Solo quiero consultar información',
+    desc:  'Acceso público a información del IIAP',
+    color: 'border-border bg-bg-alt text-text',
+    active: 'border-gold-400 ring-2 ring-gold-400/20 bg-amber-50/40',
+  },
 ]
 
 function InputField({ label, icon: Icon, error, right, ...props }) {
@@ -43,22 +60,25 @@ function InputField({ label, icon: Icon, error, right, ...props }) {
 export default function Login() {
   const navigate  = useNavigate()
   const location  = useLocation()
-  const { login, loading } = useAuth()
+  const { login, loginVisitante, loading } = useAuth()
   const from = location.state?.from?.pathname || '/'
 
+  const [modo, setModo]               = useState('institucional')
   const [email, setEmail]             = useState('')
   const [password, setPassword]       = useState('')
+  const [nombreVisitante, setNombre]  = useState('')
   const [showPass, setShowPass]       = useState(false)
-  const [remember, setRemember]       = useState(false)
   const [errors, setErrors]           = useState({})
   const [serverError, setServerError] = useState('')
 
   const validate = () => {
     const e = {}
-    const emailErr    = validateEmail(email)
-    const passwordErr = validatePassword(password, 6)
-    if (emailErr)    e.email    = emailErr
-    if (passwordErr) e.password = passwordErr
+    if (modo === 'institucional') {
+      const emailErr    = validateEmail(email)
+      const passwordErr = validatePassword(password, 6)
+      if (emailErr)    e.email    = emailErr
+      if (passwordErr) e.password = passwordErr
+    }
     return e
   }
 
@@ -68,28 +88,49 @@ export default function Login() {
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
     setErrors({})
-    try {
-      const user = await login(email, password)
-      navigate(user.role === 'Administrador SIG' ? '/admin' : (from === '/admin' ? '/' : from), { replace: true })
-    } catch (err) {
-      setServerError(err.message || 'Credenciales incorrectas. Intente de nuevo.')
-    }
-  }
 
-  const fillDemo = (cred) => {
-    setEmail(cred.email); setPassword(cred.pass)
-    setErrors({}); setServerError('')
+    try {
+      if (modo === 'visitante') {
+        await loginVisitante(nombreVisitante.trim())
+        navigate(from === '/admin' ? '/' : from, { replace: true })
+      } else {
+        const user = await login(email, password)
+        navigate(user.role === 'Administrador SIG' ? '/admin' : (from === '/admin' ? '/' : from), { replace: true })
+      }
+    } catch (err) {
+      setServerError(err.message || 'No se pudo acceder. Intente de nuevo.')
+    }
   }
 
   return (
     <AuthLayout>
       {/* Heading */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h2 className="font-display text-2xl font-bold text-text mb-1">Bienvenido</h2>
-        <p className="text-sm text-text-muted">Ingrese sus credenciales para acceder al portal territorial</p>
+        <p className="text-sm text-text-muted">Seleccione cómo desea acceder al portal territorial</p>
       </div>
 
-      {/* Server error */}
+      {/* Selector de modo */}
+      <div className="grid grid-cols-2 gap-2.5 mb-6">
+        {MODOS.map((m) => {
+          const Icon = m.icon
+          const isActive = modo === m.id
+          return (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => { setModo(m.id); setServerError(''); setErrors({}) }}
+              className={`flex flex-col items-start gap-1.5 p-3.5 rounded-xl border-2 text-left transition-all ${isActive ? m.active : 'border-border bg-white hover:border-primary-300'}`}
+            >
+              <Icon className={`w-5 h-5 ${isActive && m.id === 'institucional' ? 'text-primary-800' : isActive ? 'text-amber-600' : 'text-text-muted'}`} />
+              <span className="text-[0.78rem] font-bold text-text leading-tight">{m.label}</span>
+              <span className="text-[0.65rem] text-text-muted leading-snug">{m.desc}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Error del servidor */}
       <AnimatePresence>
         {serverError && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -100,86 +141,110 @@ export default function Login() {
         )}
       </AnimatePresence>
 
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        <InputField
-          label="Correo Electrónico"
-          icon={Mail}
-          type="email"
-          value={email}
-          onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })) }}
-          placeholder="usuario@iiap.org.co"
-          error={errors.email}
-          autoComplete="email"
-        />
-
-        <InputField
-          label="Contraseña"
-          icon={Lock}
-          type={showPass ? 'text' : 'password'}
-          value={password}
-          onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })) }}
-          placeholder="••••••••"
-          error={errors.password}
-          autoComplete="current-password"
-          right={
-            <button type="button" onClick={() => setShowPass(!showPass)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors">
-              {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+      <AnimatePresence mode="wait">
+        {/* ── Modo institucional ── */}
+        {modo === 'institucional' && (
+          <motion.form
+            key="institucional"
+            initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}
+            onSubmit={handleSubmit} className="space-y-4" noValidate
+          >
+            <InputField
+              label="Correo Electrónico"
+              icon={Mail}
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })) }}
+              placeholder="usuario@iiap.org.co"
+              error={errors.email}
+              autoComplete="email"
+            />
+            <InputField
+              label="Contraseña"
+              icon={Lock}
+              type={showPass ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })) }}
+              placeholder="••••••••"
+              error={errors.password}
+              autoComplete="current-password"
+              right={
+                <button type="button" onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors">
+                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              }
+            />
+            <div className="flex items-center justify-end pt-1">
+              <Link to="/recuperar-password"
+                className="text-sm font-semibold text-primary-800 no-underline hover:text-primary-600 transition-colors">
+                ¿Olvidó su contraseña?
+              </Link>
+            </div>
+            <button type="submit" disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-primary-800 text-white rounded-xl text-sm font-bold hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-sm">
+              {loading
+                ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                : <><LogIn className="w-4 h-4" />Iniciar Sesión</>
+              }
             </button>
-          }
-        />
 
-        <div className="flex items-center justify-between pt-1">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)}
-              className="w-4 h-4 accent-primary-800 rounded" />
-            <span className="text-sm text-text-muted select-none">Recordarme</span>
-          </label>
-          <Link to="/recuperar-password"
-            className="text-sm font-semibold text-primary-800 no-underline hover:text-primary-600 transition-colors">
-            ¿Olvidó su contraseña?
-          </Link>
-        </div>
+            {/* Divider */}
+            <div className="flex items-center gap-4 pt-2">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-text-muted uppercase tracking-wider">o</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
 
-        <button type="submit" disabled={loading}
-          className="w-full flex items-center justify-center gap-2 py-3 bg-primary-800 text-white rounded-xl text-sm font-bold hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors mt-2 shadow-sm">
-          {loading
-            ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            : <><LogIn className="w-4 h-4" />Iniciar Sesión</>
-          }
-        </button>
-      </form>
+            <Link to="/solicitar-acceso"
+              className="flex items-center justify-between w-full px-4 py-3 border-2 border-border rounded-xl text-sm font-semibold text-text no-underline hover:border-primary-800 hover:text-primary-800 transition-colors group">
+              <span>¿No tiene cuenta? Solicitar acceso</span>
+              <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary-800 transition-colors" />
+            </Link>
+          </motion.form>
+        )}
 
-      {/* Divider */}
-      <div className="flex items-center gap-4 my-6">
-        <div className="flex-1 h-px bg-border" />
-        <span className="text-xs text-text-muted uppercase tracking-wider">o</span>
-        <div className="flex-1 h-px bg-border" />
-      </div>
+        {/* ── Modo visitante ── */}
+        {modo === 'visitante' && (
+          <motion.form
+            key="visitante"
+            initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}
+            onSubmit={handleSubmit} className="space-y-5"
+          >
+            <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-4">
+              <p className="text-sm text-amber-800 leading-relaxed">
+                Accede como <strong>visitante</strong> para consultar mapas, documentos,
+                noticias y demás información pública del IIAP sin necesidad de registrarte.
+              </p>
+            </div>
 
-      {/* Register link */}
-      <Link to="/solicitar-acceso"
-        className="flex items-center justify-between w-full px-4 py-3 border-2 border-border rounded-xl text-sm font-semibold text-text no-underline hover:border-primary-800 hover:text-primary-800 transition-colors group">
-        <span>¿No tiene cuenta? Solicitar acceso</span>
-        <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary-800 transition-colors" />
-      </Link>
+            <InputField
+              label="Tu nombre (opcional)"
+              icon={User}
+              type="text"
+              value={nombreVisitante}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="¿Cómo te llamas? (opcional)"
+            />
 
-      {/* Demo credentials */}
-      <div className="mt-6 bg-bg-alt rounded-xl p-4 border border-border">
-        <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-3">
-          Acceso de demostración
-        </p>
-        <div className="space-y-1.5">
-          {DEMO_CREDS.map((c) => (
-            <button key={c.label} type="button" onClick={() => fillDemo(c)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white border border-border hover:border-primary-300 hover:bg-primary-50/30 transition-colors text-left">
-              <span className={`w-2 h-2 rounded-full shrink-0 ${c.dot}`} />
-              <span className="text-xs font-semibold text-text">{c.label}</span>
-              <span className="text-[0.65rem] text-text-muted ml-auto truncate">{c.email}</span>
+            <button type="submit" disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-sm">
+              {loading
+                ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                : <><Globe className="w-4 h-4" />Acceder como visitante</>
+              }
             </button>
-          ))}
-        </div>
-      </div>
+
+            <p className="text-xs text-text-muted text-center leading-relaxed">
+              El acceso como visitante solo permite consultar información pública.
+              Para solicitar acceso completo,{' '}
+              <Link to="/solicitar-acceso" className="text-primary-800 font-semibold hover:underline">
+                regístrate aquí
+              </Link>.
+            </p>
+          </motion.form>
+        )}
+      </AnimatePresence>
     </AuthLayout>
   )
 }

@@ -7,27 +7,32 @@ export const ROLES = {
   ADMIN:        'Administrador SIG',
   INVESTIGADOR: 'Investigador',
   PUBLICO:      'Público',
+  VISITANTE:    'Visitante',
 }
 
 const ROLE_MAP = {
   admin_sig:    ROLES.ADMIN,
   investigador: ROLES.INVESTIGADOR,
   publico:      ROLES.PUBLICO,
+  visitante:    ROLES.VISITANTE,
 }
 
 function normalizeUser(raw) {
+  const isVisitante = raw.rol === 'visitante' || raw.tipo === 'visitante'
   return {
     id:          raw.id,
-    name:        raw.nombre,
-    email:       raw.email,
-    role:        ROLE_MAP[raw.rol] ?? ROLES.PUBLICO,
-    rol:         raw.rol,           // valor backend — útil para lógica interna
-    initials:    raw.nombre
-      ?.split(' ')
+    name:        raw.nombre ?? 'Visitante',
+    email:       raw.email ?? null,
+    role:        ROLE_MAP[raw.rol] ?? ROLES.VISITANTE,
+    rol:         raw.rol,
+    tipo:        raw.tipo ?? null,       // 'visitante' | null
+    isVisitante,
+    initials:    (raw.nombre ?? 'V')
+      .split(' ')
       .map((w) => w[0])
       .slice(0, 2)
       .join('')
-      .toUpperCase() ?? '?',
+      .toUpperCase(),
     institucion: raw.institucion ?? null,
   }
 }
@@ -70,11 +75,25 @@ export function AuthProvider({ children }) {
     queryClient.clear()
   }
 
-  // ── Login ──
+  // ── Login institucional ──
   const login = useCallback(async (email, password) => {
     setLoading(true)
     try {
       const { token, user: raw } = await api.post('/auth/login', { email, password })
+      localStorage.setItem('vigiiap_token', token)
+      const normalized = normalizeUser(raw)
+      persistUser(normalized)
+      return normalized
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // ── Login visitante (acceso rápido sin credenciales) ──
+  const loginVisitante = useCallback(async (nombre = '') => {
+    setLoading(true)
+    try {
+      const { token, user: raw } = await api.post('/auth/visitante', { nombre: nombre || undefined })
       localStorage.setItem('vigiiap_token', token)
       const normalized = normalizeUser(raw)
       persistUser(normalized)
@@ -109,9 +128,11 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{
       user,
-      isAuthenticated: !!user,
+      isAuthenticated:  !!user,
+      isVisitante:      user?.isVisitante ?? false,
       loading,
       login,
+      loginVisitante,
       logout,
       register,
       refreshProfile,
