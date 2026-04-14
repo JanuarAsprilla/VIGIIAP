@@ -16,7 +16,7 @@ import {
 import { useAuth }   from '@/contexts/AuthContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { useUI }     from '@/contexts/UIContext'
-import { ALL_NEWS }  from '@/lib/constants'
+import { useNoticiasList } from '@/hooks/useNoticias'
 
 import SoportePanel        from './topbar/SoportePanel'
 import NotificacionesPanel from './topbar/NotificacionesPanel'
@@ -25,7 +25,6 @@ import ProfileDropdown     from './topbar/ProfileDropdown'
 
 // ── Constantes de configuración ──
 
-const NOTIF_COUNT  = 3
 const STORAGE_KEY  = 'vigiiap_notif_read'
 
 const SEARCH_PLACEHOLDERS = {
@@ -86,7 +85,9 @@ export default function TopBar({ onMenuToggle }) {
 
   const { readIds, markRead, markAllRead } = useReadNotifications()
 
-  const notifItems  = ALL_NEWS.slice(0, NOTIF_COUNT)
+  // Últimas 3 noticias publicadas como notificaciones
+  const { data: noticiaData } = useNoticiasList({ limit: 3 })
+  const notifItems  = noticiaData?.data ?? []
   const unreadCount = notifItems.filter((n) => !readIds.includes(n.id)).length
   const hasUnread   = notifications && unreadCount > 0
 

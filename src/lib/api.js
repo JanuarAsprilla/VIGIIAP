@@ -30,6 +30,7 @@ api.interceptors.response.use(
 
     const error = new Error(message)
     error.status = status
+    error.code   = err.response?.data?.code   ?? null
     error.fields = err.response?.data?.fields ?? null
     return Promise.reject(error)
   },

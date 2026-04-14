@@ -3,11 +3,12 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LogIn, Mail, Lock, Eye, EyeOff, AlertCircle,
-  ChevronRight, Building2, Globe, User,
+  ChevronRight, Building2, Globe, User, Send, Loader2,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import AuthLayout from '@/components/AuthLayout'
 import { validateEmail, validatePassword } from '@/lib/validators'
+import api from '@/lib/api'
 
 // ─── Tipos de acceso ──────────────────────────────────────────────────────────
 const MODOS = [
@@ -70,6 +71,9 @@ export default function Login() {
   const [showPass, setShowPass]       = useState(false)
   const [errors, setErrors]           = useState({})
   const [serverError, setServerError] = useState('')
+  const [errorCode, setErrorCode]     = useState(null)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSent, setResendSent]   = useState(false)
 
   const validate = () => {
     const e = {}
@@ -85,6 +89,8 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setServerError('')
+    setErrorCode(null)
+    setResendSent(false)
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
     setErrors({})
@@ -98,7 +104,21 @@ export default function Login() {
         navigate(user.role === 'Administrador SIG' ? '/admin' : (from === '/admin' ? '/' : from), { replace: true })
       }
     } catch (err) {
+      setErrorCode(err.code ?? null)
       setServerError(err.message || 'No se pudo acceder. Intente de nuevo.')
+    }
+  }
+
+  const handleResendVerification = async () => {
+    setResendLoading(true)
+    try {
+      await api.post('/auth/reenviar-verificacion', { email })
+      setResendSent(true)
+    } catch {
+      // Generic response — always show success to avoid revealing email existence
+      setResendSent(true)
+    } finally {
+      setResendLoading(false)
     }
   }
 
@@ -119,7 +139,7 @@ export default function Login() {
             <button
               key={m.id}
               type="button"
-              onClick={() => { setModo(m.id); setServerError(''); setErrors({}) }}
+              onClick={() => { setModo(m.id); setServerError(''); setErrorCode(null); setResendSent(false); setErrors({}) }}
               className={`flex flex-col items-start gap-1.5 p-3.5 rounded-xl border-2 text-left transition-all ${isActive ? m.active : 'border-border bg-white hover:border-primary-300'}`}
             >
               <Icon className={`w-5 h-5 ${isActive && m.id === 'institucional' ? 'text-primary-800' : isActive ? 'text-amber-600' : 'text-text-muted'}`} />
@@ -134,9 +154,32 @@ export default function Login() {
       <AnimatePresence>
         {serverError && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-5 text-sm">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>{serverError}</span>
+            className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-5 space-y-2">
+            <div className="flex items-start gap-2.5 text-red-700 text-sm">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{serverError}</span>
+            </div>
+            {errorCode === 'EMAIL_NOT_VERIFIED' && (
+              <div className="pl-6">
+                {resendSent ? (
+                  <p className="text-xs text-green-700 font-semibold">
+                    Correo de verificación reenviado. Revisa tu bandeja de entrada.
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={resendLoading}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-800 hover:text-primary-600 transition-colors disabled:opacity-50"
+                  >
+                    {resendLoading
+                      ? <><Loader2 className="w-3 h-3 animate-spin" />Enviando...</>
+                      : <><Send className="w-3 h-3" />Reenviar correo de verificación</>
+                    }
+                  </button>
+                )}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
