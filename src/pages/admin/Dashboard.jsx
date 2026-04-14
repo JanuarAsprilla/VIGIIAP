@@ -1,17 +1,19 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useQuery } from '@tanstack/react-query'
 import {
   Users, ClipboardList, FileText, Newspaper,
   TrendingUp, TrendingDown, CheckCircle, XCircle,
-  ArrowRight, Zap, AlertTriangle,
+  ArrowRight, Zap,
 } from 'lucide-react'
-import { ADMIN_ACTIVITY_LOG } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { fadeUpSm } from '@/lib/animations'
 import { useAdminStats } from '@/hooks/useStats'
 import { useSolicitudesAdmin } from '@/hooks/useSolicitudes'
 import { useUsuariosList } from '@/hooks/useUsuarios'
+import api from '@/lib/api'
+import { formatDate } from '@/lib/dateUtils'
 
 const fadeUp = fadeUpSm
 
@@ -221,11 +223,23 @@ function SolicitudesPendientes({ solicitudes }) {
 
 // ── Actividad reciente ──
 function ActividadReciente() {
-  const typeStyles = {
-    success: 'bg-green-100 text-green-700',
-    error:   'bg-red-100 text-red-600',
-    warning: 'bg-amber-100 text-amber-700',
-    info:    'bg-primary-100 text-primary-700',
+  const { data } = useQuery({
+    queryKey: ['audit', 'recent'],
+    queryFn: () => api.get('/admin/audit', { params: { limit: 7, page: 1 } }),
+    select: (res) => res.data ?? [],
+    staleTime: 30_000,
+  })
+  const logs = data ?? []
+
+  const moduloBadge = (modulo) => {
+    const map = {
+      auth: 'bg-blue-100 text-blue-700',
+      admin: 'bg-primary-100 text-primary-800',
+      solicitudes: 'bg-yellow-100 text-yellow-700',
+      mapas: 'bg-green-100 text-green-700',
+      documentos: 'bg-orange-100 text-orange-700',
+    }
+    return map[modulo] ?? 'bg-gray-100 text-gray-600'
   }
 
   return (
@@ -237,24 +251,28 @@ function ActividadReciente() {
         </Link>
       </div>
       <div className="divide-y divide-border max-h-64 overflow-y-auto">
-        {ADMIN_ACTIVITY_LOG.slice(0, 7).map((log) => (
-          <div key={log.id} className="flex items-start gap-3 px-5 py-3 hover:bg-bg-alt/40 transition-colors">
-            <div className="w-7 h-7 bg-gradient-to-br from-primary-600 to-primary-900 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-              <span className="text-white text-[0.6rem] font-bold">{log.initials}</span>
+        {logs.length === 0 && (
+          <p className="px-5 py-6 text-xs text-text-muted text-center italic">Sin actividad registrada</p>
+        )}
+        {logs.map((log) => {
+          const initials = (log.usuario_email ?? '?').slice(0, 2).toUpperCase()
+          return (
+            <div key={log.id} className="flex items-start gap-3 px-5 py-3 hover:bg-bg-alt/40 transition-colors">
+              <div className="w-7 h-7 bg-gradient-to-br from-primary-600 to-primary-900 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                <span className="text-white text-[0.6rem] font-bold">{initials}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-text truncate">{log.descripcion ?? log.accion}</p>
+                <p className="text-[0.65rem] text-text-muted mt-0.5">
+                  {log.usuario_email ?? '—'} · {formatDate(log.creado_en)}
+                </p>
+              </div>
+              <span className={`text-[0.55rem] font-bold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${moduloBadge(log.modulo)}`}>
+                {log.modulo}
+              </span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-text truncate">
-                {log.accion}{log.detalle ? `: ${log.detalle}` : ''}
-              </p>
-              <p className="text-[0.65rem] text-text-muted mt-0.5">
-                {log.usuario} · {log.hora} · {log.modulo}
-              </p>
-            </div>
-            <span className={`text-[0.55rem] font-bold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${typeStyles[log.tipo]}`}>
-              {log.tipo}
-            </span>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </motion.div>
   )
