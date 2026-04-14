@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { validatePassword, validatePasswordMatch } from '@/lib/validators'
+import { validatePasswordStrength, validatePasswordMatch, passwordCriteria } from '@/lib/validators'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   User, Mail, Building2, Shield, Bell, Palette,
@@ -41,6 +41,34 @@ function FieldRow({ label, value, editable, children }) {
   )
 }
 
+// ── Password strength meter ──
+function PasswordStrengthMeter({ value }) {
+  const criteria = passwordCriteria(value)
+  const met      = Object.values(criteria).filter(Boolean).length
+  if (!value) return null
+  const bars = [
+    met <= 1 ? 'bg-red-400'   : 'bg-bg-alt',
+    met >= 2 ? 'bg-amber-400' : 'bg-bg-alt',
+    met >= 3 ? 'bg-amber-400' : 'bg-bg-alt',
+    met >= 4 ? 'bg-green-500' : 'bg-bg-alt',
+  ]
+  const label =
+    met <= 1 ? { text: 'Muy débil',  color: 'text-red-500'   } :
+    met === 2 ? { text: 'Débil',     color: 'text-amber-500' } :
+    met === 3 ? { text: 'Moderada',  color: 'text-amber-600' } :
+               { text: 'Segura',     color: 'text-green-600' }
+  return (
+    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-2 space-y-1.5">
+      <div className="flex gap-1">
+        {bars.map((cls, i) => (
+          <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${cls}`} />
+        ))}
+      </div>
+      <p className={`text-xs font-semibold ${label.color}`}>{label.text}</p>
+    </motion.div>
+  )
+}
+
 // ── Password section ──
 function CambiarPassword() {
   const [form, setForm] = useState({ actual: '', nueva: '', confirmar: '' })
@@ -55,7 +83,7 @@ function CambiarPassword() {
   const validate = () => {
     const e = {}
     if (!form.actual)         e.actual    = 'Ingrese su contraseña actual'
-    const nuevaErr            = validatePassword(form.nueva, 8)
+    const nuevaErr            = validatePasswordStrength(form.nueva)
     if (nuevaErr)             e.nueva     = nuevaErr
     const confirmarErr        = validatePasswordMatch(form.nueva, form.confirmar)
     if (confirmarErr)         e.confirmar = confirmarErr
@@ -139,7 +167,8 @@ function CambiarPassword() {
         <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
           Nueva contraseña
         </label>
-        <PasswordInput field="nueva" placeholder="Mínimo 8 caracteres" />
+        <PasswordInput field="nueva" placeholder="Mín. 8 caracteres, mayúscula, número o símbolo" />
+        <PasswordStrengthMeter value={form.nueva} />
       </div>
       <div>
         <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">

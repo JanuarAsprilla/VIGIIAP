@@ -5,12 +5,12 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Users, ClipboardList, FileText, Newspaper,
   TrendingUp, TrendingDown, CheckCircle, XCircle,
-  ArrowRight, Zap,
+  ArrowRight, Zap, AlertTriangle,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { fadeUpSm } from '@/lib/animations'
 import { useAdminStats } from '@/hooks/useStats'
-import { useSolicitudesAdmin } from '@/hooks/useSolicitudes'
+import { useSolicitudesAdmin, useUpdateEstadoSolicitud } from '@/hooks/useSolicitudes'
 import { useUsuariosList } from '@/hooks/useUsuarios'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
@@ -185,7 +185,14 @@ function RolesChart({ usuarios }) {
 
 // ── Solicitudes pendientes ──
 function SolicitudesPendientes({ solicitudes }) {
-  const pendientes = solicitudes.filter((s) => s.estado === 'En Proceso')
+  const pendientes   = solicitudes.filter((s) => s.estado === 'En Proceso')
+  const updateEstado = useUpdateEstadoSolicitud()
+  const [confirm, setConfirm] = useState(null) // { _id, accion: 'Aprobado'|'Rechazado' }
+
+  const doAction = async (_id, accion) => {
+    await updateEstado.mutateAsync({ id: _id, estado: accion })
+    setConfirm(null)
+  }
 
   return (
     <motion.div {...fadeUp(0.2)} className="bg-white border border-border rounded-xl overflow-hidden">
@@ -199,23 +206,59 @@ function SolicitudesPendientes({ solicitudes }) {
         {pendientes.length === 0 && (
           <p className="px-5 py-6 text-sm text-text-muted text-center">Sin solicitudes pendientes</p>
         )}
-        {pendientes.map((sol) => (
-          <div key={sol.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-bg-alt/40 transition-colors">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-primary-800">{sol.id}</p>
-              <p className="text-sm font-semibold text-text truncate">{sol.tipo}</p>
-              <p className="text-xs text-text-muted">{sol.subtipo} · {sol.fecha}</p>
+        {pendientes.map((sol) => {
+          const isConfirming = confirm?._id === sol._id
+          const isPending    = updateEstado.isPending && isConfirming
+          return (
+            <div key={sol.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-bg-alt/40 transition-colors">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-primary-800">{sol.id}</p>
+                <p className="text-sm font-semibold text-text truncate">{sol.tipo}</p>
+                <p className="text-xs text-text-muted">{sol.subtipo} · {sol.fecha}</p>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {isConfirming ? (
+                  <>
+                    <span className="text-xs text-text-muted mr-1">
+                      {confirm.accion === 'Aprobado' ? '¿Aprobar?' : '¿Rechazar?'}
+                    </span>
+                    <button
+                      onClick={() => doAction(sol._id, confirm.accion)}
+                      disabled={isPending}
+                      className="px-2.5 py-1 rounded-lg text-xs font-bold bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+                    >
+                      {isPending ? '…' : 'Sí'}
+                    </button>
+                    <button
+                      onClick={() => setConfirm(null)}
+                      disabled={isPending}
+                      className="px-2.5 py-1 rounded-lg text-xs font-bold bg-bg-alt text-text-muted hover:bg-border transition-colors"
+                    >
+                      No
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setConfirm({ _id: sol._id, accion: 'Aprobado' })}
+                      className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+                      title="Aprobar"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setConfirm({ _id: sol._id, accion: 'Rechazado' })}
+                      className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                      title="Rechazar"
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors" title="Aprobar">
-                <CheckCircle className="w-4 h-4" />
-              </button>
-              <button className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors" title="Rechazar">
-                <XCircle className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </motion.div>
   )

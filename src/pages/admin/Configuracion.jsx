@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   Save, Globe, Bell, Shield, AlertTriangle,
-  Mail, Phone, MapPin, Info,
+  Mail, Phone, MapPin, CheckCircle, AlertCircle,
 } from 'lucide-react'
 
 import { fadeUpSm } from '@/lib/animations'
+import api from '@/lib/api'
 
 const fadeUp = fadeUpSm
 
@@ -81,11 +83,51 @@ export default function Configuracion() {
     mensaje: 'El sistema estará en mantenimiento programado. Disculpe las molestias.',
   })
 
-  const [saved, setSaved] = useState(false)
+  const [saveStatus, setSaveStatus] = useState(null) // null | 'ok' | 'error'
+
+  // ── Load config from API ──
+  const { data: remoteConfig } = useQuery({
+    queryKey: ['admin', 'configuracion'],
+    queryFn: () => api.get('/admin/configuracion'),
+    select: (res) => res.data,
+    staleTime: 60_000,
+  })
+
+  useEffect(() => {
+    if (!remoteConfig) return
+    setGeneral((g) => ({
+      siteName: remoteConfig.siteName ?? g.siteName,
+      siteDesc: remoteConfig.siteDesc ?? g.siteDesc,
+      region:   remoteConfig.region   ?? g.region,
+      email:    remoteConfig.email    ?? g.email,
+      phone:    remoteConfig.phone    ?? g.phone,
+      address:  remoteConfig.address  ?? g.address,
+    }))
+    setMantenimiento((m) => ({
+      modoMantenimiento: remoteConfig.modoMantenimiento === 'true',
+      mensaje: remoteConfig.mensajeMantenimiento ?? m.mensaje,
+    }))
+  }, [remoteConfig])
+
+  // ── Save mutation ──
+  const saveMutation = useMutation({
+    mutationFn: (body) => api.put('/admin/configuracion', body),
+    onSuccess: () => {
+      setSaveStatus('ok')
+      setTimeout(() => setSaveStatus(null), 3000)
+    },
+    onError: () => {
+      setSaveStatus('error')
+      setTimeout(() => setSaveStatus(null), 4000)
+    },
+  })
 
   const handleSave = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+    saveMutation.mutate({
+      ...general,
+      modoMantenimiento:    String(mantenimiento.modoMantenimiento),
+      mensajeMantenimiento: mantenimiento.mensaje,
+    })
   }
 
   return (
@@ -99,10 +141,23 @@ export default function Configuracion() {
         </div>
         <button
           onClick={handleSave}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0 ${saved ? 'bg-green-600 text-white' : 'bg-primary-800 text-white hover:bg-primary-700'}`}
+          disabled={saveMutation.isPending}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0 disabled:opacity-60 ${
+            saveStatus === 'ok'    ? 'bg-green-600 text-white' :
+            saveStatus === 'error' ? 'bg-red-600 text-white'   :
+            'bg-primary-800 text-white hover:bg-primary-700'
+          }`}
         >
-          <Save className="w-4 h-4" />
-          {saved ? '¡Guardado!' : 'Guardar Cambios'}
+          {saveMutation.isPending ? (
+            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : saveStatus === 'ok' ? (
+            <CheckCircle className="w-4 h-4" />
+          ) : saveStatus === 'error' ? (
+            <AlertCircle className="w-4 h-4" />
+          ) : (
+            <Save className="w-4 h-4" />
+          )}
+          {saveStatus === 'ok' ? '¡Guardado!' : saveStatus === 'error' ? 'Error al guardar' : 'Guardar Cambios'}
         </button>
       </motion.div>
 
@@ -243,16 +298,6 @@ export default function Configuracion() {
         )}
       </SectionCard>
 
-      {/* Info */}
-      <motion.div {...fadeUp(0.32)} className="bg-primary-50 border border-primary-200/60 rounded-xl p-5 flex gap-3">
-        <Info className="w-4 h-4 text-primary-700 shrink-0 mt-0.5" />
-        <div>
-          <p className="text-xs font-bold text-primary-800">VIGIIAP — Fase 1 Frontend</p>
-          <p className="text-xs text-primary-700/80 mt-0.5">
-            Los cambios de configuración en esta fase son de demostración. En Fase 2 (backend), se conectarán al API REST con persistencia en PostgreSQL.
-          </p>
-        </div>
-      </motion.div>
     </div>
   )
 }
