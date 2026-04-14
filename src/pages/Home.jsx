@@ -6,8 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import {
   ArrowRight, Map, FileText, Globe, Wrench,
   ClipboardList, Newspaper, Plus, SearchX, ArrowUpRight,
-  LayoutGrid, Users, Building2, Shield, ChevronRight,
-  Leaf, Droplets, TreePine, Crosshair,
+  ChevronRight, Lock,
 } from 'lucide-react'
 import { STATS, NEWS } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
@@ -21,67 +20,70 @@ gsap.registerPlugin(ScrollTrigger)
 // Globe cargado lazy — no bloquea el render inicial
 const GlobeScene = lazy(() => import('@/components/GlobeScene'))
 
-// ── Módulos con más info ──
+// ── Módulos — publicAccess: true = visible para visitantes ──
 const ALL_MODULES = [
   {
     id: 'mapas', title: 'Catálogo de Mapas',
-    description: 'Consulta y descarga mapas temáticos de biodiversidad, suelos, hidrografía y cobertura del Chocó Biogeográfico.',
+    description: 'Consulta y descarga mapas temáticos de biodiversidad, suelos, hidrografía y cobertura vegetal del Chocó Biogeográfico producidos por el IIAP.',
     icon: Map, path: '/mapas', action: 'Explorar mapas', tag: 'Cartografía',
     gradient: 'from-[#1B4332] to-[#2D6A4F]', chip: 'bg-primary-50 text-primary-800',
-    glow: 'rgba(27,67,50,0.25)',
+    glow: 'rgba(27,67,50,0.25)', publicAccess: true,
   },
   {
     id: 'documentos', title: 'Biblioteca Documental',
-    description: 'Informes técnicos, investigaciones, protocolos ambientales y documentos institucionales del IIAP.',
+    description: 'Informes técnicos, investigaciones científicas, protocolos ambientales y documentos institucionales del IIAP disponibles para consulta.',
     icon: FileText, path: '/documentos', action: 'Consultar biblioteca', tag: 'Documentos',
     gradient: 'from-[#B7791F] to-[#D4A373]', chip: 'bg-amber-50 text-amber-800',
-    glow: 'rgba(212,163,115,0.25)',
-  },
-  {
-    id: 'geovisor', title: 'Geovisor Interactivo',
-    description: 'Visualiza y analiza capas geoespaciales en tiempo real sobre el territorio del Pacífico colombiano.',
-    icon: Globe, path: '/geovisor', action: 'Abrir geovisor', tag: 'SIG',
-    gradient: 'from-[#1d4ed8] to-[#3b82f6]', chip: 'bg-blue-50 text-blue-800',
-    glow: 'rgba(59,130,246,0.2)',
-  },
-  {
-    id: 'herramientas', title: 'Herramientas SIG',
-    description: 'Calculadoras de área, convertidores de coordenadas y motores de consulta espacial avanzada.',
-    icon: Wrench, path: '/herramientas', action: 'Usar herramientas', tag: 'Análisis',
-    gradient: 'from-[#c2410c] to-[#f97316]', chip: 'bg-orange-50 text-orange-800',
-    glow: 'rgba(249,115,22,0.2)',
+    glow: 'rgba(212,163,115,0.25)', publicAccess: true,
   },
   {
     id: 'noticias', title: 'Noticias y Eventos',
-    description: 'Últimas publicaciones, investigaciones destacadas y eventos del Instituto Ambiental del Pacífico.',
+    description: 'Últimas publicaciones, investigaciones destacadas, eventos y comunicados del Instituto de Investigaciones Ambientales del Pacífico.',
     icon: Newspaper, path: '/noticias', action: 'Ver noticias', tag: 'Actualidad',
     gradient: 'from-[#065f46] to-[#059669]', chip: 'bg-emerald-50 text-emerald-800',
-    glow: 'rgba(5,150,105,0.2)',
+    glow: 'rgba(5,150,105,0.2)', publicAccess: true,
   },
   {
-    id: 'solicitudes', title: 'Solicitudes',
-    description: 'Gestiona y realiza seguimiento de tus solicitudes de acceso a datos e información especializada.',
-    icon: ClipboardList, path: '/solicitudes', action: 'Mis solicitudes', tag: 'Gestión',
+    id: 'geovisor', title: 'Geovisor Interactivo',
+    description: 'Herramienta SIG en línea para la visualización y análisis de capas geoespaciales sobre el territorio del Pacífico colombiano. Requiere cuenta institucional.',
+    icon: Globe, path: '/geovisor', action: 'Abrir geovisor', tag: 'SIG',
+    gradient: 'from-[#1d4ed8] to-[#3b82f6]', chip: 'bg-blue-50 text-blue-800',
+    glow: 'rgba(59,130,246,0.2)', publicAccess: false,
+  },
+  {
+    id: 'herramientas', title: 'Herramientas SIG',
+    description: 'Calculadoras de área, convertidores de coordenadas, motores de análisis espacial y herramientas de procesamiento de datos geográficos. Uso interno IIAP.',
+    icon: Wrench, path: '/herramientas', action: 'Usar herramientas', tag: 'Análisis',
+    gradient: 'from-[#c2410c] to-[#f97316]', chip: 'bg-orange-50 text-orange-800',
+    glow: 'rgba(249,115,22,0.2)', publicAccess: false,
+  },
+  {
+    id: 'solicitudes', title: 'Solicitudes de Acceso',
+    description: 'Realiza y gestiona solicitudes de acceso a datos, información especializada o colaboración con el IIAP. Disponible para usuarios registrados.',
+    icon: ClipboardList, path: '/solicitudes', action: 'Gestionar solicitudes', tag: 'Gestión',
     gradient: 'from-[#5b21b6] to-[#7c3aed]', chip: 'bg-violet-50 text-violet-800',
-    glow: 'rgba(124,58,237,0.2)',
+    glow: 'rgba(124,58,237,0.2)', publicAccess: false,
   },
 ]
 
-// ── Card 3D con glow ──
-function ModuleCard({ mod, index }) {
-  const ref = useRef()
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
-  const rawRX = useTransform(mouseY, [-0.5, 0.5], [8, -8])
-  const rawRY = useTransform(mouseX, [-0.5, 0.5], [-8, 8])
+// ── Card 3D con glow y control de acceso ──
+function ModuleCard({ mod, index, isVisitante }) {
+  const ref     = useRef()
+  const blocked = isVisitante && !mod.publicAccess
+
+  const mouseX  = useMotionValue(0)
+  const mouseY  = useMotionValue(0)
+  const rawRX   = useTransform(mouseY, [-0.5, 0.5], [8, -8])
+  const rawRY   = useTransform(mouseX, [-0.5, 0.5], [-8, 8])
   const rotateX = useSpring(rawRX, { stiffness: 300, damping: 30 })
   const rotateY = useSpring(rawRY, { stiffness: 300, damping: 30 })
-  const glareX = useTransform(mouseX, [-0.5, 0.5], ['0%', '100%'])
-  const glareY = useTransform(mouseY, [-0.5, 0.5], ['0%', '100%'])
+  const glareX  = useTransform(mouseX, [-0.5, 0.5], ['0%', '100%'])
+  const glareY  = useTransform(mouseY, [-0.5, 0.5], ['0%', '100%'])
   const glareOp = useMotionValue(0)
   const glareBg = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(255,255,255,0.18), transparent 65%)`
 
   const onMove = (e) => {
+    if (blocked) return
     const r = ref.current.getBoundingClientRect()
     mouseX.set((e.clientX - r.left) / r.width - 0.5)
     mouseY.set((e.clientY - r.top) / r.height - 0.5)
@@ -89,51 +91,68 @@ function ModuleCard({ mod, index }) {
   }
   const onLeave = () => { mouseX.set(0); mouseY.set(0); glareOp.set(0) }
 
-  return (
+  const CardContent = (
     <motion.div
       ref={ref}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
       style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 900 }}
-      className="module-card relative bg-white rounded-2xl border border-border/60 h-full cursor-pointer group overflow-hidden"
-      whileHover={{ y: -4, boxShadow: `0 20px 60px ${mod.glow}, 0 4px 20px rgba(0,0,0,0.08)` }}
+      className={`module-card relative bg-white rounded-2xl border h-full overflow-hidden transition-all ${blocked ? 'border-border/30 opacity-60 cursor-not-allowed' : 'border-border/60 cursor-pointer group'}`}
+      whileHover={!blocked ? { y: -4, boxShadow: `0 20px 60px ${mod.glow}, 0 4px 20px rgba(0,0,0,0.08)` } : {}}
       transition={{ duration: 0.3 }}
     >
-      {/* Top gradient bar */}
-      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${mod.gradient} rounded-t-2xl`} />
+      {/* Top bar */}
+      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${mod.gradient} rounded-t-2xl ${blocked ? 'opacity-30' : ''}`} />
       {/* Glare */}
-      <motion.div style={{ background: glareBg, opacity: glareOp }}
-        className="absolute inset-0 rounded-[inherit] pointer-events-none z-20" />
-      {/* Glow bg on hover */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"
-        style={{ background: `radial-gradient(ellipse at 30% 0%, ${mod.glow} 0%, transparent 70%)` }} />
+      {!blocked && (
+        <motion.div style={{ background: glareBg, opacity: glareOp }}
+          className="absolute inset-0 rounded-[inherit] pointer-events-none z-20" />
+      )}
+      {/* Glow hover */}
+      {!blocked && (
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"
+          style={{ background: `radial-gradient(ellipse at 30% 0%, ${mod.glow} 0%, transparent 70%)` }} />
+      )}
 
-      <div className="relative p-6 flex flex-col h-full" style={{ transform: 'translateZ(0)' }}>
-        {/* Icon + tag */}
+      <div className="relative p-6 flex flex-col h-full">
+        {/* Icon + badge */}
         <div className="flex items-start justify-between mb-5">
-          <motion.div
-            whileHover={{ scale: 1.1, rotate: -8 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-            className={`w-13 h-13 bg-gradient-to-br ${mod.gradient} rounded-xl flex items-center justify-center shadow-md`}
+          <div className={`w-13 h-13 bg-gradient-to-br ${mod.gradient} rounded-xl flex items-center justify-center shadow-md transition-transform ${!blocked ? 'group-hover:scale-110 group-hover:-rotate-6' : 'grayscale opacity-50'}`}
             style={{ width: '3.25rem', height: '3.25rem' }}>
             <mod.icon className="w-6 h-6 text-white" />
-          </motion.div>
-          <span className={`text-[0.6rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full ${mod.chip}`}>
-            {mod.tag}
-          </span>
+          </div>
+          {blocked ? (
+            <span className="inline-flex items-center gap-1 text-[0.6rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-gray-100 text-gray-400">
+              <Lock className="w-2.5 h-2.5" />Institucional
+            </span>
+          ) : (
+            <span className={`text-[0.6rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full ${mod.chip}`}>
+              {mod.tag}
+            </span>
+          )}
         </div>
 
         <h3 className="text-[1rem] font-bold text-text mb-2 leading-snug">{mod.title}</h3>
         <p className="text-sm text-text-muted leading-relaxed mb-6 flex-1">{mod.description}</p>
 
-        <Link to={mod.path}
-          className={`inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider no-underline transition-all bg-gradient-to-r ${mod.gradient} bg-clip-text text-transparent group-hover:gap-3`}>
-          {mod.action}
-          <ArrowRight className="w-3.5 h-3.5 text-current opacity-70 group-hover:opacity-100 transition-transform group-hover:translate-x-0.5" style={{ color: 'inherit' }} />
-        </Link>
+        {blocked ? (
+          <Link to="/solicitar-acceso"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-primary-700 no-underline hover:text-primary-900 transition-colors pointer-events-auto">
+            <Lock className="w-3 h-3" />
+            Solicitar acceso
+          </Link>
+        ) : (
+          <Link to={mod.path}
+            className={`inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider no-underline transition-all bg-gradient-to-r ${mod.gradient} bg-clip-text text-transparent group-hover:gap-3`}>
+            {mod.action}
+            <ArrowRight className="w-3.5 h-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        )}
       </div>
     </motion.div>
   )
+
+  return CardContent
 }
 
 // ── Hero con Globo 3D ──
@@ -217,22 +236,19 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
             </p>
           </div>
 
-          {/* Chips temáticos */}
-          <div ref={chipsRef} className="flex flex-wrap gap-2 mb-8">
-            {[
-              { icon: Leaf,      label: 'Biodiversidad' },
-              { icon: Droplets, label: 'Hidrografía'   },
-              { icon: TreePine, label: 'Ecosistemas'   },
-              { icon: Map,      label: 'Cartografía'   },
-              { icon: Crosshair, label: 'Geovisor'     },
-            ].map(({ icon: Icon, label }) => (
-              <span key={label}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.68rem] font-semibold uppercase tracking-wider border transition-colors"
-                style={{ background: 'rgba(82,183,136,0.08)', borderColor: 'rgba(82,183,136,0.2)', color: 'rgba(216,243,220,0.75)' }}>
-                <Icon className="w-3 h-3" />
-                {label}
-              </span>
-            ))}
+          {/* Texto descriptivo ampliado */}
+          <div ref={chipsRef} className="mb-8 space-y-3 max-w-lg">
+            <p className="text-white/55 text-[0.9rem] leading-relaxed">
+              Plataforma de gestión del conocimiento ambiental del{' '}
+              <span className="text-green-300/90 font-semibold">Chocó Biogeográfico</span>,
+              la región más biodiversa de Colombia. Centraliza mapas, investigaciones,
+              datos geoespaciales e información territorial producida por el IIAP.
+            </p>
+            <p className="text-white/40 text-[0.83rem] leading-relaxed">
+              Diseñada para investigadores, gestores ambientales, instituciones aliadas
+              y la ciudadanía en general — con diferentes niveles de acceso según el
+              perfil del usuario.
+            </p>
           </div>
 
           {/* CTAs */}
@@ -304,11 +320,14 @@ function StatsSection({ sectionRef }) {
 }
 
 // ── Sección de módulos con reveal GSAP ──
-function ModulesSection({ sectionRef }) {
+function ModulesSection({ sectionRef, isVisitante }) {
   const { query } = useSearch()
   const filteredModules = ALL_MODULES.filter((m) =>
     matches([m.title, m.description, m.action], query)
   )
+
+  const publicCount     = filteredModules.filter((m) => m.publicAccess).length
+  const availableCount  = isVisitante ? publicCount : filteredModules.length
 
   useEffect(() => {
     const cards = sectionRef.current?.querySelectorAll('.module-card')
@@ -327,16 +346,18 @@ function ModulesSection({ sectionRef }) {
         <span className="text-[0.68rem] font-bold uppercase tracking-[0.22em] text-text-muted block mb-2">
           Plataforma
         </span>
-        <div className="flex items-end justify-between">
+        <div className="flex items-end justify-between flex-wrap gap-2">
           <h2 className="font-display text-2xl font-bold text-text">Módulos de VIGIIAP</h2>
-          <span className="text-xs text-text-muted hidden sm:block">
-            {filteredModules.length} módulos disponibles
-          </span>
+          {isVisitante && (
+            <span className="text-xs text-text-muted bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+              {publicCount} de {filteredModules.length} disponibles como visitante
+            </span>
+          )}
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
         {filteredModules.map((mod, i) => (
-          <ModuleCard key={mod.id} mod={mod} index={i} />
+          <ModuleCard key={mod.id} mod={mod} index={i} isVisitante={isVisitante} />
         ))}
       </div>
     </section>
@@ -459,7 +480,7 @@ function WelcomeStrip({ user }) {
 
 // ── Home Page ──
 export default function Home() {
-  const { isAuthenticated, user, loginVisitante } = useAuth()
+  const { isAuthenticated, user, loginVisitante, isVisitante } = useAuth()
   const navigate = useNavigate()
   const { query } = useSearch()
   const [showModal, setShowModal] = useState(false)
@@ -508,12 +529,12 @@ export default function Home() {
 
         {/* Módulos */}
         {!query.trim()
-          ? <ModulesSection sectionRef={modulesRef} />
+          ? <ModulesSection sectionRef={modulesRef} isVisitante={isVisitante} />
           : <section>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 {ALL_MODULES
                   .filter((m) => matches([m.title, m.description, m.action], query))
-                  .map((mod, i) => <ModuleCard key={mod.id} mod={mod} index={i} />)
+                  .map((mod, i) => <ModuleCard key={mod.id} mod={mod} index={i} isVisitante={isVisitante} />)
                 }
               </div>
             </section>
