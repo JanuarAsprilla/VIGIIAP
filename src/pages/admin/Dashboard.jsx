@@ -6,21 +6,28 @@ import {
   TrendingUp, TrendingDown, CheckCircle, XCircle,
   ArrowRight, Zap, AlertTriangle,
 } from 'lucide-react'
-import {
-  ADMIN_DASHBOARD_KPIS, ADMIN_ACTIVITY_LOG, SOLICITUDES_TABLE, ADMIN_MOCK_USERS,
-} from '@/lib/constants'
+import { ADMIN_ACTIVITY_LOG } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { fadeUpSm } from '@/lib/animations'
+import { useAdminStats } from '@/hooks/useStats'
+import { useSolicitudesAdmin } from '@/hooks/useSolicitudes'
+import { useUsuariosList } from '@/hooks/useUsuarios'
 
 const fadeUp = fadeUpSm
 
 const KPI_ICONS = [Users, ClipboardList, FileText, Newspaper]
 
 // ── KPI Cards ──
-function KPICards() {
+function KPICards({ stats, isLoading }) {
+  const kpis = [
+    { label: 'Usuarios Registrados',   value: stats?.usuarios ?? '—',             trendUp: true  },
+    { label: 'Solicitudes Pendientes', value: stats?.solicitudesPendientes ?? '—', trendUp: false },
+    { label: 'Documentos Activos',     value: stats?.documentos ?? '—',            trendUp: true  },
+    { label: 'Noticias Publicadas',    value: stats?.noticias ?? '—',              trendUp: true  },
+  ]
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {ADMIN_DASHBOARD_KPIS.map((kpi, i) => {
+      {kpis.map((kpi, i) => {
         const Icon = KPI_ICONS[i]
         return (
           <motion.div
@@ -34,10 +41,11 @@ function KPICards() {
               </div>
               <span className={`inline-flex items-center gap-1 text-[0.65rem] font-semibold ${kpi.trendUp ? 'text-green-600' : 'text-orange-500'}`}>
                 {kpi.trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                {kpi.trend}
               </span>
             </div>
-            <div className="font-display text-3xl font-bold text-text">{kpi.value}</div>
+            <div className="font-display text-3xl font-bold text-text">
+              {isLoading ? '…' : kpi.value}
+            </div>
             <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">{kpi.label}</p>
           </motion.div>
         )
@@ -47,16 +55,16 @@ function KPICards() {
 }
 
 // ── Gráfico de Solicitudes por Estado ──
-function SolicitudesChart() {
+function SolicitudesChart({ solicitudes }) {
   const estados = [
     { label: 'En Proceso', color: 'bg-yellow-400', textColor: 'text-yellow-700', bg: 'bg-yellow-50' },
     { label: 'Aprobado',   color: 'bg-green-500',  textColor: 'text-green-700',  bg: 'bg-green-50'  },
     { label: 'Rechazado',  color: 'bg-red-400',    textColor: 'text-red-600',    bg: 'bg-red-50'    },
   ]
-  const total = SOLICITUDES_TABLE.length
+  const total = solicitudes.length
   const bars = estados.map((e) => ({
     ...e,
-    count: SOLICITUDES_TABLE.filter((s) => s.estado === e.label).length,
+    count: solicitudes.filter((s) => s.estado === e.label).length,
   }))
   const maxCount = Math.max(...bars.map((b) => b.count), 1)
 
@@ -115,8 +123,8 @@ function SolicitudesChart() {
 }
 
 // ── Alertas — solicitudes sin atender ──
-function AlertasSolicitudes() {
-  const pendientes = SOLICITUDES_TABLE.filter((s) => s.estado === 'En Proceso')
+function AlertasSolicitudes({ solicitudes }) {
+  const pendientes = solicitudes.filter((s) => s.estado === 'En Proceso')
   if (pendientes.length === 0) return null
   return (
     <motion.div {...fadeUp(0.15)} className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
@@ -135,12 +143,12 @@ function AlertasSolicitudes() {
 }
 
 // ── Distribución de roles ──
-function RolesChart() {
-  const counts = ADMIN_MOCK_USERS.reduce((acc, u) => {
+function RolesChart({ usuarios }) {
+  const counts = usuarios.reduce((acc, u) => {
     acc[u.rol] = (acc[u.rol] || 0) + 1
     return acc
   }, {})
-  const total = ADMIN_MOCK_USERS.length
+  const total = usuarios.length
   const items = [
     { label: 'Administrador SIG', count: counts['Administrador SIG'] || 0, color: 'bg-primary-800' },
     { label: 'Investigador',      count: counts['Investigador'] || 0,      color: 'bg-primary-500' },
@@ -174,8 +182,8 @@ function RolesChart() {
 }
 
 // ── Solicitudes pendientes ──
-function SolicitudesPendientes() {
-  const pendientes = SOLICITUDES_TABLE.filter((s) => s.estado === 'En Proceso')
+function SolicitudesPendientes({ solicitudes }) {
+  const pendientes = solicitudes.filter((s) => s.estado === 'En Proceso')
 
   return (
     <motion.div {...fadeUp(0.2)} className="bg-white border border-border rounded-xl overflow-hidden">
@@ -280,6 +288,11 @@ function QuickActions() {
 
 export default function Dashboard() {
   const { user } = useAuth()
+  const { data: stats, isLoading: loadingStats } = useAdminStats()
+  const { data: solData } = useSolicitudesAdmin({ limit: 100 })
+  const { data: usrData } = useUsuariosList({ limit: 100 })
+  const solicitudes = solData?.data ?? []
+  const usuarios    = usrData?.data ?? []
 
   return (
     <div className="space-y-6">
@@ -297,10 +310,10 @@ export default function Dashboard() {
       </motion.div>
 
       {/* KPIs */}
-      <KPICards />
+      <KPICards stats={stats} isLoading={loadingStats} />
 
       {/* Alerta solicitudes */}
-      <AlertasSolicitudes />
+      <AlertasSolicitudes solicitudes={solicitudes} />
 
       {/* Quick Actions */}
       <QuickActions />
@@ -308,12 +321,12 @@ export default function Dashboard() {
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         <div className="space-y-6">
-          <SolicitudesPendientes />
+          <SolicitudesPendientes solicitudes={solicitudes} />
           <ActividadReciente />
         </div>
         <div className="space-y-6">
-          <RolesChart />
-          <SolicitudesChart />
+          <RolesChart usuarios={usuarios} />
+          <SolicitudesChart solicitudes={solicitudes} />
         </div>
       </div>
     </div>

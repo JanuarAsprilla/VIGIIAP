@@ -4,8 +4,8 @@ import {
   Plus, Search, X, Edit2, Trash2, Eye, EyeOff,
   Send, Globe, Clock, ImagePlus, Image,
 } from 'lucide-react'
-import { ALL_NEWS } from '@/lib/constants'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
+import { useNoticiasList, useCreateNoticia, useUpdateNoticia, useDeleteNoticia } from '@/hooks/useNoticias'
 
 const fadeUp = fadeUpSm
 
@@ -84,9 +84,12 @@ function ThumbnailDropzone({ file, previewUrl, onChange, onRemove, onError }) {
 }
 
 export default function GestionNoticias() {
-  const [noticias, setNoticias] = useState(() =>
-    ALL_NEWS.map((n) => ({ ...n, published: true }))
-  )
+  const { data } = useNoticiasList({ limit: 200, admin: 'true' })
+  const noticias = data?.data ?? []
+  const createNoticia = useCreateNoticia()
+  const updateNoticia = useUpdateNoticia()
+  const deleteNoticia = useDeleteNoticia()
+
   const [search, setSearch] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -132,26 +135,36 @@ export default function GestionNoticias() {
     return e
   }
 
-  const handleSave = (ev) => {
+  const handleSave = async (ev) => {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setFormErrors(e); return }
+
+    const payload = new FormData()
+    payload.append('titulo',    form.title)
+    payload.append('resumen',   form.excerpt)
+    payload.append('contenido', form.content || '')
+    payload.append('categoria', form.category)
+    payload.append('autor',     form.author)
+    payload.append('publicado', String(form.published))
+    if (thumbnail) payload.append('imagen', thumbnail)
+
     if (editing) {
-      setNoticias((prev) => prev.map((n) => n.id === editing.id ? { ...n, ...form, thumbUrl: thumbUrl || n.thumbUrl } : n))
+      await updateNoticia.mutateAsync({ id: editing.id, data: payload })
     } else {
-      const newId = noticias.length + 1
-      const slug = form.title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').slice(0, 50)
-      setNoticias((prev) => [...prev, { id: newId, slug, tagColor: 'primary', time: 'Ahora', thumbUrl, ...form }])
+      await createNoticia.mutateAsync(payload)
     }
     setShowModal(false)
   }
 
-  const togglePublished = (id) => {
-    setNoticias((prev) => prev.map((n) => n.id === id ? { ...n, published: !n.published } : n))
+  const togglePublished = async (id) => {
+    const n = noticias.find((x) => x.id === id)
+    if (!n) return
+    await updateNoticia.mutateAsync({ id, data: { publicado: !n.published } })
   }
 
-  const confirmDelete = () => {
-    setNoticias((prev) => prev.filter((n) => n.id !== deleteTarget.id))
+  const confirmDelete = async () => {
+    await deleteNoticia.mutateAsync(deleteTarget.id)
     setDeleteTarget(null)
   }
 

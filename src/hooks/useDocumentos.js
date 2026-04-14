@@ -1,0 +1,75 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import api from '@/lib/api'
+import { formatDate } from '@/lib/dateUtils'
+
+// ─── Normalizar ───────────────────────────────────────────────────────────────
+function normalizeDoc(d) {
+  return {
+    id:          d.id,
+    slug:        d.slug,
+    titulo:      d.titulo,
+    tipo:        d.tipo,
+    anio:        d.anio,
+    autores:     d.autores ?? '',
+    resumen:     d.resumen ?? '',
+    archivo_url: d.archivo_url ?? null,
+    activo:      d.activo,
+    creado_en:   d.creado_en,
+    // Para página pública y admin
+    nombre:      d.titulo,
+    categoria:   d.tipo,
+    fecha:       formatDate(d.creado_en),
+    type:        d.archivo_url?.split('.').pop()?.toLowerCase() ?? 'pdf',
+    url:         d.archivo_url ?? null,
+    // Alias para admin table
+    tamano:      '—',
+    descargas:   0,
+  }
+}
+
+// ─── Keys ─────────────────────────────────────────────────────────────────────
+export const DOCS_KEYS = {
+  all:    ['documentos'],
+  list:   (params) => ['documentos', 'list', params],
+  detail: (slug)   => ['documentos', 'detail', slug],
+}
+
+// ─── Queries ──────────────────────────────────────────────────────────────────
+export function useDocumentosList(params = {}) {
+  return useQuery({
+    queryKey: DOCS_KEYS.list(params),
+    queryFn:  () => api.get('/documentos', { params }),
+    select:   (res) => ({
+      data: res.data.map(normalizeDoc),
+      meta: res.meta,
+    }),
+  })
+}
+
+export function useDocumentoBySlug(slug) {
+  return useQuery({
+    queryKey: DOCS_KEYS.detail(slug),
+    queryFn:  () => api.get(`/documentos/${slug}`),
+    select:   normalizeDoc,
+    enabled:  !!slug,
+  })
+}
+
+// ─── Mutations ────────────────────────────────────────────────────────────────
+export function useCreateDocumento() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (formData) => api.post('/documentos', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: DOCS_KEYS.all }),
+  })
+}
+
+export function useDeleteDocumento() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id) => api.delete(`/documentos/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: DOCS_KEYS.all }),
+  })
+}

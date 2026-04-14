@@ -3,11 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, X, Send, Trash2, Edit2,
   CheckCircle, XCircle, UserPlus, Mail,
-  Shield, User, Clock, Activity, Copy, Check,
+  User, Clock, Loader2,
 } from 'lucide-react'
-import { ADMIN_MOCK_USERS, ADMIN_ACTIVITY_LOG } from '@/lib/constants'
 import { ROLES } from '@/contexts/AuthContext'
 import { fadeUpSm, panelAnim, drawerAnim } from '@/lib/animations'
+import { useUsuariosList, useCreateUsuario, useUpdateUsuarioRol, useDeleteUsuario } from '@/hooks/useUsuarios'
 
 const fadeUp = fadeUpSm
 
@@ -147,36 +147,53 @@ function UserDrawer({ user, onClose }) {
   )
 }
 
-// ── Invite modal ──
+// ── Invite modal — crea usuario directamente vía API admin ──
 function InviteModal({ onClose }) {
+  const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [rol, setRol] = useState('Investigador')
+  const [institucion, setInstitucion] = useState('')
   const [step, setStep] = useState('form') // 'form' | 'sent'
-  const [copied, setCopied] = useState(false)
-  const fakeLink = `https://vigiiap.iiap.org.co/invitacion/${btoa(email || 'usuario').slice(0, 12)}`
+  const [error, setError] = useState('')
+  const createUsuario = useCreateUsuario()
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault()
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return
-    setStep('sent')
-  }
-
-  const copyLink = () => {
-    navigator.clipboard.writeText(fakeLink)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1800)
+    if (!nombre.trim() || !email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Nombre y correo válido son requeridos')
+      return
+    }
+    setError('')
+    try {
+      await createUsuario.mutateAsync({ nombre, email, rol, institucion })
+      setStep('sent')
+    } catch (err) {
+      setError(err.message ?? 'Error al crear el usuario')
+    }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
         <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-          <h3 className="text-base font-bold text-text">Invitar Usuario</h3>
+          <h3 className="text-base font-bold text-text">Crear Usuario</h3>
           <button onClick={onClose} className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"><X className="w-5 h-5" /></button>
         </div>
 
         {step === 'form' ? (
           <form onSubmit={handleSend} className="p-6 space-y-4">
+            <div>
+              <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                Nombre completo <span className="text-orange-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Ej. María García"
+                className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+              />
+            </div>
             <div>
               <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                 Correo electrónico <span className="text-orange-500">*</span>
@@ -187,10 +204,20 @@ function InviteModal({ onClose }) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="usuario@dominio.com"
+                  placeholder="usuario@iiap.org.co"
                   className="w-full pl-9 pr-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
                 />
               </div>
+            </div>
+            <div>
+              <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Institución</label>
+              <input
+                type="text"
+                value={institucion}
+                onChange={(e) => setInstitucion(e.target.value)}
+                placeholder="Ej. IIAP"
+                className="w-full px-3 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+              />
             </div>
             <div>
               <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Rol a asignar</label>
@@ -198,11 +225,19 @@ function InviteModal({ onClose }) {
                 {ROLES_LIST.map((r) => <option key={r}>{r}</option>)}
               </select>
             </div>
-            <p className="text-xs text-text-muted">Se enviará un correo con un enlace de activación. El enlace expira en 48 horas.</p>
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            <p className="text-xs text-text-muted">El usuario recibirá un correo con sus credenciales de acceso.</p>
             <div className="flex gap-3 pt-1">
               <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors">Cancelar</button>
-              <button type="submit" className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
-                <Send className="w-4 h-4" /> Enviar Invitación
+              <button
+                type="submit"
+                disabled={createUsuario.isPending}
+                className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors"
+              >
+                {createUsuario.isPending
+                  ? <><Loader2 className="w-4 h-4 animate-spin" />Creando...</>
+                  : <><Send className="w-4 h-4" /> Crear Usuario</>
+                }
               </button>
             </div>
           </form>
@@ -212,17 +247,10 @@ function InviteModal({ onClose }) {
               <CheckCircle className="w-7 h-7 text-green-600" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-text mb-1">¡Invitación enviada!</h4>
-              <p className="text-xs text-text-muted">Correo enviado a <strong className="text-text">{email}</strong> con rol <strong className="text-text">{rol}</strong>.</p>
-            </div>
-            <div className="bg-bg-alt rounded-xl p-3 text-left">
-              <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">Enlace de activación</p>
-              <div className="flex items-center gap-2">
-                <p className="text-xs font-mono text-text-muted truncate flex-1">{fakeLink}</p>
-                <button onClick={copyLink} className="shrink-0 p-1.5 rounded-lg hover:bg-white transition-colors">
-                  {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5 text-text-muted" />}
-                </button>
-              </div>
+              <h4 className="text-sm font-bold text-text mb-1">¡Usuario creado!</h4>
+              <p className="text-xs text-text-muted">
+                Se envió un correo a <strong className="text-text">{email}</strong> con sus credenciales de acceso y el rol <strong className="text-text">{rol}</strong>.
+              </p>
             </div>
             <button onClick={onClose} className="w-full py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">Cerrar</button>
           </div>
@@ -233,7 +261,11 @@ function InviteModal({ onClose }) {
 }
 
 export default function Usuarios() {
-  const [users, setUsers] = useState(ADMIN_MOCK_USERS)
+  const { data } = useUsuariosList({ limit: 200 })
+  const users = data?.data ?? []
+  const updateRol   = useUpdateUsuarioRol()
+  const deleteUser  = useDeleteUsuario()
+
   const [search, setSearch] = useState('')
   const [filtroRol, setFiltroRol] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
@@ -275,35 +307,25 @@ export default function Usuarios() {
     return e
   }
 
-  const handleSave = (ev) => {
+  const handleSave = async (ev) => {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setFormErrors(e); return }
     if (editingUser) {
-      setUsers((prev) => prev.map((u) => u.id === editingUser.id
-        ? { ...u, ...form, initials: form.nombre.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase() }
-        : u
-      ))
-    } else {
-      const newId = `USR-${String(users.length + 1).padStart(3, '0')}`
-      setUsers((prev) => [...prev, {
-        id: newId, ...form,
-        ultimoAcceso: 'Hoy',
-        initials: form.nombre.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase(),
-      }])
+      await updateRol.mutateAsync({ id: editingUser.id, rol: form.rol, activo: form.estado === 'Activo' })
     }
     setShowModal(false)
   }
 
-  const toggleEstado = (id) => {
-    setUsers((prev) => prev.map((u) => u.id === id
-      ? { ...u, estado: u.estado === 'Activo' ? 'Inactivo' : 'Activo' }
-      : u
-    ))
+  const toggleEstado = async (id) => {
+    const u = users.find((x) => x.id === id)
+    if (!u) return
+    await updateRol.mutateAsync({ id, rol: u.rol, activo: !u.activo })
   }
 
-  const confirmDelete = () => {
-    setUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id))
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    await deleteUser.mutateAsync(deleteTarget.id)
     setDeleteTarget(null)
   }
 
@@ -406,8 +428,16 @@ export default function Usuarios() {
                       <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors" aria-label={`Editar ${u.nombre}`}>
                         <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
-                      <button onClick={() => setDeleteTarget(u)} className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors" aria-label={`Eliminar usuario ${u.nombre}`}>
-                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                      <button
+                        onClick={() => setDeleteTarget(u)}
+                        disabled={deleteUser.isPending && deleteTarget?.id === u.id}
+                        className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                        aria-label={`Eliminar usuario ${u.nombre}`}
+                      >
+                        {deleteUser.isPending && deleteTarget?.id === u.id
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                          : <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        }
                       </button>
                     </div>
                   </td>

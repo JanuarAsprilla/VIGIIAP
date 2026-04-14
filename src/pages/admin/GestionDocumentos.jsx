@@ -6,7 +6,7 @@ import {
   AlertCircle, Link as LinkIcon,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
-import { ADMIN_MOCK_DOCS } from '@/lib/constants'
+import { useDocumentosList, useCreateDocumento, useDeleteDocumento } from '@/hooks/useDocumentos'
 
 const fadeUp = fadeUpSm
 
@@ -136,7 +136,11 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }) {
 }
 
 export default function GestionDocumentos() {
-  const [docs, setDocs] = useState(ADMIN_MOCK_DOCS)
+  const { data } = useDocumentosList({ limit: 200 })
+  const docs = data?.data ?? []
+  const createDocumento = useCreateDocumento()
+  const deleteDocumento = useDeleteDocumento()
+
   const [search, setSearch] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
   const [filtroTipo, setFiltroTipo] = useState('')
@@ -150,9 +154,9 @@ export default function GestionDocumentos() {
 
   const filtered = docs.filter((d) => {
     const q = search.toLowerCase()
-    const matchQ = !q || d.nombre.toLowerCase().includes(q) || d.autor.toLowerCase().includes(q)
+    const matchQ = !q || d.nombre.toLowerCase().includes(q) || (d.autores ?? '').toLowerCase().includes(q)
     const matchC = !filtroCategoria || d.categoria === filtroCategoria
-    const matchT = !filtroTipo || d.tipo === filtroTipo
+    const matchT = !filtroTipo || d.type?.toUpperCase() === filtroTipo
     return matchQ && matchC && matchT
   })
 
@@ -167,7 +171,7 @@ export default function GestionDocumentos() {
 
   const openEdit = (d) => {
     setEditing(d)
-    setForm({ nombre: d.nombre, categoria: d.categoria, tipo: d.tipo, autor: d.autor, fecha: d.fecha, url: d.url || '' })
+    setForm({ nombre: d.nombre, categoria: d.categoria, tipo: d.type?.toUpperCase() ?? 'PDF', autor: d.autores ?? '', fecha: d.fecha, url: d.url || '' })
     setFormErrors({})
     setUploadedFile(null)
     setUploadError(null)
@@ -183,33 +187,24 @@ export default function GestionDocumentos() {
     return e
   }
 
-  const handleSave = (ev) => {
+  const handleSave = async (ev) => {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setFormErrors(e); return }
 
-    const tamano = uploadedFile ? formatBytes(uploadedFile.size) : (editing?.tamano || '—')
-    const fileName = uploadedFile?.name
+    const payload = new FormData()
+    payload.append('titulo',   form.nombre)
+    payload.append('tipo',     form.categoria)
+    payload.append('autores',  form.autor)
+    if (uploadedFile) payload.append('archivo', uploadedFile)
+    if (form.tipo === 'Geovisor') payload.append('geovisor_url', form.url)
 
-    if (editing) {
-      setDocs((prev) => prev.map((d) => d.id === editing.id
-        ? { ...d, ...form, tamano, ...(fileName ? { fileName } : {}) }
-        : d
-      ))
-    } else {
-      setDocs((prev) => [...prev, {
-        id: prev.length + 1,
-        ...form,
-        tamano,
-        fileName,
-        descargas: 0,
-      }])
-    }
+    await createDocumento.mutateAsync(payload)
     setShowModal(false)
   }
 
-  const confirmDelete = () => {
-    setDocs((prev) => prev.filter((d) => d.id !== deleteTarget.id))
+  const confirmDelete = async () => {
+    await deleteDocumento.mutateAsync(deleteTarget.id)
     setDeleteTarget(null)
   }
 
@@ -222,7 +217,7 @@ export default function GestionDocumentos() {
         <div>
           <span className="text-[0.7rem] font-bold uppercase tracking-widest text-primary-700">Administración</span>
           <h1 className="font-display text-2xl font-bold text-text mt-0.5">Gestión de Documentos</h1>
-          <p className="text-sm text-text-muted mt-1">{docs.length} documentos · {docs.reduce((a, d) => a + d.descargas, 0)} descargas totales</p>
+          <p className="text-sm text-text-muted mt-1">{docs.length} documentos</p>
         </div>
         <button
           onClick={openCreate}
@@ -287,18 +282,17 @@ export default function GestionDocumentos() {
                 <tr key={d.id} className="border-b border-border last:border-b-0 hover:bg-bg-alt/30 transition-colors">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
-                      <TipoIcon tipo={d.tipo} />
+                      <TipoIcon tipo={d.type?.toUpperCase() ?? 'PDF'} />
                       <div>
                         <p className="text-sm font-semibold text-text">{d.nombre}</p>
-                        {d.fileName && <p className="text-[0.6rem] text-text-muted">{d.fileName}</p>}
                       </div>
                     </div>
                   </td>
                   <td className="px-5 py-3.5">
                     <span className="text-xs px-2 py-0.5 bg-primary-50 text-primary-800 rounded-full font-medium">{d.categoria}</span>
                   </td>
-                  <td className="px-5 py-3.5 text-xs font-semibold text-text-muted">{d.tipo}</td>
-                  <td className="px-5 py-3.5 text-sm text-text-muted">{d.autor}</td>
+                  <td className="px-5 py-3.5 text-xs font-semibold text-text-muted">{d.type?.toUpperCase()}</td>
+                  <td className="px-5 py-3.5 text-sm text-text-muted">{d.autores}</td>
                   <td className="px-5 py-3.5 text-sm text-text-muted">{d.fecha}</td>
                   <td className="px-5 py-3.5 text-xs text-text-muted">{d.tamano}</td>
                   <td className="px-5 py-3.5">

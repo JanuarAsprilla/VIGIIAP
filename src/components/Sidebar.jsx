@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
-import { PlusCircle, LogOut, X, Sparkles, Lock, Shield } from 'lucide-react'
+import { PlusCircle, LogOut, X, Sparkles, Lock, Shield, ChevronRight } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/contexts/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
 
-// Rutas que requieren Investigador o Admin
-const PROTECTED_PATHS = ['/mapas', '/documentos', '/geovisor', '/herramientas', '/solicitudes']
+// Rutas que requieren cuenta institucional (no visitante, no anónimo)
+const RESTRICTED_PATHS = ['/geovisor', '/herramientas', '/solicitudes']
 
 // ── Stagger presets ──
 const navContainer = {
@@ -20,8 +20,14 @@ const navItemVariant = {
 }
 
 // ── Single nav link with animated pill + role-aware lock ──
-function SidebarLink({ link, onClose, userRole }) {
-  const isLocked = PROTECTED_PATHS.includes(link.path) && userRole === ROLES.PUBLICO
+function SidebarLink({ link, onClose, userRole, isAuthenticated }) {
+  // Lock restricted paths for: visitantes, unauthenticated users, and "publico" role
+  const needsInstitutional = RESTRICTED_PATHS.includes(link.path)
+  const isLocked = needsInstitutional && (
+    !isAuthenticated ||
+    userRole === ROLES.VISITANTE ||
+    userRole === ROLES.PUBLICO
+  )
 
   if (isLocked) {
     return (
@@ -174,66 +180,102 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
           className="space-y-0.5"
         >
           {NAV_LINKS.map((link) => (
-            <SidebarLink key={link.path} link={link} onClose={onClose} userRole={user?.role} />
+            <SidebarLink key={link.path} link={link} onClose={onClose} userRole={user?.role} isAuthenticated={isAuthenticated} />
           ))}
         </motion.div>
       </nav>
 
       {/* ── Bottom actions ── */}
-      <AnimatePresence>
-        {isAuthenticated && (
+      <div className="p-3 space-y-1 border-t border-border/60">
+
+        {/* No session — CTA de ingreso */}
+        {!isAuthenticated && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="p-3 space-y-1 border-t border-border/60"
           >
-            {/* Panel Admin — solo Administrador SIG */}
-            {user?.role === ROLES.ADMIN && (
-              <Link
-                to="/admin"
-                onClick={onClose}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-primary-800 bg-primary-50 border border-primary-200/70 hover:bg-primary-100 transition-colors no-underline mb-1"
-              >
-                <Shield className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                <span>Panel Admin</span>
-                <span className="ml-auto text-[0.55rem] font-bold uppercase tracking-wider bg-primary-800 text-white px-1.5 py-0.5 rounded-full">
-                  SIG
-                </span>
-              </Link>
-            )}
-
-            {/* Nuevo Análisis — shimmer gradient button */}
-            <div className="relative overflow-hidden rounded-xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary-700 to-primary-900" aria-hidden="true" />
-              <motion.button
-                onClick={onOpenModal}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.96 }}
-                transition={{ type: 'spring', stiffness: 420, damping: 24 }}
-                className="btn-shimmer relative w-full flex items-center gap-2 px-3 py-2.5 text-white text-sm font-semibold"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-primary-200 shrink-0" aria-hidden="true" />
-                <span>Nuevo Análisis</span>
-                <PlusCircle className="w-3.5 h-3.5 ml-auto text-primary-300 shrink-0" aria-hidden="true" />
-              </motion.button>
-            </div>
-
-            {/* Cerrar sesión */}
-            <motion.button
-              onClick={onLogout}
-              whileHover={{ x: 4 }}
-              whileTap={{ x: 0 }}
-              transition={{ type: 'spring', stiffness: 400 }}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-text-muted hover:text-orange-500 hover:bg-orange-500/5 transition-colors"
+            <Link
+              to="/login"
+              onClick={onClose}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-br from-primary-700 to-primary-900 hover:from-primary-600 hover:to-primary-800 transition-all no-underline"
             >
-              <LogOut className="w-[17px] h-[17px] shrink-0" aria-hidden="true" />
-              <span>Cerrar Sesión</span>
-            </motion.button>
+              <Shield className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span>Iniciar sesión</span>
+              <ChevronRight className="w-3.5 h-3.5 ml-auto shrink-0" aria-hidden="true" />
+            </Link>
           </motion.div>
         )}
-      </AnimatePresence>
+
+        {/* Session activa */}
+        <AnimatePresence>
+          {isAuthenticated && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="space-y-1"
+            >
+              {/* Panel Admin — solo Administrador SIG */}
+              {user?.role === ROLES.ADMIN && (
+                <Link
+                  to="/admin"
+                  onClick={onClose}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-primary-800 bg-primary-50 border border-primary-200/70 hover:bg-primary-100 transition-colors no-underline mb-1"
+                >
+                  <Shield className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span>Panel Admin</span>
+                  <span className="ml-auto text-[0.55rem] font-bold uppercase tracking-wider bg-primary-800 text-white px-1.5 py-0.5 rounded-full">
+                    SIG
+                  </span>
+                </Link>
+              )}
+
+              {/* Visitante — solicitar acceso */}
+              {user?.isVisitante ? (
+                <Link
+                  to="/solicitar-acceso"
+                  onClick={onClose}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors no-underline"
+                >
+                  <Lock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span>Solicitar acceso</span>
+                  <ChevronRight className="w-3.5 h-3.5 ml-auto shrink-0" aria-hidden="true" />
+                </Link>
+              ) : (
+                /* Nuevo Análisis — solo para usuarios institucionales */
+                <div className="relative overflow-hidden rounded-xl">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary-700 to-primary-900" aria-hidden="true" />
+                  <motion.button
+                    onClick={onOpenModal}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.96 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 24 }}
+                    className="btn-shimmer relative w-full flex items-center gap-2 px-3 py-2.5 text-white text-sm font-semibold"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-primary-200 shrink-0" aria-hidden="true" />
+                    <span>Nuevo Análisis</span>
+                    <PlusCircle className="w-3.5 h-3.5 ml-auto text-primary-300 shrink-0" aria-hidden="true" />
+                  </motion.button>
+                </div>
+              )}
+
+              {/* Cerrar sesión */}
+              <motion.button
+                onClick={onLogout}
+                whileHover={{ x: 4 }}
+                whileTap={{ x: 0 }}
+                transition={{ type: 'spring', stiffness: 400 }}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-text-muted hover:text-orange-500 hover:bg-orange-500/5 transition-colors"
+              >
+                <LogOut className="w-[17px] h-[17px] shrink-0" aria-hidden="true" />
+                <span>Cerrar Sesión</span>
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

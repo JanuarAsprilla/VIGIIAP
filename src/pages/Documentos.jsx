@@ -4,13 +4,27 @@ import {
   FileText, Search, SlidersHorizontal, ArrowUpDown,
   ChevronUp, ChevronDown, Eye, Download,
   Waves, FileInput, BookOpen, TrendingUp,
-  Headphones, X, Check, AlertCircle, Send, CheckCircle,
+  Headphones, X, Check, AlertCircle, Send, CheckCircle, Loader2,
 } from 'lucide-react'
-import { DOC_CATEGORIES } from '@/lib/constants'
 import { useSearch } from '@/contexts/SearchContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { matches } from '@/lib/search'
 import { useToast, ToastContainer } from '@/components/Toast'
+import { useDocumentosList } from '@/hooks/useDocumentos'
+
+// Meta por categoría (icon + color)
+const CATEGORY_META = {
+  default: { icon: 'BookOpen', color: 'border-l-primary-800' },
+  'Protocolos Ambientales': { icon: 'Waves', color: 'border-l-primary-800' },
+  'Formatos y Plantillas':  { icon: 'FileInput', color: 'border-l-gold-400' },
+  'Bibliografía Técnica':   { icon: 'BookOpen', color: 'border-l-green-600' },
+  'Análisis de Tendencias': { icon: 'TrendingUp', color: 'border-l-orange-500' },
+  'Cartografía':            { icon: 'TrendingUp', color: 'border-l-primary-800' },
+  'Hidrología':             { icon: 'Waves', color: 'border-l-blue-500' },
+  'Biodiversidad':          { icon: 'BookOpen', color: 'border-l-green-600' },
+  'Normativa':              { icon: 'FileInput', color: 'border-l-orange-500' },
+  'Estudios Ambientales':   { icon: 'TrendingUp', color: 'border-l-orange-500' },
+}
 
 // ── Animation helper ──
 const fadeUp = (delay = 0) => ({
@@ -512,7 +526,7 @@ function useClickOutside(ref, handler) {
 // ── Main Documentos Page ──
 export default function Documentos() {
   const { query, setQuery } = useSearch()
-  const [openId, setOpenId] = useState('protocolos')
+  const [openId, setOpenId] = useState('')
   const [showSoporte, setShowSoporte] = useState(false)
 
   // Filter & sort state
@@ -547,8 +561,40 @@ export default function Documentos() {
     )
   }
 
+  // ── Real data from API ──────────────────────────────────────────────────────
+  const { data, isLoading, isError } = useDocumentosList({ limit: 200 })
+  const allDocs = data?.data ?? []
+
+  // Group flat list into category accordions
+  const allCategories = (() => {
+    const map = {}
+    allDocs.forEach((d) => {
+      const catName = d.categoria || 'General'
+      if (!map[catName]) {
+        const meta = CATEGORY_META[catName] ?? CATEGORY_META.default
+        map[catName] = {
+          id:    catName.toLowerCase().replace(/\s+/g, '-'),
+          title: catName,
+          icon:  meta.icon,
+          color: meta.color,
+          docs:  [],
+        }
+      }
+      map[catName].docs.push({
+        name:    d.nombre,
+        type:    d.type,
+        size:    d.tamano ?? '—',
+        updated: d.fecha,
+        date:    d.fecha,
+        dateISO: d.creado_en ?? '',
+        url:     d.url,
+      })
+    })
+    return Object.values(map)
+  })()
+
   // Build filtered + sorted categories
-  const filteredCategories = DOC_CATEGORIES.map((cat) => {
+  const filteredCategories = allCategories.map((cat) => {
     let docs = cat.docs.filter((d) => matches([d.name, cat.title], query))
     if (activeTypes.length > 0) {
       docs = docs.filter((d) => activeTypes.includes(d.type))
@@ -719,36 +765,47 @@ export default function Documentos() {
       </motion.div>
 
       {/* Document Categories (Accordions) */}
-      <div className="space-y-4">
-        {filteredCategories.length > 0 ? filteredCategories.map((cat, i) => (
-          <CategoryAccordion
-            key={cat.id}
-            category={cat}
-            isOpen={getIsOpen(cat.id)}
-            onToggle={() => toggleCategory(cat.id)}
-            index={i}
-            onPreview={(doc, catTitle) => { setPreviewDoc(doc); setPreviewCategory(catTitle) }}
-            onDownload={handleDownload}
-          />
-        )) : (
-          <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
-            <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">
-              No se encontraron documentos
-              {query && <> para <strong className="text-text">"{query}"</strong></>}
-              {activeTypes.length > 0 && <> con los filtros seleccionados</>}
-            </p>
-            {activeTypes.length > 0 && (
-              <button
-                onClick={() => setActiveTypes([])}
-                className="mt-3 text-sm font-medium text-primary-800 hover:underline"
-              >
-                Limpiar filtros
-              </button>
-            )}
-          </motion.div>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 text-primary-800 animate-spin" />
+        </div>
+      ) : isError ? (
+        <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
+          <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No se pudo cargar los documentos. Verifique su conexión.</p>
+        </motion.div>
+      ) : (
+        <div className="space-y-4">
+          {filteredCategories.length > 0 ? filteredCategories.map((cat, i) => (
+            <CategoryAccordion
+              key={cat.id}
+              category={cat}
+              isOpen={getIsOpen(cat.id)}
+              onToggle={() => toggleCategory(cat.id)}
+              index={i}
+              onPreview={(doc, catTitle) => { setPreviewDoc(doc); setPreviewCategory(catTitle) }}
+              onDownload={handleDownload}
+            />
+          )) : (
+            <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
+              <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">
+                No se encontraron documentos
+                {query && <> para <strong className="text-text">"{query}"</strong></>}
+                {activeTypes.length > 0 && <> con los filtros seleccionados</>}
+              </p>
+              {activeTypes.length > 0 && (
+                <button
+                  onClick={() => setActiveTypes([])}
+                  className="mt-3 text-sm font-medium text-primary-800 hover:underline"
+                >
+                  Limpiar filtros
+                </button>
+              )}
+            </motion.div>
+          )}
+        </div>
+      )}
 
       {/* Support CTA */}
       <SupportCTA onContactar={() => setShowSoporte(true)} />

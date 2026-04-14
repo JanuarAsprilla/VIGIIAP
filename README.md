@@ -120,3 +120,4 @@ develop → feat/VIG-XXX-descripcion → PR → code review → merge → develo
 ## Licencia
 
 MIT © 2026 [IIAP](https://www.iiap.org.co) — Instituto de Investigaciones Ambientales del Pacífico
+# redespliegue Tue Apr 14 00:21:18 -05 2026

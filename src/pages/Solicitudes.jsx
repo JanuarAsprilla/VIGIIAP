@@ -8,12 +8,11 @@ import {
   X, CheckCircle, Send, Clock, Check,
   AlertCircle, ChevronDown, FileText, User, Mail,
 } from 'lucide-react'
-import {
-  SOLICITUDES_KPIS, SOLICITUDES_TABLE, TRAMITE_TYPES,
-} from '@/lib/constants'
+import { TRAMITE_TYPES } from '@/lib/constants'
 import { useSearch } from '@/contexts/SearchContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { matches } from '@/lib/search'
+import { useMisSolicitudes, useCreateSolicitud } from '@/hooks/useSolicitudes'
 
 const PAGE_SIZE = 4
 
@@ -402,18 +401,21 @@ function NuevaSolicitudForm({ formRef }) {
   const { user, isAuthenticated } = useAuth()
   const [step, setStep] = useState('form') // 'form' | 'success'
   const [form, setForm] = useState({
-    nombre: isAuthenticated ? user.name : '',
-    correo: isAuthenticated ? user.email : '',
+    nombre: isAuthenticated ? user?.name : '',
+    correo: isAuthenticated ? user?.email : '',
     tipo: '',
     descripcion: '',
   })
   const [archivo, setArchivo] = useState(null)
   const [errors, setErrors] = useState({})
+  const [serverError, setServerError] = useState('')
   const fileInputRef = useRef(null)
+  const createSolicitud = useCreateSolicitud()
 
   const set = (key, val) => {
     setForm((prev) => ({ ...prev, [key]: val }))
     setErrors((prev) => ({ ...prev, [key]: undefined }))
+    setServerError('')
   }
 
   const validate = () => {
@@ -427,42 +429,34 @@ function NuevaSolicitudForm({ formRef }) {
     return e
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const e2 = validate()
     if (Object.keys(e2).length) { setErrors(e2); return }
 
-    // Persist to localStorage so "Mis Solicitudes" can show it
     const tipoLabel = TRAMITE_TYPES.find((t) => t.value === form.tipo)?.label || form.tipo
-    const newEntry = {
-      id: `#VIG-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
-      tipo: tipoLabel,
-      subtipo: form.descripcion.trim().slice(0, 50) + (form.descripcion.length > 50 ? '…' : ''),
-      fecha: new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }),
-      estado: 'En Proceso',
-      estadoColor: 'yellow',
-      solicitante: form.nombre,
-      notas: 'Su solicitud fue recibida y está siendo procesada por el equipo técnico del IIAP.',
-      timeline: ['Recibida', 'En Revisión', 'En Proceso'],
-    }
     try {
-      const prev = JSON.parse(localStorage.getItem('vigiiap_mis_solicitudes') || '[]')
-      localStorage.setItem('vigiiap_mis_solicitudes', JSON.stringify([newEntry, ...prev]))
-    } catch (_) {}
-
-    setStep('success')
+      await createSolicitud.mutateAsync({
+        tipo:        tipoLabel,
+        descripcion: form.descripcion.trim(),
+      })
+      setStep('success')
+    } catch (err) {
+      setServerError(err.message ?? 'No se pudo enviar la solicitud. Intente de nuevo.')
+    }
   }
 
   const handleReset = () => {
     setStep('form')
     setForm({
-      nombre: isAuthenticated ? user.name : '',
-      correo: isAuthenticated ? user.email : '',
+      nombre: isAuthenticated ? user?.name : '',
+      correo: isAuthenticated ? user?.email : '',
       tipo: '',
       descripcion: '',
     })
     setArchivo(null)
     setErrors({})
+    setServerError('')
   }
 
   if (step === 'success') {
@@ -500,6 +494,13 @@ function NuevaSolicitudForm({ formRef }) {
       <p className="text-sm text-text-muted mb-5">
         Complete el formulario para iniciar un nuevo proceso administrativo o consulta técnica.
       </p>
+
+      {serverError && (
+        <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2.5 mb-3 text-xs">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{serverError}</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Nombre */}
@@ -623,55 +624,48 @@ function NuevaSolicitudForm({ formRef }) {
         {/* Submit */}
         <button
           type="submit"
-          className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-800 text-white rounded-lg text-sm font-bold hover:bg-primary-700 transition-colors"
+          disabled={createSolicitud.isPending}
+          className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-800 text-white rounded-lg text-sm font-bold hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
-          <Send className="w-4 h-4" aria-hidden="true" />
-          Enviar Solicitud
+          {createSolicitud.isPending
+            ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            : <><Send className="w-4 h-4" aria-hidden="true" />Enviar Solicitud</>
+          }
         </button>
       </form>
     </motion.div>
   )
 }
 
-// ── Mis Solicitudes (localStorage) ──
+// ── Mis Solicitudes (API) ──
 function MisSolicitudes({ onVerDetalle }) {
-  const [mis, setMis] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('vigiiap_mis_solicitudes') || '[]') } catch { return [] }
-  })
+  const { data, isLoading } = useMisSolicitudes()
+  const mis = data?.data ?? []
 
-  const clear = () => {
-    localStorage.removeItem('vigiiap_mis_solicitudes')
-    setMis([])
-  }
-
-  if (mis.length === 0) return null
+  if (isLoading || mis.length === 0) return null
 
   return (
     <motion.div {...fadeUp(0.3)} className="bg-white border border-border rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <div>
           <h3 className="text-sm font-bold text-text">Mis Solicitudes</h3>
-          <p className="text-[0.65rem] text-text-muted mt-0.5">Enviadas desde este dispositivo</p>
+          <p className="text-[0.65rem] text-text-muted mt-0.5">{mis.length} solicitud{mis.length !== 1 ? 'es' : ''} registrada{mis.length !== 1 ? 's' : ''}</p>
         </div>
-        <button
-          onClick={clear}
-          className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted hover:text-red-500 transition-colors"
-        >
-          Limpiar
-        </button>
       </div>
       <div className="divide-y divide-border max-h-72 overflow-y-auto">
         {mis.map((s) => (
-          <div key={s.id} className="flex items-center gap-3 px-5 py-3 hover:bg-bg-alt/30 transition-colors">
+          <div key={s._id} className="flex items-center gap-3 px-5 py-3 hover:bg-bg-alt/30 transition-colors">
             <div className="flex-1 min-w-0">
               <p className="text-[0.6rem] font-bold text-primary-800">{s.id}</p>
               <p className="text-xs font-semibold text-text truncate">{s.tipo}</p>
               <p className="text-[0.6rem] text-text-muted">{s.fecha}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[0.6rem] font-bold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
-                {s.estado}
-              </span>
+              <span className={`text-[0.6rem] font-bold px-2 py-0.5 rounded-full ${
+                s.estadoColor === 'green' ? 'bg-green-100 text-green-700'
+                : s.estadoColor === 'red'  ? 'bg-red-100 text-red-700'
+                : 'bg-yellow-100 text-yellow-700'
+              }`}>{s.estado}</span>
               <button
                 onClick={() => onVerDetalle(s)}
                 className="p-1 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
@@ -712,13 +706,23 @@ function AyudaCTA() {
 }
 
 // ── Bottom KPIs ──
-function BottomStats() {
+function BottomStats({ rows }) {
+  const total    = rows.length
+  const proceso  = rows.filter((r) => r.estado === 'En Proceso').length
+  const aprobado = rows.filter((r) => r.estado === 'Aprobado').length
+  const tasaStr  = total > 0 ? `${Math.round((aprobado / total) * 100)}%` : '—'
+  const kpis = [
+    { label: 'Total',      value: String(total) },
+    { label: 'En Proceso', value: String(proceso) },
+    { label: 'Aprobadas',  value: tasaStr },
+    { label: 'Rechazadas', value: String(rows.filter((r) => r.estado === 'Rechazado').length) },
+  ]
   return (
     <motion.div
       {...fadeUp(0.4)}
       className="grid grid-cols-2 md:grid-cols-4 gap-4"
     >
-      {SOLICITUDES_KPIS.map((kpi) => (
+      {kpis.map((kpi) => (
         <div
           key={kpi.label}
           className="bg-white border border-border rounded-xl px-5 py-4 text-center"
@@ -743,11 +747,14 @@ export default function Solicitudes() {
   const [detalleItem, setDetalleItem] = useState(null)
   const formRef = useRef(null)
 
+  const { data } = useMisSolicitudes()
+  const allRows = data?.data ?? []
+
   // Reset page on search/filter change
   const handleFiltro = (val) => { setFiltroEstado(val); setPage(1) }
 
   // Filter rows: search + estado filter
-  const allFiltered = SOLICITUDES_TABLE.filter((s) => {
+  const allFiltered = allRows.filter((s) => {
     const searchOk = matches([s.id, s.tipo, s.subtipo, s.estado], query)
     const filtroOk = !filtroEstado || s.estado === filtroEstado
     return searchOk && filtroOk
@@ -831,7 +838,7 @@ export default function Solicitudes() {
       </div>
 
       {/* ── Bottom KPIs ── */}
-      <BottomStats />
+      <BottomStats rows={allRows} />
 
       {/* ── Detalle Modal ── */}
       <AnimatePresence>
