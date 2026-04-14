@@ -17,22 +17,24 @@ const ROLE_MAP_REVERSE = {
 function normalizeUser(u) {
   const rolLabel = ROLE_MAP[u.rol] ?? ROLES.PUBLICO
   return {
-    id:           u.id,
-    nombre:       u.nombre,
-    correo:       u.email,
-    rol:          rolLabel,
-    rolBackend:   u.rol,
-    estado:       u.activo ? 'Activo' : 'Inactivo',
-    activo:       u.activo,
-    initials:     u.nombre
+    id:              u.id,
+    nombre:          u.nombre,
+    correo:          u.email,
+    rol:             rolLabel,
+    rolBackend:      u.rol,
+    estado:          u.activo ? 'Activo' : 'Inactivo',
+    activo:          u.activo,
+    emailVerified:   u.email_verified ?? false,
+    motivoAcceso:    u.motivo_acceso ?? '',
+    initials:        u.nombre
       ?.split(' ')
       .map((w) => w[0])
       .slice(0, 2)
       .join('')
       .toUpperCase() ?? '?',
-    institucion:  u.institucion ?? '',
-    ultimoAcceso: formatDate(u.actualizado_en ?? u.creado_en),
-    creado_en:    u.creado_en,
+    institucion:     u.institucion ?? '',
+    ultimoAcceso:    formatDate(u.actualizado_en ?? u.creado_en),
+    creado_en:       u.creado_en,
   }
 }
 
@@ -73,11 +75,20 @@ export function useCreateUsuario() {
 export function useUpdateUsuarioRol() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, rol, activo }) =>
+    mutationFn: ({ id, rol }) =>
       api.patch(`/admin/usuarios/${id}`, {
-        rol:    ROLE_MAP_REVERSE[rol] ?? rol,
-        activo: activo !== undefined ? activo : true,
+        rol: ROLE_MAP_REVERSE[rol] ?? rol,
       }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: USUARIOS_KEYS.all }),
+  })
+}
+
+/** Activa o desactiva un usuario sin tocar su rol */
+export function useToggleActivo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, activo }) =>
+      api.patch(`/admin/usuarios/${id}`, { activo }),
     onSuccess: () => qc.invalidateQueries({ queryKey: USUARIOS_KEYS.all }),
   })
 }

@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Plus, Search, X, Send, Trash2, Edit2,
-  CheckCircle, XCircle, UserPlus, Mail,
+  Search, X, Send, Trash2, Edit2,
+  CheckCircle, XCircle, UserPlus,
   User, Clock, Loader2,
 } from 'lucide-react'
 import { ROLES } from '@/contexts/AuthContext'
 import { fadeUpSm, panelAnim, drawerAnim } from '@/lib/animations'
-import { useUsuariosList, useCreateUsuario, useUpdateUsuarioRol, useDeleteUsuario } from '@/hooks/useUsuarios'
+import { useUsuariosList, useCreateUsuario, useUpdateUsuarioRol, useToggleActivo, useDeleteUsuario } from '@/hooks/useUsuarios'
 
 const fadeUp = fadeUpSm
 
@@ -21,17 +21,6 @@ const ROLE_COLORS = {
 
 // ── User detail drawer ──
 function UserDrawer({ user, onClose }) {
-  const activity = ADMIN_ACTIVITY_LOG.filter((l) =>
-    l.usuario.toLowerCase().includes(user.nombre.split(' ')[0].toLowerCase())
-  ).slice(0, 5)
-
-  const typeStyles = {
-    success: 'bg-green-100 text-green-700',
-    error:   'bg-red-100 text-red-600',
-    warning: 'bg-amber-100 text-amber-700',
-    info:    'bg-primary-100 text-primary-700',
-  }
-
   return (
     <>
       <motion.div
@@ -67,8 +56,8 @@ function UserDrawer({ user, onClose }) {
           {/* Meta */}
           <div className="grid grid-cols-2 gap-3">
             {[
-              { icon: User,    label: 'ID',              value: user.id },
-              { icon: Clock,   label: 'Último acceso',   value: user.ultimoAcceso },
+              { icon: User,  label: 'ID',           value: user.id?.slice(0, 8) + '…' },
+              { icon: Clock, label: 'Última acción', value: user.ultimoAcceso },
             ].map(({ icon: Ic, label, value }) => (
               <div key={label} className="bg-bg-alt rounded-xl p-3">
                 <div className="flex items-center gap-1.5 mb-1">
@@ -79,6 +68,22 @@ function UserDrawer({ user, onClose }) {
               </div>
             ))}
           </div>
+
+          {/* Institución */}
+          {user.institucion && (
+            <div className="bg-bg-alt rounded-xl p-3">
+              <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">Institución</p>
+              <p className="text-xs font-semibold text-text">{user.institucion}</p>
+            </div>
+          )}
+
+          {/* Motivo de acceso */}
+          {user.motivoAcceso && (
+            <div className="bg-bg-alt rounded-xl p-3">
+              <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">Motivo de acceso</p>
+              <p className="text-xs text-text leading-relaxed">{user.motivoAcceso}</p>
+            </div>
+          )}
 
           {/* Permissions summary */}
           <div>
@@ -120,27 +125,6 @@ function UserDrawer({ user, onClose }) {
             </div>
           </div>
 
-          {/* Recent activity */}
-          <div>
-            <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-2">Actividad Reciente</p>
-            {activity.length > 0 ? (
-              <div className="space-y-2">
-                {activity.map((log) => (
-                  <div key={log.id} className="flex items-start gap-2.5 p-2.5 bg-bg-alt rounded-lg">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-text truncate">{log.accion}</p>
-                      <p className="text-[0.6rem] text-text-muted">{log.modulo} · {log.hora}</p>
-                    </div>
-                    <span className={`text-[0.55rem] font-bold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${typeStyles[log.tipo]}`}>
-                      {log.tipo}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-text-muted italic">Sin actividad registrada</p>
-            )}
-          </div>
         </div>
       </motion.div>
     </>
@@ -264,6 +248,7 @@ export default function Usuarios() {
   const { data } = useUsuariosList({ limit: 200 })
   const users = data?.data ?? []
   const updateRol   = useUpdateUsuarioRol()
+  const toggleActivo = useToggleActivo()
   const deleteUser  = useDeleteUsuario()
 
   const [search, setSearch] = useState('')
@@ -274,36 +259,27 @@ export default function Usuarios() {
   const [editingUser, setEditingUser] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [detailUser, setDetailUser] = useState(null)
-  const [form, setForm] = useState({ nombre: '', correo: '', rol: 'Público', estado: 'Activo' })
+  const [form, setForm] = useState({ rol: 'Público' })
   const [formErrors, setFormErrors] = useState({})
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase()
-    const matchQ = !q || u.nombre.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q)
+    const matchQ = !q || u.nombre.toLowerCase().includes(q) || (u.correo ?? '').toLowerCase().includes(q)
     const matchRol = !filtroRol || u.rol === filtroRol
     const matchEst = !filtroEstado || u.estado === filtroEstado
     return matchQ && matchRol && matchEst
   })
 
-  const openCreate = () => {
-    setEditingUser(null)
-    setForm({ nombre: '', correo: '', rol: 'Público', estado: 'Activo' })
-    setFormErrors({})
-    setShowModal(true)
-  }
-
   const openEdit = (u) => {
     setEditingUser(u)
-    setForm({ nombre: u.nombre, correo: u.correo, rol: u.rol, estado: u.estado })
+    setForm((f) => ({ ...f, rol: u.rol }))
     setFormErrors({})
     setShowModal(true)
   }
 
   const validate = () => {
     const e = {}
-    if (!form.nombre.trim()) e.nombre = 'Requerido'
-    if (!form.correo.trim()) e.correo = 'Requerido'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) e.correo = 'Correo inválido'
+    if (!form.rol) e.rol = 'Selecciona un rol'
     return e
   }
 
@@ -312,7 +288,7 @@ export default function Usuarios() {
     const e = validate()
     if (Object.keys(e).length) { setFormErrors(e); return }
     if (editingUser) {
-      await updateRol.mutateAsync({ id: editingUser.id, rol: form.rol, activo: form.estado === 'Activo' })
+      await updateRol.mutateAsync({ id: editingUser.id, rol: form.rol })
     }
     setShowModal(false)
   }
@@ -320,7 +296,7 @@ export default function Usuarios() {
   const toggleEstado = async (id) => {
     const u = users.find((x) => x.id === id)
     if (!u) return
-    await updateRol.mutateAsync({ id, rol: u.rol, activo: !u.activo })
+    await toggleActivo.mutateAsync({ id, activo: !u.activo })
   }
 
   const confirmDelete = async () => {
@@ -341,17 +317,10 @@ export default function Usuarios() {
         <div className="flex gap-2 shrink-0">
           <button
             onClick={() => setShowInvite(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-border text-text rounded-xl text-sm font-semibold hover:border-primary-800 hover:text-primary-800 transition-colors"
-          >
-            <Mail className="w-4 h-4" />
-            Invitar
-          </button>
-          <button
-            onClick={openCreate}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors"
           >
             <UserPlus className="w-4 h-4" />
-            Nuevo Usuario
+            Crear Usuario
           </button>
         </div>
       </motion.div>
@@ -385,7 +354,7 @@ export default function Usuarios() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-bg-alt/50">
-                {['Usuario', 'Correo', 'Rol', 'Estado', 'Último Acceso', 'Acciones'].map((h) => (
+                {['Usuario', 'Correo', 'Rol', 'Verificado', 'Estado', 'Acciones'].map((h) => (
                   <th key={h} className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted px-5 py-3">{h}</th>
                 ))}
               </tr>
@@ -415,17 +384,37 @@ export default function Usuarios() {
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ROLE_COLORS[u.rol]}`}>{u.rol}</span>
                   </td>
                   <td className="px-5 py-3.5">
+                    {u.emailVerified ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
+                        <CheckCircle className="w-3 h-3" />Sí
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                        <XCircle className="w-3 h-3" />Pendiente
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3.5">
                     <button
                       onClick={() => toggleEstado(u.id)}
-                      className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${u.estado === 'Activo' ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}
+                      disabled={toggleActivo.isPending}
+                      title={u.activo ? 'Clic para desactivar' : 'Clic para activar'}
+                      className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
+                        u.activo
+                          ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600'
+                          : 'bg-red-100 text-red-600 hover:bg-green-100 hover:text-green-700'
+                      }`}
                     >
+                      {toggleActivo.isPending
+                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                        : u.activo ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />
+                      }
                       {u.estado}
                     </button>
                   </td>
-                  <td className="px-5 py-3.5 text-sm text-text-muted">{u.ultimoAcceso}</td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-1.5">
-                      <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors" aria-label={`Editar ${u.nombre}`}>
+                      <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors" title="Cambiar rol" aria-label={`Editar rol de ${u.nombre}`}>
                         <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
                       <button
@@ -467,30 +456,18 @@ export default function Usuarios() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false) }}>
             <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
               <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-                <h3 className="text-base font-bold text-text">{editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
+                <div>
+                  <h3 className="text-base font-bold text-text">Cambiar Rol</h3>
+                  {editingUser && <p className="text-xs text-text-muted mt-0.5">{editingUser.nombre}</p>}
+                </div>
                 <button onClick={() => setShowModal(false)} className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
               <form onSubmit={handleSave} className="p-6 space-y-4">
-                {[
-                  { key: 'nombre', label: 'Nombre Completo', type: 'text', placeholder: 'Ej. María García' },
-                  { key: 'correo', label: 'Correo Electrónico', type: 'email', placeholder: 'usuario@iiap.org.co' },
-                ].map(({ key, label, type, placeholder }) => (
-                  <div key={key}>
-                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                      {label} <span className="text-orange-500">*</span>
-                    </label>
-                    <input
-                      type={type}
-                      value={form[key]}
-                      onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                      placeholder={placeholder}
-                      className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors[key] ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
-                    />
-                    {formErrors[key] && <p className="text-xs text-red-500 mt-1">{formErrors[key]}</p>}
-                  </div>
-                ))}
+                <div className="bg-bg-alt/60 rounded-xl px-4 py-3 text-xs text-text-muted border border-border/50">
+                  El rol determina los permisos del usuario. Para activar o desactivar una cuenta usa el botón de estado en la tabla.
+                </div>
                 <div>
                   <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Rol</label>
                   <select value={form.rol} onChange={(e) => setForm((f) => ({ ...f, rol: e.target.value }))} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
@@ -499,9 +476,9 @@ export default function Usuarios() {
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors">Cancelar</button>
-                  <button type="submit" className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
-                    <Send className="w-4 h-4" />
-                    {editingUser ? 'Guardar Cambios' : 'Crear Usuario'}
+                  <button type="submit" disabled={updateRol.isPending} className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors">
+                    {updateRol.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    Guardar Cambios
                   </button>
                 </div>
               </form>

@@ -9,7 +9,7 @@ import {
 import AuthLayout from '@/components/AuthLayout'
 import { useAuth } from '@/contexts/AuthContext'
 import {
-  validateEmail, validateRequired, validateMinLength,
+  validateEmail, validateRequired,
   validateSelect, validateCheckbox,
   validatePasswordStrength, passwordCriteria,
 } from '@/lib/validators'
@@ -154,8 +154,7 @@ export default function SolicitarAcceso() {
     if (instErr)                                                          e.institucion     = instErr
     const perfilErr = validateSelect(form.perfil, 'un perfil')
     if (perfilErr)                                                        e.perfil          = perfilErr
-    const motivoErr = validateMinLength(form.motivo, 10, 'El motivo')
-    if (motivoErr)                                                        e.motivo          = motivoErr
+    // motivo es opcional — no se valida longitud mínima
     const termErr = validateCheckbox(form.terminos, 'Debe aceptar los términos')
     if (termErr)                                                          e.terminos        = termErr
     return e
@@ -172,7 +171,8 @@ export default function SolicitarAcceso() {
         email:       form.email,
         password:    form.password,
         institucion: form.institucion,
-        motivo:      `[${form.perfil}] ${form.motivo}`,
+        perfil:      form.perfil || undefined,
+        motivo:      form.motivo || undefined,
       })
       setSent(true)
     } catch (err) {
@@ -350,9 +350,9 @@ export default function SolicitarAcceso() {
                 </select>
               </Field>
 
-              {/* Motivo */}
+              {/* Motivo — opcional */}
               <Field
-                label="Motivo de la Solicitud" icon={FileText} error={errors.motivo}
+                label="Motivo de la Solicitud (opcional)" icon={FileText} error={errors.motivo}
                 hint="Describa para qué proyecto o investigación necesita acceso"
               >
                 <textarea
