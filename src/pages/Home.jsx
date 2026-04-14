@@ -67,9 +67,10 @@ const ALL_MODULES = [
 ]
 
 // ── Card 3D con glow y control de acceso ──
-function ModuleCard({ mod, index, isVisitante }) {
+function ModuleCard({ mod, index, isVisitante, isPublico }) {
   const ref     = useRef()
-  const blocked = !mod.publicAccess && isVisitante
+  // Visitantes y usuarios Público no pueden acceder a herramientas SIG avanzadas
+  const blocked = !mod.publicAccess && (isVisitante || isPublico)
 
   const mouseX  = useMotionValue(0)
   const mouseY  = useMotionValue(0)
@@ -321,13 +322,14 @@ function StatsSection({ sectionRef }) {
 }
 
 // ── Sección de módulos ──
-function ModulesSection({ sectionRef, isVisitante }) {
+function ModulesSection({ sectionRef, isVisitante, isPublico }) {
   const { query } = useSearch()
   const filteredModules = ALL_MODULES.filter((m) =>
     matches([m.title, m.description, m.action], query)
   )
 
-  const publicCount = filteredModules.filter((m) => m.publicAccess).length
+  const restricted = filteredModules.filter((m) => !m.publicAccess).length
+  const showNote = isVisitante || isPublico
 
   if (!filteredModules.length) return null
 
@@ -339,16 +341,16 @@ function ModulesSection({ sectionRef, isVisitante }) {
         </span>
         <div className="flex items-end justify-between flex-wrap gap-2">
           <h2 className="font-display text-2xl font-bold text-text">Módulos de VIGIIAP</h2>
-          {isVisitante && (
+          {showNote && (
             <span className="text-xs text-text-muted bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
-              {publicCount} de {filteredModules.length} disponibles como visitante
+              {restricted} módulos requieren cuenta de investigador
             </span>
           )}
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
         {filteredModules.map((mod, i) => (
-          <ModuleCard key={mod.id} mod={mod} index={i} isVisitante={isVisitante} />
+          <ModuleCard key={mod.id} mod={mod} index={i} isVisitante={isVisitante} isPublico={isPublico} />
         ))}
       </div>
     </section>
@@ -472,6 +474,7 @@ function WelcomeStrip({ user }) {
 // ── Home Page ──
 export default function Home() {
   const { isAuthenticated, user, loginVisitante, isVisitante } = useAuth()
+  const isPublico = user?.role === 'Público'
   const navigate = useNavigate()
   const { query } = useSearch()
   const [showModal, setShowModal] = useState(false)
@@ -520,12 +523,12 @@ export default function Home() {
 
         {/* Módulos */}
         {!query.trim()
-          ? <ModulesSection sectionRef={modulesRef} isVisitante={isVisitante} />
+          ? <ModulesSection sectionRef={modulesRef} isVisitante={isVisitante} isPublico={isPublico} />
           : <section>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 {ALL_MODULES
                   .filter((m) => matches([m.title, m.description, m.action], query))
-                  .map((mod, i) => <ModuleCard key={mod.id} mod={mod} index={i} isVisitante={isVisitante} />)
+                  .map((mod, i) => <ModuleCard key={mod.id} mod={mod} index={i} isVisitante={isVisitante} isPublico={isPublico} />)
                 }
               </div>
             </section>

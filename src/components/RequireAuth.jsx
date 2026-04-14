@@ -12,14 +12,14 @@ export default function RequireAuth() {
   return <Outlet />
 }
 
-/** Protege rutas exclusivas para Investigador y Administrador SIG. */
+/** Protege rutas que requieren rol Investigador o Administrador SIG. Bloquea Público y Visitante. */
 export function RequireInvestigador() {
   const { isAuthenticated, user } = useAuth()
   const location = useLocation()
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
-  if (user?.role === ROLES.PUBLICO) {
+  if (user?.role === ROLES.PUBLICO || user?.isVisitante) {
     return <Navigate to="/" replace />
   }
   return <Outlet />

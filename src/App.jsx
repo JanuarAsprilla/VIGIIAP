@@ -105,8 +105,8 @@ export default function App() {
               <Suspense fallback={<GenericPageSkeleton />}><Terminos /></Suspense>
             } />
 
-            {/* Requiere Investigador o Admin */}
-            <Route element={<RequireInvestigador />}>
+            {/* Requiere sesión (cualquier rol incluyendo Público) */}
+            <Route element={<RequireAuth />}>
               <Route path="/perfil" element={
                 <Suspense fallback={<PerfilSkeleton />}><Perfil /></Suspense>
               } />
@@ -116,14 +116,18 @@ export default function App() {
               <Route path="/documentos" element={
                 <Suspense fallback={<DocumentosSkeleton />}><Documentos /></Suspense>
               } />
+              <Route path="/solicitudes" element={
+                <Suspense fallback={<SolicitudesSkeleton />}><Solicitudes /></Suspense>
+              } />
+            </Route>
+
+            {/* Requiere Investigador o Admin (bloquea Público y Visitante) */}
+            <Route element={<RequireInvestigador />}>
               <Route path="/geovisor" element={
                 <Suspense fallback={<GeovisorLoader />}><Geovisor /></Suspense>
               } />
               <Route path="/herramientas" element={
                 <Suspense fallback={<HerramientasSkeleton />}><Herramientas /></Suspense>
-              } />
-              <Route path="/solicitudes" element={
-                <Suspense fallback={<SolicitudesSkeleton />}><Solicitudes /></Suspense>
               } />
             </Route>
           </Route>
