@@ -13,6 +13,17 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (id.includes('three') || id.includes('@react-three')) return 'three-vendor'
+          if (id.includes('framer-motion') || id.includes('gsap')) return 'motion-vendor'
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': {

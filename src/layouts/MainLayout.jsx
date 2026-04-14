@@ -7,6 +7,7 @@ import FooterBar from '@/components/FooterBar'
 import BottomTabs from '@/components/BottomTabs'
 import CommandPalette from '@/components/CommandPalette'
 import { useUI } from '@/contexts/UIContext'
+import { useLenis } from '@/hooks/useLenis'
 
 const DENSITY_PADDING = {
   compact: 'p-2 lg:p-3 pb-20 lg:pb-3',
@@ -32,6 +33,7 @@ export default function MainLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
   const { density, openPalette } = useUI()
+  useLenis() // smooth scroll global
 
   // Global keyboard shortcut: Cmd+K / Ctrl+K
   useEffect(() => {
