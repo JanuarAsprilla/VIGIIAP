@@ -16,7 +16,8 @@ import {
   HelpCircle, FileCheck,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { NAV_LINKS, ALL_NEWS } from '@/lib/constants'
+import { NAV_LINKS } from '@/lib/constants'
+import { useNoticiasList } from '@/hooks/useNoticias'
 
 // Mapa estático icono por path — evita acoplamiento a la estructura de NAV_LINKS
 const ROUTE_ICONS = {
@@ -92,33 +93,34 @@ function buildActionEntries(isAuthenticated) {
   return entries
 }
 
-function buildNewsEntries() {
-  return ALL_NEWS.slice(0, 5).map((n) => ({
-    id:       `new-${n.id}`,
-    group:    'Noticias',
-    label:    n.title,
-    meta:     n.tag,
-    keywords: `${n.title} ${n.tag} ${n.author ?? ''}`.toLowerCase(),
-    icon:     Newspaper,
-    to:       `/noticias/${n.slug}`,
-  }))
-}
-
 /**
  * Devuelve el catálogo completo de entradas buscables.
- * Se memoiza por cambios en el estado de autenticación.
- *
- * @returns {{ id: string, group: string, label: string, keywords: string, icon: React.ComponentType, to: string, meta?: string }[]}
+ * Las noticias provienen de la API real.
  */
 export function useCatalogue() {
   const { isAuthenticated } = useAuth()
+  const { data: noticiasData } = useNoticiasList({ limit: 5 })
+  const noticias = noticiasData?.data ?? []
+
+  const newsEntries = useMemo(
+    () => noticias.map((n) => ({
+      id:       `new-${n.id}`,
+      group:    'Noticias',
+      label:    n.titulo ?? n.title ?? '—',
+      meta:     n.categoria ?? n.tag,
+      keywords: `${n.titulo ?? ''} ${n.categoria ?? ''} ${n.resumen ?? ''}`.toLowerCase(),
+      icon:     Newspaper,
+      to:       `/noticias/${n.slug}`,
+    })),
+    [noticias],
+  )
 
   return useMemo(
     () => [
       ...buildModuleEntries(),
       ...buildActionEntries(isAuthenticated),
-      ...buildNewsEntries(),
+      ...newsEntries,
     ],
-    [isAuthenticated],
+    [isAuthenticated, newsEntries],
   )
 }
