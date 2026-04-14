@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, ArrowLeft, CheckCircle, Send, KeyRound, AlertCircle, ShieldCheck } from 'lucide-react'
+import { Mail, ArrowLeft, CheckCircle, Send, KeyRound, AlertCircle, ShieldCheck, Loader2 } from 'lucide-react'
 import AuthLayout from '@/components/AuthLayout'
 import { validateEmail } from '@/lib/validators'
+import api from '@/lib/api'
 
 const STEPS = [
   { id: 'email',    label: 'Correo',    icon: Mail        },
@@ -15,13 +16,22 @@ export default function RecuperarPassword() {
   const [step, setStep] = useState('email') // 'email' | 'enviado'
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const emailErr = validateEmail(email)
     if (emailErr) { setError(emailErr); return }
     setError('')
-    setStep('enviado')
+    setLoading(true)
+    try {
+      await api.post('/auth/recuperar-password', { email })
+      setStep('enviado')
+    } catch (err) {
+      setError(err.message ?? 'Ocurrió un error. Intenta de nuevo.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const stepIndex = STEPS.findIndex((s) => s.id === step)
@@ -98,9 +108,12 @@ export default function RecuperarPassword() {
               </div>
 
               <button type="submit"
-                className="w-full flex items-center justify-center gap-2 py-3 bg-primary-800 text-white rounded-xl text-sm font-bold hover:bg-primary-700 transition-colors shadow-sm">
-                <Send className="w-4 h-4" />
-                Enviar Instrucciones
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-primary-800 text-white rounded-xl text-sm font-bold hover:bg-primary-700 disabled:opacity-60 transition-colors shadow-sm">
+                {loading
+                  ? <><Loader2 className="w-4 h-4 animate-spin" />Enviando...</>
+                  : <><Send className="w-4 h-4" />Enviar Instrucciones</>
+                }
               </button>
             </form>
 

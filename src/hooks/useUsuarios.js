@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
-import { formatDate, timeAgo } from '@/lib/dateUtils'
+import { formatDate } from '@/lib/dateUtils'
 import { ROLES } from '@/contexts/AuthContext'
 
 const ROLE_MAP = {
@@ -46,7 +46,7 @@ export const USUARIOS_KEYS = {
 export function useUsuariosList(params = {}) {
   return useQuery({
     queryKey: USUARIOS_KEYS.list(params),
-    queryFn:  () => api.get('/usuarios', { params }),
+    queryFn:  () => api.get('/admin/usuarios', { params }),
     select:   (res) => ({
       data: res.data.map(normalizeUser),
       meta: res.meta,
@@ -55,15 +55,38 @@ export function useUsuariosList(params = {}) {
 }
 
 // ─── Mutations ────────────────────────────────────────────────────────────────
+export function useCreateUsuario() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ nombre, email, rol, institucion }) =>
+      api.post('/admin/usuarios', {
+        nombre,
+        email,
+        rol:         ROLE_MAP_REVERSE[rol] ?? rol,
+        institucion: institucion ?? undefined,
+        tipoAcceso:  'institucional',
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: USUARIOS_KEYS.all }),
+  })
+}
+
 export function useUpdateUsuarioRol() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, rol, activo }) =>
-      api.patch(`/usuarios/${id}/rol`, {
+      api.patch(`/admin/usuarios/${id}`, {
         rol:    ROLE_MAP_REVERSE[rol] ?? rol,
-        activo: activo ?? true,
+        activo: activo !== undefined ? activo : true,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: USUARIOS_KEYS.all }),
+  })
+}
+
+export function useDeleteUsuario() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id) => api.delete(`/admin/usuarios/${id}`),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: USUARIOS_KEYS.all }),
   })
 }
 
