@@ -69,7 +69,7 @@ const ALL_MODULES = [
 // ── Card 3D con glow y control de acceso ──
 function ModuleCard({ mod, index, isVisitante }) {
   const ref     = useRef()
-  const blocked = isVisitante && !mod.publicAccess
+  const blocked = !mod.publicAccess && isVisitante
 
   const mouseX  = useMotionValue(0)
   const mouseY  = useMotionValue(0)
@@ -98,8 +98,11 @@ function ModuleCard({ mod, index, isVisitante }) {
       onMouseLeave={onLeave}
       style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 900 }}
       className={`module-card relative bg-white rounded-2xl border h-full overflow-hidden transition-all ${blocked ? 'border-border/30 opacity-60 cursor-not-allowed' : 'border-border/60 cursor-pointer group'}`}
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: index * 0.08 }}
       whileHover={!blocked ? { y: -4, boxShadow: `0 20px 60px ${mod.glow}, 0 4px 20px rgba(0,0,0,0.08)` } : {}}
-      transition={{ duration: 0.3 }}
     >
       {/* Top bar */}
       <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${mod.gradient} rounded-t-2xl ${blocked ? 'opacity-30' : ''}`} />
@@ -293,50 +296,38 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
   )
 }
 
-// ── Stats con parallax GSAP ──
+// ── Stats ──
 function StatsSection({ sectionRef }) {
-  useEffect(() => {
-    const cards = sectionRef.current?.querySelectorAll('.stat-card')
-    if (!cards?.length) return
-    gsap.from(cards, {
-      y: 50, opacity: 0, stagger: 0.12, duration: 0.9, ease: 'power3.out',
-      scrollTrigger: { trigger: sectionRef.current, start: 'top 80%', once: true },
-    })
-  }, [sectionRef])
-
   return (
     <div ref={sectionRef} className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {STATS.map((stat) => (
-        <div key={stat.label} className="stat-card bg-white border border-border/60 rounded-2xl p-5 text-center group hover:border-primary-300 transition-colors">
+      {STATS.map((stat, i) => (
+        <motion.div
+          key={stat.label}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: i * 0.1 }}
+          className="bg-white border border-border/60 rounded-2xl p-5 text-center group hover:border-primary-300 transition-colors"
+        >
           <div className="w-10 h-10 bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
             <stat.icon className="w-5 h-5 text-primary-700" />
           </div>
           <div className="font-display text-2xl font-bold text-primary-800 mb-1">{stat.value}</div>
           <div className="text-[0.65rem] text-text-muted uppercase tracking-wider">{stat.label}</div>
-        </div>
+        </motion.div>
       ))}
     </div>
   )
 }
 
-// ── Sección de módulos con reveal GSAP ──
+// ── Sección de módulos ──
 function ModulesSection({ sectionRef, isVisitante }) {
   const { query } = useSearch()
   const filteredModules = ALL_MODULES.filter((m) =>
     matches([m.title, m.description, m.action], query)
   )
 
-  const publicCount     = filteredModules.filter((m) => m.publicAccess).length
-  const availableCount  = isVisitante ? publicCount : filteredModules.length
-
-  useEffect(() => {
-    const cards = sectionRef.current?.querySelectorAll('.module-card')
-    if (!cards?.length) return
-    gsap.from(cards, {
-      y: 60, opacity: 0, stagger: 0.1, duration: 0.85, ease: 'power3.out',
-      scrollTrigger: { trigger: sectionRef.current, start: 'top 75%', once: true },
-    })
-  }, [sectionRef])
+  const publicCount = filteredModules.filter((m) => m.publicAccess).length
 
   if (!filteredModules.length) return null
 
