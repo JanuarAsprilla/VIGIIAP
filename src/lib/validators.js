@@ -62,6 +62,35 @@ export function validatePassword(value, minLength = 6) {
 }
 
 /**
+ * Valida criterios de seguridad de contraseña para registro.
+ * Requiere mín. 8 chars, 1 mayúscula, 1 minúscula, 1 dígito o carácter especial.
+ * @param {string} value
+ * @returns {string|null}
+ */
+export function validatePasswordStrength(value) {
+  if (!value) return 'La contraseña es requerida'
+  if (value.length < 8)           return 'La contraseña debe tener al menos 8 caracteres'
+  if (!/[A-Z]/.test(value))       return 'Debe incluir al menos una letra mayúscula'
+  if (!/[a-z]/.test(value))       return 'Debe incluir al menos una letra minúscula'
+  if (!/[\d\W_]/.test(value))     return 'Debe incluir al menos un número o símbolo'
+  return null
+}
+
+/**
+ * Retorna el estado de cada criterio de fortaleza de contraseña.
+ * @param {string} value
+ * @returns {{ length: boolean, upper: boolean, lower: boolean, numOrSymbol: boolean }}
+ */
+export function passwordCriteria(value = '') {
+  return {
+    length:      value.length >= 8,
+    upper:       /[A-Z]/.test(value),
+    lower:       /[a-z]/.test(value),
+    numOrSymbol: /[\d\W_]/.test(value),
+  }
+}
+
+/**
  * Valida que dos contraseñas coincidan.
  * @param {string} value
  * @param {string} confirmation
