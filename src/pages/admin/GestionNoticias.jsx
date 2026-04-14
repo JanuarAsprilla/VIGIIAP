@@ -84,7 +84,7 @@ function ThumbnailDropzone({ file, previewUrl, onChange, onRemove, onError }) {
 }
 
 export default function GestionNoticias() {
-  const { data } = useNoticiasList({ limit: 200 })
+  const { data } = useNoticiasList({ limit: 200, admin: 'true' })
   const noticias = data?.data ?? []
   const createNoticia = useCreateNoticia()
   const updateNoticia = useUpdateNoticia()

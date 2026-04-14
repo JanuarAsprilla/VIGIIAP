@@ -128,7 +128,7 @@ function FileDropzone({ formato, onFile, currentFile, editing, onError }) {
 }
 
 export default function GestionMapas() {
-  const { data } = useMapasList({ limit: 200 })
+  const { data } = useMapasList({ limit: 200, admin: 'true' })
   const mapas = data?.data ?? []
   const createMapa = useCreateMapa()
   const updateMapa = useUpdateMapa()
