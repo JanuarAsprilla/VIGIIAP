@@ -11,9 +11,10 @@ import { useSolicitudesAdmin, useUpdateEstadoSolicitud } from '@/hooks/useSolici
 const fadeUp = fadeUpSm
 
 const ESTADO_BADGE = {
-  'En Proceso': 'bg-yellow-100 text-yellow-700',
-  'Aprobado':   'bg-green-100 text-green-700',
-  'Rechazado':  'bg-red-100 text-red-600',
+  'Pendiente':   'bg-orange-100 text-orange-700',
+  'En Revisión': 'bg-blue-100 text-blue-700',
+  'Aprobado':    'bg-green-100 text-green-700',
+  'Rechazado':   'bg-red-100 text-red-600',
 }
 
 const REVISORES = [
@@ -112,7 +113,8 @@ export default function GestionSolicitudes() {
           className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
         >
           <option value="">Todos los estados</option>
-          <option>En Proceso</option>
+          <option>Pendiente</option>
+          <option>En Revisión</option>
           <option>Aprobado</option>
           <option>Rechazado</option>
         </select>
@@ -173,7 +175,7 @@ export default function GestionSolicitudes() {
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
-                      {s.estado === 'En Proceso' && (
+                      {s.estado === 'Pendiente' || s.estado === 'En Revisión' && (
                         <>
                           <button
                             onClick={() => { setAccionModal({ type: 'approve', sol: s }); setNota('') }}

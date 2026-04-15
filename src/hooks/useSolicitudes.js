@@ -4,28 +4,29 @@ import { formatDate } from '@/lib/dateUtils'
 
 // ─── Mapeo de estados backend → UI ────────────────────────────────────────────
 const ESTADO_LABEL = {
-  pendiente:   'En Proceso',
-  en_revision: 'En Proceso',
+  pendiente:   'Pendiente',
+  en_revision: 'En Revisión',
   aprobada:    'Aprobado',
   rechazada:   'Rechazado',
 }
 const ESTADO_COLOR = {
-  'En Proceso': 'yellow',
-  'Aprobado':   'green',
-  'Rechazado':  'red',
+  'Pendiente':   'orange',
+  'En Revisión': 'blue',
+  'Aprobado':    'green',
+  'Rechazado':   'red',
 }
 const ESTADO_API = {
-  'Aprobado':   'aprobada',
-  'Rechazado':  'rechazada',
-  'En Proceso': 'en_revision',
+  'Pendiente':   'pendiente',
+  'En Revisión': 'en_revision',
+  'Aprobado':    'aprobada',
+  'Rechazado':   'rechazada',
 }
 
 function buildTimeline(estadoRaw) {
-  const base = ['Recibida', 'En Revisión', 'En Proceso']
-  if (estadoRaw === 'aprobada') return [...base, 'Aprobado']
-  if (estadoRaw === 'rechazada') return ['Recibida', 'En Revisión', 'Rechazado']
-  if (estadoRaw === 'en_revision') return ['Recibida', 'En Revisión']
-  return ['Recibida']
+  if (estadoRaw === 'aprobada')    return ['Recibida', 'Pendiente', 'En Revisión', 'Aprobado']
+  if (estadoRaw === 'rechazada')   return ['Recibida', 'Pendiente', 'En Revisión', 'Rechazado']
+  if (estadoRaw === 'en_revision') return ['Recibida', 'Pendiente', 'En Revisión']
+  return ['Recibida', 'Pendiente']
 }
 
 function normalizeSolicitud(s) {
@@ -38,6 +39,7 @@ function normalizeSolicitud(s) {
     subtipo:    s.descripcion?.slice(0, 60) ?? '',
     descripcion: s.descripcion ?? '',
     fecha:      formatDate(s.creado_en),
+    creadoEn:   s.creado_en,
     estado:     estadoLabel,
     estadoColor: ESTADO_COLOR[estadoLabel] ?? 'yellow',
     solicitante: s.solicitante ?? '',

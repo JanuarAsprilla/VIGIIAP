@@ -101,6 +101,12 @@ export function useDeleteUsuario() {
   })
 }
 
+export function useUpdatePerfil() {
+  return useMutation({
+    mutationFn: (data) => api.patch('/usuarios/me', data),
+  })
+}
+
 export function useUpdatePassword() {
   return useMutation({
     mutationFn: ({ currentPassword, newPassword }) =>

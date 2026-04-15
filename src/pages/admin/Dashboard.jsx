@@ -59,9 +59,10 @@ function KPICards({ stats, isLoading }) {
 // ── Gráfico de Solicitudes por Estado ──
 function SolicitudesChart({ solicitudes }) {
   const estados = [
-    { label: 'En Proceso', color: 'bg-yellow-400', textColor: 'text-yellow-700', bg: 'bg-yellow-50' },
-    { label: 'Aprobado',   color: 'bg-green-500',  textColor: 'text-green-700',  bg: 'bg-green-50'  },
-    { label: 'Rechazado',  color: 'bg-red-400',    textColor: 'text-red-600',    bg: 'bg-red-50'    },
+    { label: 'Pendiente',   color: 'bg-orange-400', textColor: 'text-orange-600' },
+    { label: 'En Revisión', color: 'bg-blue-400',   textColor: 'text-blue-600'   },
+    { label: 'Aprobado',    color: 'bg-green-500',  textColor: 'text-green-700'  },
+    { label: 'Rechazado',   color: 'bg-red-400',    textColor: 'text-red-600'    },
   ]
   const total = solicitudes.length
   const bars = estados.map((e) => ({
@@ -70,9 +71,17 @@ function SolicitudesChart({ solicitudes }) {
   }))
   const maxCount = Math.max(...bars.map((b) => b.count), 1)
 
-  // Simulated weekly trend (last 6 weeks)
-  const weeklyData = [2, 4, 3, 6, 5, 8]
-  const weeklyMax = Math.max(...weeklyData)
+  // Tendencia semanal real — últimas 6 semanas
+  const weeklyData = Array(6).fill(0)
+  const msPerWeek  = 7 * 24 * 60 * 60 * 1000
+  const now        = Date.now()
+  solicitudes.forEach((s) => {
+    if (!s.creadoEn) return
+    const diffWeeks = Math.floor((now - new Date(s.creadoEn).getTime()) / msPerWeek)
+    const idx = 5 - diffWeeks   // 5 = esta semana, 0 = hace 5 semanas
+    if (idx >= 0 && idx <= 5) weeklyData[idx]++
+  })
+  const weeklyMax = Math.max(...weeklyData, 1)
 
   return (
     <motion.div {...fadeUp(0.28)} className="bg-white border border-border rounded-xl p-5">
@@ -126,7 +135,7 @@ function SolicitudesChart({ solicitudes }) {
 
 // ── Alertas — solicitudes sin atender ──
 function AlertasSolicitudes({ solicitudes }) {
-  const pendientes = solicitudes.filter((s) => s.estado === 'En Proceso')
+  const pendientes = solicitudes.filter((s) => s.estado === 'Pendiente' || s.estado === 'En Revisión')
   if (pendientes.length === 0) return null
   return (
     <motion.div {...fadeUp(0.15)} className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
@@ -185,7 +194,7 @@ function RolesChart({ usuarios }) {
 
 // ── Solicitudes pendientes ──
 function SolicitudesPendientes({ solicitudes }) {
-  const pendientes   = solicitudes.filter((s) => s.estado === 'En Proceso')
+  const pendientes   = solicitudes.filter((s) => s.estado === 'Pendiente' || s.estado === 'En Revisión')
   const updateEstado = useUpdateEstadoSolicitud()
   const [confirm, setConfirm] = useState(null) // { _id, accion: 'Aprobado'|'Rechazado' }
 
