@@ -29,8 +29,11 @@ const ACCION_LABEL = {
   update_rol:            { label: 'Cambio de rol',        badge: 'bg-amber-100 text-amber-700'   },
   delete_usuario:        { label: 'Eliminar usuario',     badge: 'bg-red-100 text-red-600'       },
   change_password:       { label: 'Cambio contraseña',    badge: 'bg-amber-100 text-amber-700'   },
-  create_solicitud:      { label: 'Nueva solicitud',      badge: 'bg-blue-100 text-blue-700'     },
+  create_solicitud:       { label: 'Nueva solicitud',      badge: 'bg-blue-100 text-blue-700'     },
   update_solicitud_estado:{ label: 'Estado solicitud',    badge: 'bg-yellow-100 text-yellow-700' },
+  update_perfil:          { label: 'Actualizar perfil',   badge: 'bg-amber-100 text-amber-700'   },
+  update_configuracion:   { label: 'Configuración',       badge: 'bg-primary-100 text-primary-800'},
+  registro:               { label: 'Registro',            badge: 'bg-blue-100 text-blue-700'     },
 }
 
 const PAGE_SIZE = 10

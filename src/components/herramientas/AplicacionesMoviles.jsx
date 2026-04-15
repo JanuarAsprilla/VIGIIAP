@@ -64,7 +64,7 @@ export default function AplicacionesMoviles() {
         ))}
 
         <p className="text-xs text-text-muted text-center pt-1">
-          Las apps estarán disponibles para descarga en la Fase 2 del sistema.
+          Las apps estarán disponibles próximamente. Contáctanos para acceso anticipado.
         </p>
       </div>
     </ToolCard>

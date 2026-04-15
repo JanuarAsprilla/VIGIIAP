@@ -66,6 +66,16 @@ export function useCreateDocumento() {
   })
 }
 
+export function useUpdateDocumento() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }) => api.put(`/documentos/${id}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: DOCS_KEYS.all }),
+  })
+}
+
 export function useDeleteDocumento() {
   const qc = useQueryClient()
   return useMutation({

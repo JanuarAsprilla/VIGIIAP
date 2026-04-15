@@ -126,13 +126,17 @@ function PreviewModal({ doc, categoryTitle, onClose }) {
             ))}
           </div>
 
-          {/* Placeholder notice */}
-          <div className="w-full flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-left">
-            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-700 leading-relaxed">
-              La vista previa estará disponible una vez el archivo sea cargado al servidor en la Fase 2 del sistema.
-            </p>
-          </div>
+          {doc.url && (
+            <a
+              href={doc.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-50 border border-primary-200 text-primary-800 text-sm font-semibold rounded-lg hover:bg-primary-100 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Ver / Descargar archivo
+            </a>
+          )}
         </div>
 
         {/* Footer */}

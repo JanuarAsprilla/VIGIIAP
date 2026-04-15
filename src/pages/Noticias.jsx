@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowRight, Newspaper, Search, X, Loader2 } from 'lucide-react'
+import { ArrowRight, Newspaper, Search, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNoticiasList } from '@/hooks/useNoticias'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
+
+const PAGE_SIZE = 12
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 20 },
@@ -50,24 +52,44 @@ function NewsCard({ article, index }) {
 
 export default function Noticias() {
   const { query } = useSearch()
-  const [localSearch,     setLocalSearch]     = useState('')
-  const [activeCategory,  setActiveCategory]  = useState('')
+  const [localSearch,    setLocalSearch]    = useState('')
+  const [activeCategory, setActiveCategory] = useState('')
+  const [page,           setPage]           = useState(1)
 
-  const { data, isLoading, isError } = useNoticiasList({ limit: 100 })
-  const allNews  = data?.data ?? []
+  const hasFilter = !!(localSearch || activeCategory || query)
+
+  // Cuando hay filtros locales cargamos más para filtrar en cliente;
+  // sin filtros usamos paginación real del servidor.
+  const { data, isLoading, isError } = useNoticiasList(
+    hasFilter
+      ? { limit: 200 }
+      : { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE },
+  )
+
+  const allNews    = data?.data ?? []
+  const totalServer = data?.meta?.total ?? allNews.length
   const categories = [...new Set(allNews.map((a) => a.category).filter(Boolean))]
 
-  const filtered = allNews.filter((a) => {
-    const globalMatch = matches([a.title, a.excerpt, a.tag, a.author, a.category], query)
-    const localQ      = localSearch.toLowerCase()
-    const localMatch  = !localQ || a.title.toLowerCase().includes(localQ) || a.author.toLowerCase().includes(localQ)
-    const catMatch    = !activeCategory || a.category === activeCategory
-    return globalMatch && localMatch && catMatch
-  })
+  const filtered = hasFilter
+    ? allNews.filter((a) => {
+        const globalMatch = matches([a.title, a.excerpt, a.tag, a.author, a.category], query)
+        const localQ      = localSearch.toLowerCase()
+        const localMatch  = !localQ || a.title.toLowerCase().includes(localQ) || a.author.toLowerCase().includes(localQ)
+        const catMatch    = !activeCategory || a.category === activeCategory
+        return globalMatch && localMatch && catMatch
+      })
+    : allNews
 
-  const counts    = categories.reduce((acc, c) => { acc[c] = allNews.filter((a) => a.category === c).length; return acc }, {})
-  const hasFilter = localSearch || activeCategory
-  const clear     = () => { setLocalSearch(''); setActiveCategory('') }
+  const total      = hasFilter ? filtered.length : totalServer
+  const totalPages = Math.max(1, Math.ceil((hasFilter ? filtered.length : totalServer) / PAGE_SIZE))
+
+  const counts = categories.reduce((acc, c) => {
+    acc[c] = allNews.filter((a) => a.category === c).length
+    return acc
+  }, {})
+
+  const resetFilters = () => { setLocalSearch(''); setActiveCategory(''); setPage(1) }
+  const goPage       = (n) => { setPage(n); window.scrollTo({ top: 0, behavior: 'smooth' }) }
 
   return (
     <div className="space-y-8">
@@ -95,18 +117,18 @@ export default function Noticias() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => setActiveCategory('')}
+          <button onClick={() => { setActiveCategory(''); setPage(1) }}
             className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${!activeCategory ? 'bg-primary-800 text-white border-primary-800' : 'bg-white text-text-muted border-border hover:border-primary-400 hover:text-primary-800'}`}>
-            Todas <span className="ml-1 opacity-70">{allNews.length}</span>
+            Todas <span className="ml-1 opacity-70">{hasFilter ? allNews.length : totalServer}</span>
           </button>
           {categories.map((cat) => (
-            <button key={cat} onClick={() => setActiveCategory(activeCategory === cat ? '' : cat)}
+            <button key={cat} onClick={() => { setActiveCategory(activeCategory === cat ? '' : cat); setPage(1) }}
               className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${activeCategory === cat ? 'bg-primary-800 text-white border-primary-800' : 'bg-white text-text-muted border-border hover:border-primary-400 hover:text-primary-800'}`}>
               {cat} <span className="ml-1 opacity-70">{counts[cat]}</span>
             </button>
           ))}
           {hasFilter && (
-            <button onClick={clear} className="text-xs font-semibold text-text-muted hover:text-red-500 transition-colors flex items-center gap-1 ml-1">
+            <button onClick={resetFilters} className="text-xs font-semibold text-text-muted hover:text-red-500 transition-colors flex items-center gap-1 ml-1">
               <X className="w-3 h-3" /> Limpiar
             </button>
           )}
@@ -143,13 +165,47 @@ export default function Noticias() {
               <Newspaper className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p className="text-sm">No se encontraron noticias</p>
               {hasFilter && (
-                <button onClick={clear} className="mt-3 text-xs font-semibold text-primary-800 hover:text-primary-600 transition-colors">
+                <button onClick={resetFilters} className="mt-3 text-xs font-semibold text-primary-800 hover:text-primary-600 transition-colors">
                   Limpiar filtros
                 </button>
               )}
             </motion.div>
           )}
         </AnimatePresence>
+      )}
+
+      {/* Paginación — solo visible cuando no hay filtros activos */}
+      {!hasFilter && totalPages > 1 && (
+        <motion.div {...fadeUp(0.1)} className="flex items-center justify-between pt-2">
+          <span className="text-xs text-text-muted">
+            Página {page} de {totalPages} · {totalServer} noticias
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => goPage(page - 1)}
+              disabled={page === 1}
+              className="p-2 rounded-lg border border-border text-text-muted hover:text-primary-800 hover:border-primary-800 disabled:opacity-40 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                onClick={() => goPage(n)}
+                className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${n === page ? 'bg-primary-800 text-white' : 'border border-border text-text-muted hover:border-primary-800 hover:text-primary-800'}`}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              onClick={() => goPage(page + 1)}
+              disabled={page === totalPages}
+              className="p-2 rounded-lg border border-border text-text-muted hover:text-primary-800 hover:border-primary-800 disabled:opacity-40 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </motion.div>
       )}
     </div>
   )

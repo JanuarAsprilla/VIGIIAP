@@ -55,7 +55,15 @@ function MapCard({ map, index, onDownload }) {
   return (
     <motion.div {...fadeUp(0.1 + index * 0.05)}
       className="bg-white border border-border rounded-xl overflow-hidden hover:shadow-card transition-shadow">
-      <div className="h-48 relative" style={{ background: `linear-gradient(135deg, ${bg}, ${bg}dd)` }}>
+      <div className="h-48 relative" style={!map.thumbnail_url ? { background: `linear-gradient(135deg, ${bg}, ${bg}dd)` } : undefined}>
+        {map.thumbnail_url && (
+          <img
+            src={map.thumbnail_url}
+            alt={map.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        )}
         <FormatBadge text={map.badge} color={map.badgeColor} />
       </div>
       <div className="p-5">

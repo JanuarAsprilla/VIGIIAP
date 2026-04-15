@@ -6,7 +6,7 @@ import {
   AlertCircle, Link as LinkIcon,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
-import { useDocumentosList, useCreateDocumento, useDeleteDocumento } from '@/hooks/useDocumentos'
+import { useDocumentosList, useCreateDocumento, useUpdateDocumento, useDeleteDocumento } from '@/hooks/useDocumentos'
 
 const fadeUp = fadeUpSm
 
@@ -24,7 +24,7 @@ const MAX_SIZE_BYTES = {
   IMG: 25 * 1024 * 1024,  // 25 MB
 }
 
-const EMPTY_FORM = { nombre: '', categoria: CATEGORIES[0], tipo: TIPOS[0], autor: '', fecha: '', url: '' }
+const EMPTY_FORM = { nombre: '', categoria: CATEGORIES[0], tipo: TIPOS[0], autor: '', anio: '', url: '' }
 
 // Fase 2: reemplazar con llamadas a /api/admin/documentos
 
@@ -138,8 +138,9 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }) {
 export default function GestionDocumentos() {
   const { data } = useDocumentosList({ limit: 200 })
   const docs = data?.data ?? []
-  const createDocumento = useCreateDocumento()
-  const deleteDocumento = useDeleteDocumento()
+  const createDocumento  = useCreateDocumento()
+  const updateDocumento  = useUpdateDocumento()
+  const deleteDocumento  = useDeleteDocumento()
 
   const [search, setSearch] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
@@ -171,7 +172,7 @@ export default function GestionDocumentos() {
 
   const openEdit = (d) => {
     setEditing(d)
-    setForm({ nombre: d.nombre, categoria: d.categoria, tipo: d.type?.toUpperCase() ?? 'PDF', autor: d.autores ?? '', fecha: d.fecha, url: d.url || '' })
+    setForm({ nombre: d.nombre, categoria: d.categoria, tipo: d.type?.toUpperCase() ?? 'PDF', autor: d.autores ?? '', anio: d.anio ?? '', url: d.url || '' })
     setFormErrors({})
     setUploadedFile(null)
     setUploadError(null)
@@ -196,10 +197,15 @@ export default function GestionDocumentos() {
     payload.append('titulo',   form.nombre)
     payload.append('tipo',     form.categoria)
     payload.append('autores',  form.autor)
+    if (form.anio) payload.append('anio', form.anio)
     if (uploadedFile) payload.append('archivo', uploadedFile)
-    if (form.tipo === 'Geovisor') payload.append('geovisor_url', form.url)
+    if (form.tipo === 'Geovisor') payload.append('archivo_url', form.url)
 
-    await createDocumento.mutateAsync(payload)
+    if (editing) {
+      await updateDocumento.mutateAsync({ id: editing.id, data: payload })
+    } else {
+      await createDocumento.mutateAsync(payload)
+    }
     setShowModal(false)
   }
 
@@ -389,7 +395,6 @@ export default function GestionDocumentos() {
                 {[
                   { key: 'nombre', label: 'Nombre del Documento', required: true },
                   { key: 'autor', label: 'Autor / Responsable', required: true },
-                  { key: 'fecha', label: 'Fecha (ej. 15 Abr 2026)', required: false },
                 ].map(({ key, label, required }) => (
                   <div key={key}>
                     <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
@@ -405,11 +410,25 @@ export default function GestionDocumentos() {
                   </div>
                 ))}
 
-                <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Categoría</label>
-                  <select value={form.categoria} onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
-                    {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-                  </select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Categoría</label>
+                    <select value={form.categoria} onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
+                      {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Año</label>
+                    <input
+                      type="number"
+                      min="1900"
+                      max="2100"
+                      value={form.anio}
+                      onChange={(e) => setForm((f) => ({ ...f, anio: e.target.value }))}
+                      placeholder={String(new Date().getFullYear())}
+                      className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-2">
