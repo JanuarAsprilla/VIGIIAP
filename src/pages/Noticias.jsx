@@ -82,7 +82,7 @@ export default function Noticias() {
   const { data, isLoading, isError } = useNoticiasList(
     hasFilter
       ? { limit: 200 }
-      : { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE },
+      : { limit: PAGE_SIZE, page },
   )
 
   const allNews    = data?.data ?? []
