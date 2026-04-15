@@ -8,6 +8,25 @@ import { matches } from '@/lib/search'
 
 const PAGE_SIZE = 12
 
+/** Genera el array de botones: números y '…' según la posición actual. */
+function buildPageButtons(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const pages = new Set([1, total, current])
+  for (let d = -2; d <= 2; d++) {
+    const n = current + d
+    if (n > 1 && n < total) pages.add(n)
+  }
+  const sorted = [...pages].sort((a, b) => a - b)
+  const result = []
+  let prev = 0
+  for (const n of sorted) {
+    if (n - prev > 1) result.push('…')
+    result.push(n)
+    prev = n
+  }
+  return result
+}
+
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -188,15 +207,19 @@ export default function Noticias() {
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                onClick={() => goPage(n)}
-                className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${n === page ? 'bg-primary-800 text-white' : 'border border-border text-text-muted hover:border-primary-800 hover:text-primary-800'}`}
-              >
-                {n}
-              </button>
-            ))}
+            {buildPageButtons(page, totalPages).map((item, i) =>
+              item === '…' ? (
+                <span key={`ellipsis-${i}`} className="w-8 text-center text-xs text-text-muted select-none">…</span>
+              ) : (
+                <button
+                  key={item}
+                  onClick={() => goPage(item)}
+                  className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${item === page ? 'bg-primary-800 text-white' : 'border border-border text-text-muted hover:border-primary-800 hover:text-primary-800'}`}
+                >
+                  {item}
+                </button>
+              )
+            )}
             <button
               onClick={() => goPage(page + 1)}
               disabled={page === totalPages}

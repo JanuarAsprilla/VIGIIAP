@@ -31,9 +31,18 @@ const ACCION_LABEL = {
   change_password:       { label: 'Cambio contraseña',    badge: 'bg-amber-100 text-amber-700'   },
   create_solicitud:       { label: 'Nueva solicitud',      badge: 'bg-blue-100 text-blue-700'     },
   update_solicitud_estado:{ label: 'Estado solicitud',    badge: 'bg-yellow-100 text-yellow-700' },
-  update_perfil:          { label: 'Actualizar perfil',   badge: 'bg-amber-100 text-amber-700'   },
+  update_perfil:          { label: 'Actualizar perfil',   badge: 'bg-amber-100 text-amber-700'    },
   update_configuracion:   { label: 'Configuración',       badge: 'bg-primary-100 text-primary-800'},
-  registro:               { label: 'Registro',            badge: 'bg-blue-100 text-blue-700'     },
+  registro:               { label: 'Registro',            badge: 'bg-blue-100 text-blue-700'      },
+  create_mapa:            { label: 'Crear mapa',          badge: 'bg-green-100 text-green-700'    },
+  update_mapa:            { label: 'Actualizar mapa',     badge: 'bg-amber-100 text-amber-700'    },
+  delete_mapa:            { label: 'Eliminar mapa',       badge: 'bg-red-100 text-red-600'        },
+  create_noticia:         { label: 'Crear noticia',       badge: 'bg-pink-100 text-pink-700'      },
+  update_noticia:         { label: 'Actualizar noticia',  badge: 'bg-amber-100 text-amber-700'    },
+  delete_noticia:         { label: 'Eliminar noticia',    badge: 'bg-red-100 text-red-600'        },
+  create_documento:       { label: 'Subir documento',     badge: 'bg-orange-100 text-orange-700'  },
+  update_documento:       { label: 'Editar documento',    badge: 'bg-amber-100 text-amber-700'    },
+  delete_documento:       { label: 'Eliminar documento',  badge: 'bg-red-100 text-red-600'        },
 }
 
 const PAGE_SIZE = 10

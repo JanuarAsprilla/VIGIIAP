@@ -4,7 +4,7 @@ import {
   FileText, Search, SlidersHorizontal, ArrowUpDown,
   ChevronUp, ChevronDown, Eye, Download,
   Waves, FileInput, BookOpen, TrendingUp,
-  Headphones, X, Check, AlertCircle, Send, CheckCircle, Loader2,
+  Headphones, X, Check, Send, CheckCircle, Loader2,
 } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
 import { useAuth } from '@/contexts/AuthContext'
