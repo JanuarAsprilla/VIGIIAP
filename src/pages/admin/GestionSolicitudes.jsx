@@ -17,14 +17,6 @@ const ESTADO_BADGE = {
   'Rechazado':   'bg-red-100 text-red-600',
 }
 
-const REVISORES = [
-  'Sin asignar',
-  'Carlos Rentería',
-  'Analista Territorial',
-  'María Valencia',
-  'Jorge Mena',
-]
-
 const PAGE_SIZE = 5
 
 export default function GestionSolicitudes() {
@@ -62,14 +54,9 @@ export default function GestionSolicitudes() {
     setNota('')
   }
 
-  const handleRevisor = (_id, _revisor) => {
-    // Revisor is a local UI concept — update locally only
-    if (selected?._id === _id) setSelected((prev) => ({ ...prev, revisor: _revisor }))
-  }
-
   const exportCSV = () => {
-    const rows = [['ID', 'Tipo', 'Solicitante', 'Fecha', 'Estado', 'Revisor']]
-    filtered.forEach((s) => rows.push([s.id, s.tipo, s.solicitante, s.fecha, s.estado, s.revisor]))
+    const rows = [['ID', 'Tipo', 'Solicitante', 'Fecha', 'Estado']]
+    filtered.forEach((s) => rows.push([s.id, s.tipo, s.solicitante, s.fecha, s.estado]))
     const csv = rows.map((r) => r.join(',')).join('\n')
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
@@ -134,7 +121,7 @@ export default function GestionSolicitudes() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-bg-alt/50">
-                {['ID', 'Tipo', 'Solicitante', 'Fecha', 'Revisor', 'Estado', 'Acciones'].map((h) => (
+                {['ID', 'Tipo', 'Solicitante', 'Fecha', 'Estado', 'Acciones'].map((h) => (
                   <th key={h} className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted px-5 py-3">{h}</th>
                 ))}
               </tr>
@@ -153,15 +140,6 @@ export default function GestionSolicitudes() {
                   <td className="px-5 py-3.5 text-sm text-text-muted">{s.solicitante}</td>
                   <td className="px-5 py-3.5 text-sm text-text-muted">{s.fecha}</td>
                   <td className="px-5 py-3.5">
-                    <select
-                      value={s.revisor}
-                      onChange={(e) => handleRevisor(s.id, e.target.value)}
-                      className="text-xs px-2 py-1 border border-border rounded-lg bg-white focus:outline-none focus:border-primary-800 transition"
-                    >
-                      {REVISORES.map((r) => <option key={r}>{r}</option>)}
-                    </select>
-                  </td>
-                  <td className="px-5 py-3.5">
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ESTADO_BADGE[s.estado]}`}>
                       {s.estado}
                     </span>
@@ -175,8 +153,17 @@ export default function GestionSolicitudes() {
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
-                      {s.estado === 'Pendiente' || s.estado === 'En Revisión' && (
+                      {(s.estado === 'Pendiente' || s.estado === 'En Revisión') && (
                         <>
+                          {s.estado === 'Pendiente' && (
+                            <button
+                              onClick={() => updateEstado.mutate({ id: s._id, estado: 'En Revisión' })}
+                              className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors"
+                              title="Marcar en revisión"
+                            >
+                              <Clock className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => { setAccionModal({ type: 'approve', sol: s }); setNota('') }}
                             className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
@@ -311,9 +298,17 @@ export default function GestionSolicitudes() {
                 </div>
 
                 {/* Inline action if pending */}
-                {selected.estado === 'En Proceso' && (
+                {(selected.estado === 'Pendiente' || selected.estado === 'En Revisión') && (
                   <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 space-y-3">
                     <p className="text-xs font-bold text-primary-800">Acción rápida</p>
+                    {selected.estado === 'Pendiente' && (
+                      <button
+                        onClick={() => updateEstado.mutate({ id: selected._id, estado: 'En Revisión' })}
+                        className="w-full flex items-center justify-center gap-1.5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors"
+                      >
+                        <Clock className="w-3.5 h-3.5" /> Marcar en revisión
+                      </button>
+                    )}
                     <textarea
                       rows={2}
                       value={nota}

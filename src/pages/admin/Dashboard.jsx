@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Users, ClipboardList, FileText, Newspaper,
+  Users, ClipboardList, FileText, Newspaper, Eye,
   TrendingUp, TrendingDown, CheckCircle, XCircle,
   ArrowRight, Zap, AlertTriangle,
 } from 'lucide-react'
@@ -17,7 +17,7 @@ import { formatDate } from '@/lib/dateUtils'
 
 const fadeUp = fadeUpSm
 
-const KPI_ICONS = [Users, ClipboardList, FileText, Newspaper]
+const KPI_ICONS = [Users, ClipboardList, FileText, Newspaper, Eye]
 
 // ── KPI Cards ──
 function KPICards({ stats, isLoading }) {
@@ -26,9 +26,10 @@ function KPICards({ stats, isLoading }) {
     { label: 'Solicitudes Pendientes', value: stats?.solicitudesPendientes ?? '—', trendUp: false },
     { label: 'Documentos Activos',     value: stats?.documentos ?? '—',            trendUp: true  },
     { label: 'Noticias Publicadas',    value: stats?.noticias ?? '—',              trendUp: true  },
+    { label: 'Visitantes (30 días)',   value: stats?.visitantesUltimos30d ?? '—',  trendUp: true  },
   ]
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
       {kpis.map((kpi, i) => {
         const Icon = KPI_ICONS[i]
         return (
