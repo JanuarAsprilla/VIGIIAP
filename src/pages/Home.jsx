@@ -174,8 +174,8 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
 
   return (
     <div ref={heroRef}
-      className="relative rounded-3xl overflow-hidden"
-      style={{ minHeight: '580px', background: 'linear-gradient(135deg, #020d09 0%, #0a1f12 45%, #0d2b1a 100%)' }}>
+      className="relative rounded-3xl overflow-hidden flex flex-col"
+      style={{ minHeight: '640px', background: 'linear-gradient(135deg, #020d09 0%, #0a1f12 45%, #0d2b1a 100%)' }}>
 
       {/* Dot grid */}
       <div className="absolute inset-0 opacity-[0.055]"
@@ -191,20 +191,21 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
       <div className="absolute top-0 left-0 right-0 h-[1px]"
         style={{ background: 'linear-gradient(90deg, transparent, rgba(82,183,136,0.4), transparent)' }} />
 
-      <div className="relative z-10 flex flex-col lg:flex-row w-full h-full">
+      <div className="relative z-10 flex flex-col lg:flex-row w-full flex-1">
         {/* Left — copy */}
-        <div className="flex-1 flex flex-col justify-center px-8 py-14 lg:px-16 lg:py-0">
+        <div className="flex-1 flex flex-col justify-center px-10 py-16 lg:px-16 lg:py-16">
 
           {/* Eyebrow */}
-          <div className="flex items-center gap-3 mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-8"
+            style={{ border: '1px solid rgba(82,183,136,0.22)', background: 'rgba(82,183,136,0.08)' }}>
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shrink-0" />
-            <span className="text-[0.62rem] font-bold uppercase tracking-[0.25em] text-green-400/75">
+            <span className="text-[0.62rem] font-bold uppercase tracking-[0.25em] text-green-400/85">
               Sistema activo · IIAP Colombia · Chocó Biogeográfico
             </span>
           </div>
 
           {/* Logo word */}
-          <div ref={titleRef} className="mb-3">
+          <div ref={titleRef} className="mb-6">
             <h1 className="font-display font-black leading-[0.9] tracking-tight"
               style={{ fontSize: 'clamp(4rem, 10vw, 7.5rem)' }}>
               <span style={{
@@ -220,7 +221,7 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
           </div>
 
           {/* Description */}
-          <div ref={subtitleRef} className="max-w-md mb-10">
+          <div ref={subtitleRef} className="max-w-lg mb-10">
             <p className="text-white/55 text-[0.95rem] leading-[1.75]">
               Plataforma institucional para la consulta, análisis y gestión de información
               ambiental y territorial del{' '}
