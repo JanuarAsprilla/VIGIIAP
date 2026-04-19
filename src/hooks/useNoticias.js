@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { formatDate, timeAgo } from '@/lib/dateUtils'
 
-// ─── Normalizar ───────────────────────────────────────────────────────────────
 function normalizeNoticia(n) {
   return {
     id:        n.id,
@@ -18,8 +17,9 @@ function normalizeNoticia(n) {
     date:      formatDate(n.publicado_en ?? n.creado_en),
     time:      timeAgo(n.publicado_en ?? n.creado_en),
     // Campos para panel admin
-    published: n.publicado,
-    thumbUrl:  n.imagen_url ?? '',
+    published:   n.publicado,
+    visibilidad: n.visibilidad ?? 'publico',
+    thumbUrl:    n.imagen_url ?? '',
     // Campos backend raw (para edición)
     titulo:    n.titulo,
     resumen:   n.resumen ?? '',
@@ -30,14 +30,12 @@ function normalizeNoticia(n) {
   }
 }
 
-// ─── Keys ─────────────────────────────────────────────────────────────────────
 export const NOTICIAS_KEYS = {
   all:    ['noticias'],
   list:   (params) => ['noticias', 'list', params],
   detail: (slug)   => ['noticias', 'detail', slug],
 }
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
 export function useNoticiasList(params = {}) {
   return useQuery({
     queryKey: NOTICIAS_KEYS.list(params),
@@ -58,13 +56,11 @@ export function useNoticiaBySlug(slug) {
   })
 }
 
-// ─── Mutations ────────────────────────────────────────────────────────────────
 export function useCreateNoticia() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (formData) => api.post('/noticias', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    mutationFn: ({ formData, onUploadProgress }) =>
+      api.post('/noticias', formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: NOTICIAS_KEYS.all }),
   })
 }
@@ -72,7 +68,8 @@ export function useCreateNoticia() {
 export function useUpdateNoticia() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }) => api.put(`/noticias/${id}`, data),
+    mutationFn: ({ id, data, onUploadProgress }) =>
+      api.put(`/noticias/${id}`, data, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: NOTICIAS_KEYS.all }),
   })
 }

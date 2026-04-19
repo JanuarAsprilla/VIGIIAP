@@ -48,7 +48,7 @@ function normalizeMap(m) {
     autor:     m.autor ?? '',
     fecha:     formatDate(m.creado_en),
     visible:   m.activo,
-    formato:   primaryFmt,
+    formato:   primaryFmt === 'GEOVISOR' ? 'Geovisor' : primaryFmt,
     url:       m.geovisor_url ?? '',
     consultas: 0,
   }
@@ -86,9 +86,8 @@ export function useMapaBySlug(slug) {
 export function useCreateMapa() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (formData) => api.post('/mapas', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    mutationFn: ({ formData, onUploadProgress }) =>
+      api.post('/mapas', formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
   })
 }
@@ -96,9 +95,16 @@ export function useCreateMapa() {
 export function useUpdateMapa() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, formData }) => api.put(`/mapas/${id}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    mutationFn: ({ id, formData, onUploadProgress }) =>
+      api.put(`/mapas/${id}`, formData, { onUploadProgress }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
+  })
+}
+
+export function useToggleMapaActivo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, activo }) => api.patch(`/mapas/${id}/activo`, { activo }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
   })
 }
