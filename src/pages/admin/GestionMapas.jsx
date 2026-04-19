@@ -12,7 +12,6 @@ import { useMapasList, useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDel
 const fadeUp = fadeUpSm
 
 const TEMATICAS = ['Hidrología', 'Cartografía Base', 'Biodiversidad', 'Zonificación', 'Infraestructura', 'Riesgo']
-const ESCALES   = ['1:10.000', '1:25.000', '1:50.000', '1:100.000', '1:250.000', '1:500.000']
 const FORMATOS  = ['PDF', 'IMG', 'Geovisor']
 
 const ACCEPT = {
@@ -33,7 +32,7 @@ const VISIBILIDAD = [
 const visMap = Object.fromEntries(VISIBILIDAD.map((v) => [v.value, v]))
 
 const EMPTY_FORM = {
-  nombre: '', tematica: TEMATICAS[0], escala: ESCALES[2],
+  nombre: '', tematica: TEMATICAS[0],
   descripcion: '', anio: String(new Date().getFullYear()),
   visible: true, formato: 'PDF', url: '', visibilidad: 'publico',
 }
@@ -218,7 +217,6 @@ export default function GestionMapas() {
     setForm({
       nombre:      m.nombre,
       tematica:    m.tematica,
-      escala:      m.escala,
       descripcion: m.descripcion || '',
       anio:        String(m.anio || new Date().getFullYear()),
       visible:     m.visible,
@@ -384,7 +382,6 @@ export default function GestionMapas() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${TEMATICA_COLORS[m.tematica] ?? 'bg-gray-100 text-gray-600'}`}>{m.tematica}</span>
-                    <span className="text-[0.6rem] text-text-muted">{m.escala}</span>
                     <span className={`text-[0.6rem] font-semibold px-1.5 py-0.5 rounded border ${
                       m.formato === 'PDF' ? 'border-red-200 text-red-500' :
                       m.formato === 'IMG' ? 'border-blue-200 text-blue-500' :
@@ -551,8 +548,8 @@ export default function GestionMapas() {
                   />
                 </div>
 
-                {/* Año · Temática · Escala */}
-                <div className="grid grid-cols-3 gap-3">
+                {/* Año · Temática */}
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Año</label>
                     <input type="number" min="1900" max="2100" value={form.anio}
@@ -565,13 +562,6 @@ export default function GestionMapas() {
                     <select value={form.tematica} onChange={(e) => setForm((f) => ({ ...f, tematica: e.target.value }))}
                       className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
                       {TEMATICAS.map((t) => <option key={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Escala</label>
-                    <select value={form.escala} onChange={(e) => setForm((f) => ({ ...f, escala: e.target.value }))}
-                      className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
-                      {ESCALES.map((e) => <option key={e}>{e}</option>)}
                     </select>
                   </div>
                 </div>

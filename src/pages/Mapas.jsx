@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Map, Filter, ChevronLeft, ChevronRight, X,
-  FileText, Image, Globe, Loader2, Eye, Download,
+  FileText, Image, Globe, Loader2, Eye, Download, Calendar, ExternalLink,
 } from 'lucide-react'
-import { MAP_CATEGORIES, MAP_DEPARTMENTS, MAP_FORMATS, MAP_YEARS } from '@/lib/constants'
+import { MAP_CATEGORIES, MAP_FORMATS, MAP_YEARS } from '@/lib/constants'
 import { useMapasList } from '@/hooks/useMapas'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
@@ -100,69 +100,95 @@ function MapPreviewModal({ map, format, onClose }) {
   )
 }
 
-function FormatIcon({ format, geovisorLink, onDownload, onPreview }) {
-  if (format === 'GEOVISOR') {
-    return (
-      <Link to={geovisorLink || '/geovisor'}
-        className="flex flex-col items-center gap-1 text-primary-800/60 hover:text-primary-800 transition-colors no-underline"
-        title="Ver en Geovisor">
-        <Globe className="w-5 h-5" />
-        <span className="text-[0.65rem] font-bold uppercase">Geovisor</span>
-      </Link>
-    )
-  }
-  const icons = { PDF: FileText, IMG: Image }
-  const Icon = icons[format] || FileText
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <button onClick={onPreview}
-        className="flex flex-col items-center gap-1 text-primary-800/60 hover:text-primary-800 transition-colors"
-        title={`Vista previa ${format}`}>
-        <Icon className="w-5 h-5" />
-        <span className="text-[0.65rem] font-bold uppercase">{format}</span>
-      </button>
-    </div>
-  )
-}
-
-function FormatBadge({ text, color }) {
-  const colors = { primary: 'bg-primary-800 text-white', orange: 'bg-orange-500 text-white' }
-  return (
-    <span className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-[0.65rem] font-bold uppercase tracking-wider ${colors[color] || colors.primary}`}>
-      {text}
-    </span>
-  )
+const CATEGORY_COLORS = {
+  'Hidrología':       { pill: 'bg-blue-100 text-blue-700',    accent: '#3b82f6' },
+  'Biodiversidad':    { pill: 'bg-green-100 text-green-700',  accent: '#22c55e' },
+  'Zonificación':     { pill: 'bg-violet-100 text-violet-700',accent: '#8b5cf6' },
+  'Cartografía Base': { pill: 'bg-slate-100 text-slate-600',  accent: '#64748b' },
+  'Infraestructura':  { pill: 'bg-orange-100 text-orange-700',accent: '#f97316' },
+  'Riesgo':           { pill: 'bg-red-100 text-red-600',      accent: '#ef4444' },
 }
 
 function MapCard({ map, index, onPreview }) {
-  const palette = ['#D8F3DC', '#E8F5E9', '#F1F8F1', '#E0F2E0', '#D4EDDA', '#EDF7ED']
-  const bg = palette[index % palette.length]
+  const colors = CATEGORY_COLORS[map.category] ?? { pill: 'bg-primary-100 text-primary-700', accent: '#1B4332' }
+  const hasPdf     = map.formats.includes('PDF')
+  const hasImg     = map.formats.includes('IMG')
+  const hasGeovisor = map.formats.includes('GEOVISOR')
+
   return (
-    <motion.div {...fadeUp(0.1 + index * 0.05)}
-      className="bg-white border border-border rounded-xl overflow-hidden hover:shadow-card transition-shadow">
-      <div className="h-48 relative" style={!map.thumbnail_url ? { background: `linear-gradient(135deg, ${bg}, ${bg}dd)` } : undefined}>
-        {map.thumbnail_url && (
-          <img
-            src={map.thumbnail_url}
-            alt={map.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+    <motion.div {...fadeUp(0.06 + index * 0.04)}
+      className="group bg-white border border-border rounded-2xl overflow-hidden hover:border-primary-300 hover:shadow-lg transition-all duration-300 flex flex-col">
+
+      {/* Visual header */}
+      <div className="relative h-44 overflow-hidden bg-bg-alt shrink-0">
+        {map.thumbnail_url ? (
+          <img src={map.thumbnail_url} alt={map.title}
+            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+            loading="lazy" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center"
+            style={{ background: `linear-gradient(135deg, ${colors.accent}18 0%, ${colors.accent}08 100%)` }}>
+            <Map className="w-16 h-16 opacity-10" style={{ color: colors.accent }} />
+          </div>
         )}
-        <FormatBadge text={map.badge} color={map.badgeColor} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+
+        {/* Year badge top-left */}
+        {map.year && (
+          <span className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 bg-black/50 backdrop-blur-sm text-white text-[0.65rem] font-bold rounded-lg">
+            <Calendar className="w-3 h-3" />
+            {map.year}
+          </span>
+        )}
+
+        {/* Format badges top-right */}
+        <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
+          {hasPdf && <span className="px-2 py-0.5 bg-red-500 text-white text-[0.6rem] font-bold uppercase rounded">PDF</span>}
+          {hasImg && <span className="px-2 py-0.5 bg-blue-500 text-white text-[0.6rem] font-bold uppercase rounded">IMG</span>}
+          {hasGeovisor && <span className="px-2 py-0.5 bg-primary-800 text-white text-[0.6rem] font-bold uppercase rounded">Geovisor</span>}
+        </div>
       </div>
-      <div className="p-5">
-        <span className="inline-block text-[0.7rem] font-bold uppercase tracking-wider text-primary-700 mb-1.5">
+
+      {/* Body */}
+      <div className="p-5 flex flex-col flex-1">
+        <span className={`self-start text-[0.6rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 ${colors.pill}`}>
           {map.category}
         </span>
-        <h3 className="card-title text-text leading-snug mb-2">{map.title}</h3>
-        <p className="card-text mb-4">{map.excerpt}</p>
-        <div className="flex items-center gap-5 pt-3 border-t border-border">
-          {map.formats.map((fmt) => (
-            <FormatIcon key={fmt} format={fmt}
-              onPreview={() => onPreview(map, fmt)}
-              geovisorLink={map.geovisorLink} />
-          ))}
+        <h3 className="text-sm font-bold text-text leading-snug mb-2 line-clamp-2 flex-1">{map.title}</h3>
+        {map.excerpt && (
+          <p className="text-xs text-text-muted leading-relaxed line-clamp-2 mb-4">{map.excerpt}</p>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-3 border-t border-border/60 mt-auto">
+          {hasPdf && (
+            <button onClick={() => onPreview(map, 'PDF')}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-colors">
+              <FileText className="w-3.5 h-3.5" />
+              PDF
+            </button>
+          )}
+          {hasImg && (
+            <button onClick={() => onPreview(map, 'IMG')}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+              <Image className="w-3.5 h-3.5" />
+              Imagen
+            </button>
+          )}
+          {hasGeovisor && (
+            <Link to={map.geovisorLink || '/geovisor'}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-primary-800 border border-primary-200 rounded-lg bg-primary-50 hover:bg-primary-100 transition-colors no-underline">
+              <Globe className="w-3.5 h-3.5" />
+              Geovisor
+            </Link>
+          )}
+          {(map.archivo_pdf_url || map.archivo_img_url) && (
+            <a href={map.archivo_img_url ?? map.archivo_pdf_url} target="_blank" rel="noopener noreferrer"
+              className="p-2 text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors"
+              title="Abrir en nueva pestaña">
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
         </div>
       </div>
     </motion.div>
@@ -195,7 +221,7 @@ function FilterChip({ label, onRemove }) {
 export default function Mapas() {
   const { query }    = useSearch()
   const { toasts, toast, dismiss } = useToast()
-  const [filters, setFilters] = useState({ category: '', department: '', format: '', year: '' })
+  const [filters, setFilters] = useState({ category: '', format: '', year: '' })
   const [page, setPage]       = useState(1)
   const [previewMap, setPreviewMap]       = useState(null)
   const [previewFormat, setPreviewFormat] = useState(null)
@@ -233,7 +259,7 @@ export default function Mapas() {
 
   const updateFilter = (key, value) => { setFilters((p) => ({ ...p, [key]: value })); setPage(1) }
   const removeChip   = (key)        => { setFilters((p) => ({ ...p, [key]: '' }));    setPage(1) }
-  const clearAll     = ()           => { setFilters({ category: '', department: '', format: '', year: '' }); setPage(1) }
+  const clearAll     = ()           => { setFilters({ category: '', format: '', year: '' }); setPage(1) }
 
   const handlePreview = (map, format) => {
     setPreviewMap(map)
@@ -274,7 +300,6 @@ export default function Mapas() {
         </div>
         <div className="flex flex-wrap gap-4">
           <FilterSelect label="Categoría" options={MAP_CATEGORIES} value={filters.category} onChange={(v) => updateFilter('category', v)} />
-          <FilterSelect label="Departamento / Subregión" options={MAP_DEPARTMENTS} value={filters.department} onChange={(v) => updateFilter('department', v)} />
           <FilterSelect label="Formato" options={MAP_FORMATS} value={filters.format} onChange={(v) => updateFilter('format', v)} />
           <FilterSelect label="Año de Publicación" options={MAP_YEARS} value={filters.year} onChange={(v) => updateFilter('year', v)} />
         </div>
