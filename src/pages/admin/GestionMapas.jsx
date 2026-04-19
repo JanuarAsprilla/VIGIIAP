@@ -92,6 +92,67 @@ function VisibilidadSelector({ value, onChange }) {
   )
 }
 
+function ThumbnailDropzone({ file, onFile, existing }) {
+  const inputRef = useRef(null)
+  const [dragging, setDragging] = useState(false)
+  const [preview, setPreview] = useState(null)
+
+  const accept = useCallback((f) => {
+    if (!f || !f.type.startsWith('image/')) return
+    if (f.size > 5 * 1024 * 1024) return
+    onFile(f)
+    setPreview(URL.createObjectURL(f))
+  }, [onFile])
+
+  const handleDrop = (e) => { e.preventDefault(); setDragging(false); accept(e.dataTransfer.files[0]) }
+
+  const thumb = preview || existing || null
+
+  return (
+    <div>
+      <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+        Miniatura / Vista previa <span className="text-text-muted font-normal normal-case tracking-normal">(opcional)</span>
+      </label>
+      {thumb ? (
+        <div className="relative w-full h-28 rounded-xl overflow-hidden border border-border group">
+          <img src={thumb} alt="Miniatura" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+            <button type="button" onClick={() => inputRef.current?.click()}
+              className="px-3 py-1.5 bg-white text-text text-xs font-semibold rounded-lg hover:bg-bg-alt transition-colors">
+              Cambiar
+            </button>
+            <button type="button" onClick={() => { onFile(null); setPreview(null) }}
+              className="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors">
+              Quitar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+          onClick={() => inputRef.current?.click()}
+          className={`flex items-center gap-3 px-4 py-3 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+            dragging ? 'border-primary-600 bg-primary-50' : 'border-border hover:border-primary-400 hover:bg-bg-alt/60'
+          }`}
+        >
+          <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${dragging ? 'bg-primary-100' : 'bg-bg-alt'}`}>
+            <Image className={`w-4 h-4 ${dragging ? 'text-primary-700' : 'text-text-muted'}`} />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-text">{dragging ? 'Suelta la imagen aquí' : 'Haz clic o arrastra una imagen'}</p>
+            <p className="text-[0.6rem] text-text-muted">JPG, PNG o WebP — máx. 5 MB</p>
+          </div>
+        </div>
+      )}
+      <input ref={inputRef} type="file" accept="image/*"
+        onChange={(e) => { accept(e.target.files[0]); e.target.value = '' }}
+        className="sr-only" />
+    </div>
+  )
+}
+
 function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, onError }) {
   const inputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
@@ -191,6 +252,7 @@ export default function GestionMapas() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [formErrors, setFormErrors] = useState({})
   const [uploadedFile, setUploadedFile] = useState(null)
+  const [uploadedThumb, setUploadedThumb] = useState(null)
   const [uploadError, setUploadError] = useState(null)
   const [submitError, setSubmitError] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(null)
@@ -208,7 +270,7 @@ export default function GestionMapas() {
 
   const openCreate = () => {
     setEditing(null); setForm(EMPTY_FORM); setFormErrors({})
-    setUploadedFile(null); setUploadError(null); setSubmitError(null)
+    setUploadedFile(null); setUploadedThumb(null); setUploadError(null); setSubmitError(null)
     setUploadProgress(null); setShowModal(true)
   }
 
@@ -224,7 +286,7 @@ export default function GestionMapas() {
       url:         m.url || '',
       visibilidad: m.visibilidad ?? 'publico',
     })
-    setFormErrors({}); setUploadedFile(null); setUploadError(null)
+    setFormErrors({}); setUploadedFile(null); setUploadedThumb(null); setUploadError(null)
     setSubmitError(null); setUploadProgress(null); setShowModal(true)
   }
 
@@ -250,6 +312,7 @@ export default function GestionMapas() {
     payload.append('anio',        form.anio || String(new Date().getFullYear()))
     payload.append('visibilidad', form.visibilidad)
     if (form.descripcion.trim()) payload.append('descripcion', form.descripcion)
+    if (uploadedThumb) payload.append('thumbnail', uploadedThumb)
 
     if (uploadedFile) {
       payload.append(form.formato === 'PDF' ? 'archivo_pdf' : 'archivo_img', uploadedFile)
@@ -268,7 +331,7 @@ export default function GestionMapas() {
       payload.append('geovisor_url', '')
     }
 
-    const onUploadProgress = uploadedFile
+    const onUploadProgress = (uploadedFile || uploadedThumb)
       ? (e) => setUploadProgress(Math.round((e.loaded * 100) / (e.total ?? e.loaded)))
       : undefined
 
@@ -522,6 +585,9 @@ export default function GestionMapas() {
                     {formErrors.url && <p className="text-xs text-red-500 mt-1">{formErrors.url}</p>}
                   </div>
                 )}
+
+                {/* Thumbnail opcional */}
+                <ThumbnailDropzone file={uploadedThumb} onFile={setUploadedThumb} existing={editing?.thumbnail_url} />
 
                 {/* Nombre del mapa */}
                 <div>
