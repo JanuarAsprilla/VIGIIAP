@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Map, Filter, ChevronLeft, ChevronRight, X,
-  FileText, Image, Globe, Loader2,
+  FileText, Image, Globe, Loader2, Eye, Download,
 } from 'lucide-react'
 import { MAP_CATEGORIES, MAP_DEPARTMENTS, MAP_FORMATS, MAP_YEARS } from '@/lib/constants'
 import { useMapasList } from '@/hooks/useMapas'
@@ -17,7 +17,90 @@ const fadeUp = (delay = 0) => ({
   transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] },
 })
 
-function FormatIcon({ format, geovisorLink, onDownload }) {
+// ── Preview Modal para mapas ──────────────────────────────────────────────────
+function MapPreviewModal({ map, format, onClose }) {
+  const fileUrl = format === 'IMG' ? map.archivo_img_url : map.archivo_pdf_url
+  const isImage = format === 'IMG' || (fileUrl && /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(fileUrl))
+
+  useEffect(() => {
+    const h = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', h)
+    return () => document.removeEventListener('keydown', h)
+  }, [onClose])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <div>
+            <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded mr-2 ${isImage ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-500'}`}>
+              {format}
+            </span>
+            <span className="text-sm font-semibold text-text">{map.title}</span>
+          </div>
+          <button onClick={onClose}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:bg-bg-alt transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {fileUrl ? (
+          <div className="w-full">
+            {isImage ? (
+              <div className="p-4 flex justify-center bg-bg-alt">
+                <img src={fileUrl} alt={map.title}
+                  className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-sm" />
+              </div>
+            ) : (
+              <div className="p-8 flex flex-col items-center gap-4 text-center">
+                <div className="w-16 h-16 rounded-xl flex items-center justify-center bg-red-50">
+                  <FileText className="w-8 h-8 text-red-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-text mb-1">{map.title}</p>
+                  <p className="text-xs text-text-muted">{map.category} · {map.year}</p>
+                </div>
+                <div className="flex gap-3">
+                  <a href={fileUrl} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
+                    <Eye className="w-4 h-4" />
+                    Abrir PDF
+                  </a>
+                  <a href={fileUrl} download
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-50 border border-primary-200 text-primary-800 rounded-lg text-sm font-semibold hover:bg-primary-100 transition-colors">
+                    <Download className="w-4 h-4" />
+                    Descargar
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="p-10 text-center text-text-muted text-sm">Archivo no disponible</div>
+        )}
+
+        {fileUrl && isImage && (
+          <div className="px-6 py-4 border-t border-border flex justify-end gap-3">
+            <a href={fileUrl} download
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
+              <Download className="w-4 h-4" />
+              Descargar imagen
+            </a>
+          </div>
+        )}
+      </motion.div>
+    </div>
+  )
+}
+
+function FormatIcon({ format, geovisorLink, onDownload, onPreview }) {
   if (format === 'GEOVISOR') {
     return (
       <Link to={geovisorLink || '/geovisor'}
@@ -31,12 +114,14 @@ function FormatIcon({ format, geovisorLink, onDownload }) {
   const icons = { PDF: FileText, IMG: Image }
   const Icon = icons[format] || FileText
   return (
-    <button onClick={onDownload}
-      className="flex flex-col items-center gap-1 text-primary-800/60 hover:text-primary-800 transition-colors"
-      title={`Descargar ${format}`}>
-      <Icon className="w-5 h-5" />
-      <span className="text-[0.65rem] font-bold uppercase">{format}</span>
-    </button>
+    <div className="flex flex-col items-center gap-1">
+      <button onClick={onPreview}
+        className="flex flex-col items-center gap-1 text-primary-800/60 hover:text-primary-800 transition-colors"
+        title={`Vista previa ${format}`}>
+        <Icon className="w-5 h-5" />
+        <span className="text-[0.65rem] font-bold uppercase">{format}</span>
+      </button>
+    </div>
   )
 }
 
@@ -49,7 +134,7 @@ function FormatBadge({ text, color }) {
   )
 }
 
-function MapCard({ map, index, onDownload }) {
+function MapCard({ map, index, onPreview }) {
   const palette = ['#D8F3DC', '#E8F5E9', '#F1F8F1', '#E0F2E0', '#D4EDDA', '#EDF7ED']
   const bg = palette[index % palette.length]
   return (
@@ -75,7 +160,7 @@ function MapCard({ map, index, onDownload }) {
         <div className="flex items-center gap-5 pt-3 border-t border-border">
           {map.formats.map((fmt) => (
             <FormatIcon key={fmt} format={fmt}
-              onDownload={() => onDownload(map, fmt)}
+              onPreview={() => onPreview(map, fmt)}
               geovisorLink={map.geovisorLink} />
           ))}
           {!map.formats.includes('GEOVISOR') && (
@@ -115,6 +200,8 @@ export default function Mapas() {
   const { toasts, toast, dismiss } = useToast()
   const [filters, setFilters] = useState({ category: '', department: '', format: '', year: '' })
   const [page, setPage]       = useState(1)
+  const [previewMap, setPreviewMap]       = useState(null)
+  const [previewFormat, setPreviewFormat] = useState(null)
   const PER_PAGE = 6
 
   // ── Datos reales ─────────────────────────────────────────────────────────────
@@ -151,10 +238,9 @@ export default function Mapas() {
   const removeChip   = (key)        => { setFilters((p) => ({ ...p, [key]: '' }));    setPage(1) }
   const clearAll     = ()           => { setFilters({ category: '', department: '', format: '', year: '' }); setPage(1) }
 
-  const handleDownload = (map, format) => {
-    const url = format === 'PDF' ? map.archivo_pdf_url : map.archivo_img_url
-    if (url) window.open(url, '_blank', 'noopener')
-    else toast(`Descargando "${map.title}" en ${format}`, 'success')
+  const handlePreview = (map, format) => {
+    setPreviewMap(map)
+    setPreviewFormat(format)
   }
 
   return (
@@ -220,7 +306,7 @@ export default function Mapas() {
       ) : pagedMaps.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {pagedMaps.map((map, i) => (
-            <MapCard key={map.id} map={map} index={i} onDownload={handleDownload} />
+            <MapCard key={map.id} map={map} index={i} onPreview={handlePreview} />
           ))}
         </div>
       ) : (
@@ -256,6 +342,16 @@ export default function Mapas() {
       )}
 
       <ToastContainer toasts={toasts} dismiss={dismiss} />
+
+      <AnimatePresence>
+        {previewMap && (
+          <MapPreviewModal
+            map={previewMap}
+            format={previewFormat}
+            onClose={() => { setPreviewMap(null); setPreviewFormat(null) }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

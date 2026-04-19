@@ -3,31 +3,48 @@ import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
 
 // ─── Normalizar respuesta de backend → shape que usan las pages ───────────────
+// Detecta el formato real del archivo a partir de la URL cuando no hay campo explícito
+function fmtFromUrl(url) {
+  if (!url) return null
+  const ext = url.split('?')[0].split('.').pop().toLowerCase()
+  return ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'].includes(ext) ? 'IMG' : 'PDF'
+}
+
 function deriveFormats(m) {
   const fmts = []
-  if (m.archivo_pdf_url) fmts.push('PDF')
-  if (m.archivo_img_url) fmts.push('IMG')
-  if (m.geovisor_url)    fmts.push('GEOVISOR')
+  if (m.archivo_pdf_url || m.archivo_img_url) {
+    // Detectar por URL real para no mostrar PDF cuando el archivo es imagen
+    const pdfFmt = m.archivo_pdf_url ? fmtFromUrl(m.archivo_pdf_url) : null
+    const imgFmt = m.archivo_img_url ? 'IMG' : null
+    if (imgFmt) fmts.push('IMG')
+    if (pdfFmt && pdfFmt !== 'IMG') fmts.push('PDF')
+    else if (pdfFmt === 'IMG' && !imgFmt) fmts.push('IMG')
+  }
+  if (m.geovisor_url) fmts.push('GEOVISOR')
   return fmts.length ? fmts : ['PDF']
 }
 
 function normalizeMap(m) {
   const formats = deriveFormats(m)
   const primaryFmt = formats[0]
+  // La URL efectiva del archivo principal
+  const fileUrl = m.archivo_img_url ?? m.archivo_pdf_url ?? null
+  const detectedFmt = fileUrl ? fmtFromUrl(fileUrl) : (m.geovisor_url ? 'Geovisor' : 'PDF')
   return {
     // ── campos compartidos ──
-    id:            m.id,
-    slug:          m.slug,
-    titulo:        m.titulo,
-    categoria:     m.categoria,
-    anio:          m.anio,
-    descripcion:   m.descripcion ?? '',
-    thumbnail_url: m.thumbnail_url ?? null,
+    id:              m.id,
+    slug:            m.slug,
+    titulo:          m.titulo,
+    categoria:       m.categoria,
+    anio:            m.anio,
+    descripcion:     m.descripcion ?? '',
+    thumbnail_url:   m.thumbnail_url ?? null,
     archivo_pdf_url: m.archivo_pdf_url ?? null,
     archivo_img_url: m.archivo_img_url ?? null,
-    geovisor_url:  m.geovisor_url ?? null,
-    activo:        m.activo,
-    creado_en:     m.creado_en,
+    geovisor_url:    m.geovisor_url ?? null,
+    activo:          m.activo,
+    visibilidad:     m.visibilidad ?? 'publico',
+    creado_en:       m.creado_en,
     // ── campos para página pública (Mapas.jsx) ──
     title:        m.titulo,
     category:     m.categoria,
@@ -40,7 +57,7 @@ function normalizeMap(m) {
     badge:        primaryFmt === 'GEOVISOR' ? 'Geovisor' : primaryFmt,
     badgeColor:   'primary',
     geovisorLink: m.geovisor_url ?? '/geovisor',
-    department:   '',  // no está en el schema actual
+    department:   '',
     // ── campos para panel admin (GestionMapas.jsx) ──
     nombre:    m.titulo,
     tematica:  m.categoria,
@@ -48,7 +65,9 @@ function normalizeMap(m) {
     autor:     m.autor ?? '',
     fecha:     formatDate(m.creado_en),
     visible:   m.activo,
-    formato:   primaryFmt === 'GEOVISOR' ? 'Geovisor' : primaryFmt,
+    formato:   m.geovisor_url && !m.archivo_pdf_url && !m.archivo_img_url
+                 ? 'Geovisor'
+                 : detectedFmt,
     url:       m.geovisor_url ?? '',
     consultas: 0,
   }

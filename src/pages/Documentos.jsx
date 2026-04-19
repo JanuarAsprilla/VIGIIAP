@@ -64,6 +64,8 @@ function FileIcon({ type }) {
 // ── Preview Modal ──
 function PreviewModal({ doc, categoryTitle, onClose }) {
   const s = typeStyles[doc.type] || typeStyles.pdf
+  const isImage = doc.url && /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(doc.url)
+  const isPdf   = doc.url && !isImage
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose() }
@@ -81,7 +83,7 @@ function PreviewModal({ doc, categoryTitle, onClose }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
@@ -89,79 +91,66 @@ function PreviewModal({ doc, categoryTitle, onClose }) {
             <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded ${s.bg} ${s.text}`}>
               {s.label}
             </span>
-            <span className="text-sm font-semibold text-text">Vista Previa</span>
+            <span className="text-sm font-semibold text-text truncate max-w-xs">{doc.name}</span>
           </div>
-          <button
-            onClick={onClose}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:bg-bg-alt transition-colors"
-          >
+          <button onClick={onClose}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:bg-bg-alt transition-colors shrink-0">
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* File preview area */}
-        <div className="px-6 py-8 flex flex-col items-center text-center">
-          <div className={`w-16 h-16 rounded-xl flex items-center justify-center mb-4 ${s.bg}`}>
-            <FileText className={`w-8 h-8 ${s.text}`} />
-          </div>
-          <h3 className="text-sm font-semibold text-text leading-snug mb-1 break-all">
-            {doc.name}
-          </h3>
-          <span className="text-xs text-text-muted mb-6">{categoryTitle}</span>
-
-          {/* Metadata grid */}
-          <div className="w-full grid grid-cols-2 gap-3 mb-6 text-left">
-            {[
-              ['Tamaño', doc.size],
-              ['Formato', s.label],
-              ['Actualizado', doc.updated],
-              ['Estado', 'Pendiente carga'],
-            ].map(([label, value]) => (
-              <div key={label} className="bg-bg-alt rounded-lg px-3 py-2">
-                <span className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-0.5">
-                  {label}
-                </span>
-                <span className="text-sm font-medium text-text">{value}</span>
+        {/* Contenido real del archivo */}
+        {doc.url ? (
+          <div className="w-full">
+            {isImage ? (
+              <div className="p-4 flex justify-center bg-bg-alt">
+                <img src={doc.url} alt={doc.name}
+                  className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-sm" />
               </div>
-            ))}
+            ) : isPdf ? (
+              <div className="p-6 flex flex-col items-center gap-4 text-center">
+                <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${s.bg}`}>
+                  <FileText className={`w-8 h-8 ${s.text}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-text mb-1">{doc.name}</p>
+                  <p className="text-xs text-text-muted">{categoryTitle}</p>
+                </div>
+                <div className="flex gap-3">
+                  <a href={doc.url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
+                    <Eye className="w-4 h-4" />
+                    Abrir PDF
+                  </a>
+                  <a href={doc.url} download={doc.name}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-50 border border-primary-200 text-primary-800 rounded-lg text-sm font-semibold hover:bg-primary-100 transition-colors">
+                    <Download className="w-4 h-4" />
+                    Descargar
+                  </a>
+                </div>
+              </div>
+            ) : null}
           </div>
+        ) : (
+          <div className="px-6 py-10 flex flex-col items-center text-center text-text-muted">
+            <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-4 ${s.bg}`}>
+              <FileText className={`w-7 h-7 ${s.text}`} />
+            </div>
+            <p className="text-sm font-medium text-text mb-1">{doc.name}</p>
+            <p className="text-xs">Archivo no disponible para previsualización</p>
+          </div>
+        )}
 
-          {doc.url && (
-            <a
-              href={doc.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-50 border border-primary-200 text-primary-800 text-sm font-semibold rounded-lg hover:bg-primary-100 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Ver / Descargar archivo
-            </a>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-text-muted hover:text-text transition-colors"
-          >
+        {/* Footer con metadatos */}
+        <div className="px-6 py-4 border-t border-border flex items-center justify-between gap-3">
+          <div className="flex items-center gap-4 text-xs text-text-muted">
+            {doc.updated && <span>Actualizado: {doc.updated}</span>}
+            {categoryTitle && <span>{categoryTitle}</span>}
+          </div>
+          <button onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-text-muted hover:text-text transition-colors">
             Cerrar
           </button>
-          {doc.url ? (
-            <a
-              href={doc.url}
-              download={doc.name}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-800 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Descargar
-            </a>
-          ) : (
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary-800/30 text-white rounded-lg text-sm font-medium cursor-not-allowed">
-              <Download className="w-4 h-4" />
-              Descargar
-            </span>
-          )}
         </div>
       </motion.div>
     </div>

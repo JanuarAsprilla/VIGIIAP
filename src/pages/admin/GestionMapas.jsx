@@ -4,6 +4,7 @@ import {
   Plus, Search, X, Edit2, Trash2, Eye, EyeOff,
   Layers, Send, Upload, CheckCircle, AlertCircle,
   FileText, Image, Link as LinkIcon, Loader2, MapPin,
+  ExternalLink, Globe, Users, ShieldCheck,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
 import { useMapasList, useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa } from '@/hooks/useMapas'
@@ -24,10 +25,17 @@ const MAX_SIZE_BYTES = {
   IMG: 25 * 1024 * 1024,
 }
 
+const VISIBILIDAD = [
+  { value: 'publico',     label: 'Público',      desc: 'Visible para todos',             Icon: Globe,       border: 'border-emerald-500', bg: 'bg-emerald-50',  text: 'text-emerald-700', pill: 'bg-emerald-100 text-emerald-700' },
+  { value: 'usuarios',    label: 'Usuarios',     desc: 'Solo usuarios registrados',      Icon: Users,       border: 'border-blue-500',   bg: 'bg-blue-50',     text: 'text-blue-700',    pill: 'bg-blue-100 text-blue-700' },
+  { value: 'acreditados', label: 'Acreditados',  desc: 'Investigadores y admins',        Icon: ShieldCheck, border: 'border-violet-500', bg: 'bg-violet-50',   text: 'text-violet-700',  pill: 'bg-violet-100 text-violet-700' },
+]
+const visMap = Object.fromEntries(VISIBILIDAD.map((v) => [v.value, v]))
+
 const EMPTY_FORM = {
   nombre: '', tematica: TEMATICAS[0], escala: ESCALES[2],
   descripcion: '', anio: String(new Date().getFullYear()),
-  visible: true, formato: 'PDF', url: '',
+  visible: true, formato: 'PDF', url: '', visibilidad: 'publico',
 }
 
 const TEMATICA_COLORS = {
@@ -67,6 +75,24 @@ function SavedToast({ message, onDone }) {
 }
 
 // ── Dropzone ──────────────────────────────────────────────────────────────────
+function VisibilidadSelector({ value, onChange }) {
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {VISIBILIDAD.map(({ value: v, label, desc, Icon, border, bg, text }) => {
+        const active = value === v
+        return (
+          <button key={v} type="button" onClick={() => onChange(v)}
+            className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${active ? `${border} ${bg}` : 'border-border bg-white hover:bg-bg-alt'}`}>
+            <Icon className={`w-4 h-4 ${active ? text : 'text-text-muted'}`} />
+            <span className={`text-[0.65rem] font-bold uppercase tracking-wide ${active ? text : 'text-text-muted'}`}>{label}</span>
+            <span className="text-[0.6rem] text-text-muted leading-tight hidden sm:block">{desc}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 function FileDropzone({ formato, onFile, currentFile, editing, onError }) {
   const inputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
@@ -196,6 +222,7 @@ export default function GestionMapas() {
       visible:     m.visible,
       formato:     m.formato,
       url:         m.url || '',
+      visibilidad: m.visibilidad ?? 'publico',
     })
     setFormErrors({}); setUploadedFile(null); setUploadError(null)
     setSubmitError(null); setUploadProgress(null); setShowModal(true)
@@ -218,9 +245,10 @@ export default function GestionMapas() {
     setSubmitError(null); setUploadProgress(null)
 
     const payload = new FormData()
-    payload.append('titulo',    form.nombre)
-    payload.append('categoria', form.tematica)
-    payload.append('anio',      form.anio || String(new Date().getFullYear()))
+    payload.append('titulo',      form.nombre)
+    payload.append('categoria',   form.tematica)
+    payload.append('anio',        form.anio || String(new Date().getFullYear()))
+    payload.append('visibilidad', form.visibilidad)
     if (form.descripcion.trim()) payload.append('descripcion', form.descripcion)
 
     if (uploadedFile) {
@@ -377,11 +405,25 @@ export default function GestionMapas() {
                 </button>
               </div>
               <div className="flex items-center justify-between pt-1 border-t border-border/50">
-                <div className="flex items-center gap-1.5">
-                  <Layers className="w-3 h-3 text-text-muted" />
-                  <span className="text-xs text-text-muted">{m.consultas?.toLocaleString() ?? 0} consultas</span>
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const vis = visMap[m.visibilidad] ?? visMap.publico
+                    return (
+                      <span className={`text-[0.6rem] font-semibold px-1.5 py-0.5 rounded ${vis.pill}`}>
+                        {vis.label}
+                      </span>
+                    )
+                  })()}
                 </div>
                 <div className="flex items-center gap-1">
+                  {(m.archivo_pdf_url || m.archivo_img_url || m.geovisor_url) && (
+                    <button
+                      onClick={() => window.open(m.archivo_img_url || m.archivo_pdf_url || m.geovisor_url, '_blank', 'noopener')}
+                      className="p-1.5 rounded-lg text-text-muted hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                      title="Ver archivo">
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   <button onClick={() => openEdit(m)}
                     className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
                     title="Editar mapa">
@@ -529,6 +571,12 @@ export default function GestionMapas() {
                       {ESCALES.map((e) => <option key={e}>{e}</option>)}
                     </select>
                   </div>
+                </div>
+
+                {/* Nivel de acceso */}
+                <div>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2">Nivel de acceso</label>
+                  <VisibilidadSelector value={form.visibilidad} onChange={(v) => setForm((f) => ({ ...f, visibilidad: v }))} />
                 </div>
 
                 {/* Visible al público */}
