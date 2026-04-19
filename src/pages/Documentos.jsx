@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  FileText, Search, SlidersHorizontal, ArrowUpDown,
+  FileText, FileSpreadsheet, Search, SlidersHorizontal, ArrowUpDown,
   ChevronUp, ChevronDown, Eye, Download,
-  Waves, FileInput, BookOpen, TrendingUp,
+  Waves, BookOpen, TrendingUp,
+  Map as MapIcon, Leaf, Scale, ClipboardList, ClipboardCheck,
   Headphones, X, Check, Send, CheckCircle, Loader2,
 } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
@@ -14,17 +15,17 @@ import { useDocumentosList } from '@/hooks/useDocumentos'
 
 // Meta por categoría (icon + color) — debe coincidir con CATEGORIES en GestionDocumentos.jsx
 const CATEGORY_META = {
-  default:                  { icon: 'BookOpen',   color: 'border-l-primary-800' },
-  'Cartografía':            { icon: 'TrendingUp', color: 'border-l-primary-800' },
-  'Estudios Ambientales':   { icon: 'TrendingUp', color: 'border-l-orange-500'  },
-  'Normativa':              { icon: 'FileInput',  color: 'border-l-orange-500'  },
-  'Informes Técnicos':      { icon: 'FileInput',  color: 'border-l-gold-400'    },
-  'Biodiversidad':          { icon: 'BookOpen',   color: 'border-l-green-600'   },
-  'Hidrología':             { icon: 'Waves',      color: 'border-l-blue-500'    },
-  'Protocolos Ambientales': { icon: 'Waves',      color: 'border-l-primary-800' },
-  'Bibliografía Técnica':   { icon: 'BookOpen',   color: 'border-l-green-600'   },
-  'Análisis de Tendencias': { icon: 'TrendingUp', color: 'border-l-orange-500'  },
-  'Formatos y Plantillas':  { icon: 'FileInput',  color: 'border-l-gold-400'    },
+  default:                  { icon: 'BookOpen',        color: 'border-l-primary-800' },
+  'Cartografía':            { icon: 'MapIcon',         color: 'border-l-primary-800' },
+  'Estudios Ambientales':   { icon: 'Leaf',            color: 'border-l-orange-500'  },
+  'Normativa':              { icon: 'Scale',           color: 'border-l-orange-500'  },
+  'Informes Técnicos':      { icon: 'ClipboardList',   color: 'border-l-gold-400'    },
+  'Biodiversidad':          { icon: 'Leaf',            color: 'border-l-green-600'   },
+  'Hidrología':             { icon: 'Waves',           color: 'border-l-blue-500'    },
+  'Protocolos Ambientales': { icon: 'ClipboardCheck',  color: 'border-l-primary-800' },
+  'Bibliografía Técnica':   { icon: 'BookOpen',        color: 'border-l-green-600'   },
+  'Análisis de Tendencias': { icon: 'TrendingUp',      color: 'border-l-orange-500'  },
+  'Formatos y Plantillas':  { icon: 'FileSpreadsheet', color: 'border-l-gold-400'    },
 }
 
 // ── Animation helper ──
@@ -35,7 +36,7 @@ const fadeUp = (delay = 0) => ({
 })
 
 // ── Icon mapping for categories ──
-const categoryIcons = { Waves, FileInput, BookOpen, TrendingUp }
+const categoryIcons = { MapIcon, Leaf, Scale, ClipboardList, ClipboardCheck, FileSpreadsheet, Waves, BookOpen, TrendingUp }
 
 // ── File type styles ──
 const typeStyles = {
@@ -62,11 +63,32 @@ function FileIcon({ type }) {
   )
 }
 
+async function forceDownload(url, filename) {
+  if (!url) return
+  const name = filename || url.split('?')[0].split('/').pop() || 'archivo'
+  try {
+    const res  = await fetch(url)
+    const blob = await res.blob()
+    const tmp  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = tmp
+    a.download = name
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(tmp)
+  } catch {
+    window.open(url, '_blank', 'noopener')
+  }
+}
+
 // ── Preview Modal ──
 function PreviewModal({ doc, categoryTitle, onClose }) {
   const s = typeStyles[doc.type] || typeStyles.pdf
-  const isImage = doc.url && /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(doc.url)
-  const isPdf   = doc.url && !isImage
+  const isImage  = doc.url && /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(doc.url)
+  const isPdf    = doc.type === 'pdf'
+  const isOffice = doc.type === 'docx' || doc.type === 'doc' || doc.type === 'xlsx' || doc.type === 'xls'
+  const OfficeIcon = (doc.type === 'xlsx' || doc.type === 'xls') ? FileSpreadsheet : FileText
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose() }
@@ -100,7 +122,7 @@ function PreviewModal({ doc, categoryTitle, onClose }) {
           </button>
         </div>
 
-        {/* Contenido real del archivo */}
+        {/* Contenido según tipo */}
         {doc.url ? (
           <div className="w-full">
             {isImage ? (
@@ -121,14 +143,30 @@ function PreviewModal({ doc, categoryTitle, onClose }) {
                   <a href={doc.url} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
                     <Eye className="w-4 h-4" />
-                    Abrir PDF
+                    Visualizar PDF
                   </a>
-                  <a href={doc.url} download={doc.name}
+                  <button onClick={() => forceDownload(doc.url, doc.name)}
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-50 border border-primary-200 text-primary-800 rounded-lg text-sm font-semibold hover:bg-primary-100 transition-colors">
                     <Download className="w-4 h-4" />
                     Descargar
-                  </a>
+                  </button>
                 </div>
+              </div>
+            ) : isOffice ? (
+              <div className="p-6 flex flex-col items-center gap-4 text-center">
+                <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${s.bg}`}>
+                  <OfficeIcon className={`w-8 h-8 ${s.text}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-text mb-1">{doc.name}</p>
+                  <p className="text-xs text-text-muted mb-1">{categoryTitle}</p>
+                  <p className="text-xs text-text-muted">Los archivos {s.label} no se pueden previsualizar en el navegador.</p>
+                </div>
+                <button onClick={() => forceDownload(doc.url, doc.name)}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
+                  <Download className="w-4 h-4" />
+                  Descargar {s.label}
+                </button>
               </div>
             ) : null}
           </div>
@@ -138,11 +176,11 @@ function PreviewModal({ doc, categoryTitle, onClose }) {
               <FileText className={`w-7 h-7 ${s.text}`} />
             </div>
             <p className="text-sm font-medium text-text mb-1">{doc.name}</p>
-            <p className="text-xs">Archivo no disponible para previsualización</p>
+            <p className="text-xs">Archivo no disponible</p>
           </div>
         )}
 
-        {/* Footer con metadatos */}
+        {/* Footer */}
         <div className="px-6 py-4 border-t border-border flex items-center justify-between gap-3">
           <div className="flex items-center gap-4 text-xs text-text-muted">
             {doc.updated && <span>Actualizado: {doc.updated}</span>}
@@ -539,13 +577,8 @@ export default function Documentos() {
   useClickOutside(sortRef, () => setShowSort(false))
 
   const { toasts, toast, dismiss } = useToast()
-  const handleDownload = (doc) => {
-    if (doc.url) {
-      const a = document.createElement('a')
-      a.href = doc.url
-      a.download = doc.name
-      a.click()
-    }
+  const handleDownload = async (doc) => {
+    await forceDownload(doc.url, doc.name)
     toast(`Descargando "${doc.name}"`, 'success')
   }
 

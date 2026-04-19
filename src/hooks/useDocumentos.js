@@ -2,7 +2,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
 
+function formatBytes(bytes) {
+  if (!bytes) return null
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+}
+
+const EXT_TYPE = { doc: 'docx', xls: 'xlsx' }
+
 function normalizeDoc(d) {
+  const rawExt = d.archivo_url?.split('?')[0].split('.').pop()?.toLowerCase() ?? 'pdf'
+  const type   = EXT_TYPE[rawExt] ?? rawExt
   return {
     id:          d.id,
     slug:        d.slug,
@@ -19,9 +31,9 @@ function normalizeDoc(d) {
     nombre:      d.titulo,
     categoria:   d.tipo,
     fecha:       formatDate(d.creado_en),
-    type:        d.archivo_url?.split('.').pop()?.toLowerCase() ?? 'pdf',
+    type,
     url:         d.archivo_url ?? null,
-    tamano:      '—',
+    tamano:      formatBytes(d.tamano_bytes) ?? '—',
     descargas:   0,
   }
 }

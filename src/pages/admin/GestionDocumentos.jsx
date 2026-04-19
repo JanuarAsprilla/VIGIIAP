@@ -2,8 +2,8 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, X, Edit2, Trash2,
-  FileText, File, Image, Send, Upload, CheckCircle,
-  AlertCircle, Link as LinkIcon, Globe, Users, ShieldCheck,
+  FileText, File, FileSpreadsheet, Send, Upload, CheckCircle,
+  AlertCircle, Globe, Users, ShieldCheck,
   Loader2, FolderOpen,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
@@ -16,16 +16,22 @@ const CATEGORIES = [
   'Biodiversidad', 'Hidrología', 'Protocolos Ambientales',
   'Bibliografía Técnica', 'Análisis de Tendencias', 'Formatos y Plantillas',
 ]
-const TIPOS = ['PDF', 'IMG', 'Geovisor']
+const TIPOS = ['PDF', 'Word', 'Excel']
 
 const ACCEPT = {
-  PDF:      '.pdf,application/pdf',
-  IMG:      '.jpg,.jpeg,.png,.webp,image/*',
-  Geovisor: null,
+  PDF:   '.pdf,application/pdf',
+  Word:  '.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  Excel: '.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 }
 const MAX_SIZE_BYTES = {
-  PDF: 20 * 1024 * 1024,
-  IMG: 25 * 1024 * 1024,
+  PDF:   20 * 1024 * 1024,
+  Word:  50 * 1024 * 1024,
+  Excel: 50 * 1024 * 1024,
+}
+const TIPO_HINT = {
+  PDF:   'Archivos PDF — máx. 20 MB',
+  Word:  'Archivos Word (.doc, .docx) — máx. 50 MB',
+  Excel: 'Archivos Excel (.xls, .xlsx) — máx. 50 MB',
 }
 
 const VISIBILIDAD = [
@@ -36,14 +42,23 @@ const VISIBILIDAD = [
 
 const EMPTY_FORM = {
   nombre: '', categoria: CATEGORIES[0], tipo: TIPOS[0],
-  autor: '', anio: '', url: '', visibilidad: 'publico',
+  autor: '', anio: '', visibilidad: 'publico',
+}
+
+function typeToTipo(type) {
+  const t = type?.toLowerCase()
+  if (t === 'doc' || t === 'docx' || t === 'word') return 'Word'
+  if (t === 'xls' || t === 'xlsx' || t === 'excel') return 'Excel'
+  return 'PDF'
 }
 
 const visMap = Object.fromEntries(VISIBILIDAD.map((v) => [v.value, v]))
 
 const TipoIcon = ({ tipo }) => {
-  if (tipo === 'PDF') return <FileText className="w-4 h-4 text-red-500" />
-  if (tipo === 'IMG') return <Image className="w-4 h-4 text-blue-500" />
+  const t = tipo?.toLowerCase()
+  if (t === 'pdf')  return <FileText className="w-4 h-4 text-red-500" />
+  if (t === 'docx' || t === 'doc' || t === 'word')  return <FileText className="w-4 h-4 text-blue-500" />
+  if (t === 'xlsx' || t === 'xls' || t === 'excel') return <FileSpreadsheet className="w-4 h-4 text-green-600" />
   return <File className="w-4 h-4 text-primary-600" />
 }
 
@@ -129,7 +144,7 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }) {
     if (!file) return
     const maxBytes = MAX_SIZE_BYTES[tipo]
     if (maxBytes && file.size > maxBytes) {
-      onError?.(`El archivo supera el límite de ${tipo === 'PDF' ? '20 MB' : '25 MB'}`)
+      onError?.(`El archivo supera el límite permitido para ${tipo}`)
       return
     }
     onError?.(null)
@@ -140,8 +155,6 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }) {
     e.preventDefault(); setDragging(false)
     validateAndAccept(e.dataTransfer.files[0])
   }, [validateAndAccept])
-
-  if (tipo === 'Geovisor') return null
 
   return (
     <div>
@@ -177,9 +190,7 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }) {
           </div>
           <div className="text-center">
             <p className="text-sm font-semibold text-text">{dragging ? 'Suelta el archivo aquí' : 'Haz clic o arrastra el archivo aquí'}</p>
-            <p className="text-xs text-text-muted mt-1">
-              {tipo === 'PDF' ? 'Archivos PDF — máx. 20 MB' : 'Imágenes JPG, PNG o WebP — máx. 25 MB'}
-            </p>
+            <p className="text-xs text-text-muted mt-1">{TIPO_HINT[tipo] ?? ''}</p>
           </div>
           <input ref={inputRef} type="file" accept={accept}
             onChange={(e) => { validateAndAccept(e.target.files[0]); e.target.value = '' }}
@@ -217,7 +228,7 @@ export default function GestionDocumentos() {
     const q = search.toLowerCase()
     const matchQ = !q || d.nombre?.toLowerCase().includes(q) || (d.autores ?? '').toLowerCase().includes(q)
     const matchC = !filtroCategoria || d.categoria === filtroCategoria
-    const matchT = !filtroTipo || d.type?.toUpperCase() === filtroTipo
+    const matchT = !filtroTipo || typeToTipo(d.type) === filtroTipo
     return matchQ && matchC && matchT
   })
 
@@ -232,10 +243,9 @@ export default function GestionDocumentos() {
     setForm({
       nombre:      d.nombre,
       categoria:   d.categoria,
-      tipo:        d.type?.toUpperCase() ?? 'PDF',
+      tipo:        typeToTipo(d.type),
       autor:       d.autores ?? '',
       anio:        d.anio ?? '',
-      url:         d.url || '',
       visibilidad: d.visibilidad ?? 'publico',
     })
     setFormErrors({}); setUploadedFile(null); setUploadError(null)
@@ -245,10 +255,8 @@ export default function GestionDocumentos() {
   const validate = () => {
     const e = {}
     if (!form.nombre.trim()) e.nombre = 'El nombre del documento es obligatorio'
-    if (form.tipo !== 'Geovisor' && !editing && !uploadedFile)
+    if (!editing && !uploadedFile)
       e.archivo = 'Debes seleccionar el archivo del documento para continuar'
-    if (form.tipo === 'Geovisor' && !form.url.trim())
-      e.url = 'Debes ingresar la URL del Geovisor'
     return e
   }
 
@@ -265,7 +273,6 @@ export default function GestionDocumentos() {
     if (form.autor.trim()) payload.append('autores', form.autor)
     if (form.anio) payload.append('anio', form.anio)
     if (uploadedFile) payload.append('archivo', uploadedFile)
-    if (form.tipo === 'Geovisor') payload.append('archivo_url', form.url)
 
     const onUploadProgress = uploadedFile
       ? (ev) => setUploadProgress(ev.total ? Math.round((ev.loaded / ev.total) * 100) : 50)
@@ -463,15 +470,15 @@ export default function GestionDocumentos() {
                   <div className="grid grid-cols-3 gap-2">
                     {TIPOS.map((t) => (
                       <button key={t} type="button"
-                        onClick={() => { setForm((f) => ({ ...f, tipo: t, url: '' })); setUploadedFile(null); setFormErrors({}) }}
+                        onClick={() => { setForm((f) => ({ ...f, tipo: t })); setUploadedFile(null); setFormErrors({}) }}
                         className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition-all ${
                           form.tipo === t
                             ? 'bg-primary-800 text-white border-primary-800 shadow-sm'
                             : 'bg-white text-text-muted border-border hover:border-primary-400'
                         }`}>
-                        {t === 'PDF' && <FileText className="w-4 h-4" />}
-                        {t === 'IMG' && <Image className="w-4 h-4" />}
-                        {t === 'Geovisor' && <File className="w-4 h-4" />}
+                        {t === 'PDF'   && <FileText className="w-4 h-4" />}
+                        {t === 'Word'  && <FileText className="w-4 h-4" />}
+                        {t === 'Excel' && <FileSpreadsheet className="w-4 h-4" />}
                         {t}
                       </button>
                     ))}
@@ -489,20 +496,6 @@ export default function GestionDocumentos() {
                 {formErrors.archivo && (
                   <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />{formErrors.archivo}
-                  </div>
-                )}
-
-                {/* URL Geovisor */}
-                {form.tipo === 'Geovisor' && (
-                  <div>
-                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5 flex items-center gap-1">
-                      <LinkIcon className="w-3 h-3" /> URL del Geovisor <span className="text-orange-500">*</span>
-                    </label>
-                    <input type="url" value={form.url}
-                      onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
-                      placeholder="https://geovisor.iiap.gov.co/…"
-                      className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.url ? 'border-red-400' : 'border-border focus:border-primary-800'}`} />
-                    {formErrors.url && <p className="text-xs text-red-500 mt-1">{formErrors.url}</p>}
                   </div>
                 )}
 
