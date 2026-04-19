@@ -99,7 +99,7 @@ function ThumbnailDropzone({ file, onFile, existing }) {
 
   const accept = useCallback((f) => {
     if (!f || !f.type.startsWith('image/')) return
-    if (f.size > 5 * 1024 * 1024) return
+    if (f.size > 50 * 1024 * 1024) return
     onFile(f)
     setPreview(URL.createObjectURL(f))
   }, [onFile])
@@ -142,7 +142,7 @@ function ThumbnailDropzone({ file, onFile, existing }) {
           </div>
           <div>
             <p className="text-xs font-semibold text-text">{dragging ? 'Suelta la imagen aquí' : 'Haz clic o arrastra una imagen'}</p>
-            <p className="text-[0.6rem] text-text-muted">JPG, PNG o WebP — máx. 5 MB</p>
+            <p className="text-[0.6rem] text-text-muted">JPG, PNG o WebP — máx. 50 MB</p>
           </div>
         </div>
       )}

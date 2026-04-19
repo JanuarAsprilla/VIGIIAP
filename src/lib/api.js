@@ -14,6 +14,7 @@ api.interceptors.request.use((config) => {
   // Let the browser set the multipart boundary automatically for file uploads
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type']
+    config.timeout = 0
   }
   return config
 })
