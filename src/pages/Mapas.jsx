@@ -169,24 +169,24 @@ function MapCard({ map, index, onPreview }) {
             </button>
           )}
           {hasImg && (
-            <button onClick={() => onPreview(map, 'IMG')}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-              <Image className="w-3.5 h-3.5" />
-              Imagen
-            </button>
+            <a href={map.archivo_img_url} download
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors no-underline">
+              <Download className="w-3.5 h-3.5" />
+              Descargar
+            </a>
+          )}
+          {hasImg && (
+            <a href={map.archivo_img_url} target="_blank" rel="noopener noreferrer"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors no-underline">
+              <Eye className="w-3.5 h-3.5" />
+              Visualizar
+            </a>
           )}
           {hasGeovisor && (
-            <Link to={map.geovisorLink || '/geovisor'}
+            <a href={map.geovisorLink || '/geovisor'} target="_blank" rel="noopener noreferrer"
               className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-primary-800 border border-primary-200 rounded-lg bg-primary-50 hover:bg-primary-100 transition-colors no-underline">
               <Globe className="w-3.5 h-3.5" />
               Geovisor
-            </Link>
-          )}
-          {(map.archivo_pdf_url || map.archivo_img_url) && (
-            <a href={map.archivo_img_url ?? map.archivo_pdf_url} target="_blank" rel="noopener noreferrer"
-              className="p-2 text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors"
-              title="Abrir en nueva pestaña">
-              <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
         </div>
