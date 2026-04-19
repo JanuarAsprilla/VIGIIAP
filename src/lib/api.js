@@ -11,6 +11,10 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('vigiiap_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
+  // Let the browser set the multipart boundary automatically for file uploads
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type']
+  }
   return config
 })
 

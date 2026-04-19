@@ -12,18 +12,19 @@ import { matches } from '@/lib/search'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { useDocumentosList } from '@/hooks/useDocumentos'
 
-// Meta por categoría (icon + color)
+// Meta por categoría (icon + color) — debe coincidir con CATEGORIES en GestionDocumentos.jsx
 const CATEGORY_META = {
-  default: { icon: 'BookOpen', color: 'border-l-primary-800' },
-  'Protocolos Ambientales': { icon: 'Waves', color: 'border-l-primary-800' },
-  'Formatos y Plantillas':  { icon: 'FileInput', color: 'border-l-gold-400' },
-  'Bibliografía Técnica':   { icon: 'BookOpen', color: 'border-l-green-600' },
-  'Análisis de Tendencias': { icon: 'TrendingUp', color: 'border-l-orange-500' },
+  default:                  { icon: 'BookOpen',   color: 'border-l-primary-800' },
   'Cartografía':            { icon: 'TrendingUp', color: 'border-l-primary-800' },
-  'Hidrología':             { icon: 'Waves', color: 'border-l-blue-500' },
-  'Biodiversidad':          { icon: 'BookOpen', color: 'border-l-green-600' },
-  'Normativa':              { icon: 'FileInput', color: 'border-l-orange-500' },
-  'Estudios Ambientales':   { icon: 'TrendingUp', color: 'border-l-orange-500' },
+  'Estudios Ambientales':   { icon: 'TrendingUp', color: 'border-l-orange-500'  },
+  'Normativa':              { icon: 'FileInput',  color: 'border-l-orange-500'  },
+  'Informes Técnicos':      { icon: 'FileInput',  color: 'border-l-gold-400'    },
+  'Biodiversidad':          { icon: 'BookOpen',   color: 'border-l-green-600'   },
+  'Hidrología':             { icon: 'Waves',      color: 'border-l-blue-500'    },
+  'Protocolos Ambientales': { icon: 'Waves',      color: 'border-l-primary-800' },
+  'Bibliografía Técnica':   { icon: 'BookOpen',   color: 'border-l-green-600'   },
+  'Análisis de Tendencias': { icon: 'TrendingUp', color: 'border-l-orange-500'  },
+  'Formatos y Plantillas':  { icon: 'FileInput',  color: 'border-l-gold-400'    },
 }
 
 // ── Animation helper ──

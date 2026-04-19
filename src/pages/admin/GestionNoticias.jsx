@@ -12,8 +12,7 @@ const fadeUp = fadeUpSm
 
 const MAX_THUMBNAIL_BYTES = 2 * 1024 * 1024
 
-const CATEGORIES = ['Ambiente', 'Social', 'Tecnología', 'Capacitación', 'Investigación']
-const TAGS = ['ACTUALIZACIÓN DE DATOS', 'EVENTO REGIONAL', 'TECNOLOGÍA', 'CAPACITACIÓN', 'INVESTIGACIÓN']
+const CATEGORIES = ['Ambiente', 'Social', 'Tecnología', 'Capacitación', 'Investigación', 'Biodiversidad', 'Territorial']
 
 const VISIBILIDAD = [
   {
@@ -49,8 +48,8 @@ const VISIBILIDAD = [
 ]
 
 const EMPTY_FORM = {
-  titulo: '', resumen: '', contenido: '', tag: TAGS[0],
-  categoria: CATEGORIES[0], autor: '', publicado: true, visibilidad: 'publico',
+  titulo: '', resumen: '', contenido: '',
+  categoria: CATEGORIES[0], publicado: true, visibilidad: 'publico',
 }
 
 // ── Toast de éxito ────────────────────────────────────────────────────────────
@@ -235,9 +234,7 @@ export default function GestionNoticias() {
       titulo:      n.titulo,
       resumen:     n.resumen,
       contenido:   n.contenido ?? '',
-      tag:         n.tag ?? TAGS[0],
       categoria:   n.categoria ?? CATEGORIES[0],
-      autor:       n.autor ?? '',
       publicado:   n.publicado,
       visibilidad: n.visibilidad ?? 'publico',
     })
@@ -269,7 +266,6 @@ export default function GestionNoticias() {
     payload.append('categoria',   form.categoria)
     payload.append('publicado',   String(form.publicado))
     payload.append('visibilidad', form.visibilidad)
-    if (form.autor.trim()) payload.append('autor', form.autor)
     if (thumbnail) payload.append('imagen', thumbnail)
 
     const onUploadProgress = thumbnail
@@ -472,20 +468,12 @@ export default function GestionNoticias() {
                   </div>
                 )}
 
-                {/* Tag + Categoría */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Etiqueta</label>
-                    <select value={form.tag} onChange={(e) => setForm((f) => ({ ...f, tag: e.target.value }))} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
-                      {TAGS.map((t) => <option key={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Categoría</label>
-                    <select value={form.categoria} onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
-                      {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-                    </select>
-                  </div>
+                {/* Categoría */}
+                <div>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Categoría</label>
+                  <select value={form.categoria} onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
+                    {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+                  </select>
                 </div>
 
                 {/* Título */}
@@ -514,20 +502,6 @@ export default function GestionNoticias() {
                     className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.resumen ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
                   />
                   {formErrors.resumen && <p className="text-xs text-red-500 mt-1">{formErrors.resumen}</p>}
-                </div>
-
-                {/* Autor */}
-                <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                    Autor <span className="text-text-muted font-normal normal-case">(opcional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={form.autor}
-                    placeholder="IIAP"
-                    onChange={(e) => setForm((f) => ({ ...f, autor: e.target.value }))}
-                    className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
-                  />
                 </div>
 
                 {/* Imagen de portada */}

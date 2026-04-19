@@ -11,7 +11,11 @@ import { useDocumentosList, useCreateDocumento, useUpdateDocumento, useDeleteDoc
 
 const fadeUp = fadeUpSm
 
-const CATEGORIES = ['Cartografía', 'Estudios Ambientales', 'Normativa', 'Informes Técnicos', 'Biodiversidad', 'Hidrología']
+const CATEGORIES = [
+  'Cartografía', 'Estudios Ambientales', 'Normativa', 'Informes Técnicos',
+  'Biodiversidad', 'Hidrología', 'Protocolos Ambientales',
+  'Bibliografía Técnica', 'Análisis de Tendencias', 'Formatos y Plantillas',
+]
 const TIPOS = ['PDF', 'IMG', 'Geovisor']
 
 const ACCEPT = {
