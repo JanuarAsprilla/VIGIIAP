@@ -100,6 +100,25 @@ function MapPreviewModal({ map, format, onClose }) {
   )
 }
 
+async function forceDownload(url) {
+  if (!url) return
+  const filename = url.split('?')[0].split('/').pop() || 'archivo'
+  try {
+    const res  = await fetch(url)
+    const blob = await res.blob()
+    const tmp  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = tmp
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(tmp)
+  } catch {
+    window.open(url, '_blank', 'noopener')
+  }
+}
+
 const CATEGORY_COLORS = {
   'Hidrología':       { pill: 'bg-blue-100 text-blue-700',    accent: '#3b82f6' },
   'Biodiversidad':    { pill: 'bg-green-100 text-green-700',  accent: '#22c55e' },
@@ -162,18 +181,25 @@ function MapCard({ map, index, onPreview }) {
         {/* Actions */}
         <div className="flex items-center gap-2 pt-3 border-t border-border/60 mt-auto">
           {hasPdf && (
-            <button onClick={() => onPreview(map, 'PDF')}
+            <button onClick={() => forceDownload(map.archivo_pdf_url)}
               className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-colors">
-              <FileText className="w-3.5 h-3.5" />
-              PDF
+              <Download className="w-3.5 h-3.5" />
+              Descargar PDF
             </button>
           )}
+          {hasPdf && (
+            <a href={map.archivo_pdf_url} target="_blank" rel="noopener noreferrer"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors no-underline">
+              <Eye className="w-3.5 h-3.5" />
+              Visualizar
+            </a>
+          )}
           {hasImg && (
-            <a href={map.archivo_img_url} download
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors no-underline">
+            <button onClick={() => forceDownload(map.archivo_img_url)}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors">
               <Download className="w-3.5 h-3.5" />
               Descargar
-            </a>
+            </button>
           )}
           {hasImg && (
             <a href={map.archivo_img_url} target="_blank" rel="noopener noreferrer"
