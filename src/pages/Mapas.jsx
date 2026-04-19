@@ -163,9 +163,6 @@ function MapCard({ map, index, onPreview }) {
               onPreview={() => onPreview(map, fmt)}
               geovisorLink={map.geovisorLink} />
           ))}
-          {!map.formats.includes('GEOVISOR') && (
-            <FormatIcon format="GEOVISOR" geovisorLink={map.geovisorLink} />
-          )}
         </div>
       </div>
     </motion.div>

@@ -12,13 +12,11 @@ function fmtFromUrl(url) {
 
 function deriveFormats(m) {
   const fmts = []
-  if (m.archivo_pdf_url || m.archivo_img_url) {
-    // Detectar por URL real para no mostrar PDF cuando el archivo es imagen
-    const pdfFmt = m.archivo_pdf_url ? fmtFromUrl(m.archivo_pdf_url) : null
-    const imgFmt = m.archivo_img_url ? 'IMG' : null
-    if (imgFmt) fmts.push('IMG')
-    if (pdfFmt && pdfFmt !== 'IMG') fmts.push('PDF')
-    else if (pdfFmt === 'IMG' && !imgFmt) fmts.push('IMG')
+  if (m.archivo_img_url) fmts.push('IMG')
+  if (m.archivo_pdf_url) {
+    const ext = fmtFromUrl(m.archivo_pdf_url)
+    if (ext === 'IMG' && !m.archivo_img_url) fmts.push('IMG')
+    else if (ext !== 'IMG') fmts.push('PDF')
   }
   if (m.geovisor_url) fmts.push('GEOVISOR')
   return fmts.length ? fmts : ['PDF']

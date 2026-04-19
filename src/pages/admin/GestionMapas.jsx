@@ -93,21 +93,23 @@ function VisibilidadSelector({ value, onChange }) {
   )
 }
 
-function FileDropzone({ formato, onFile, currentFile, editing, onError }) {
+function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, onError }) {
   const inputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
   const accept = ACCEPT[formato]
 
   const validateAndAccept = useCallback((file) => {
     if (!file) return
-    const maxBytes = MAX_SIZE_BYTES[formato]
+    const detectedFmt = file.type.startsWith('image/') ? 'IMG' : 'PDF'
+    if (onFormatDetect && detectedFmt !== formato) onFormatDetect(detectedFmt)
+    const maxBytes = MAX_SIZE_BYTES[detectedFmt]
     if (maxBytes && file.size > maxBytes) {
-      onError?.(`El archivo supera el límite de ${formato === 'PDF' ? '20 MB' : '25 MB'}`)
+      onError?.(`El archivo supera el límite de ${detectedFmt === 'PDF' ? '20 MB' : '25 MB'}`)
       return
     }
     onError?.(null)
     onFile(file)
-  }, [formato, onFile, onError])
+  }, [formato, onFile, onFormatDetect, onError])
 
   const handleDrop = useCallback((e) => {
     e.preventDefault()
@@ -495,6 +497,7 @@ export default function GestionMapas() {
                 {/* Dropzone */}
                 <FileDropzone
                   formato={form.formato} onFile={setUploadedFile}
+                  onFormatDetect={(fmt) => setForm((fm) => ({ ...fm, formato: fmt }))}
                   currentFile={uploadedFile} editing={!!editing} onError={setUploadError}
                 />
                 {uploadError && (
