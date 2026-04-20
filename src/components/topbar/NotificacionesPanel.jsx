@@ -1,24 +1,42 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { BellOff, ExternalLink } from 'lucide-react'
+import { BellOff, ExternalLink, User, FileText, Newspaper, ClipboardList } from 'lucide-react'
 import { panelAnim } from './panelAnim'
 
+const TYPE_META = {
+  usuario:   { Icon: User,          color: 'text-blue-600',   bg: 'bg-blue-50'   },
+  solicitud: { Icon: ClipboardList, color: 'text-orange-600', bg: 'bg-orange-50' },
+  noticia:   { Icon: Newspaper,     color: 'text-primary-700',bg: 'bg-primary-50'},
+  default:   { Icon: FileText,      color: 'text-text-muted', bg: 'bg-bg-alt'    },
+}
+
+function timeAgo(iso) {
+  if (!iso) return ''
+  const diff = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1)  return 'ahora'
+  if (m < 60) return `hace ${m} min`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `hace ${h} h`
+  const d = Math.floor(h / 24)
+  return `hace ${d} d`
+}
+
 function NotificationItem({ item, isRead, onSelect }) {
+  const { Icon, color, bg } = TYPE_META[item.type] ?? TYPE_META.default
+
   return (
     <Link
-      to={`/noticias/${item.slug}`}
+      to={item.link}
       onClick={onSelect}
       className="flex items-start gap-3 px-4 py-3 hover:bg-bg-alt transition-colors no-underline group"
     >
-      <span
-        aria-hidden="true"
-        className={`w-2 h-2 rounded-full mt-2 shrink-0 transition-colors ${
-          isRead ? 'bg-transparent border border-border' : 'bg-orange-500'
-        }`}
-      />
+      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${bg}`}>
+        <Icon className={`w-3.5 h-3.5 ${color}`} />
+      </div>
       <div className="flex-1 min-w-0">
-        <p className={`text-[0.65rem] font-bold uppercase tracking-wider mb-0.5 ${
-          isRead ? 'text-text-muted' : 'text-primary-700'
+        <p className={`text-[0.6rem] font-bold uppercase tracking-wider mb-0.5 ${
+          isRead ? 'text-text-muted' : color
         }`}>
           {item.tag}
         </p>
@@ -27,8 +45,14 @@ function NotificationItem({ item, isRead, onSelect }) {
         }`}>
           {item.title}
         </p>
-        <p className="text-xs text-text-muted mt-1">{item.time}</p>
+        {item.meta && (
+          <p className="text-xs text-text-muted mt-0.5 truncate">{item.meta}</p>
+        )}
+        <p className="text-xs text-text-muted mt-1">{timeAgo(item.time)}</p>
       </div>
+      {!isRead && (
+        <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0 mt-2" aria-hidden="true" />
+      )}
     </Link>
   )
 }
@@ -70,7 +94,7 @@ export default function NotificacionesPanel({ onClose, items, readIds, onMarkAll
           <p className="text-xs text-text-muted">No tienes notificaciones pendientes.</p>
         </div>
       ) : (
-        <ul className="divide-y divide-border max-h-72 overflow-y-auto" role="list">
+        <ul className="divide-y divide-border max-h-80 overflow-y-auto" role="list">
           {items.map((item) => (
             <li key={item.id} role="listitem">
               <NotificationItem
@@ -85,11 +109,11 @@ export default function NotificacionesPanel({ onClose, items, readIds, onMarkAll
 
       <div className="px-4 py-3 border-t border-border">
         <Link
-          to="/noticias"
+          to="/admin/usuarios"
           onClick={onClose}
           className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-primary-800 hover:text-primary-600 transition-colors no-underline"
         >
-          Ver todas las noticias
+          Ver panel de administración
           <ExternalLink className="w-3.5 h-3.5" />
         </Link>
       </div>

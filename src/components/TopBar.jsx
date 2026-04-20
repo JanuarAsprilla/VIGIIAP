@@ -17,6 +17,7 @@ import { useAuth }   from '@/contexts/AuthContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { useUI }     from '@/contexts/UIContext'
 import { useNoticiasList } from '@/hooks/useNoticias'
+import { useAdminNotificaciones } from '@/hooks/useNotificaciones'
 
 import SoportePanel        from './topbar/SoportePanel'
 import NotificacionesPanel from './topbar/NotificacionesPanel'
@@ -85,9 +86,14 @@ export default function TopBar({ onMenuToggle }) {
 
   const { readIds, markRead, markAllRead } = useReadNotifications()
 
-  // Últimas 3 noticias publicadas como notificaciones
-  const { data: noticiaData } = useNoticiasList({ limit: 3 })
-  const notifItems  = noticiaData?.data ?? []
+  const isAdmin = user?.rol === 'admin_sig'
+
+  // Admins: notificaciones enriquecidas (usuarios + solicitudes + noticias)
+  // Resto: solo últimas noticias
+  const { data: adminNotifs } = useAdminNotificaciones(isAdmin && isAuthenticated)
+  const { data: noticiaData } = useNoticiasList({ limit: 3, enabled: !isAdmin })
+
+  const notifItems  = isAdmin ? (adminNotifs ?? []) : (noticiaData?.data ?? [])
   const unreadCount = notifItems.filter((n) => !readIds.includes(n.id)).length
   const hasUnread   = notifications && unreadCount > 0
 
