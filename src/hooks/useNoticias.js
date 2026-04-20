@@ -16,6 +16,9 @@ function normalizeNoticia(n) {
     author:    n.autor ?? 'IIAP',
     date:      formatDate(n.publicado_en ?? n.creado_en),
     time:      timeAgo(n.publicado_en ?? n.creado_en),
+    // Campo para panel de notificaciones
+    link:      `/noticias/${n.slug}`,
+    type:      'noticia',
     // Campos para panel admin
     published:   n.publicado,
     visibilidad: n.visibilidad ?? 'publico',

@@ -91,9 +91,11 @@ export default function TopBar({ onMenuToggle }) {
   // Admins: notificaciones enriquecidas (usuarios + solicitudes + noticias)
   // Resto: solo últimas noticias
   const { data: adminNotifs } = useAdminNotificaciones(isAdmin && isAuthenticated)
-  const { data: noticiaData } = useNoticiasList({ limit: 3, enabled: !isAdmin })
+  const { data: noticiaData } = useNoticiasList({ limit: 3 })
 
-  const notifItems  = isAdmin ? (adminNotifs ?? []) : (noticiaData?.data ?? [])
+  const notifItems = isAdmin
+    ? (adminNotifs ?? [])
+    : (noticiaData?.data ?? [])
   const unreadCount = notifItems.filter((n) => !readIds.includes(n.id)).length
   const hasUnread   = notifications && unreadCount > 0
 
