@@ -6,12 +6,16 @@ import { ROLES } from '@/contexts/AuthContext'
 const ROLE_MAP = {
   admin_sig:    ROLES.ADMIN,
   investigador: ROLES.INVESTIGADOR,
+  tecnico:      ROLES.TECNICO,
+  institucional:ROLES.INSTITUCIONAL,
   publico:      ROLES.PUBLICO,
 }
 const ROLE_MAP_REVERSE = {
-  [ROLES.ADMIN]:        'admin_sig',
-  [ROLES.INVESTIGADOR]: 'investigador',
-  [ROLES.PUBLICO]:      'publico',
+  [ROLES.ADMIN]:         'admin_sig',
+  [ROLES.INVESTIGADOR]:  'investigador',
+  [ROLES.TECNICO]:       'tecnico',
+  [ROLES.INSTITUCIONAL]: 'institucional',
+  [ROLES.PUBLICO]:       'publico',
 }
 
 function normalizeUser(u) {

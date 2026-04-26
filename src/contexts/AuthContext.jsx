@@ -4,15 +4,19 @@ import queryClient from '@/lib/queryClient'
 
 // ─── Mapeo de roles backend → etiquetas UI ────────────────────────────────────
 export const ROLES = {
-  ADMIN:        'Administrador SIG',
-  INVESTIGADOR: 'Investigador',
-  PUBLICO:      'Público',
-  VISITANTE:    'Visitante',
+  ADMIN:         'Administrador SIG',
+  INVESTIGADOR:  'Investigador',
+  TECNICO:       'Técnico SIG',
+  INSTITUCIONAL: 'Funcionario Institucional',
+  PUBLICO:       'Público',
+  VISITANTE:     'Visitante',
 }
 
 const ROLE_MAP = {
   admin_sig:    ROLES.ADMIN,
   investigador: ROLES.INVESTIGADOR,
+  tecnico:      ROLES.TECNICO,
+  institucional:ROLES.INSTITUCIONAL,
   publico:      ROLES.PUBLICO,
   visitante:    ROLES.VISITANTE,
 }

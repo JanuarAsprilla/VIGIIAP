@@ -12,11 +12,13 @@ import { useUsuariosList, useCreateUsuario, useUpdateUsuarioRol, useToggleActivo
 const fadeUp = fadeUpSm
 
 // Source of truth para roles: sincronizado con AuthContext
-const ROLES_LIST = [ROLES.ADMIN, ROLES.INVESTIGADOR, ROLES.PUBLICO]
+const ROLES_LIST = [ROLES.ADMIN, ROLES.INVESTIGADOR, ROLES.TECNICO, ROLES.INSTITUCIONAL, ROLES.PUBLICO]
 const ROLE_COLORS = {
-  [ROLES.ADMIN]:        'bg-primary-100 text-primary-800',
-  [ROLES.INVESTIGADOR]: 'bg-blue-100 text-blue-700',
-  [ROLES.PUBLICO]:      'bg-gray-100 text-gray-600',
+  [ROLES.ADMIN]:         'bg-primary-100 text-primary-800',
+  [ROLES.INVESTIGADOR]:  'bg-blue-100 text-blue-700',
+  [ROLES.TECNICO]:       'bg-indigo-100 text-indigo-700',
+  [ROLES.INSTITUCIONAL]: 'bg-teal-100 text-teal-700',
+  [ROLES.PUBLICO]:       'bg-gray-100 text-gray-600',
 }
 
 // ── User detail drawer ──
@@ -98,7 +100,7 @@ function UserDrawer({ user, onClose }) {
                   ))}
                 </>
               )}
-              {user.rol === 'Investigador' && (
+              {(user.rol === 'Investigador' || user.rol === 'Técnico SIG' || user.rol === 'Funcionario Institucional') && (
                 <>
                   {['Mapas y Documentos', 'Geovisor', 'Herramientas SIG', 'Solicitudes'].map((p) => (
                     <div key={p} className="flex items-center gap-2 text-xs text-text">

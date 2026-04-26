@@ -19,7 +19,7 @@ export function RequireInvestigador() {
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
-  if (user?.role === ROLES.PUBLICO || user?.isVisitante) {
+  if (user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE || user?.isVisitante) {
     return <Navigate to="/" replace />
   }
   return <Outlet />
