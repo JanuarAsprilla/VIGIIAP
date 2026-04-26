@@ -8,6 +8,7 @@ import {
 import { ROLES } from '@/contexts/AuthContext'
 import { fadeUpSm, panelAnim, drawerAnim } from '@/lib/animations'
 import { useUsuariosList, useCreateUsuario, useUpdateUsuarioRol, useToggleActivo, useDeleteUsuario } from '@/hooks/useUsuarios'
+import { useToast, ToastContainer } from '@/components/Toast'
 
 const fadeUp = fadeUpSm
 
@@ -253,6 +254,8 @@ export default function Usuarios() {
   const toggleActivo = useToggleActivo()
   const deleteUser  = useDeleteUsuario()
 
+  const { toasts, toast, dismiss } = useToast()
+
   const [search, setSearch] = useState('')
   const [filtroRol, setFiltroRol] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
@@ -289,22 +292,38 @@ export default function Usuarios() {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setFormErrors(e); return }
-    if (editingUser) {
-      await updateRol.mutateAsync({ id: editingUser.id, rol: form.rol })
+    try {
+      if (editingUser) {
+        await updateRol.mutateAsync({ id: editingUser.id, rol: form.rol })
+        toast(`Rol de ${editingUser.nombre} actualizado a ${form.rol}`, 'success')
+      }
+      setShowModal(false)
+    } catch {
+      toast('Error al actualizar el rol', 'error')
     }
-    setShowModal(false)
   }
 
   const toggleEstado = async (id) => {
     const u = users.find((x) => x.id === id)
     if (!u) return
-    await toggleActivo.mutateAsync({ id, activo: !u.activo })
+    try {
+      await toggleActivo.mutateAsync({ id, activo: !u.activo })
+      toast(`${u.nombre} ${!u.activo ? 'activado' : 'desactivado'}`, 'success')
+    } catch {
+      toast('Error al cambiar el estado', 'error')
+    }
   }
 
   const confirmDelete = async () => {
     if (!deleteTarget) return
-    await deleteUser.mutateAsync(deleteTarget.id)
-    setDeleteTarget(null)
+    const nombre = deleteTarget.nombre
+    try {
+      await deleteUser.mutateAsync(deleteTarget.id)
+      setDeleteTarget(null)
+      toast(`${nombre} eliminado correctamente`, 'success')
+    } catch {
+      toast('Error al eliminar el usuario', 'error')
+    }
   }
 
   return (
@@ -489,6 +508,8 @@ export default function Usuarios() {
         )}
       </AnimatePresence>
 
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
+
       {/* Delete confirm */}
       <AnimatePresence>
         {deleteTarget && (
@@ -502,8 +523,16 @@ export default function Usuarios() {
                 ¿Seguro que deseas eliminar a <strong className="text-text">{deleteTarget.nombre}</strong>? Esta acción no se puede deshacer.
               </p>
               <div className="flex gap-3">
-                <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors">Cancelar</button>
-                <button onClick={confirmDelete} className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">Eliminar</button>
+                <button onClick={() => setDeleteTarget(null)} disabled={deleteUser.isPending} className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 disabled:opacity-50 transition-colors">Cancelar</button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={deleteUser.isPending}
+                  className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors"
+                >
+                  {deleteUser.isPending
+                    ? <><Loader2 className="w-4 h-4 animate-spin" />Eliminando...</>
+                    : 'Eliminar'}
+                </button>
               </div>
             </motion.div>
           </div>
