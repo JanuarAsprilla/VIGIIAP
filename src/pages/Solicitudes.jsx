@@ -398,7 +398,8 @@ function SolicitudesTable({ rows, onVerDetalle, filtro, onFiltroChange, totalAll
 // ── New Request Form ──
 function NuevaSolicitudForm({ formRef }) {
   const { user, isAuthenticated } = useAuth()
-  const [step, setStep] = useState('form') // 'form' | 'success'
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [submittedCorreo, setSubmittedCorreo] = useState('')
   const [form, setForm] = useState({
     nombre: isAuthenticated ? user?.name : '',
     correo: isAuthenticated ? user?.email : '',
@@ -438,48 +439,20 @@ function NuevaSolicitudForm({ formRef }) {
         tipo:        form.tipo,
         descripcion: form.descripcion.trim(),
       })
-      setStep('success')
+      setSubmittedCorreo(form.correo)
+      setForm({
+        nombre: isAuthenticated ? user?.name : '',
+        correo: isAuthenticated ? user?.email : '',
+        tipo: '',
+        descripcion: '',
+      })
+      setArchivo(null)
+      setErrors({})
+      setServerError('')
+      setShowSuccess(true)
     } catch (err) {
       setServerError(err.message ?? 'No se pudo enviar la solicitud. Intente de nuevo.')
     }
-  }
-
-  const handleReset = () => {
-    setStep('form')
-    setForm({
-      nombre: isAuthenticated ? user?.name : '',
-      correo: isAuthenticated ? user?.email : '',
-      tipo: '',
-      descripcion: '',
-    })
-    setArchivo(null)
-    setErrors({})
-    setServerError('')
-  }
-
-  if (step === 'success') {
-    return (
-      <motion.div
-        ref={formRef}
-        {...fadeUp(0.25)}
-        className="bg-white border border-border rounded-xl p-6 text-center"
-      >
-        <div className="w-14 h-14 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="w-7 h-7 text-primary-800" />
-        </div>
-        <h3 className="text-base font-bold text-text mb-1">Solicitud Enviada</h3>
-        <p className="text-sm text-text-muted leading-relaxed mb-6">
-          Su solicitud fue recibida. Le notificaremos a{' '}
-          <strong className="text-text">{form.correo}</strong> sobre el estado del trámite.
-        </p>
-        <button
-          onClick={handleReset}
-          className="w-full py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors"
-        >
-          Hacer otra solicitud
-        </button>
-      </motion.div>
-    )
   }
 
   return (
@@ -488,6 +461,50 @@ function NuevaSolicitudForm({ formRef }) {
       {...fadeUp(0.25)}
       className="bg-white border border-border rounded-xl p-6"
     >
+      <AnimatePresence>
+        {showSuccess && (
+          <>
+            <motion.div
+              key="overlay"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+              onClick={() => setShowSuccess(false)}
+            />
+            <motion.div
+              key="modal"
+              initial={{ opacity: 0, scale: 0.92, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+            >
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center pointer-events-auto">
+                <motion.div
+                  initial={{ scale: 0 }} animate={{ scale: 1 }}
+                  transition={{ delay: 0.1, type: 'spring', stiffness: 260, damping: 20 }}
+                  className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5 border-4 border-green-200"
+                >
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                </motion.div>
+                <h3 className="font-display text-xl font-bold text-text mb-2">¡Solicitud enviada!</h3>
+                <p className="text-sm text-text-muted leading-relaxed mb-1">
+                  Su solicitud fue recibida correctamente.
+                </p>
+                <p className="text-sm text-text-muted leading-relaxed mb-6">
+                  Le notificaremos a <strong className="text-text">{submittedCorreo}</strong> cuando haya novedades.
+                </p>
+                <button
+                  onClick={() => setShowSuccess(false)}
+                  className="w-full py-3 bg-primary-800 text-white rounded-xl text-sm font-bold hover:bg-primary-700 transition-colors"
+                >
+                  Entendido
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
       <h3 className="text-lg font-bold text-text mb-1">Nueva Solicitud</h3>
       <p className="text-sm text-text-muted mb-5">
         Complete el formulario para iniciar un nuevo proceso administrativo o consulta técnica.
