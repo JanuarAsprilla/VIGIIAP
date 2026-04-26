@@ -433,10 +433,9 @@ function NuevaSolicitudForm({ formRef }) {
     const e2 = validate()
     if (Object.keys(e2).length) { setErrors(e2); return }
 
-    const tipoLabel = TRAMITE_TYPES.find((t) => t.value === form.tipo)?.label || form.tipo
     try {
       await createSolicitud.mutateAsync({
-        tipo:        tipoLabel,
+        tipo:        form.tipo,
         descripcion: form.descripcion.trim(),
       })
       setStep('success')

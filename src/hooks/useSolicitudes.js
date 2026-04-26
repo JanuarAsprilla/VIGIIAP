@@ -2,6 +2,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
 
+// ─── Mapeo de tipos backend → etiqueta legible ────────────────────────────────
+const TIPO_LABEL = {
+  'uso-suelo':         'Certificado de Uso de Suelo',
+  'linderos':          'Consulta de Linderos',
+  'estudio-ambiental': 'Estudio Técnico Ambiental',
+  'validacion':        'Validación Cartográfica',
+  'aprovechamiento':   'Permiso de Aprovechamiento Forestal',
+  'otro':              'Otro',
+}
+
 // ─── Mapeo de estados backend → UI ────────────────────────────────────────────
 const ESTADO_LABEL = {
   pendiente:   'Pendiente',
@@ -35,7 +45,7 @@ function normalizeSolicitud(s) {
     // UI id: primeros 8 chars del UUID en mayúsculas (legible)
     id:         `#${s.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`,
     _id:        s.id,   // UUID real para llamadas a la API
-    tipo:       s.tipo,
+    tipo:       TIPO_LABEL[s.tipo] ?? s.tipo,
     subtipo:    s.descripcion?.slice(0, 60) ?? '',
     descripcion: s.descripcion ?? '',
     fecha:      formatDate(s.creado_en),
