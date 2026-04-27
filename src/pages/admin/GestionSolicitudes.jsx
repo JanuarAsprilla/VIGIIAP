@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, X, CheckCircle, XCircle, Clock, Eye,
-  Download, Filter, ChevronLeft, ChevronRight,
-  User, FileText, MessageSquare,
+  Download, ChevronLeft, ChevronRight, Loader2,
+  FileText, MessageSquare,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, drawerAnim } from '@/lib/animations'
 import { useSolicitudesAdmin, useUpdateEstadoSolicitud } from '@/hooks/useSolicitudes'
+import { useToast, ToastContainer } from '@/components/Toast'
 
 const fadeUp = fadeUpSm
 
@@ -23,6 +24,7 @@ export default function GestionSolicitudes() {
   const { data } = useSolicitudesAdmin({ limit: 200 })
   const solicitudes = data?.data ?? []
   const updateEstado = useUpdateEstadoSolicitud()
+  const { toasts, toast, dismiss } = useToast()
 
   const [search, setSearch] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
@@ -45,13 +47,35 @@ export default function GestionSolicitudes() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
+  const handleMarcarRevision = async (sol) => {
+    try {
+      await updateEstado.mutateAsync({ id: sol._id, estado: 'En Revisión' })
+      if (selected?._id === sol._id)
+        setSelected((prev) => ({ ...prev, estado: 'En Revisión', timeline: ['Recibida', 'Pendiente', 'En Revisión'] }))
+      toast(`Solicitud ${sol.id} marcada en revisión`, 'info')
+    } catch {
+      toast('Error al actualizar la solicitud', 'error')
+    }
+  }
+
   const handleAction = async () => {
     const { type, sol } = accionModal
     const nuevoEstado = type === 'approve' ? 'Aprobado' : 'Rechazado'
-    await updateEstado.mutateAsync({ id: sol._id, estado: nuevoEstado, nota })
-    if (selected?._id === sol._id) setSelected((prev) => ({ ...prev, estado: nuevoEstado }))
-    setAccionModal(null)
-    setNota('')
+    try {
+      await updateEstado.mutateAsync({ id: sol._id, estado: nuevoEstado, nota })
+      if (selected?._id === sol._id)
+        setSelected((prev) => ({ ...prev, estado: nuevoEstado, notas: nota || prev.notas }))
+      setAccionModal(null)
+      setNota('')
+      toast(
+        type === 'approve'
+          ? `Solicitud ${sol.id} aprobada — se notificó al solicitante`
+          : `Solicitud ${sol.id} rechazada — se notificó al solicitante`,
+        type === 'approve' ? 'success' : 'error'
+      )
+    } catch {
+      toast('Error al procesar la solicitud', 'error')
+    }
   }
 
   const exportCSV = () => {
@@ -157,23 +181,26 @@ export default function GestionSolicitudes() {
                         <>
                           {s.estado === 'Pendiente' && (
                             <button
-                              onClick={() => updateEstado.mutate({ id: s._id, estado: 'En Revisión' })}
-                              className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors"
+                              onClick={() => handleMarcarRevision(s)}
+                              disabled={updateEstado.isPending}
+                              className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 disabled:opacity-50 transition-colors"
                               title="Marcar en revisión"
                             >
-                              <Clock className="w-3.5 h-3.5" />
+                              {updateEstado.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
                             </button>
                           )}
                           <button
                             onClick={() => { setAccionModal({ type: 'approve', sol: s }); setNota('') }}
-                            className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+                            disabled={updateEstado.isPending}
+                            className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors"
                             title="Aprobar"
                           >
                             <CheckCircle className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => { setAccionModal({ type: 'reject', sol: s }); setNota('') }}
-                            className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                            disabled={updateEstado.isPending}
+                            className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
                             title="Rechazar"
                           >
                             <XCircle className="w-3.5 h-3.5" />
@@ -303,10 +330,12 @@ export default function GestionSolicitudes() {
                     <p className="text-xs font-bold text-primary-800">Acción rápida</p>
                     {selected.estado === 'Pendiente' && (
                       <button
-                        onClick={() => updateEstado.mutate({ id: selected._id, estado: 'En Revisión' })}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors"
+                        onClick={() => handleMarcarRevision(selected)}
+                        disabled={updateEstado.isPending}
+                        className="w-full flex items-center justify-center gap-1.5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 disabled:opacity-60 transition-colors"
                       >
-                        <Clock className="w-3.5 h-3.5" /> Marcar en revisión
+                        {updateEstado.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+                        Marcar en revisión
                       </button>
                     )}
                     <textarea
@@ -366,8 +395,10 @@ export default function GestionSolicitudes() {
                 <button onClick={() => setAccionModal(null)} className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors">Cancelar</button>
                 <button
                   onClick={handleAction}
-                  className={`flex-1 py-2.5 text-white rounded-lg text-sm font-semibold transition-colors ${accionModal.type === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+                  disabled={updateEstado.isPending}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-white rounded-lg text-sm font-semibold disabled:opacity-60 transition-colors ${accionModal.type === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
                 >
+                  {updateEstado.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   {accionModal.type === 'approve' ? 'Confirmar Aprobación' : 'Confirmar Rechazo'}
                 </button>
               </div>
@@ -375,6 +406,8 @@ export default function GestionSolicitudes() {
           </div>
         )}
       </AnimatePresence>
+
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>
   )
 }
