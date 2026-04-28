@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  FileText, FileSpreadsheet, Search, SlidersHorizontal, ArrowUpDown,
-  ChevronUp, ChevronDown, Eye, Download,
+  FileText, FileSpreadsheet, Search, SlidersHorizontal, ArrowUpDown, ArrowRight,
+  Eye, Download,
   Waves, BookOpen, TrendingUp,
   Map as MapIcon, Leaf, Scale, ClipboardList, ClipboardCheck,
   Headphones, X, Check, Send, CheckCircle, Loader2,
@@ -13,44 +13,54 @@ import { matches } from '@/lib/search'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { useDocumentosList } from '@/hooks/useDocumentos'
 
-// Meta por categoría (icon + color) — debe coincidir con CATEGORIES en GestionDocumentos.jsx
+// Meta por categoría — debe coincidir con CATEGORIES en GestionDocumentos.jsx
 const CATEGORY_META = {
-  default:                  { icon: 'BookOpen',        color: 'border-l-primary-800' },
-  'Cartografía':            { icon: 'MapIcon',         color: 'border-l-primary-800' },
-  'Estudios Ambientales':   { icon: 'Leaf',            color: 'border-l-orange-500'  },
-  'Normativa':              { icon: 'Scale',           color: 'border-l-orange-500'  },
-  'Informes Técnicos':      { icon: 'ClipboardList',   color: 'border-l-gold-400'    },
-  'Biodiversidad':          { icon: 'Leaf',            color: 'border-l-green-600'   },
-  'Hidrología':             { icon: 'Waves',           color: 'border-l-blue-500'    },
-  'Protocolos Ambientales': { icon: 'ClipboardCheck',  color: 'border-l-primary-800' },
-  'Bibliografía Técnica':   { icon: 'BookOpen',        color: 'border-l-green-600'   },
-  'Análisis de Tendencias': { icon: 'TrendingUp',      color: 'border-l-orange-500'  },
-  'Formatos y Plantillas':  { icon: 'FileSpreadsheet', color: 'border-l-gold-400'    },
+  default:                  { icon: 'BookOpen' },
+  'Cartografía':            { icon: 'MapIcon' },
+  'Estudios Ambientales':   { icon: 'Leaf' },
+  'Normativa':              { icon: 'Scale' },
+  'Informes Técnicos':      { icon: 'ClipboardList' },
+  'Biodiversidad':          { icon: 'Leaf' },
+  'Hidrología':             { icon: 'Waves' },
+  'Protocolos Ambientales': { icon: 'ClipboardCheck' },
+  'Bibliografía Técnica':   { icon: 'BookOpen' },
+  'Análisis de Tendencias': { icon: 'TrendingUp' },
+  'Formatos y Plantillas':  { icon: 'FileSpreadsheet' },
 }
 
-// ── Animation helper ──
+const CATEGORY_COLORS = {
+  'Cartografía':            { from: '#1B4332', to: '#2D6A4F' },
+  'Estudios Ambientales':   { from: '#7C2D12', to: '#C2410C' },
+  'Normativa':              { from: '#1E3A5F', to: '#1D4ED8' },
+  'Informes Técnicos':      { from: '#78350F', to: '#B45309' },
+  'Biodiversidad':          { from: '#14532D', to: '#15803D' },
+  'Hidrología':             { from: '#1E3A8A', to: '#0284C7' },
+  'Protocolos Ambientales': { from: '#1B4332', to: '#40916C' },
+  'Bibliografía Técnica':   { from: '#0F766E', to: '#0D9488' },
+  'Análisis de Tendencias': { from: '#4C1D95', to: '#7C3AED' },
+  'Formatos y Plantillas':  { from: '#92400E', to: '#D4A373' },
+  default:                  { from: '#1B4332', to: '#52B788' },
+}
+
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] },
 })
 
-// ── Icon mapping for categories ──
 const categoryIcons = { MapIcon, Leaf, Scale, ClipboardList, ClipboardCheck, FileSpreadsheet, Waves, BookOpen, TrendingUp }
 
-// ── File type styles ──
 const typeStyles = {
   pdf:  { bg: 'bg-red-50',   text: 'text-red-500',   label: 'PDF' },
   docx: { bg: 'bg-blue-50',  text: 'text-blue-500',  label: 'Word' },
   xlsx: { bg: 'bg-green-50', text: 'text-green-600', label: 'Excel' },
 }
 
-// ── Sort options ──
 const SORT_OPTIONS = [
-  { value: 'name-asc',   label: 'Nombre A–Z' },
-  { value: 'name-desc',  label: 'Nombre Z–A' },
-  { value: 'date-desc',  label: 'Más reciente' },
-  { value: 'date-asc',   label: 'Más antiguo' },
+  { value: 'name-asc',  label: 'Nombre A–Z' },
+  { value: 'name-desc', label: 'Nombre Z–A' },
+  { value: 'date-desc', label: 'Más reciente' },
+  { value: 'date-asc',  label: 'Más antiguo' },
 ]
 
 // ── File type icon ──
@@ -98,7 +108,7 @@ function PreviewModal({ doc, categoryTitle, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <motion.div
@@ -108,7 +118,6 @@ function PreviewModal({ doc, categoryTitle, onClose }) {
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
         className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
             <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded ${s.bg} ${s.text}`}>
@@ -122,7 +131,6 @@ function PreviewModal({ doc, categoryTitle, onClose }) {
           </button>
         </div>
 
-        {/* Contenido según tipo */}
         {doc.url ? (
           <div className="w-full">
             {isImage ? (
@@ -180,7 +188,6 @@ function PreviewModal({ doc, categoryTitle, onClose }) {
           </div>
         )}
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-border flex items-center justify-between gap-3">
           <div className="flex items-center gap-4 text-xs text-text-muted">
             {doc.updated && <span>Actualizado: {doc.updated}</span>}
@@ -211,10 +218,10 @@ function DocRow({ doc, onPreview, onDownload }) {
           </button>
         </div>
       </td>
-      <td className="py-3 pr-4">
+      <td className="py-3 pr-4 hidden sm:table-cell">
         <span className="text-sm text-text-muted">{doc.size}</span>
       </td>
-      <td className="py-3 pr-4">
+      <td className="py-3 pr-4 hidden md:table-cell">
         <span className="text-sm text-text-muted">{doc.updated}</span>
       </td>
       <td className="py-3">
@@ -239,63 +246,271 @@ function DocRow({ doc, onPreview, onDownload }) {
   )
 }
 
-// ── Accordion Category ──
-function CategoryAccordion({ category, isOpen, onToggle, index, onPreview, onDownload }) {
-  const Icon = categoryIcons[category.icon] || FileText
+// ── useClickOutside ──
+function useClickOutside(ref, handler) {
+  useEffect(() => {
+    const listener = (e) => { if (ref.current && !ref.current.contains(e.target)) handler() }
+    document.addEventListener('mousedown', listener)
+    return () => document.removeEventListener('mousedown', listener)
+  }, [ref, handler])
+}
+
+// ── Category Card ──
+function CategoryCard({ category, filteredCount, onOpen, index }) {
+  const Icon = categoryIcons[category.icon] || BookOpen
+  const colors = CATEGORY_COLORS[category.title] || CATEGORY_COLORS.default
+  const hasFilter = filteredCount !== null
 
   return (
-    <motion.div
-      {...fadeUp(0.1 + index * 0.08)}
-      className={`bg-white border border-border rounded-xl overflow-hidden border-l-4 ${category.color}`}
+    <motion.button
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.05 + index * 0.07, ease: [0.22, 1, 0.36, 1] }}
+      onClick={onOpen}
+      className="group relative w-full text-left rounded-2xl overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-800 focus-visible:ring-offset-2"
+      style={{ aspectRatio: '4 / 3' }}
     >
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center gap-4 px-6 py-5 hover:bg-bg-alt/50 transition-colors text-left"
-      >
-        <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center shrink-0">
-          <Icon className="w-5 h-5 text-primary-800" />
-        </div>
-        <div className="flex-1">
-          <h3 className="text-base font-bold text-text">{category.title}</h3>
-          <span className="text-sm text-text-muted">{category.docs.length} documento{category.docs.length !== 1 ? 's' : ''}</span>
-        </div>
-        {isOpen ? (
-          <ChevronUp className="w-5 h-5 text-text-muted shrink-0" />
+      {/* Background — zooms on hover */}
+      <div className="absolute inset-0 scale-100 group-hover:scale-110 transition-transform duration-700 ease-out">
+        {category.thumbnail ? (
+          <img src={category.thumbnail} alt="" className="w-full h-full object-cover" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-text-muted shrink-0" />
+          <div
+            className="w-full h-full"
+            style={{ background: `linear-gradient(145deg, ${colors.from} 0%, ${colors.to} 100%)` }}
+          />
         )}
-      </button>
+        {/* Highlight blobs */}
+        <div
+          className="absolute inset-0 opacity-25"
+          style={{
+            backgroundImage: `radial-gradient(ellipse at 15% 85%, rgba(255,255,255,0.35) 0%, transparent 55%),
+                              radial-gradient(ellipse at 85% 10%, rgba(255,255,255,0.12) 0%, transparent 50%)`,
+          }}
+        />
+      </div>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="overflow-hidden"
-          >
-            <div className="px-6 pb-5">
+      {/* Dark vignette overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+      {/* Hover tint */}
+      <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors duration-300" />
+
+      {/* Content */}
+      <div className="absolute inset-0 flex flex-col justify-between p-4 sm:p-5">
+        {/* Top: icon + count badge */}
+        <div className="flex items-start justify-between">
+          <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+            <Icon className="w-4 h-4 text-white" />
+          </div>
+          <span className="text-[0.7rem] text-white/90 bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full font-semibold leading-none">
+            {hasFilter
+              ? `${filteredCount} / ${category.docs.length}`
+              : `${category.docs.length} doc${category.docs.length !== 1 ? 's' : ''}`
+            }
+          </span>
+        </div>
+
+        {/* Bottom: title + CTA */}
+        <div>
+          <h3 className="text-white font-bold text-sm sm:text-base leading-snug mb-2 drop-shadow-sm">
+            {category.title}
+          </h3>
+          <div className="flex items-center gap-1.5 text-white/0 group-hover:text-white/90 translate-y-1 group-hover:translate-y-0 transition-all duration-300 text-xs sm:text-sm font-semibold">
+            <span>Ver documentos</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </div>
+        </div>
+      </div>
+    </motion.button>
+  )
+}
+
+// ── Category Documents Modal ──
+function CategoryModal({ category, onClose, onPreview, onDownload }) {
+  const Icon = categoryIcons[category.icon] || BookOpen
+  const colors = CATEGORY_COLORS[category.title] || CATEGORY_COLORS.default
+  const [localQuery, setLocalQuery] = useState('')
+  const [sortBy, setSortBy] = useState('name-asc')
+  const [showSort, setShowSort] = useState(false)
+  const sortRef = useRef(null)
+
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [onClose])
+
+  useClickOutside(sortRef, () => setShowSort(false))
+
+  let docs = category.docs.filter((d) => matches([d.name], localQuery))
+  docs = [...docs].sort((a, b) => {
+    if (sortBy === 'name-asc')  return a.name.localeCompare(b.name)
+    if (sortBy === 'name-desc') return b.name.localeCompare(a.name)
+    if (sortBy === 'date-desc') return new Date(b.dateISO) - new Date(a.dateISO)
+    if (sortBy === 'date-asc')  return new Date(a.dateISO) - new Date(b.dateISO)
+    return 0
+  })
+
+  const activeSortLabel = SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Ordenar'
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/50 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 40, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 40, scale: 0.98 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className="bg-white w-full sm:rounded-2xl sm:max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+      >
+        {/* Gradient header */}
+        <div
+          className="px-6 py-5 shrink-0"
+          style={{ background: `linear-gradient(135deg, ${colors.from} 0%, ${colors.to} 100%)` }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center shrink-0">
+              <Icon className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-white font-bold text-lg leading-tight">{category.title}</h2>
+              <p className="text-white/70 text-sm mt-0.5">
+                {category.docs.length} documento{category.docs.length !== 1 ? 's' : ''} en esta categoría
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-colors shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Toolbar: search + sort */}
+        <div className="px-6 py-3 border-b border-border flex items-center gap-3 shrink-0 bg-white">
+          <div className="flex items-center gap-2 bg-bg-alt border border-border rounded-lg px-3 py-2 flex-1 min-w-0">
+            <Search className="w-3.5 h-3.5 text-text-muted shrink-0" />
+            <input
+              type="text"
+              placeholder="Buscar documento..."
+              value={localQuery}
+              onChange={(e) => setLocalQuery(e.target.value)}
+              className="bg-transparent border-none outline-none text-sm text-text w-full placeholder:text-text-muted"
+              autoFocus
+            />
+            {localQuery && (
+              <button onClick={() => setLocalQuery('')} className="text-text-muted hover:text-text">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="relative shrink-0" ref={sortRef}>
+            <button
+              onClick={() => setShowSort((v) => !v)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 border rounded-lg text-sm font-medium transition-colors ${
+                showSort
+                  ? 'bg-primary-800 border-primary-800 text-white'
+                  : 'border-border text-text hover:border-primary-800 hover:text-primary-800'
+              }`}
+            >
+              <ArrowUpDown className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{activeSortLabel}</span>
+            </button>
+            <AnimatePresence>
+              {showSort && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 4, scale: 0.97 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-full mt-2 w-44 bg-white border border-border rounded-xl shadow-lg z-20 py-1"
+                >
+                  {SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => { setSortBy(opt.value); setShowSort(false) }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-bg-alt transition-colors text-sm text-text"
+                    >
+                      <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                        sortBy === opt.value ? 'border-primary-800' : 'border-border'
+                      }`}>
+                        {sortBy === opt.value && <span className="w-2 h-2 rounded-full bg-primary-800" />}
+                      </span>
+                      {opt.label}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Document list */}
+        <div className="flex-1 overflow-y-auto">
+          {docs.length > 0 ? (
+            <div className="px-6 py-4">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-primary-700 pb-3 pr-4">Nombre del Archivo</th>
-                    <th className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted pb-3 pr-4">Tamaño</th>
-                    <th className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted pb-3 pr-4">Última Actualización</th>
+                    <th className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-primary-700 pb-3 pr-4">Archivo</th>
+                    <th className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted pb-3 pr-4 hidden sm:table-cell">Tamaño</th>
+                    <th className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted pb-3 pr-4 hidden md:table-cell">Actualización</th>
                     <th className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted pb-3">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {category.docs.map((doc, i) => (
-                    <DocRow key={i} doc={doc} onPreview={(d) => onPreview(d, category.title)} onDownload={onDownload} />
+                  {docs.map((doc, i) => (
+                    <DocRow
+                      key={i}
+                      doc={doc}
+                      onPreview={(d) => onPreview(d, category.title)}
+                      onDownload={onDownload}
+                    />
                   ))}
                 </tbody>
               </table>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+          ) : (
+            <div className="py-14 text-center text-text-muted">
+              <FileText className="w-8 h-8 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">
+                No se encontraron documentos{localQuery && <> para &quot;{localQuery}&quot;</>}
+              </p>
+              {localQuery && (
+                <button
+                  onClick={() => setLocalQuery('')}
+                  className="mt-3 text-sm font-medium text-primary-800 hover:underline"
+                >
+                  Limpiar búsqueda
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-between bg-bg-alt/40">
+          <span className="text-xs text-text-muted">
+            {docs.length < category.docs.length
+              ? `${docs.length} de ${category.docs.length} documentos`
+              : `${category.docs.length} documento${category.docs.length !== 1 ? 's' : ''} en total`
+            }
+          </span>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-text-muted hover:text-text transition-colors"
+          >
+            Cerrar
+          </button>
+        </div>
+      </motion.div>
+    </div>
   )
 }
 
@@ -311,7 +526,7 @@ const CONSULTA_TYPES = [
 
 function SoporteDocumentalModal({ onClose }) {
   const { user, isAuthenticated } = useAuth()
-  const [step, setStep] = useState('form') // 'form' | 'success'
+  const [step, setStep] = useState('form')
   const [form, setForm] = useState({
     nombre: isAuthenticated ? user.name : '',
     correo: isAuthenticated ? user.email : '',
@@ -391,7 +606,6 @@ function SoporteDocumentalModal({ onClose }) {
           </div>
         ) : (
           <>
-            {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-primary-800 rounded-lg flex items-center justify-center">
@@ -413,10 +627,8 @@ function SoporteDocumentalModal({ onClose }) {
               </button>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Nombre */}
                 <div>
                   <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                     Nombre <span className="text-orange-500" aria-hidden="true">*</span>
@@ -433,8 +645,6 @@ function SoporteDocumentalModal({ onClose }) {
                   />
                   {errors.nombre && <p className="text-xs text-red-500 mt-1" role="alert">{errors.nombre}</p>}
                 </div>
-
-                {/* Correo */}
                 <div>
                   <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                     Correo <span className="text-orange-500" aria-hidden="true">*</span>
@@ -453,7 +663,6 @@ function SoporteDocumentalModal({ onClose }) {
                 </div>
               </div>
 
-              {/* Tipo de consulta */}
               <div>
                 <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                   Tipo de consulta <span className="text-orange-500" aria-hidden="true">*</span>
@@ -470,7 +679,6 @@ function SoporteDocumentalModal({ onClose }) {
                 {errors.tipo && <p className="text-xs text-red-500 mt-1" role="alert">{errors.tipo}</p>}
               </div>
 
-              {/* Descripción */}
               <div>
                 <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                   Descripción <span className="text-orange-500" aria-hidden="true">*</span>
@@ -491,7 +699,6 @@ function SoporteDocumentalModal({ onClose }) {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
@@ -546,35 +753,18 @@ function SupportCTA({ onContactar }) {
   )
 }
 
-// ── useClickOutside ──
-function useClickOutside(ref, handler) {
-  useEffect(() => {
-    const listener = (e) => { if (ref.current && !ref.current.contains(e.target)) handler() }
-    document.addEventListener('mousedown', listener)
-    return () => document.removeEventListener('mousedown', listener)
-  }, [ref, handler])
-}
-
 // ── Main Documentos Page ──
 export default function Documentos() {
   const { query, setQuery } = useSearch()
-  const [openId, setOpenId] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState(null)
   const [showSoporte, setShowSoporte] = useState(false)
-
-  // Filter & sort state
   const [activeTypes, setActiveTypes] = useState([])
-  const [sortBy, setSortBy] = useState('date-desc')
   const [showFilter, setShowFilter] = useState(false)
-  const [showSort, setShowSort] = useState(false)
-
-  // Preview modal
   const [previewDoc, setPreviewDoc] = useState(null)
   const [previewCategory, setPreviewCategory] = useState('')
 
   const filterRef = useRef(null)
-  const sortRef = useRef(null)
   useClickOutside(filterRef, () => setShowFilter(false))
-  useClickOutside(sortRef, () => setShowSort(false))
 
   const { toasts, toast, dismiss } = useToast()
   const handleDownload = async (doc) => {
@@ -588,11 +778,10 @@ export default function Documentos() {
     )
   }
 
-  // ── Real data from API ──────────────────────────────────────────────────────
+  // ── Real data from API ──
   const { data, isLoading, isError } = useDocumentosList({ limit: 200 })
   const allDocs = data?.data ?? []
 
-  // Group flat list into category accordions
   const allCategories = (() => {
     const map = {}
     allDocs.forEach((d) => {
@@ -600,11 +789,11 @@ export default function Documentos() {
       if (!map[catName]) {
         const meta = CATEGORY_META[catName] ?? CATEGORY_META.default
         map[catName] = {
-          id:    catName.toLowerCase().replace(/\s+/g, '-'),
-          title: catName,
-          icon:  meta.icon,
-          color: meta.color,
-          docs:  [],
+          id:        catName.toLowerCase().replace(/\s+/g, '-'),
+          title:     catName,
+          icon:      meta.icon,
+          thumbnail: null,
+          docs:      [],
         }
       }
       map[catName].docs.push({
@@ -612,7 +801,6 @@ export default function Documentos() {
         type:    d.type,
         size:    d.tamano ?? '—',
         updated: d.fecha,
-        date:    d.fecha,
         dateISO: d.creado_en ?? '',
         url:     d.url,
       })
@@ -620,32 +808,18 @@ export default function Documentos() {
     return Object.values(map)
   })()
 
-  // Build filtered + sorted categories
-  const filteredCategories = allCategories.map((cat) => {
-    let docs = cat.docs.filter((d) => matches([d.name, cat.title], query))
-    if (activeTypes.length > 0) {
-      docs = docs.filter((d) => activeTypes.includes(d.type))
-    }
-    docs = [...docs].sort((a, b) => {
-      if (sortBy === 'name-asc')  return a.name.localeCompare(b.name)
-      if (sortBy === 'name-desc') return b.name.localeCompare(a.name)
-      if (sortBy === 'date-desc') return new Date(b.dateISO) - new Date(a.dateISO)
-      if (sortBy === 'date-asc')  return new Date(a.dateISO) - new Date(b.dateISO)
-      return 0
-    })
-    return { ...cat, docs }
-  }).filter((cat) => cat.docs.length > 0)
+  // Categories with filtered doc counts (for badge on card)
+  const isFiltering = query.trim() !== '' || activeTypes.length > 0
+  const displayCategories = allCategories.map((cat) => {
+    let filtered = cat.docs.filter((d) => matches([d.name, cat.title], query))
+    if (activeTypes.length > 0) filtered = filtered.filter((d) => activeTypes.includes(d.type))
+    return { ...cat, filteredDocs: filtered }
+  }).filter((cat) => !isFiltering || cat.filteredDocs.length > 0)
 
-  const getIsOpen = (catId) => {
-    if (query.trim() || activeTypes.length > 0) return filteredCategories.some((c) => c.id === catId)
-    return openId === catId
+  const openCategory = (cat) => {
+    // always open full (unfiltered) category so user can browse all docs
+    setSelectedCategory(allCategories.find((c) => c.id === cat.id) || cat)
   }
-
-  const toggleCategory = (id) => {
-    if (!query.trim() && activeTypes.length === 0) setOpenId(openId === id ? '' : id)
-  }
-
-  const activeSortLabel = SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Ordenar'
 
   return (
     <div className="space-y-8">
@@ -660,13 +834,12 @@ export default function Documentos() {
       </motion.div>
 
       {/* Search & Filter Bar */}
-      <motion.div {...fadeUp(0.1)} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        {/* Search */}
+      <motion.div {...fadeUp(0.1)} className="flex items-center gap-3">
         <div className="flex items-center gap-2 bg-white border border-border rounded-lg px-4 py-2.5 flex-1">
           <Search className="w-4 h-4 text-text-muted shrink-0" />
           <input
             type="text"
-            placeholder="Buscar por nombre, tipo o fecha..."
+            placeholder="Buscar por nombre, categoría o tipo..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="bg-transparent border-none outline-none text-sm text-text w-full placeholder:text-text-muted"
@@ -678,10 +851,9 @@ export default function Documentos() {
           )}
         </div>
 
-        {/* Filtros button + panel */}
         <div className="relative shrink-0" ref={filterRef}>
           <button
-            onClick={() => { setShowFilter((v) => !v); setShowSort(false) }}
+            onClick={() => setShowFilter((v) => !v)}
             className={`inline-flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium transition-colors ${
               showFilter || activeTypes.length > 0
                 ? 'bg-primary-800 border-primary-800 text-white'
@@ -689,7 +861,7 @@ export default function Documentos() {
             }`}
           >
             <SlidersHorizontal className="w-4 h-4" />
-            Filtros
+            <span className="hidden sm:inline">Filtros</span>
             {activeTypes.length > 0 && (
               <span className="w-5 h-5 rounded-full bg-white text-primary-800 text-xs font-bold flex items-center justify-center">
                 {activeTypes.length}
@@ -722,9 +894,7 @@ export default function Documentos() {
                     className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-bg-alt transition-colors text-sm text-text"
                   >
                     <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
-                      activeTypes.includes(value)
-                        ? 'bg-primary-800 border-primary-800'
-                        : 'border-border'
+                      activeTypes.includes(value) ? 'bg-primary-800 border-primary-800' : 'border-border'
                     }`}>
                       {activeTypes.includes(value) && <Check className="w-3 h-3 text-white" />}
                     </span>
@@ -745,55 +915,11 @@ export default function Documentos() {
             )}
           </AnimatePresence>
         </div>
-
-        {/* Ordenar button + dropdown */}
-        <div className="relative shrink-0" ref={sortRef}>
-          <button
-            onClick={() => { setShowSort((v) => !v); setShowFilter(false) }}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium transition-colors ${
-              showSort
-                ? 'bg-primary-800 border-primary-800 text-white'
-                : 'bg-primary-800 border-primary-800 text-white hover:bg-primary-700'
-            }`}
-          >
-            <ArrowUpDown className="w-4 h-4" />
-            {activeSortLabel}
-          </button>
-
-          <AnimatePresence>
-            {showSort && (
-              <motion.div
-                initial={{ opacity: 0, y: 6, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 6, scale: 0.97 }}
-                transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-2 w-48 bg-white border border-border rounded-xl shadow-lg z-20 overflow-hidden py-1"
-              >
-                {SORT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => { setSortBy(opt.value); setShowSort(false) }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-bg-alt transition-colors text-sm text-text"
-                  >
-                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                      sortBy === opt.value ? 'border-primary-800' : 'border-border'
-                    }`}>
-                      {sortBy === opt.value && (
-                        <span className="w-2 h-2 rounded-full bg-primary-800" />
-                      )}
-                    </span>
-                    {opt.label}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
       </motion.div>
 
-      {/* Document Categories (Accordions) */}
+      {/* Category Cards Grid */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
+        <div className="flex items-center justify-center py-24">
           <Loader2 className="w-8 h-8 text-primary-800 animate-spin" />
         </div>
       ) : isError ? (
@@ -801,41 +927,51 @@ export default function Documentos() {
           <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm">No se pudo cargar los documentos. Verifique su conexión.</p>
         </motion.div>
-      ) : (
-        <div className="space-y-4">
-          {filteredCategories.length > 0 ? filteredCategories.map((cat, i) => (
-            <CategoryAccordion
+      ) : displayCategories.length > 0 ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {displayCategories.map((cat, i) => (
+            <CategoryCard
               key={cat.id}
               category={cat}
-              isOpen={getIsOpen(cat.id)}
-              onToggle={() => toggleCategory(cat.id)}
+              filteredCount={isFiltering ? cat.filteredDocs.length : null}
+              onOpen={() => openCategory(cat)}
               index={i}
-              onPreview={(doc, catTitle) => { setPreviewDoc(doc); setPreviewCategory(catTitle) }}
-              onDownload={handleDownload}
             />
-          )) : (
-            <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
-              <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">
-                No se encontraron documentos
-                {query && <> para <strong className="text-text">"{query}"</strong></>}
-                {activeTypes.length > 0 && <> con los filtros seleccionados</>}
-              </p>
-              {activeTypes.length > 0 && (
-                <button
-                  onClick={() => setActiveTypes([])}
-                  className="mt-3 text-sm font-medium text-primary-800 hover:underline"
-                >
-                  Limpiar filtros
-                </button>
-              )}
-            </motion.div>
-          )}
+          ))}
         </div>
+      ) : (
+        <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
+          <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">
+            No se encontraron documentos
+            {query && <> para <strong className="text-text">&quot;{query}&quot;</strong></>}
+            {activeTypes.length > 0 && <> con los filtros seleccionados</>}
+          </p>
+          {isFiltering && (
+            <button
+              onClick={() => { setQuery(''); setActiveTypes([]) }}
+              className="mt-3 text-sm font-medium text-primary-800 hover:underline"
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </motion.div>
       )}
 
       {/* Support CTA */}
       <SupportCTA onContactar={() => setShowSoporte(true)} />
+
+      {/* Category Documents Modal */}
+      <AnimatePresence>
+        {selectedCategory && (
+          <CategoryModal
+            category={selectedCategory}
+            onClose={() => setSelectedCategory(null)}
+            onPreview={(doc, catTitle) => { setPreviewDoc(doc); setPreviewCategory(catTitle) }}
+            onDownload={handleDownload}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Preview Modal */}
       <AnimatePresence>
@@ -848,7 +984,7 @@ export default function Documentos() {
         )}
       </AnimatePresence>
 
-      {/* Soporte Documental Modal */}
+      {/* Soporte Modal */}
       <AnimatePresence>
         {showSoporte && (
           <SoporteDocumentalModal onClose={() => setShowSoporte(false)} />
