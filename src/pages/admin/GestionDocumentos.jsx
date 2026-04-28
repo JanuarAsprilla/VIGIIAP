@@ -4,14 +4,17 @@ import {
   Plus, Search, X, Edit2, Trash2,
   FileText, File, FileSpreadsheet, Send, Upload, CheckCircle,
   AlertCircle, Globe, Users, ShieldCheck,
-  Loader2, FolderOpen,
+  Loader2, FolderOpen, ChevronDown, Tag,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
 import { useDocumentosList, useCreateDocumento, useUpdateDocumento, useDeleteDocumento } from '@/hooks/useDocumentos'
 
 const fadeUp = fadeUpSm
 
-const CATEGORIES = [
+// Lista base de categorías — actúa como sugerencia inicial.
+// Las nuevas categorías creadas desde el formulario se reflejan automáticamente
+// en esta lista y en las tarjetas del módulo público de Documentos.
+const BASE_CATEGORIES = [
   'Cartografía', 'Estudios Ambientales', 'Normativa', 'Informes Técnicos',
   'Biodiversidad', 'Hidrología', 'Protocolos Ambientales',
   'Bibliografía Técnica', 'Análisis de Tendencias', 'Formatos y Plantillas',
@@ -41,7 +44,7 @@ const VISIBILIDAD = [
 ]
 
 const EMPTY_FORM = {
-  nombre: '', categoria: CATEGORIES[0], tipo: TIPOS[0],
+  nombre: '', categoria: '', tipo: TIPOS[0],
   autor: '', anio: '', visibilidad: 'publico',
 }
 
@@ -60,6 +63,105 @@ const TipoIcon = ({ tipo }) => {
   if (t === 'docx' || t === 'doc' || t === 'word')  return <FileText className="w-4 h-4 text-blue-500" />
   if (t === 'xlsx' || t === 'xls' || t === 'excel') return <FileSpreadsheet className="w-4 h-4 text-green-600" />
   return <File className="w-4 h-4 text-primary-600" />
+}
+
+// ── useClickOutside ──────────────────────────────────────────────────────────
+function useClickOutside(ref, handler) {
+  useEffect(() => {
+    const listener = (e) => { if (ref.current && !ref.current.contains(e.target)) handler() }
+    document.addEventListener('mousedown', listener)
+    return () => document.removeEventListener('mousedown', listener)
+  }, [ref, handler])
+}
+
+// ── CategoryCombobox ─────────────────────────────────────────────────────────
+// Permite seleccionar una categoría existente o escribir/crear una nueva al vuelo.
+function CategoryCombobox({ value, onChange, allCategories }) {
+  const [input, setInput] = useState(value || '')
+  const [open, setOpen]   = useState(false)
+  const ref = useRef(null)
+  useClickOutside(ref, () => setOpen(false))
+
+  // Sincronizar si el valor externo cambia (ej: al abrir el modal de edición)
+  useEffect(() => { setInput(value || '') }, [value])
+
+  const filtered = allCategories.filter((c) =>
+    !input.trim() || c.toLowerCase().includes(input.toLowerCase())
+  )
+  const isNew = input.trim() !== '' &&
+    !allCategories.some((c) => c.toLowerCase() === input.trim().toLowerCase())
+
+  const select = (cat) => { onChange(cat); setInput(cat); setOpen(false) }
+
+  return (
+    <div className="relative" ref={ref}>
+      <div className="relative">
+        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+        <input
+          type="text"
+          value={input}
+          placeholder="Selecciona o escribe una categoría nueva…"
+          onChange={(e) => { setInput(e.target.value); onChange(e.target.value); setOpen(true) }}
+          onFocus={() => setOpen(true)}
+          className="w-full pl-8 pr-8 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => setOpen((v) => !v)}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted"
+        >
+          <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {open && (filtered.length > 0 || isNew) && (
+          <motion.div
+            initial={{ opacity: 0, y: 4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-30 top-full mt-1 w-full bg-white border border-border rounded-xl shadow-xl overflow-hidden"
+            style={{ maxHeight: '14rem', overflowY: 'auto' }}
+          >
+            {filtered.length > 0 && (
+              <div className="px-3 pt-2.5 pb-1">
+                <span className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">
+                  Categorías existentes
+                </span>
+              </div>
+            )}
+            {filtered.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => select(cat)}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${
+                  value === cat
+                    ? 'bg-primary-50 text-primary-800 font-semibold'
+                    : 'text-text hover:bg-bg-alt'
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-primary-400 shrink-0" />
+                {cat}
+              </button>
+            ))}
+            {isNew && (
+              <button
+                type="button"
+                onClick={() => select(input.trim())}
+                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-primary-800 hover:bg-primary-50 border-t border-border transition-colors flex items-center gap-2"
+              >
+                <Plus className="w-3.5 h-3.5 shrink-0" />
+                Crear categoría: <em className="not-italic font-bold">&ldquo;{input.trim()}&rdquo;</em>
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
 }
 
 function formatBytes(bytes) {
@@ -255,6 +357,7 @@ export default function GestionDocumentos() {
   const validate = () => {
     const e = {}
     if (!form.nombre.trim()) e.nombre = 'El nombre del documento es obligatorio'
+    if (!form.categoria.trim()) e.categoria = 'Selecciona o escribe una categoría'
     if (!editing && !uploadedFile)
       e.archivo = 'Debes seleccionar el archivo del documento para continuar'
     return e
@@ -300,7 +403,14 @@ export default function GestionDocumentos() {
     setDeleteTarget(null)
   }
 
-  const byCategory = CATEGORIES
+  // Todas las categorías: base + las que ya existen en documentos cargados
+  const allCategories = [...new Set([
+    ...BASE_CATEGORIES,
+    ...docs.map((d) => d.categoria).filter(Boolean),
+  ])].sort((a, b) => a.localeCompare(b))
+
+  // Pills de categoría: solo las que tienen documentos
+  const byCategory = allCategories
     .map((c) => ({ label: c, count: docs.filter((d) => d.categoria === c).length }))
     .filter((c) => c.count > 0)
 
@@ -523,13 +633,25 @@ export default function GestionDocumentos() {
                 </div>
 
                 {/* Categoría + Año */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Categoría temática</label>
-                    <select value={form.categoria} onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))}
-                      className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
-                      {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-                    </select>
+                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                      Categoría temática <span className="text-orange-500">*</span>
+                    </label>
+                    <CategoryCombobox
+                      value={form.categoria}
+                      onChange={(cat) => setForm((f) => ({ ...f, categoria: cat }))}
+                      allCategories={allCategories}
+                    />
+                    {form.categoria && !BASE_CATEGORIES.includes(form.categoria) && (
+                      <p className="text-[0.65rem] text-primary-700 mt-1 flex items-center gap-1">
+                        <Tag className="w-3 h-3" />
+                        Nueva categoría — se creará automáticamente al guardar
+                      </p>
+                    )}
+                    {formErrors.categoria && (
+                      <p className="text-xs text-red-500 mt-1">{formErrors.categoria}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Año de publicación</label>
