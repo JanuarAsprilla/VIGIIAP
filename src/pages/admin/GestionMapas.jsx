@@ -4,14 +4,14 @@ import {
   Plus, Search, X, Edit2, Trash2, Eye, EyeOff,
   Layers, Send, Upload, CheckCircle, AlertCircle,
   FileText, Image, Link as LinkIcon, Loader2, MapPin,
-  ExternalLink, Globe, Users, ShieldCheck,
+  ExternalLink, Globe, Users, ShieldCheck, ChevronDown, Tag,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
 import { useMapasList, useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa } from '@/hooks/useMapas'
 
 const fadeUp = fadeUpSm
 
-const TEMATICAS = ['Hidrología', 'Cartografía Base', 'Biodiversidad', 'Zonificación', 'Infraestructura', 'Riesgo']
+const BASE_TEMATICAS = ['Hidrología', 'Cartografía Base', 'Biodiversidad', 'Zonificación', 'Infraestructura', 'Riesgo']
 const FORMATOS  = ['PDF', 'IMG', 'Geovisor']
 
 const ACCEPT = {
@@ -32,7 +32,7 @@ const VISIBILIDAD = [
 const visMap = Object.fromEntries(VISIBILIDAD.map((v) => [v.value, v]))
 
 const EMPTY_FORM = {
-  nombre: '', tematica: TEMATICAS[0],
+  nombre: '', tematica: '',
   descripcion: '', anio: String(new Date().getFullYear()),
   visible: true, formato: 'PDF', url: '', visibilidad: 'publico',
 }
@@ -44,6 +44,83 @@ const TEMATICA_COLORS = {
   'Zonificación':     'bg-purple-100 text-purple-700',
   'Infraestructura':  'bg-orange-100 text-orange-700',
   'Riesgo':           'bg-red-100 text-red-600',
+}
+
+function useClickOutside(ref, handler) {
+  useEffect(() => {
+    const listener = (e) => { if (ref.current && !ref.current.contains(e.target)) handler() }
+    document.addEventListener('mousedown', listener)
+    return () => document.removeEventListener('mousedown', listener)
+  }, [ref, handler])
+}
+
+function CategoryCombobox({ value, onChange, allOptions, placeholder = 'Selecciona o escribe una temática nueva…' }) {
+  const [input, setInput] = useState(value || '')
+  const [open, setOpen]   = useState(false)
+  const ref = useRef(null)
+  useClickOutside(ref, () => setOpen(false))
+  useEffect(() => { setInput(value || '') }, [value])
+
+  const filtered = allOptions.filter((c) =>
+    !input.trim() || c.toLowerCase().includes(input.toLowerCase())
+  )
+  const isNew = input.trim() !== '' &&
+    !allOptions.some((c) => c.toLowerCase() === input.trim().toLowerCase())
+
+  const select = (cat) => { onChange(cat); setInput(cat); setOpen(false) }
+
+  return (
+    <div className="relative" ref={ref}>
+      <div className="relative">
+        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+        <input
+          type="text"
+          value={input}
+          placeholder={placeholder}
+          onChange={(e) => { setInput(e.target.value); onChange(e.target.value); setOpen(true) }}
+          onFocus={() => setOpen(true)}
+          className="w-full pl-8 pr-8 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+        />
+        <button type="button" tabIndex={-1} onClick={() => setOpen((v) => !v)}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted">
+          <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+      <AnimatePresence>
+        {open && (filtered.length > 0 || isNew) && (
+          <motion.div
+            initial={{ opacity: 0, y: 4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-30 top-full mt-1 w-full bg-white border border-border rounded-xl shadow-xl overflow-hidden"
+            style={{ maxHeight: '14rem', overflowY: 'auto' }}
+          >
+            {filtered.length > 0 && (
+              <div className="px-3 pt-2.5 pb-1">
+                <span className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">Temáticas existentes</span>
+              </div>
+            )}
+            {filtered.map((cat) => (
+              <button key={cat} type="button" onClick={() => select(cat)}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${
+                  value === cat ? 'bg-primary-50 text-primary-800 font-semibold' : 'text-text hover:bg-bg-alt'
+                }`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary-400 shrink-0" />{cat}
+              </button>
+            ))}
+            {isNew && (
+              <button type="button" onClick={() => select(input.trim())}
+                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-primary-800 hover:bg-primary-50 border-t border-border transition-colors flex items-center gap-2">
+                <Plus className="w-3.5 h-3.5 shrink-0" />
+                Crear: <em className="not-italic font-bold">&ldquo;{input.trim()}&rdquo;</em>
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
 }
 
 function formatBytes(bytes) {
@@ -261,6 +338,11 @@ export default function GestionMapas() {
 
   const isSubmitting = createMapa.isPending || updateMapa.isPending
 
+  const allTematicas = [...new Set([
+    ...BASE_TEMATICAS,
+    ...mapas.map((m) => m.tematica).filter(Boolean),
+  ])].sort((a, b) => a.localeCompare(b))
+
   const filtered = mapas.filter((m) => {
     const q = search.toLowerCase()
     const matchQ = !q || m.nombre?.toLowerCase().includes(q) || (m.autor ?? '').toLowerCase().includes(q)
@@ -293,6 +375,7 @@ export default function GestionMapas() {
   const validate = () => {
     const e = {}
     if (!form.nombre.trim()) e.nombre = 'El nombre del mapa es obligatorio'
+    if (!form.tematica.trim()) e.tematica = 'Selecciona o escribe una temática'
     if (form.formato !== 'Geovisor' && !editing && !uploadedFile)
       e.archivo = 'Debes seleccionar el archivo del mapa para continuar'
     if (form.formato === 'Geovisor' && !form.url.trim())
@@ -389,9 +472,9 @@ export default function GestionMapas() {
         </button>
       </motion.div>
 
-      {/* Thematic pills */}
+      {/* Thematic pills — solo las que tienen mapas */}
       <motion.div {...fadeUp(0.06)} className="flex flex-wrap gap-2">
-        {TEMATICAS.map((t) => (
+        {allTematicas.filter((t) => mapas.some((m) => m.tematica === t)).map((t) => (
           <button key={t}
             onClick={() => setFiltroTematica(filtroTematica === t ? '' : t)}
             className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
@@ -624,11 +707,23 @@ export default function GestionMapas() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Temática</label>
-                    <select value={form.tematica} onChange={(e) => setForm((f) => ({ ...f, tematica: e.target.value }))}
-                      className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
-                      {TEMATICAS.map((t) => <option key={t}>{t}</option>)}
-                    </select>
+                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                      Temática <span className="text-orange-500">*</span>
+                    </label>
+                    <CategoryCombobox
+                      value={form.tematica}
+                      onChange={(t) => setForm((f) => ({ ...f, tematica: t }))}
+                      allOptions={allTematicas}
+                      placeholder="Selecciona o crea una temática…"
+                    />
+                    {form.tematica && !BASE_TEMATICAS.includes(form.tematica) && (
+                      <p className="text-[0.65rem] text-primary-700 mt-1 flex items-center gap-1">
+                        <Tag className="w-3 h-3" />Nueva temática — se creará al guardar
+                      </p>
+                    )}
+                    {formErrors.tematica && (
+                      <p className="text-xs text-red-500 mt-1">{formErrors.tematica}</p>
+                    )}
                   </div>
                 </div>
 

@@ -4,6 +4,7 @@ import {
   Plus, Search, X, Edit2, Trash2, Eye, EyeOff,
   Send, Globe, Clock, ImagePlus, Image,
   Users, ShieldCheck, AlertCircle, Loader2, Newspaper, CheckCircle,
+  ChevronDown, Tag,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
 import { useNoticiasList, useCreateNoticia, useUpdateNoticia, useDeleteNoticia } from '@/hooks/useNoticias'
@@ -12,7 +13,7 @@ const fadeUp = fadeUpSm
 
 const MAX_THUMBNAIL_BYTES = 2 * 1024 * 1024
 
-const CATEGORIES = ['Ambiente', 'Social', 'Tecnología', 'Capacitación', 'Investigación', 'Biodiversidad', 'Territorial']
+const BASE_CATEGORIES = ['Ambiente', 'Social', 'Tecnología', 'Capacitación', 'Investigación', 'Biodiversidad', 'Territorial']
 
 const VISIBILIDAD = [
   {
@@ -49,10 +50,87 @@ const VISIBILIDAD = [
 
 const EMPTY_FORM = {
   titulo: '', resumen: '', contenido: '',
-  categoria: CATEGORIES[0], publicado: true, visibilidad: 'publico',
+  categoria: '', publicado: true, visibilidad: 'publico',
 }
 
 // ── Toast de éxito ────────────────────────────────────────────────────────────
+function useClickOutside(ref, handler) {
+  useEffect(() => {
+    const listener = (e) => { if (ref.current && !ref.current.contains(e.target)) handler() }
+    document.addEventListener('mousedown', listener)
+    return () => document.removeEventListener('mousedown', listener)
+  }, [ref, handler])
+}
+
+function CategoryCombobox({ value, onChange, allOptions }) {
+  const [input, setInput] = useState(value || '')
+  const [open, setOpen]   = useState(false)
+  const ref = useRef(null)
+  useClickOutside(ref, () => setOpen(false))
+  useEffect(() => { setInput(value || '') }, [value])
+
+  const filtered = allOptions.filter((c) =>
+    !input.trim() || c.toLowerCase().includes(input.toLowerCase())
+  )
+  const isNew = input.trim() !== '' &&
+    !allOptions.some((c) => c.toLowerCase() === input.trim().toLowerCase())
+
+  const select = (cat) => { onChange(cat); setInput(cat); setOpen(false) }
+
+  return (
+    <div className="relative" ref={ref}>
+      <div className="relative">
+        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted pointer-events-none" />
+        <input
+          type="text"
+          value={input}
+          placeholder="Selecciona o escribe una categoría nueva…"
+          onChange={(e) => { setInput(e.target.value); onChange(e.target.value); setOpen(true) }}
+          onFocus={() => setOpen(true)}
+          className="w-full pl-8 pr-8 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+        />
+        <button type="button" tabIndex={-1} onClick={() => setOpen((v) => !v)}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted">
+          <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+      <AnimatePresence>
+        {open && (filtered.length > 0 || isNew) && (
+          <motion.div
+            initial={{ opacity: 0, y: 4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-30 top-full mt-1 w-full bg-white border border-border rounded-xl shadow-xl overflow-hidden"
+            style={{ maxHeight: '14rem', overflowY: 'auto' }}
+          >
+            {filtered.length > 0 && (
+              <div className="px-3 pt-2.5 pb-1">
+                <span className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">Categorías existentes</span>
+              </div>
+            )}
+            {filtered.map((cat) => (
+              <button key={cat} type="button" onClick={() => select(cat)}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${
+                  value === cat ? 'bg-primary-50 text-primary-800 font-semibold' : 'text-text hover:bg-bg-alt'
+                }`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary-400 shrink-0" />{cat}
+              </button>
+            ))}
+            {isNew && (
+              <button type="button" onClick={() => select(input.trim())}
+                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-primary-800 hover:bg-primary-50 border-t border-border transition-colors flex items-center gap-2">
+                <Plus className="w-3.5 h-3.5 shrink-0" />
+                Crear: <em className="not-italic font-bold">&ldquo;{input.trim()}&rdquo;</em>
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 function SavedToast({ message, onDone }) {
   useEffect(() => {
     const t = setTimeout(onDone, 3500)
@@ -210,6 +288,11 @@ export default function GestionNoticias() {
 
   const isSubmitting = createNoticia.isPending || updateNoticia.isPending
 
+  const allCategories = [...new Set([
+    ...BASE_CATEGORIES,
+    ...noticias.map((n) => n.categoria).filter(Boolean),
+  ])].sort((a, b) => a.localeCompare(b))
+
   const filtered = noticias.filter((n) => {
     const q = search.toLowerCase()
     const matchQ = !q || n.titulo?.toLowerCase().includes(q) || n.autor?.toLowerCase().includes(q)
@@ -234,7 +317,7 @@ export default function GestionNoticias() {
       titulo:      n.titulo,
       resumen:     n.resumen,
       contenido:   n.contenido ?? '',
-      categoria:   n.categoria ?? CATEGORIES[0],
+      categoria:   n.categoria ?? '',
       publicado:   n.publicado,
       visibilidad: n.visibilidad ?? 'publico',
     })
@@ -250,6 +333,7 @@ export default function GestionNoticias() {
     const e = {}
     if (!form.titulo.trim()) e.titulo = 'Requerido'
     if (!form.resumen.trim()) e.resumen = 'Requerido'
+    if (!form.categoria.trim()) e.categoria = 'Selecciona o escribe una categoría'
     return e
   }
 
@@ -348,7 +432,9 @@ export default function GestionNoticias() {
           className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
         >
           <option value="">Todas las categorías</option>
-          {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+          {allCategories.filter((c) => noticias.some((n) => n.categoria === c)).map((c) => (
+            <option key={c}>{c}</option>
+          ))}
         </select>
       </motion.div>
 
@@ -470,10 +556,22 @@ export default function GestionNoticias() {
 
                 {/* Categoría */}
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Categoría</label>
-                  <select value={form.categoria} onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
-                    {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-                  </select>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Categoría <span className="text-orange-500">*</span>
+                  </label>
+                  <CategoryCombobox
+                    value={form.categoria}
+                    onChange={(cat) => setForm((f) => ({ ...f, categoria: cat }))}
+                    allOptions={allCategories}
+                  />
+                  {form.categoria && !BASE_CATEGORIES.includes(form.categoria) && (
+                    <p className="text-[0.65rem] text-primary-700 mt-1 flex items-center gap-1">
+                      <Tag className="w-3 h-3" />Nueva categoría — se creará al guardar
+                    </p>
+                  )}
+                  {formErrors.categoria && (
+                    <p className="text-xs text-red-500 mt-1">{formErrors.categoria}</p>
+                  )}
                 </div>
 
                 {/* Título */}
