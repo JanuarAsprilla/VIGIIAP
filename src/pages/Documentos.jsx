@@ -792,9 +792,11 @@ export default function Documentos() {
           id:        catName.toLowerCase().replace(/\s+/g, '-'),
           title:     catName,
           icon:      meta.icon,
-          thumbnail: null,
+          thumbnail: d.categoria_thumbnail_url ?? null,
           docs:      [],
         }
+      } else if (!map[catName].thumbnail && d.categoria_thumbnail_url) {
+        map[catName].thumbnail = d.categoria_thumbnail_url
       }
       map[catName].docs.push({
         name:    d.nombre,

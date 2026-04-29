@@ -50,6 +50,7 @@ const AdminDocumentos  = lazy(() => import('./pages/admin/GestionDocumentos'))
 const AdminMapas       = lazy(() => import('./pages/admin/GestionMapas'))
 const AdminConfig      = lazy(() => import('./pages/admin/Configuracion'))
 const AdminActividad   = lazy(() => import('./pages/admin/Actividad'))
+const AdminCategorias  = lazy(() => import('./pages/admin/GestionCategorias'))
 
 // Fallback genérico para Geovisor (mapa de pantalla completa, sin skeleton de columnas)
 function GeovisorLoader() {
@@ -148,6 +149,7 @@ export default function App() {
               <Route path="/admin/mapas"         element={<Suspense fallback={<GenericPageSkeleton />}><AdminMapas /></Suspense>} />
               <Route path="/admin/configuracion" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConfig /></Suspense>} />
               <Route path="/admin/actividad"     element={<Suspense fallback={<GenericPageSkeleton />}><AdminActividad /></Suspense>} />
+              <Route path="/admin/categorias"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminCategorias /></Suspense>} />
             </Route>
           </Route>
         </Routes>

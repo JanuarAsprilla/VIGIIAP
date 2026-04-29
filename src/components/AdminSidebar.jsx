@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Users, ClipboardList, Newspaper,
   FileText, Map, Settings, Activity, X,
-  LogOut, Globe, Shield,
+  LogOut, Globe, Shield, Tag,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -22,6 +22,7 @@ const NAV_SECTIONS = [
       { label: 'Noticias',     path: '/admin/noticias',    icon: Newspaper },
       { label: 'Documentos',   path: '/admin/documentos',  icon: FileText },
       { label: 'Mapas',        path: '/admin/mapas',       icon: Map },
+      { label: 'Categorías',   path: '/admin/categorias',  icon: Tag },
     ],
   },
   {

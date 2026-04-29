@@ -29,7 +29,8 @@ function normalizeDoc(d) {
     creado_en:   d.creado_en,
     // Alias para página pública y admin
     nombre:      d.titulo,
-    categoria:   d.tipo,
+    categoria:   d.categoria ?? d.tipo,
+    categoria_thumbnail_url: d.categoria_thumbnail_url ?? null,
     fecha:       formatDate(d.creado_en),
     type,
     url:         d.archivo_url ?? null,

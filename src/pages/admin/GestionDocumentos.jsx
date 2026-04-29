@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
 import { useDocumentosList, useCreateDocumento, useUpdateDocumento, useDeleteDocumento } from '@/hooks/useDocumentos'
+import { useCategoriasList } from '@/hooks/useCategorias'
 
 const fadeUp = fadeUpSm
 
@@ -303,13 +304,14 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }) {
   )
 }
 
+
 export default function GestionDocumentos() {
   const { data, isLoading } = useDocumentosList({ limit: 200, admin: 'true' })
   const docs = data?.data ?? []
+  const { data: categorias = [] } = useCategoriasList()
   const createDocumento = useCreateDocumento()
   const updateDocumento = useUpdateDocumento()
   const deleteDocumento = useDeleteDocumento()
-
   const [search, setSearch] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
   const [filtroTipo, setFiltroTipo] = useState('')
@@ -384,11 +386,12 @@ export default function GestionDocumentos() {
     try {
       if (editing) {
         await updateDocumento.mutateAsync({ id: editing.id, formData: payload, onUploadProgress })
-        setToast(`Documento "${form.nombre}" actualizado correctamente`)
       } else {
         await createDocumento.mutateAsync({ formData: payload, onUploadProgress })
-        setToast(`Documento "${form.nombre}" registrado correctamente`)
       }
+      setToast(editing
+        ? `Documento "${form.nombre}" actualizado correctamente`
+        : `Documento "${form.nombre}" registrado correctamente`)
       setShowModal(false)
     } catch (err) {
       setSubmitError(err?.response?.data?.error ?? err?.message ?? 'No se pudo guardar. Verifica la conexión e intenta de nuevo.')
@@ -403,11 +406,13 @@ export default function GestionDocumentos() {
     setDeleteTarget(null)
   }
 
-  // Todas las categorías: base + las que ya existen en documentos cargados
+  // Todas las categorías: base + las que ya existen en documentos cargados + las de la tabla categorias
   const allCategories = [...new Set([
     ...BASE_CATEGORIES,
     ...docs.map((d) => d.categoria).filter(Boolean),
+    ...categorias.map((c) => c.nombre),
   ])].sort((a, b) => a.localeCompare(b))
+
 
   // Pills de categoría: solo las que tienen documentos
   const byCategory = allCategories
@@ -632,7 +637,7 @@ export default function GestionDocumentos() {
                     className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition" />
                 </div>
 
-                {/* Categoría + Año */}
+                {/* Categoría + portada + Año */}
                 <div className="space-y-4">
                   <div>
                     <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
@@ -652,7 +657,9 @@ export default function GestionDocumentos() {
                     {formErrors.categoria && (
                       <p className="text-xs text-red-500 mt-1">{formErrors.categoria}</p>
                     )}
+
                   </div>
+
                   <div>
                     <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Año de publicación</label>
                     <input type="number" min="1900" max="2100" value={form.anio}
