@@ -25,43 +25,43 @@ const ALL_MODULES = [
     id: 'mapas', title: 'Catálogo de Mapas',
     description: 'Mapas temáticos de biodiversidad, suelos, hidrografía y cobertura vegetal del Chocó Biogeográfico producidos por el IIAP.',
     icon: Map, path: '/mapas', action: 'Explorar mapas', tag: 'Cartografía',
-    gradient: 'from-[#1B4332] to-[#2D6A4F]', chip: 'bg-primary-50 text-primary-800',
-    glow: 'rgba(27,67,50,0.25)', publicAccess: true,
+    gradient: 'from-[#1A5632] to-[#284E39]', chip: 'bg-primary-50 text-primary-800',
+    glow: 'rgba(26,86,50,0.28)', publicAccess: true,
   },
   {
     id: 'documentos', title: 'Biblioteca Documental',
     description: 'Informes técnicos, investigaciones científicas, protocolos ambientales y documentos institucionales del IIAP.',
     icon: FileText, path: '/documentos', action: 'Consultar biblioteca', tag: 'Documentos',
-    gradient: 'from-[#B7791F] to-[#D4A373]', chip: 'bg-amber-50 text-amber-800',
-    glow: 'rgba(212,163,115,0.25)', publicAccess: true,
+    gradient: 'from-[#F08143] to-[#F7AC42]', chip: 'bg-amber-50 text-amber-800',
+    glow: 'rgba(247,172,66,0.28)', publicAccess: true,
   },
   {
     id: 'noticias', title: 'Noticias y Eventos',
     description: 'Últimas publicaciones, investigaciones destacadas, eventos y comunicados del Instituto de Investigaciones Ambientales del Pacífico.',
     icon: Newspaper, path: '/noticias', action: 'Ver noticias', tag: 'Actualidad',
-    gradient: 'from-[#065f46] to-[#059669]', chip: 'bg-emerald-50 text-emerald-800',
-    glow: 'rgba(5,150,105,0.2)', publicAccess: true,
+    gradient: 'from-[#218842] to-[#009846]', chip: 'bg-emerald-50 text-emerald-800',
+    glow: 'rgba(0,152,70,0.22)', publicAccess: true,
   },
   {
     id: 'geovisor', title: 'Geovisor Interactivo',
     description: 'Herramienta SIG en línea para la visualización y análisis de capas geoespaciales sobre el territorio del Pacífico colombiano.',
     icon: Globe, path: '/geovisor', action: 'Abrir geovisor', tag: 'SIG',
-    gradient: 'from-[#1d4ed8] to-[#3b82f6]', chip: 'bg-blue-50 text-blue-800',
-    glow: 'rgba(59,130,246,0.2)', publicAccess: false,
+    gradient: 'from-[#1A5632] to-[#218842]', chip: 'bg-primary-50 text-primary-800',
+    glow: 'rgba(26,86,50,0.22)', publicAccess: false,
   },
   {
     id: 'herramientas', title: 'Herramientas SIG',
     description: 'Calculadoras de área, convertidores de coordenadas y motores de análisis espacial para procesamiento de datos geográficos.',
     icon: Wrench, path: '/herramientas', action: 'Usar herramientas', tag: 'Análisis',
-    gradient: 'from-[#c2410c] to-[#f97316]', chip: 'bg-orange-50 text-orange-800',
-    glow: 'rgba(249,115,22,0.2)', publicAccess: false,
+    gradient: 'from-[#B0CB1F] to-[#218842]', chip: 'bg-lime-50 text-lime-800',
+    glow: 'rgba(176,203,31,0.22)', publicAccess: false,
   },
   {
     id: 'solicitudes', title: 'Solicitudes de Acceso',
     description: 'Gestiona solicitudes de acceso a datos, información especializada y colaboración con el IIAP.',
     icon: ClipboardList, path: '/solicitudes', action: 'Gestionar solicitudes', tag: 'Gestión',
-    gradient: 'from-[#5b21b6] to-[#7c3aed]', chip: 'bg-violet-50 text-violet-800',
-    glow: 'rgba(124,58,237,0.2)', publicAccess: false,
+    gradient: 'from-[#284E39] to-[#1A5632]', chip: 'bg-primary-50 text-primary-800',
+    glow: 'rgba(40,78,57,0.22)', publicAccess: false,
   },
 ]
 
@@ -175,21 +175,21 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
   return (
     <div ref={heroRef}
       className="relative rounded-3xl overflow-hidden flex flex-col"
-      style={{ minHeight: '640px', background: 'linear-gradient(135deg, #020d09 0%, #0a1f12 45%, #0d2b1a 100%)' }}>
+      style={{ minHeight: '640px', background: 'linear-gradient(135deg, #0c1f14 0%, #0f2b1a 45%, #122e1d 100%)' }}>
 
       {/* Dot grid */}
       <div className="absolute inset-0 opacity-[0.055]"
-        style={{ backgroundImage: 'radial-gradient(circle, #52B788 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+        style={{ backgroundImage: 'radial-gradient(circle, #009846 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
 
       {/* Ambient orbs */}
       <div className="absolute top-[-15%] left-[-8%] w-[640px] h-[640px] rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(82,183,136,0.13) 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(circle, rgba(0,152,70,0.14) 0%, transparent 70%)' }} />
       <div className="absolute bottom-[-20%] right-[15%] w-[440px] h-[440px] rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(212,163,115,0.09) 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(circle, rgba(247,172,66,0.10) 0%, transparent 70%)' }} />
 
       {/* Horizontal rule accent */}
       <div className="absolute top-0 left-0 right-0 h-[1px]"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(82,183,136,0.4), transparent)' }} />
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(0,152,70,0.45), rgba(176,203,31,0.25), transparent)' }} />
 
       <div className="relative z-10 flex flex-col lg:flex-row w-full flex-1">
         {/* Left — copy */}
@@ -197,9 +197,9 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
 
           {/* Eyebrow */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-8"
-            style={{ border: '1px solid rgba(82,183,136,0.22)', background: 'rgba(82,183,136,0.08)' }}>
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shrink-0" />
-            <span className="text-[0.62rem] font-bold uppercase tracking-[0.25em] text-green-400/85">
+            style={{ border: '1px solid rgba(176,203,31,0.28)', background: 'rgba(0,152,70,0.10)' }}>
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0" style={{ background: '#B0CB1F' }} />
+            <span className="text-[0.62rem] font-bold uppercase tracking-[0.25em]" style={{ color: 'rgba(176,203,31,0.9)' }}>
               Sistema activo · IIAP Colombia · Chocó Biogeográfico
             </span>
           </div>
@@ -209,10 +209,10 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
             <h1 className="font-display font-black leading-[0.9] tracking-tight"
               style={{ fontSize: 'clamp(4rem, 10vw, 7.5rem)' }}>
               <span style={{
-                background: 'linear-gradient(140deg, #D8F3DC 0%, #52B788 45%, #D4A373 100%)',
+                background: 'linear-gradient(140deg, #C8E6CE 0%, #009846 45%, #F7AC42 100%)',
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
               }}>
-                VIGIIAP
+                VIGI-IIAP
               </span>
             </h1>
             <p className="text-white/35 text-xs font-bold uppercase tracking-[0.3em] mt-2 ml-1">
@@ -234,7 +234,7 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
           <div ref={ctaRef} className="flex flex-wrap items-center gap-3">
             <Link to="/geovisor"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold no-underline transition-all hover:scale-[1.03] active:scale-[0.98]"
-              style={{ background: 'linear-gradient(135deg, #52B788, #2D6A4F)', color: '#fff', boxShadow: '0 4px 28px rgba(82,183,136,0.35)' }}>
+              style={{ background: 'linear-gradient(135deg, #009846, #1A5632)', color: '#fff', boxShadow: '0 4px 28px rgba(0,152,70,0.38)' }}>
               <Globe className="w-4 h-4" />Explorar Geovisor
             </Link>
 
@@ -386,7 +386,7 @@ function ModulesSection({ isVisitante, isPublico }) {
     <section>
       <SectionHeading
         eyebrow="Plataforma"
-        title="Módulos de VIGIIAP"
+        title="Módulos de VIGI-IIAP"
         note={showNote ? `${restricted} módulos requieren cuenta de investigador` : undefined}
       />
 
@@ -506,15 +506,15 @@ function InstitutionalBanner() {
   return (
     <div ref={ref}
       className="relative rounded-2xl overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #020d09 0%, #0d2b1a 100%)' }}>
+      style={{ background: 'linear-gradient(135deg, #0c1f14 0%, #122e1d 100%)' }}>
 
       {/* Dot grid */}
       <div className="absolute inset-0 opacity-[0.055]"
-        style={{ backgroundImage: 'radial-gradient(circle, #52B788 1px, transparent 1px)', backgroundSize: '26px 26px' }} />
+        style={{ backgroundImage: 'radial-gradient(circle, #009846 1px, transparent 1px)', backgroundSize: '26px 26px' }} />
 
       {/* Left accent line */}
       <div className="absolute left-0 top-0 bottom-0 w-[3px]"
-        style={{ background: 'linear-gradient(180deg, transparent, #52B788 30%, #D4A373 70%, transparent)' }} />
+        style={{ background: 'linear-gradient(180deg, transparent, #009846 30%, #F7AC42 70%, transparent)' }} />
 
       <div className="relative px-10 py-10 flex flex-col sm:flex-row items-center gap-6">
         <div className="flex-1 text-center sm:text-left">
@@ -532,7 +532,7 @@ function InstitutionalBanner() {
         <div className="shrink-0">
           <Link to="/solicitar-acceso"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold no-underline transition-all hover:scale-105"
-            style={{ background: 'rgba(82,183,136,0.13)', color: '#D8F3DC', border: '1px solid rgba(82,183,136,0.22)' }}>
+            style={{ background: 'rgba(0,152,70,0.14)', color: '#C8E6CE', border: '1px solid rgba(0,152,70,0.25)' }}>
             Solicitar acceso <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
@@ -558,7 +558,7 @@ function WelcomeStrip({ user }) {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold text-text">{greeting}, {firstName}</p>
         <p className="text-xs text-text-muted truncate">
-          {user?.isVisitante ? 'Modo visitante — acceso a información pública' : `${user?.role || 'Sesión activa'} · VIGIIAP`}
+          {user?.isVisitante ? 'Modo visitante — acceso a información pública' : `${user?.role || 'Sesión activa'} · VIGI-IIAP`}
         </p>
       </div>
       {!user?.isVisitante ? (
@@ -652,7 +652,7 @@ export default function Home() {
           whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.9 }}
           transition={{ type: 'spring', stiffness: 400, damping: 20 }}
           className="fixed bottom-20 lg:bottom-6 right-6 z-30 flex items-center justify-center rounded-full text-white"
-          style={{ width: '3.25rem', height: '3.25rem', background: 'linear-gradient(135deg, #2D6A4F, #1B4332)', boxShadow: '0 8px 32px rgba(27,67,50,0.45)' }}>
+          style={{ width: '3.25rem', height: '3.25rem', background: 'linear-gradient(135deg, #F7AC42, #F08143)', boxShadow: '0 8px 32px rgba(247,172,66,0.45)', color: '#284E39' }}>
           <Plus className="w-5 h-5" />
         </motion.button>
       )}

@@ -25,14 +25,27 @@ export function RequireInvestigador() {
   return <Outlet />
 }
 
-/** Protege rutas exclusivas para Administrador SIG. */
+/** Protege rutas exclusivas para Administrador SIG (también permite super_admin). */
 export function RequireAdmin() {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, isAdmin } = useAuth()
   const location = useLocation()
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
-  if (user?.role !== ROLES.ADMIN) {
+  if (!isAdmin) {
+    return <Navigate to="/" replace />
+  }
+  return <Outlet />
+}
+
+/** Protege rutas exclusivas para Super Administrador. */
+export function RequireSuperAdmin() {
+  const { isAuthenticated, isSuperAdmin } = useAuth()
+  const location = useLocation()
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+  if (!isSuperAdmin) {
     return <Navigate to="/" replace />
   }
   return <Outlet />

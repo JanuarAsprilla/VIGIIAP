@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, X, CheckCircle, XCircle, Clock, Eye,
   Download, ChevronLeft, ChevronRight, Loader2,
-  FileText, MessageSquare,
+  Mail, User, FileText, Send, MessageSquare, AlertCircle,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, drawerAnim } from '@/lib/animations'
-import { useSolicitudesAdmin, useUpdateEstadoSolicitud } from '@/hooks/useSolicitudes'
+import { useSolicitudesAdmin, useUpdateEstadoSolicitud, useResponderSolicitud } from '@/hooks/useSolicitudes'
 import { useToast, ToastContainer } from '@/components/Toast'
 
 const fadeUp = fadeUpSm
@@ -16,22 +16,33 @@ const ESTADO_BADGE = {
   'En Revisión': 'bg-blue-100 text-blue-700',
   'Aprobado':    'bg-green-100 text-green-700',
   'Rechazado':   'bg-red-100 text-red-600',
+  'Resuelta':    'bg-teal-100 text-teal-700',
 }
 
 const PAGE_SIZE = 5
+
+function SectionLabel({ children }) {
+  return (
+    <p className="text-[0.6rem] font-bold uppercase tracking-widest text-text-muted mb-2">
+      {children}
+    </p>
+  )
+}
 
 export default function GestionSolicitudes() {
   const { data } = useSolicitudesAdmin({ limit: 200 })
   const solicitudes = data?.data ?? []
   const updateEstado = useUpdateEstadoSolicitud()
+  const responderMutation = useResponderSolicitud()
   const { toasts, toast, dismiss } = useToast()
 
   const [search, setSearch] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
   const [filtroTipo, setFiltroTipo] = useState('')
   const [selected, setSelected] = useState(null)
-  const [accionModal, setAccionModal] = useState(null) // { type: 'approve'|'reject', sol }
+  const [accionModal, setAccionModal] = useState(null)
   const [nota, setNota] = useState('')
+  const [respuesta, setRespuesta] = useState('')
   const [page, setPage] = useState(1)
 
   const tipos = [...new Set(solicitudes.map((s) => s.tipo))]
@@ -78,15 +89,38 @@ export default function GestionSolicitudes() {
     }
   }
 
+  const handleResponder = async () => {
+    if (!respuesta.trim() || respuesta.trim().length < 10) {
+      toast('La respuesta debe tener al menos 10 caracteres', 'error')
+      return
+    }
+    try {
+      await responderMutation.mutateAsync({ id: selected._id, respuesta: respuesta.trim() })
+      setSelected((prev) => ({
+        ...prev,
+        estado: 'Resuelta',
+        notas: respuesta.trim(),
+        timeline: ['Recibida', 'Pendiente', 'En Revisión', 'Resuelta'],
+      }))
+      setRespuesta('')
+      toast(`Respuesta enviada — solicitud ${selected.id} marcada como resuelta`, 'success')
+    } catch {
+      toast('Error al enviar la respuesta', 'error')
+    }
+  }
+
   const exportCSV = () => {
-    const rows = [['ID', 'Tipo', 'Solicitante', 'Fecha', 'Estado']]
-    filtered.forEach((s) => rows.push([s.id, s.tipo, s.solicitante, s.fecha, s.estado]))
+    const rows = [['ID', 'Tipo', 'Solicitante', 'Email', 'Fecha', 'Estado']]
+    filtered.forEach((s) => rows.push([s.id, s.tipo, s.solicitante, s.email, s.fecha, s.estado]))
     const csv = rows.map((r) => r.join(',')).join('\n')
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
     a.download = 'solicitudes.csv'
     a.click()
   }
+
+  const isResolved = (s) => s?.estado === 'Resuelta' || s?.estado === 'Aprobado' || s?.estado === 'Rechazado'
+  const canAct = (s) => s?.estado === 'Pendiente' || s?.estado === 'En Revisión'
 
   return (
     <div className="space-y-6">
@@ -127,6 +161,7 @@ export default function GestionSolicitudes() {
           <option>Pendiente</option>
           <option>En Revisión</option>
           <option>Aprobado</option>
+          <option>Resuelta</option>
           <option>Rechazado</option>
         </select>
         <select
@@ -152,32 +187,35 @@ export default function GestionSolicitudes() {
             </thead>
             <tbody>
               {pageItems.length === 0 && (
-                <tr><td colSpan={7} className="px-5 py-10 text-center text-sm text-text-muted">Sin resultados</td></tr>
+                <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-text-muted">Sin resultados</td></tr>
               )}
               {pageItems.map((s) => (
                 <tr key={s.id} className="border-b border-border last:border-b-0 hover:bg-bg-alt/30 transition-colors">
                   <td className="px-5 py-3.5 text-xs font-bold text-primary-800">{s.id}</td>
                   <td className="px-5 py-3.5">
                     <p className="text-sm font-semibold text-text">{s.tipo}</p>
-                    <p className="text-[0.65rem] text-text-muted">{s.subtipo}</p>
+                    <p className="text-[0.65rem] text-text-muted line-clamp-1">{s.subtipo}</p>
                   </td>
-                  <td className="px-5 py-3.5 text-sm text-text-muted">{s.solicitante}</td>
+                  <td className="px-5 py-3.5">
+                    <p className="text-sm text-text">{s.solicitante}</p>
+                    <p className="text-[0.65rem] text-text-muted">{s.email}</p>
+                  </td>
                   <td className="px-5 py-3.5 text-sm text-text-muted">{s.fecha}</td>
                   <td className="px-5 py-3.5">
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ESTADO_BADGE[s.estado]}`}>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ESTADO_BADGE[s.estado] ?? 'bg-gray-100 text-gray-600'}`}>
                       {s.estado}
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => setSelected(s)}
+                        onClick={() => { setSelected(s); setRespuesta('') }}
                         className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
                         title="Ver detalle"
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
-                      {(s.estado === 'Pendiente' || s.estado === 'En Revisión') && (
+                      {canAct(s) && (
                         <>
                           {s.estado === 'Pendiente' && (
                             <button
@@ -214,7 +252,6 @@ export default function GestionSolicitudes() {
             </tbody>
           </table>
         </div>
-        {/* Pagination */}
         <div className="px-5 py-3 border-t border-border bg-bg-alt/30 flex items-center justify-between">
           <span className="text-xs text-text-muted">Mostrando {pageItems.length} de {filtered.length}</span>
           <div className="flex items-center gap-1">
@@ -237,11 +274,10 @@ export default function GestionSolicitudes() {
         </div>
       </motion.div>
 
-      {/* Detail slide drawer */}
+      {/* ── Detail Drawer ── */}
       <AnimatePresence>
         {selected && (
           <>
-            {/* Overlay */}
             <motion.div
               key="overlay"
               initial={{ opacity: 0 }}
@@ -251,57 +287,97 @@ export default function GestionSolicitudes() {
               className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
               onClick={() => setSelected(null)}
             />
-            {/* Drawer */}
             <motion.div
               key="drawer"
               {...drawerAnim}
               className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col"
             >
-              {/* Header */}
-              <div className="flex items-start justify-between px-6 py-5 border-b border-border bg-bg-alt/40">
+              {/* Drawer Header */}
+              <div className="flex items-start justify-between px-6 py-5 border-b border-border bg-bg-alt/40 shrink-0">
                 <div>
                   <span className="text-xs font-bold text-primary-800">{selected.id}</span>
                   <h3 className="text-base font-bold text-text mt-0.5">{selected.tipo}</h3>
-                  <p className="text-xs text-text-muted mt-0.5">{selected.subtipo}</p>
+                  <span className={`inline-block mt-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full ${ESTADO_BADGE[selected.estado] ?? 'bg-gray-100 text-gray-600'}`}>
+                    {selected.estado}
+                  </span>
                 </div>
                 <button onClick={() => setSelected(null)} className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors shrink-0">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Body */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-5">
-                {/* Status + meta */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">Estado</p>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ESTADO_BADGE[selected.estado]}`}>{selected.estado}</span>
+              {/* Drawer Body */}
+              <div className="flex-1 overflow-y-auto divide-y divide-border">
+
+                {/* 1 — Información del solicitante */}
+                <div className="px-6 py-4 space-y-3">
+                  <SectionLabel>Solicitante</SectionLabel>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                      <User className="w-4 h-4 text-primary-700" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-text leading-tight">{selected.solicitante || 'Sin nombre'}</p>
+                      {selected.email && (
+                        <a
+                          href={`mailto:${selected.email}`}
+                          className="text-xs text-primary-700 hover:underline flex items-center gap-1 mt-0.5"
+                        >
+                          <Mail className="w-3 h-3" />
+                          {selected.email}
+                        </a>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">Fecha</p>
-                    <p className="text-sm text-text">{selected.fecha}</p>
-                  </div>
-                  <div>
-                    <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">Solicitante</p>
-                    <p className="text-sm font-semibold text-text">{selected.solicitante}</p>
-                  </div>
-                  <div>
-                    <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">Revisor</p>
-                    <p className="text-sm text-text">{selected.revisor || 'Sin asignar'}</p>
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-0.5">Fecha de envío</p>
+                      <p className="text-sm text-text">{selected.fecha}</p>
+                    </div>
+                    <div>
+                      <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-0.5">ID único</p>
+                      <p className="text-sm font-mono text-primary-800">{selected.id}</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Timeline */}
-                <div>
-                  <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-3">Progreso de la Solicitud</p>
-                  <div className="relative">
+                {/* 2 — Detalle de la solicitud */}
+                <div className="px-6 py-4 space-y-3">
+                  <SectionLabel>Detalle de la solicitud</SectionLabel>
+                  <div className="flex items-start gap-2.5">
+                    <FileText className="w-4 h-4 text-text-muted shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-0.5">Tipo de trámite</p>
+                      <p className="text-sm font-semibold text-text">{selected.tipo}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Descripción</p>
+                    <div className="bg-bg-alt rounded-lg p-3">
+                      <p className="text-sm text-text leading-relaxed">
+                        {selected.descripcion || selected.subtipo || 'Sin descripción'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3 — Seguimiento / Timeline */}
+                <div className="px-6 py-4">
+                  <SectionLabel>Historial del trámite</SectionLabel>
+                  <div className="relative space-y-0">
                     {selected.timeline.map((step, i) => {
                       const isLast = i === selected.timeline.length - 1
-                      const isDone = true
+                      const isReject = step === 'Rechazado'
+                      const isTeal = step === 'Resuelta'
                       return (
                         <div key={i} className="flex gap-3 pb-4 last:pb-0">
                           <div className="flex flex-col items-center">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white text-[0.55rem] font-bold ${isLast && selected.estado === 'Rechazado' ? 'bg-red-500' : isLast ? 'bg-primary-800' : 'bg-primary-300'}`}>
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white text-[0.55rem] font-bold ${
+                              isLast && isReject ? 'bg-red-500'
+                              : isLast && isTeal  ? 'bg-teal-500'
+                              : isLast            ? 'bg-primary-800'
+                              : 'bg-primary-300'
+                            }`}>
                               {i + 1}
                             </div>
                             {!isLast && <div className="w-px flex-1 bg-border mt-1" />}
@@ -316,48 +392,107 @@ export default function GestionSolicitudes() {
                   </div>
                 </div>
 
-                {/* Notes */}
-                <div>
-                  <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-2">Notas Técnicas</p>
-                  <div className="bg-bg-alt rounded-xl p-4">
-                    <p className="text-sm text-text-muted leading-relaxed">{selected.notas}</p>
+                {/* 4 — Respuesta enviada (si ya está resuelta) */}
+                {selected.estado === 'Resuelta' && selected.notas && (
+                  <div className="px-6 py-4">
+                    <SectionLabel>Respuesta enviada al solicitante</SectionLabel>
+                    <div className="bg-teal-50 border border-teal-200 rounded-xl p-4">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                        <p className="text-sm text-teal-800 leading-relaxed">{selected.notas}</p>
+                      </div>
+                      <p className="text-[0.6rem] text-teal-600 mt-2">
+                        Respuesta enviada por correo al solicitante
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Inline action if pending */}
-                {(selected.estado === 'Pendiente' || selected.estado === 'En Revisión') && (
-                  <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 space-y-3">
-                    <p className="text-xs font-bold text-primary-800">Acción rápida</p>
-                    {selected.estado === 'Pendiente' && (
+                {/* 5 — Respuesta del admin con nota anterior */}
+                {selected.notas && selected.estado !== 'Resuelta' && (
+                  <div className="px-6 py-4">
+                    <SectionLabel>Nota interna</SectionLabel>
+                    <div className="bg-bg-alt rounded-xl p-3">
+                      <p className="text-sm text-text-muted leading-relaxed">{selected.notas}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* 6 — Comunicación / Enviar respuesta (solo si está activa) */}
+                {canAct(selected) && (
+                  <div className="px-6 py-4 space-y-3">
+                    <SectionLabel>Comunicación con el solicitante</SectionLabel>
+
+                    {/* Enviar respuesta formal */}
+                    <div className="bg-primary-50 border border-primary-100 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-primary-700" />
+                        <p className="text-xs font-bold text-primary-800">Enviar respuesta y resolver</p>
+                      </div>
+                      <p className="text-[0.65rem] text-primary-700 leading-relaxed">
+                        Escribe la respuesta formal. Se enviará al correo del solicitante y
+                        la solicitud quedará marcada como <strong>Resuelta</strong>.
+                      </p>
+                      <textarea
+                        rows={4}
+                        value={respuesta}
+                        onChange={(e) => setRespuesta(e.target.value)}
+                        placeholder="Redacta la respuesta oficial para el solicitante. Incluye los resultados del trámite, observaciones técnicas o instrucciones para recibir los documentos..."
+                        className="w-full px-3 py-2.5 border border-primary-200 bg-white rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
+                      />
                       <button
-                        onClick={() => handleMarcarRevision(selected)}
-                        disabled={updateEstado.isPending}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                        onClick={handleResponder}
+                        disabled={responderMutation.isPending || respuesta.trim().length < 10}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-xs font-bold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
-                        {updateEstado.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
-                        Marcar en revisión
+                        {responderMutation.isPending
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <Send className="w-3.5 h-3.5" />
+                        }
+                        Enviar respuesta al solicitante
                       </button>
-                    )}
-                    <textarea
-                      rows={2}
-                      value={nota}
-                      onChange={(e) => setNota(e.target.value)}
-                      placeholder="Nota para el solicitante (opcional)..."
-                      className="w-full px-3 py-2 border border-primary-200 bg-white rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => { setAccionModal({ type: 'approve', sol: selected }) }}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 transition-colors"
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" /> Aprobar
-                      </button>
-                      <button
-                        onClick={() => { setAccionModal({ type: 'reject', sol: selected }) }}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
-                      >
-                        <XCircle className="w-3.5 h-3.5" /> Rechazar
-                      </button>
+                    </div>
+
+                    {/* Acciones de estado */}
+                    <div className="space-y-2">
+                      <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">Acciones de estado</p>
+                      <div className="flex gap-2">
+                        {selected.estado === 'Pendiente' && (
+                          <button
+                            onClick={() => handleMarcarRevision(selected)}
+                            disabled={updateEstado.isPending}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                          >
+                            {updateEstado.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+                            En revisión
+                          </button>
+                        )}
+                        <button
+                          onClick={() => { setAccionModal({ type: 'approve', sol: selected }) }}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 transition-colors"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" /> Aprobar
+                        </button>
+                        <button
+                          onClick={() => { setAccionModal({ type: 'reject', sol: selected }) }}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> Rechazar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Resolved state info */}
+                {isResolved(selected) && selected.estado !== 'Resuelta' && (
+                  <div className="px-6 py-4">
+                    <div className="flex items-start gap-2.5 p-3 bg-bg-alt rounded-xl">
+                      <AlertCircle className="w-4 h-4 text-text-muted shrink-0 mt-0.5" />
+                      <p className="text-xs text-text-muted leading-relaxed">
+                        Esta solicitud fue marcada como <strong>{selected.estado}</strong>.
+                        El solicitante fue notificado por correo electrónico.
+                      </p>
                     </div>
                   </div>
                 )}
@@ -382,12 +517,14 @@ export default function GestionSolicitudes() {
                 {accionModal.sol.id} — {accionModal.sol.tipo}
               </p>
               <div className="mb-4">
-                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1">Nota (opcional)</label>
+                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1">
+                  Nota para el solicitante (opcional)
+                </label>
                 <textarea
                   rows={3}
                   value={nota}
                   onChange={(e) => setNota(e.target.value)}
-                  placeholder="Agregar comentario..."
+                  placeholder="Agregar comentario o motivo..."
                   className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
                 />
               </div>

@@ -540,7 +540,7 @@ export default function Perfil() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-orange-600">Cerrar Sesión</p>
-                <p className="text-xs text-text-muted">Salir del portal VIGIIAP</p>
+                <p className="text-xs text-text-muted">Salir del portal VIGI-IIAP</p>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-orange-400 group-hover:text-orange-600 transition-colors" />
@@ -550,7 +550,7 @@ export default function Perfil() {
 
       {/* Footer */}
       <p className="text-center text-[0.65rem] text-text-muted/50 font-mono pb-4">
-        VIGIIAP v1.0 · © {new Date().getFullYear()} IIAP · Chocó Biogeográfico
+        VIGI-IIAP v1.0 · © {new Date().getFullYear()} IIAP · Chocó Biogeográfico
       </p>
     </div>
   )

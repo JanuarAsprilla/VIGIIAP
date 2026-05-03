@@ -25,10 +25,17 @@ export default defineConfig({
     },
   },
   server: {
+    headers: {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:4000',
         changeOrigin: true,
+        secure: false,
       },
     },
   },

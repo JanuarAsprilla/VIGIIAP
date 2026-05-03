@@ -151,7 +151,7 @@ export default function AuthLayout({ children }) {
               Portal Territorial · IIAP
             </span>
             <h1 className="font-display text-4xl font-bold text-white mt-1 tracking-[0.18em]">
-              VIGIIAP
+              VIGI-IIAP
             </h1>
           </motion.div>
 
@@ -202,7 +202,7 @@ export default function AuthLayout({ children }) {
             <div className="w-7 h-7 bg-primary-800 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xs">V</span>
             </div>
-            <span className="font-display font-bold text-text tracking-wider">VIGIIAP</span>
+            <span className="font-display font-bold text-text tracking-wider">VIGI-IIAP</span>
           </div>
           <Link to="/"
             className="flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-primary-800 no-underline transition-colors">

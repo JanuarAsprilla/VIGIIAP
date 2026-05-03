@@ -63,30 +63,33 @@ export function validatePassword(value, minLength = 6) {
 
 /**
  * Valida criterios de seguridad de contraseña para registro.
- * Requiere mín. 8 chars, 1 mayúscula, 1 minúscula, 1 dígito o carácter especial.
+ * Requiere mín. 8 chars, mayúscula, minúscula, número Y carácter especial.
  * @param {string} value
  * @returns {string|null}
  */
 export function validatePasswordStrength(value) {
   if (!value) return 'La contraseña es requerida'
-  if (value.length < 8)           return 'La contraseña debe tener al menos 8 caracteres'
-  if (!/[A-Z]/.test(value))       return 'Debe incluir al menos una letra mayúscula'
-  if (!/[a-z]/.test(value))       return 'Debe incluir al menos una letra minúscula'
-  if (!/[\d\W_]/.test(value))     return 'Debe incluir al menos un número o símbolo'
+  if (value.length < 8)                    return 'La contraseña debe tener al menos 8 caracteres'
+  if (!/[A-Z]/.test(value))               return 'Debe incluir al menos una letra mayúscula'
+  if (!/[a-z]/.test(value))               return 'Debe incluir al menos una letra minúscula'
+  if (!/[0-9]/.test(value))               return 'Debe incluir al menos un número'
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(value))
+    return 'Debe incluir al menos un carácter especial (!@#$%...)'
   return null
 }
 
 /**
  * Retorna el estado de cada criterio de fortaleza de contraseña.
  * @param {string} value
- * @returns {{ length: boolean, upper: boolean, lower: boolean, numOrSymbol: boolean }}
+ * @returns {{ length: boolean, upper: boolean, lower: boolean, number: boolean, special: boolean }}
  */
 export function passwordCriteria(value = '') {
   return {
-    length:      value.length >= 8,
-    upper:       /[A-Z]/.test(value),
-    lower:       /[a-z]/.test(value),
-    numOrSymbol: /[\d\W_]/.test(value),
+    length:  value.length >= 8,
+    upper:   /[A-Z]/.test(value),
+    lower:   /[a-z]/.test(value),
+    number:  /[0-9]/.test(value),
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(value),
   }
 }
 

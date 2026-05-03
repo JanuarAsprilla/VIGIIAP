@@ -19,7 +19,7 @@ const resourceLinks = [
 
 export default function Footer() {
   return (
-    <footer className="relative bg-primary-900 text-white mt-16">
+    <footer className="relative text-white mt-16" style={{ background: '#284E39' }}>
       {/* ── Wave separator ── */}
       <div className="absolute -top-15 inset-x-0 h-15 overflow-hidden pointer-events-none">
         <svg
@@ -55,7 +55,7 @@ export default function Footer() {
                     IIAP
                   </text>
                 </svg>
-                <span className="font-display text-2xl font-bold">VIGIIAP</span>
+                <span className="font-display text-2xl font-bold">VIGI-IIAP</span>
               </div>
 
               {/* Description */}

@@ -3,12 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 // ── Deterministic data points on the globe ──
 const GLOBE_POINTS = [
-  { cx: 140, cy: 72,  r: 3,   color: '#D4A373', pulse: true  },
-  { cx: 62,  cy: 88,  r: 2,   color: '#74C69D', pulse: false },
-  { cx: 108, cy: 128, r: 2.5, color: '#74C69D', pulse: true  },
-  { cx: 162, cy: 110, r: 1.5, color: '#52B788', pulse: false },
-  { cx: 48,  cy: 118, r: 2,   color: '#D4A373', pulse: true  },
-  { cx: 128, cy: 52,  r: 1.5, color: '#74C69D', pulse: false },
+  { cx: 140, cy: 72,  r: 3,   color: '#F7AC42', pulse: true  },
+  { cx: 62,  cy: 88,  r: 2,   color: '#33B065', pulse: false },
+  { cx: 108, cy: 128, r: 2.5, color: '#B0CB1F', pulse: true  },
+  { cx: 162, cy: 110, r: 1.5, color: '#009846', pulse: false },
+  { cx: 48,  cy: 118, r: 2,   color: '#F7AC42', pulse: true  },
+  { cx: 128, cy: 52,  r: 1.5, color: '#33B065', pulse: false },
 ]
 
 // ── Background star particles ──
@@ -29,29 +29,29 @@ const HUD_LINES = [
   'LAT: 5°41\'13"N  LON: 76°39\'29"W',
   'EPSG:4326 → MAGNA-SIRGAS:3115',
   'SRS: WGS84 · CRS: Colombia Oeste',
-  'IIAP · VIGIIAP v2.1 · BUILD 2026',
+  'IIAP · VIGI-IIAP v2.1 · BUILD 2026',
 ]
 
 // ── Globe SVG ──
 function Globe() {
   return (
-    <svg viewBox="0 0 200 200" className="w-full h-full" style={{ filter: 'drop-shadow(0 0 18px rgba(82,183,136,0.35))' }}>
+    <svg viewBox="0 0 200 200" className="w-full h-full" style={{ filter: 'drop-shadow(0 0 18px rgba(0,152,70,0.38))' }}>
       <defs>
         {/* Sphere gradient */}
         <radialGradient id="sg" cx="38%" cy="32%" r="65%">
-          <stop offset="0%"   stopColor="rgba(64,145,108,0.22)" />
-          <stop offset="60%"  stopColor="rgba(27,67,50,0.12)"   />
-          <stop offset="100%" stopColor="rgba(8,28,21,0.05)"    />
+          <stop offset="0%"   stopColor="rgba(33,136,66,0.22)" />
+          <stop offset="60%"  stopColor="rgba(26,86,50,0.12)"  />
+          <stop offset="100%" stopColor="rgba(40,78,57,0.05)"  />
         </radialGradient>
         {/* Equator glow */}
         <radialGradient id="eg" cx="50%" cy="50%" r="50%">
           <stop offset="70%" stopColor="transparent" />
-          <stop offset="100%" stopColor="rgba(116,198,157,0.15)" />
+          <stop offset="100%" stopColor="rgba(0,152,70,0.18)" />
         </radialGradient>
         {/* Scanning sweep */}
         <radialGradient id="scan" cx="0%" cy="50%" r="100%">
-          <stop offset="0%"  stopColor="rgba(116,198,157,0.25)" />
-          <stop offset="80%" stopColor="rgba(116,198,157,0.05)" />
+          <stop offset="0%"  stopColor="rgba(176,203,31,0.28)" />
+          <stop offset="80%" stopColor="rgba(0,152,70,0.06)"   />
           <stop offset="100%" stopColor="transparent" />
         </radialGradient>
         <clipPath id="globe-clip">
@@ -60,7 +60,7 @@ function Globe() {
       </defs>
 
       {/* Atmosphere ring */}
-      <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(116,198,157,0.08)" strokeWidth="16" />
+      <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(0,152,70,0.08)" strokeWidth="16" />
 
       {/* Globe fill */}
       <circle cx="100" cy="100" r="80" fill="url(#sg)" />
@@ -81,7 +81,7 @@ function Globe() {
           cx="100" cy={l.cy}
           rx="80" ry={l.ry}
           fill="none"
-          stroke={`rgba(116,198,157,${l.op})`}
+          stroke={`rgba(0,152,70,${l.op})`}
           strokeWidth="0.7"
           initial={{ pathLength: 0 }}
           animate={{ pathLength: 1 }}
@@ -97,7 +97,7 @@ function Globe() {
           cx="100" cy="100"
           rx="8" ry="80"
           fill="none"
-          stroke={`rgba(116,198,157,${i === 0 ? 0.5 : 0.22})`}
+          stroke={`rgba(0,152,70,${i === 0 ? 0.5 : 0.22})`}
           strokeWidth={i === 0 ? 0.8 : 0.6}
           transform={`rotate(${angle}, 100, 100)`}
           initial={{ pathLength: 0 }}
@@ -113,14 +113,14 @@ function Globe() {
         transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
       >
         <path d="M100 100 L180 100 A80 80 0 0 0 180 100 Z" fill="url(#scan)" opacity="0.7" />
-        <line x1="100" y1="100" x2="180" y2="100" stroke="rgba(116,198,157,0.6)" strokeWidth="0.8" />
+        <line x1="100" y1="100" x2="180" y2="100" stroke="rgba(0,152,70,0.6)" strokeWidth="0.8" />
       </motion.g>
 
       {/* Outer circle */}
       <motion.circle
         cx="100" cy="100" r="80"
         fill="none"
-        stroke="rgba(116,198,157,0.6)"
+        stroke="rgba(0,152,70,0.6)"
         strokeWidth="1"
         initial={{ pathLength: 0 }}
         animate={{ pathLength: 1 }}
@@ -154,9 +154,9 @@ function Globe() {
 
       {/* Center crosshair */}
       <g opacity="0.4">
-        <line x1="94" y1="100" x2="106" y2="100" stroke="#74C69D" strokeWidth="0.8" />
-        <line x1="100" y1="94"  x2="100" y2="106" stroke="#74C69D" strokeWidth="0.8" />
-        <circle cx="100" cy="100" r="3" fill="none" stroke="#74C69D" strokeWidth="0.6" />
+        <line x1="94" y1="100" x2="106" y2="100" stroke="#B0CB1F" strokeWidth="0.8" />
+        <line x1="100" y1="94"  x2="100" y2="106" stroke="#B0CB1F" strokeWidth="0.8" />
+        <circle cx="100" cy="100" r="3" fill="none" stroke="#B0CB1F" strokeWidth="0.6" />
       </g>
     </svg>
   )
@@ -170,7 +170,7 @@ function OrbitRing() {
         {/* Ring */}
         <svg viewBox="0 0 300 300" className="absolute inset-0 w-full h-full">
           <circle cx="150" cy="150" r="135" fill="none"
-            stroke="rgba(116,198,157,0.2)" strokeWidth="1"
+            stroke="rgba(0,152,70,0.2)" strokeWidth="1"
             strokeDasharray="6 4" />
         </svg>
         {/* Satellite dot */}
@@ -233,8 +233,8 @@ export default function Preloader() {
                 transform: 'rotateX(65deg)',
                 transformOrigin: 'bottom center',
                 backgroundImage: `
-                  linear-gradient(rgba(82,183,136,0.07) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(82,183,136,0.07) 1px, transparent 1px)
+                  linear-gradient(rgba(0,152,70,0.07) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(0,152,70,0.07) 1px, transparent 1px)
                 `,
                 backgroundSize: '60px 60px',
                 maskImage: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%)',
@@ -310,7 +310,7 @@ export default function Preloader() {
                 Sistema de Información Territorial
               </p>
 
-              {/* VIGIIAP */}
+              {/* VIGI-IIAP */}
               <h1
                 className="font-display font-bold text-white mb-2"
                 style={{ fontSize: 'clamp(2.8rem, 8vw, 4.5rem)', letterSpacing: '0.22em', lineHeight: 1 }}
@@ -352,8 +352,8 @@ export default function Preloader() {
                   className="h-full rounded-full"
                   style={{
                     width: `${progress}%`,
-                    background: 'linear-gradient(90deg, #2D6A4F, #52B788, #74C69D)',
-                    boxShadow: '0 0 12px rgba(116,198,157,0.5)',
+                    background: 'linear-gradient(90deg, #1A5632, #218842, #B0CB1F)',
+                    boxShadow: '0 0 14px rgba(176,203,31,0.55)',
                     transition: 'width 0.08s linear',
                   }}
                 />
@@ -383,7 +383,7 @@ export default function Preloader() {
           {/* ── Scan line sweep across full screen ── */}
           <motion.div
             className="absolute inset-x-0 h-px"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(116,198,157,0.4), transparent)' }}
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(0,152,70,0.4), transparent)' }}
             animate={{ top: ['0%', '100%'] }}
             transition={{ duration: 2.4, repeat: Infinity, ease: 'linear' }}
           />

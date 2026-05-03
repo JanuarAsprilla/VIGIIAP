@@ -2,58 +2,67 @@
 
 /* =====================================================
    VIGIIAP Design System — Tailwind v4 Theme
-   Based on Figma: Biogeográfico Emerald
+   Paleta Oficial IIAP — Manual de Identidad Visual
    ===================================================== */
 
 @theme {
-  /* Primary palette — Chocó Biogeográfico greens */
-  --color-primary-50: #F0FFF4;
-  --color-primary-100: #D8F3DC;
-  --color-primary-200: #B7E4C7;
-  --color-primary-300: #95D5B2;
-  --color-primary-400: #74C69D;
-  --color-primary-500: #52B788;
-  --color-primary-600: #40916C;
-  --color-primary-700: #2D6A4F;
-  --color-primary-800: #1B4332;
-  --color-primary-900: #081C15;
+  /* ── Verdes institucionales ────────────────────────── */
+  --color-primary-50:  #E8F5EB;
+  --color-primary-100: #C8E6CE;
+  --color-primary-200: #A0D3AB;
+  --color-primary-300: #66BA7F;
+  --color-primary-400: #33A65E;
+  --color-primary-500: #009846;   /* secondary — verde vivo IIAP    */
+  --color-primary-600: #218842;   /* primary-light                  */
+  --color-primary-700: #1A5632;   /* primary institucional           */
+  --color-primary-800: #284E39;   /* primary-dark                   */
+  --color-primary-900: #1A2E22;
 
-  /* Gold / Accent */
-  --color-gold-300: #E9C46A;
-  --color-gold-400: #D4A373;
-  --color-gold-500: #C68B59;
+  /* ── Acento cálido — cultura / fauna ──────────────── */
+  --color-gold-300: #FECC00;      /* gold-light                     */
+  --color-gold-400: #F7AC42;      /* gold principal                 */
+  --color-gold-500: #F08143;      /* orange                         */
 
-  /* Orange */
-  --color-orange-400: #F4845F;
-  --color-orange-500: #E76F51;
-  --color-orange-600: #E67E22;
+  /* ── Acento lima — biodiversidad ──────────────────── */
+  --color-accent: #B0CB1F;
 
-  /* Neutrals */
-  --color-surface: #FFFFFF;
-  --color-bg: #F8FAF9;
-  --color-bg-alt: #EDF2F0;
-  --color-border: #E2E8F0;
-  --color-text: #1A1A2E;
+  /* ── Orange ────────────────────────────────────────── */
+  --color-orange-400: #F4A261;
+  --color-orange-500: #F08143;
+  --color-orange-600: #E07030;
+
+  /* ── Alertas / cultura afrocolombiana ─────────────── */
+  --color-red:        #E31E24;
+  --color-red-dark:   #C12A2B;
+  --color-pink:       #E95B8C;
+  --color-pink-light: #F18A87;
+
+  /* ── Neutrals ──────────────────────────────────────── */
+  --color-surface:    #FEFEFE;
+  --color-bg:         #F8FAF9;
+  --color-bg-alt:     #EDF2F0;
+  --color-border:     #E2E8F0;
+  --color-text:       #1A1A2E;
   --color-text-light: #4A5568;
   --color-text-muted: #718096;
 
-  /* Typography */
+  /* ── Typography ────────────────────────────────────── */
   --font-display: 'Playfair Display', Georgia, serif;
-  --font-body: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body:    'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Shadows */
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  /* ── Shadows ───────────────────────────────────────── */
+  --shadow-soft:     0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-card:     0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-elevated: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-float: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-glow: 0 0 40px rgba(27, 67, 50, 0.15);
+  --shadow-float:    0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-glow:     0 0 40px rgba(26, 86, 50, 0.15);
 
-  /* Radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 24px;
+  /* ── Radius ────────────────────────────────────────── */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  24px;
   --radius-full: 9999px;
 }
 
@@ -99,10 +108,8 @@ body {
    Typography scale adjustments
    ===================================================== */
 
-/* Ensure readable minimums */
 .text-sm { font-size: clamp(0.875rem, 1.5vw, 1rem); line-height: 1.5; }
 
-/* Module page headers */
 .page-header-tag {
   font-size: clamp(0.95rem, 1.5vw, 0.85rem);
   font-weight: 700;
@@ -125,7 +132,6 @@ body {
   line-height: 1.7;
 }
 
-/* Card content readable */
 .card-title {
   font-size: clamp(0.95rem, 1.5vw, 1.1rem);
   font-weight: 700;
@@ -138,7 +144,6 @@ body {
   color: var(--color-text-muted);
 }
 
-/* Table text */
 .table-header {
   font-size: clamp(0.75rem, 1.2vw, 0.85rem);
   font-weight: 700;
@@ -178,9 +183,7 @@ body {
    3D & Motion — Design Premium System
    ===================================================== */
 
-/* ── Card lift 3D ──
-   Aplica perspective + rotación leve al hacer hover.
-   Uso: <div class="card-3d"> */
+/* ── Card lift 3D ── */
 .card-3d {
   will-change: transform;
   transform-style: preserve-3d;
@@ -191,25 +194,23 @@ body {
 .card-3d:hover {
   transform: perspective(900px) translateY(-6px) rotateX(2.5deg) rotateY(-1.5deg) scale(1.015);
   box-shadow:
-    0 24px 48px -8px rgba(27, 67, 50, 0.18),
-    0 8px 16px -4px rgba(27, 67, 50, 0.08),
-    0 0 0 1px rgba(27, 67, 50, 0.06);
+    0 24px 48px -8px rgba(26, 86, 50, 0.18),
+    0 8px 16px -4px rgba(26, 86, 50, 0.08),
+    0 0 0 1px rgba(26, 86, 50, 0.06);
 }
 
-/* ── Glow border on hover ──
-   Uso: <div class="glow-hover"> */
+/* ── Glow border on hover ── */
 .glow-hover {
   transition: box-shadow 0.3s ease;
 }
 .glow-hover:hover {
   box-shadow:
-    0 0 0 1px rgba(27, 67, 50, 0.15),
-    0 0 24px 2px rgba(27, 67, 50, 0.12),
-    0 0 48px 4px rgba(82, 183, 136, 0.06);
+    0 0 0 1px rgba(26, 86, 50, 0.15),
+    0 0 24px 2px rgba(26, 86, 50, 0.12),
+    0 0 48px 4px rgba(0, 152, 70, 0.06);
 }
 
-/* ── Shimmer sweep on primary buttons ──
-   Uso: <button class="btn-shimmer"> */
+/* ── Shimmer sweep on primary buttons ── */
 .btn-shimmer {
   position: relative;
   overflow: hidden;
@@ -235,8 +236,7 @@ body {
   100%     { transform: skewX(-20deg) translateX(280%); }
 }
 
-/* ── Float — sutil levitación para elementos hero ──
-   Uso: <div class="animate-float"> */
+/* ── Float — sutil levitación para elementos hero ── */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50%       { transform: translateY(-8px); }
@@ -245,40 +245,36 @@ body {
   animation: float 4s ease-in-out infinite;
 }
 
-/* ── Pulse glow ──
-   Uso: <div class="animate-pulse-glow"> */
+/* ── Pulse glow ── */
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(27, 67, 50, 0.18);
+    box-shadow: 0 0 0 0 rgba(26, 86, 50, 0.18);
   }
   50% {
-    box-shadow: 0 0 0 12px rgba(27, 67, 50, 0);
+    box-shadow: 0 0 0 12px rgba(26, 86, 50, 0);
   }
 }
 .animate-pulse-glow {
   animation: pulse-glow 2.4s ease-in-out infinite;
 }
 
-/* ── Gradient text ──
-   Uso: <h1 class="text-gradient"> */
+/* ── Gradient text — Verdes IIAP ── */
 .text-gradient {
-  background: linear-gradient(135deg, #1B4332 0%, #40916C 50%, #74C69D 100%);
+  background: linear-gradient(135deg, #1A5632 0%, #218842 50%, #009846 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ── Gold gradient text ──
-   Uso: <span class="text-gradient-gold"> */
+/* ── Gold gradient text — Cultura / Fauna ── */
 .text-gradient-gold {
-  background: linear-gradient(135deg, #C68B59 0%, #D4A373 60%, #E9C46A 100%);
+  background: linear-gradient(135deg, #F08143 0%, #F7AC42 60%, #FECC00 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ── Glassmorphism ──
-   Uso: <div class="glass-card"> */
+/* ── Glassmorphism ── */
 .glass-card {
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(16px) saturate(180%);
@@ -286,17 +282,15 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-/* ── Frosted dark (para overlays, modales) ──
-   Uso: <div class="glass-dark"> */
+/* ── Frosted dark (overlays, modales) ── */
 .glass-dark {
-  background: rgba(8, 28, 21, 0.72);
+  background: rgba(40, 78, 57, 0.72);
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* ── Noise texture overlay (aporta profundidad) ──
-   Uso: <div class="noise-overlay"> */
+/* ── Noise texture overlay ── */
 .noise-overlay::before {
   content: '';
   position: absolute;
@@ -307,8 +301,7 @@ body {
   pointer-events: none;
 }
 
-/* ── Gradient border ──
-   Uso: <div class="gradient-border"> */
+/* ── Gradient border ── */
 .gradient-border {
   position: relative;
 }
@@ -316,14 +309,13 @@ body {
   content: '';
   position: absolute;
   inset: -1px;
-  background: linear-gradient(135deg, rgba(27, 67, 50, 0.3), rgba(116, 198, 157, 0.2), transparent 60%);
+  background: linear-gradient(135deg, rgba(26, 86, 50, 0.3), rgba(0, 152, 70, 0.2), transparent 60%);
   border-radius: inherit;
   pointer-events: none;
   z-index: 0;
 }
 
-/* ── Scan line (premium data feel) ──
-   Uso: <div class="scan-lines"> */
+/* ── Scan line (premium data feel) ── */
 .scan-lines {
   position: relative;
   overflow: hidden;
@@ -342,16 +334,121 @@ body {
   pointer-events: none;
 }
 
-/* ── Hover lift (más simple que card-3d) ──
-   Uso: <button class="lift-hover"> */
+/* ── Hover lift ── */
 .lift-hover {
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
 }
 .lift-hover:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 28px -6px rgba(27, 67, 50, 0.2);
+  box-shadow: 0 12px 28px -6px rgba(26, 86, 50, 0.2);
 }
 .lift-hover:active {
   transform: translateY(0);
   box-shadow: none;
+}
+
+/* =====================================================
+   Paleta Oficial IIAP — Componentes Semánticos
+   ===================================================== */
+
+/* ── Hero section gradient ── */
+.hero-gradient {
+  background: linear-gradient(135deg, #284E39 0%, #1A5632 50%, #218842 100%);
+}
+
+/* ── Botones primarios — ámbar sobre verde oscuro ── */
+.btn-primary {
+  background: #F7AC42;
+  color: #284E39;
+  font-weight: 700;
+  border: none;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.btn-primary:hover {
+  background: #FECC00;
+  box-shadow: 0 6px 20px -4px rgba(247, 172, 66, 0.45);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  background: #F08143;
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* ── Module icons ── */
+.module-icon {
+  background: linear-gradient(135deg, #1A5632, #009846);
+}
+
+/* ── Section tags / badges institucionales ── */
+.section-tag {
+  background: #1A5632;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+}
+
+/* ── Tool card headers ── */
+.tool-header {
+  background: linear-gradient(135deg, #1A5632, #218842);
+  color: #ffffff;
+}
+
+/* ── Form headers ── */
+.form-header {
+  background: linear-gradient(135deg, #1A5632, #218842);
+  color: #ffffff;
+}
+
+/* ── Footer ── */
+.footer {
+  background: #284E39;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── Timeline — estado activo / hover ── */
+.timeline-item.active .timeline-marker,
+.timeline-item:hover .timeline-marker {
+  background: #F7AC42;
+  border-color: #F7AC42;
+  box-shadow: 0 0 0 4px rgba(247, 172, 66, 0.2);
+}
+
+/* ── Map card categories ── */
+.map-card-category {
+  color: #1A5632;
+  background: rgba(26, 86, 50, 0.1);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ── Preloader progress bar ── */
+.preloader-progress {
+  background: linear-gradient(90deg, #B0CB1F, #F7AC42);
+  border-radius: var(--radius-full);
+  height: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ── Accent lima — biodiversidad ── */
+.accent-lime {
+  color: #B0CB1F;
+}
+.bg-accent-lime {
+  background: #B0CB1F;
+}
+
+/* ── Alert states using IIAP red ── */
+.alert-danger {
+  color: #C12A2B;
+  background: rgba(227, 30, 36, 0.08);
+  border-left: 3px solid #E31E24;
 }

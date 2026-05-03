@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { BookOpen, ChevronRight } from 'lucide-react'
 
 const SECTIONS = [
-  { title: 'Primeros Pasos', description: 'Cómo acceder al sistema, configurar su perfil y personalizar su experiencia en VIGIIAP.' },
+  { title: 'Primeros Pasos', description: 'Cómo acceder al sistema, configurar su perfil y personalizar su experiencia en VIGI-IIAP.' },
   { title: 'Módulo de Mapas', description: 'Buscar, filtrar y descargar cartografía temática. Uso de formatos y visualización en el Geovisor.' },
   { title: 'Centro de Documentos', description: 'Navegación por categorías, búsqueda avanzada y descarga de protocolos y guías técnicas.' },
   { title: 'Geovisor SIAT-PC', description: 'Capas de información, herramientas de medición, exportación y cambio de estilos de mapa.' },
@@ -17,7 +17,7 @@ export default function GuiaUsuario() {
         <span className="page-header-tag block mb-2">Recursos</span>
         <h1 className="page-header-title mb-3">Guía de Usuario</h1>
         <p className="page-header-description max-w-2xl">
-          Manual completo del sistema VIGIIAP. Aprenda a utilizar todas las herramientas
+          Manual completo del sistema VIGI-IIAP. Aprenda a utilizar todas las herramientas
           y módulos disponibles para la gestión territorial del Chocó Biogeográfico.
         </p>
       </div>

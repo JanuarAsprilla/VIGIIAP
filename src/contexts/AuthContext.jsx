@@ -4,6 +4,7 @@ import queryClient from '@/lib/queryClient'
 
 // ─── Mapeo de roles backend → etiquetas UI ────────────────────────────────────
 export const ROLES = {
+  SUPER_ADMIN:   'Super Administrador',
   ADMIN:         'Administrador SIG',
   INVESTIGADOR:  'Investigador',
   TECNICO:       'Técnico SIG',
@@ -13,6 +14,7 @@ export const ROLES = {
 }
 
 const ROLE_MAP = {
+  super_admin:  ROLES.SUPER_ADMIN,
   admin_sig:    ROLES.ADMIN,
   investigador: ROLES.INVESTIGADOR,
   tecnico:      ROLES.TECNICO,
@@ -134,6 +136,8 @@ export function AuthProvider({ children }) {
       user,
       isAuthenticated:  !!user,
       isVisitante:      user?.isVisitante ?? false,
+      isSuperAdmin:     user?.rol === 'super_admin',
+      isAdmin:          user?.rol === 'admin_sig' || user?.rol === 'super_admin',
       loading,
       login,
       loginVisitante,

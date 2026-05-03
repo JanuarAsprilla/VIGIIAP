@@ -5,7 +5,7 @@ import { SearchProvider } from './contexts/SearchContext'
 import { UIProvider } from './contexts/UIContext'
 import MainLayout from './layouts/MainLayout'
 import AdminLayout from './layouts/AdminLayout'
-import RequireAuth, { RequireInvestigador, RequireAdmin } from './components/RequireAuth'
+import RequireAuth, { RequireInvestigador, RequireAdmin, RequireSuperAdmin } from './components/RequireAuth'
 import ErrorBoundary from './components/ErrorBoundary'
 import Preloader from './components/Preloader'
 import {
@@ -51,6 +51,7 @@ const AdminMapas       = lazy(() => import('./pages/admin/GestionMapas'))
 const AdminConfig      = lazy(() => import('./pages/admin/Configuracion'))
 const AdminActividad   = lazy(() => import('./pages/admin/Actividad'))
 const AdminCategorias  = lazy(() => import('./pages/admin/GestionCategorias'))
+const AdminGestionAdmins = lazy(() => import('./pages/admin/GestionAdmins'))
 
 // Fallback genérico para Geovisor (mapa de pantalla completa, sin skeleton de columnas)
 function GeovisorLoader() {
@@ -138,7 +139,7 @@ export default function App() {
             <Suspense fallback={null}><NotFound /></Suspense>
           } />
 
-          {/* ── Panel Admin (AdminLayout) — solo Administrador SIG ── */}
+          {/* ── Panel Admin (AdminLayout) — Administrador SIG y Super Admin ── */}
           <Route element={<RequireAdmin />}>
             <Route element={<AdminLayout />}>
               <Route path="/admin"               element={<Suspense fallback={<GenericPageSkeleton />}><AdminDashboard /></Suspense>} />
@@ -150,6 +151,11 @@ export default function App() {
               <Route path="/admin/configuracion" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConfig /></Suspense>} />
               <Route path="/admin/actividad"     element={<Suspense fallback={<GenericPageSkeleton />}><AdminActividad /></Suspense>} />
               <Route path="/admin/categorias"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminCategorias /></Suspense>} />
+
+              {/* ── Rutas exclusivas Super Admin ── */}
+              <Route element={<RequireSuperAdmin />}>
+                <Route path="/admin/superadmin" element={<Suspense fallback={<GenericPageSkeleton />}><AdminGestionAdmins /></Suspense>} />
+              </Route>
             </Route>
           </Route>
         </Routes>

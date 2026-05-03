@@ -54,7 +54,7 @@ export default function FAQ() {
         <span className="page-header-tag block mb-2">Recursos</span>
         <h1 className="page-header-title mb-3">Preguntas Frecuentes</h1>
         <p className="page-header-description max-w-2xl">
-          Respuestas a las consultas más comunes sobre el uso del sistema VIGIIAP.
+          Respuestas a las consultas más comunes sobre el uso del sistema VIGI-IIAP.
         </p>
       </div>
       <div className="space-y-3">

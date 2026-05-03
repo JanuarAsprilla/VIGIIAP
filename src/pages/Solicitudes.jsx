@@ -33,7 +33,7 @@ function exportCSV(rows) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = 'solicitudes_vigiiap.csv'
+  a.download = 'solicitudes_vigi-iiap.csv'
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -46,6 +46,7 @@ function StatusBadge({ estado, color }) {
     orange: 'bg-orange-100 text-orange-700',
     blue:   'bg-blue-100 text-blue-700',
     red:    'bg-red-100 text-red-700',
+    teal:   'bg-teal-100 text-teal-700',
   }
   const dotStyles = {
     green:  'bg-green-500',
@@ -53,6 +54,7 @@ function StatusBadge({ estado, color }) {
     orange: 'bg-orange-500',
     blue:   'bg-blue-500',
     red:    'bg-red-500',
+    teal:   'bg-teal-500',
   }
   return (
     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${styles[color]}`}>
@@ -72,8 +74,9 @@ function DetalleSolicitudModal({ sol, onClose, onNueva }) {
 
   const isRechazado = sol.estado === 'Rechazado'
   const isAprobado  = sol.estado === 'Aprobado'
+  const isResuelta  = sol.estado === 'Resuelta'
+  const isPendiente = sol.estado === 'Pendiente' || sol.estado === 'En Revisión'
 
-  // Usar el timeline calculado en la normalización del hook
   const steps    = sol.timeline ?? ['Recibida', 'Pendiente', sol.estado]
   const activeIdx = steps.indexOf(sol.estado)
 
@@ -90,45 +93,68 @@ function DetalleSolicitudModal({ sol, onClose, onNueva }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-5 border-b border-border">
+        <div className="flex items-start justify-between px-6 py-5 border-b border-border shrink-0">
           <div>
             <span className="text-[0.65rem] font-bold uppercase tracking-wider text-primary-700">
-              {sol.id}
+              {sol.id} · {sol.fecha}
             </span>
             <h3 id="detalle-modal-title" className="text-base font-bold text-text mt-0.5 leading-tight">
               {sol.tipo}
             </h3>
-            <p className="text-xs text-text-muted mt-0.5">{sol.subtipo} · {sol.fecha}</p>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors shrink-0 ml-4"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 ml-4 shrink-0">
+            <StatusBadge estado={sol.estado} color={sol.estadoColor} />
+            <button
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        <div className="p-6 space-y-5">
-          {/* Estado actual */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-text-muted">Estado actual</span>
-            <StatusBadge estado={sol.estado} color={sol.estadoColor} />
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* Banner: Resuelta — revisa tu correo */}
+          {isResuelta && (
+            <div className="flex items-start gap-3 p-4 bg-teal-50 border border-teal-200 rounded-xl">
+              <CheckCircle className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" aria-hidden="true" />
+              <div>
+                <p className="text-sm font-bold text-teal-800">Solicitud tramitada</p>
+                <p className="text-xs text-teal-700 mt-0.5 leading-relaxed">
+                  Tu solicitud fue procesada. Revisa tu correo electrónico para obtener
+                  la respuesta, archivos o documentos adjuntos del IIAP.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Descripción completa */}
+          <div>
+            <span className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted block mb-2">
+              Descripción de la solicitud
+            </span>
+            <div className="bg-bg-alt rounded-lg p-3">
+              <p className="text-sm text-text leading-relaxed">
+                {sol.descripcion || sol.subtipo || 'Sin descripción'}
+              </p>
+            </div>
           </div>
 
           {/* Timeline */}
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-text-muted block mb-3">
+            <span className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted block mb-3">
               Seguimiento del trámite
             </span>
-            <div className="flex items-center gap-0">
+            <div className="flex items-center">
               {steps.map((step, i) => {
                 const done = i <= activeIdx
                 const isLast = i === steps.length - 1
                 const isReject = step === 'Rechazado'
+                const isTeal = step === 'Resuelta'
                 return (
                   <div key={step} className="flex items-center flex-1 min-w-0">
                     <div className="flex flex-col items-center flex-1 min-w-0">
@@ -136,9 +162,11 @@ function DetalleSolicitudModal({ sol, onClose, onNueva }) {
                         done
                           ? isReject
                             ? 'bg-red-500 border-red-500'
-                            : isLast && isAprobado
-                              ? 'bg-green-500 border-green-500'
-                              : 'bg-primary-800 border-primary-800'
+                            : isTeal
+                              ? 'bg-teal-500 border-teal-500'
+                              : isLast && isAprobado
+                                ? 'bg-green-500 border-green-500'
+                                : 'bg-primary-800 border-primary-800'
                           : 'bg-white border-border'
                       }`}>
                         {done
@@ -149,7 +177,9 @@ function DetalleSolicitudModal({ sol, onClose, onNueva }) {
                         }
                       </div>
                       <span className={`text-[0.6rem] font-semibold mt-1.5 text-center leading-tight ${
-                        done ? (isReject ? 'text-red-600' : 'text-primary-800') : 'text-text-muted'
+                        done
+                          ? isReject ? 'text-red-600' : isTeal ? 'text-teal-700' : 'text-primary-800'
+                          : 'text-text-muted'
                       }`}>
                         {step}
                       </span>
@@ -165,46 +195,54 @@ function DetalleSolicitudModal({ sol, onClose, onNueva }) {
             </div>
           </div>
 
-          {/* Solicitante */}
-          <div className="flex items-center gap-2 p-3 bg-bg-alt rounded-lg">
-            <User className="w-4 h-4 text-text-muted shrink-0" aria-hidden="true" />
-            <div>
-              <span className="block text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">Solicitante</span>
-              <span className="text-sm font-semibold text-text">{sol.solicitante}</span>
+          {/* Respuesta / Nota del administrador */}
+          {(sol.notas || isResuelta || !isPendiente) && (
+            <div className={`p-4 rounded-xl border ${
+              isRechazado  ? 'bg-red-50 border-red-200'
+              : isResuelta ? 'bg-teal-50 border-teal-200'
+              : isAprobado ? 'bg-green-50 border-green-200'
+              : 'bg-primary-50 border-primary-200'
+            }`}>
+              <div className="flex items-start gap-2.5">
+                {isRechazado
+                  ? <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" aria-hidden="true" />
+                  : isResuelta
+                    ? <CheckCircle className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" aria-hidden="true" />
+                    : isAprobado
+                      ? <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" aria-hidden="true" />
+                      : <Clock className="w-4 h-4 text-primary-700 shrink-0 mt-0.5" aria-hidden="true" />
+                }
+                <div>
+                  <p className={`text-[0.6rem] font-bold uppercase tracking-wider mb-1 ${
+                    isRechazado ? 'text-red-700' : isResuelta ? 'text-teal-700' : isAprobado ? 'text-green-700' : 'text-primary-700'
+                  }`}>
+                    {isResuelta ? 'Respuesta del IIAP' : 'Nota del administrador'}
+                  </p>
+                  <p className={`text-xs leading-relaxed ${
+                    isRechazado ? 'text-red-800' : isResuelta ? 'text-teal-800' : isAprobado ? 'text-green-800' : 'text-primary-800'
+                  }`}>
+                    {sol.notas || 'Sin observaciones adicionales.'}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Notas */}
-          <div className={`p-3 rounded-lg border ${
-            isRechazado
-              ? 'bg-red-50 border-red-200'
-              : isAprobado
-                ? 'bg-green-50 border-green-200'
-                : 'bg-primary-50 border-primary-200'
-          }`}>
-            <div className="flex items-start gap-2">
-              {isRechazado
-                ? <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" aria-hidden="true" />
-                : isAprobado
-                  ? <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" aria-hidden="true" />
-                  : <Clock className="w-4 h-4 text-primary-700 shrink-0 mt-0.5" aria-hidden="true" />
-              }
-              <p className={`text-xs leading-relaxed ${
-                isRechazado ? 'text-red-800' : isAprobado ? 'text-green-800' : 'text-primary-800'
-              }`}>
-                {sol.notas}
+          {/* Estado pendiente - mensaje informativo */}
+          {isPendiente && !sol.notas && (
+            <div className="flex items-start gap-2.5 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
+              <Clock className="w-4 h-4 text-yellow-600 shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="text-xs text-yellow-800 leading-relaxed">
+                Tu solicitud está siendo revisada por el equipo del IIAP.
+                Recibirás una notificación por correo cuando haya una respuesta.
               </p>
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-1">
-            {isAprobado && (
-              <button className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
-                <Download className="w-4 h-4" aria-hidden="true" />
-                Descargar Certificado
-              </button>
-            )}
+        {/* Footer actions */}
+        <div className="px-6 py-4 border-t border-border bg-bg-alt/30 shrink-0">
+          <div className="flex gap-3">
             {isRechazado && (
               <button
                 onClick={() => { onClose(); onNueva() }}
@@ -216,7 +254,7 @@ function DetalleSolicitudModal({ sol, onClose, onNueva }) {
             )}
             <button
               onClick={onClose}
-              className={`${isAprobado || isRechazado ? 'flex-1' : 'w-full'} py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors`}
+              className={`${isRechazado ? 'flex-1' : 'w-full'} py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors`}
             >
               Cerrar
             </button>
@@ -230,9 +268,11 @@ function DetalleSolicitudModal({ sol, onClose, onNueva }) {
 // ── Filtro Dropdown ──
 const ESTADOS_FILTRO = [
   { value: '', label: 'Todos los estados' },
-  { value: 'En Proceso', label: 'En Proceso', color: 'bg-yellow-500' },
-  { value: 'Aprobado', label: 'Aprobado', color: 'bg-green-500' },
-  { value: 'Rechazado', label: 'Rechazado', color: 'bg-red-500' },
+  { value: 'Pendiente',   label: 'Pendiente',   color: 'bg-orange-500' },
+  { value: 'En Revisión', label: 'En Revisión', color: 'bg-blue-500' },
+  { value: 'Aprobado',    label: 'Aprobado',    color: 'bg-green-500' },
+  { value: 'Resuelta',    label: 'Resuelta',    color: 'bg-teal-500' },
+  { value: 'Rechazado',   label: 'Rechazado',   color: 'bg-red-500' },
 ]
 
 function FiltroDropdown({ filtro, onChange }) {
@@ -677,9 +717,11 @@ function MisSolicitudes({ onVerDetalle }) {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className={`text-[0.6rem] font-bold px-2 py-0.5 rounded-full ${
-                s.estadoColor === 'green' ? 'bg-green-100 text-green-700'
+                s.estadoColor === 'green'  ? 'bg-green-100 text-green-700'
                 : s.estadoColor === 'red'  ? 'bg-red-100 text-red-700'
-                : 'bg-yellow-100 text-yellow-700'
+                : s.estadoColor === 'teal' ? 'bg-teal-100 text-teal-700'
+                : s.estadoColor === 'blue' ? 'bg-blue-100 text-blue-700'
+                : 'bg-orange-100 text-orange-700'
               }`}>{s.estado}</span>
               <button
                 onClick={() => onVerDetalle(s)}
@@ -722,14 +764,14 @@ function AyudaCTA() {
 
 // ── Bottom KPIs ──
 function BottomStats({ rows }) {
-  const total    = rows.length
-  const proceso  = rows.filter((r) => r.estado === 'En Proceso').length
-  const aprobado = rows.filter((r) => r.estado === 'Aprobado').length
-  const tasaStr  = total > 0 ? `${Math.round((aprobado / total) * 100)}%` : '—'
+  const total     = rows.length
+  const pendiente = rows.filter((r) => r.estado === 'Pendiente' || r.estado === 'En Revisión').length
+  const resuelta  = rows.filter((r) => r.estado === 'Resuelta' || r.estado === 'Aprobado').length
+  const tasaStr   = total > 0 ? `${Math.round((resuelta / total) * 100)}%` : '—'
   const kpis = [
     { label: 'Total',      value: String(total) },
-    { label: 'En Proceso', value: String(proceso) },
-    { label: 'Aprobadas',  value: tasaStr },
+    { label: 'En Proceso', value: String(pendiente) },
+    { label: 'Resueltas',  value: tasaStr },
     { label: 'Rechazadas', value: String(rows.filter((r) => r.estado === 'Rechazado').length) },
   ]
   return (

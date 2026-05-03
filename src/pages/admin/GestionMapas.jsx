@@ -504,7 +504,7 @@ export default function GestionMapas() {
             <MapPin className="w-8 h-8 text-primary-400" />
           </div>
           <h3 className="text-base font-bold text-text mb-1">Aún no hay mapas registrados</h3>
-          <p className="text-sm text-text-muted mb-6 max-w-xs">Ingresa el primer mapa para que aparezca en el portal público de VIGIIAP.</p>
+          <p className="text-sm text-text-muted mb-6 max-w-xs">Ingresa el primer mapa para que aparezca en el portal público de VIGI-IIAP.</p>
           <button onClick={openCreate}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors">
             <Plus className="w-4 h-4" /> Ingresar el primer mapa

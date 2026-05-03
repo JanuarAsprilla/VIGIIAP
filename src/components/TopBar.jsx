@@ -157,10 +157,10 @@ export default function TopBar({ onMenuToggle }) {
             <Menu className="w-5 h-5" aria-hidden="true" />
           </button>
 
-          <span className="lg:hidden text-sm font-bold text-text tracking-wide">VIGIIAP</span>
+          <span className="lg:hidden text-sm font-bold text-text tracking-wide">VIGI-IIAP</span>
 
           <div className="hidden lg:flex items-center gap-3 flex-1">
-            <span className="text-sm font-bold text-text tracking-wide shrink-0">VIGIIAP</span>
+            <span className="text-sm font-bold text-text tracking-wide shrink-0">VIGI-IIAP</span>
 
             {/* Búsqueda contextual por página */}
             <div className="flex items-center gap-2 bg-bg-alt rounded-lg px-3 py-2 flex-1 max-w-sm">

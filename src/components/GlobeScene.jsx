@@ -1,5 +1,5 @@
 /**
- * VIGIIAP — Globo 3D · Chocó Biogeográfico
+ * VIGI-IIAP — Globo 3D · Chocó Biogeográfico
  * Polígono real basado en límites del IIAP (Darién → Ecuador, Pacífico → Andes).
  */
 import { useRef, useMemo } from 'react'

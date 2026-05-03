@@ -376,7 +376,7 @@ export default function Dashboard() {
           Bienvenido, {user?.name?.split(' ')[0]}
         </h1>
         <p className="text-sm text-text-muted mt-1">
-          Resumen general del sistema VIGIIAP · {new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}
+          Resumen general del sistema VIGI-IIAP · {new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}
         </p>
       </motion.div>
 

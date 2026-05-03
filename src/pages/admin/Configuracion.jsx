@@ -57,7 +57,7 @@ function Toggle({ checked, onChange, label }) {
 
 export default function Configuracion() {
   const [general, setGeneral] = useState({
-    siteName: 'VIGIIAP',
+    siteName: 'VIGI-IIAP',
     siteDesc: 'Visor y Gestor de Información Ambiental del IIAP',
     region: 'Chocó Biogeográfico',
     email: 'info@iiap.org.co',
@@ -137,7 +137,7 @@ export default function Configuracion() {
         <div>
           <span className="text-[0.7rem] font-bold uppercase tracking-widest text-primary-700">Administración</span>
           <h1 className="font-display text-2xl font-bold text-text mt-0.5">Configuración del Sistema</h1>
-          <p className="text-sm text-text-muted mt-1">Ajustes globales de la plataforma VIGIIAP</p>
+          <p className="text-sm text-text-muted mt-1">Ajustes globales de la plataforma VIGI-IIAP</p>
         </div>
         <button
           onClick={handleSave}

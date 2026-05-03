@@ -128,9 +128,9 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
         >
           <defs>
             <pattern id="topo" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-              <circle cx="20" cy="20" r="14" fill="none" stroke="#1B4332" strokeWidth="1"/>
-              <circle cx="20" cy="20" r="8"  fill="none" stroke="#1B4332" strokeWidth="0.8"/>
-              <circle cx="20" cy="20" r="3"  fill="none" stroke="#1B4332" strokeWidth="0.6"/>
+              <circle cx="20" cy="20" r="14" fill="none" stroke="#1A5632" strokeWidth="1"/>
+              <circle cx="20" cy="20" r="8"  fill="none" stroke="#1A5632" strokeWidth="0.8"/>
+              <circle cx="20" cy="20" r="3"  fill="none" stroke="#1A5632" strokeWidth="0.6"/>
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#topo)"/>
@@ -149,7 +149,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
 
             <div className="leading-tight">
               <span className="block text-sm font-bold text-text tracking-wide group-hover:text-primary-800 transition-colors">
-                VIGIIAP
+                VIGI-IIAP
               </span>
               <span className="block text-[0.6rem] text-text-muted uppercase tracking-wider">
                 Chocó Biogeográfico

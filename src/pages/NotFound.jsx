@@ -84,7 +84,7 @@ export default function NotFound() {
             Página no encontrada
           </h1>
           <p className="text-sm text-text-muted leading-relaxed max-w-sm mx-auto mb-8">
-            La ruta que solicitó no existe en el portal VIGIIAP. Puede haber sido movida,
+            La ruta que solicitó no existe en el portal VIGI-IIAP. Puede haber sido movida,
             eliminada o nunca haber existido.
           </p>
         </motion.div>
@@ -142,7 +142,7 @@ export default function NotFound() {
           transition={{ delay: 0.55 }}
           className="mt-10 text-xs text-text-muted/50 font-mono"
         >
-          VIGIIAP · Instituto de Investigaciones Ambientales del Pacífico
+          VIGI-IIAP · Instituto de Investigaciones Ambientales del Pacífico
         </motion.p>
       </motion.div>
     </div>

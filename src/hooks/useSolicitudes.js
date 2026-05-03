@@ -18,21 +18,25 @@ const ESTADO_LABEL = {
   en_revision: 'En Revisión',
   aprobada:    'Aprobado',
   rechazada:   'Rechazado',
+  resuelta:    'Resuelta',
 }
 const ESTADO_COLOR = {
   'Pendiente':   'orange',
   'En Revisión': 'blue',
   'Aprobado':    'green',
   'Rechazado':   'red',
+  'Resuelta':    'teal',
 }
 const ESTADO_API = {
   'Pendiente':   'pendiente',
   'En Revisión': 'en_revision',
   'Aprobado':    'aprobada',
   'Rechazado':   'rechazada',
+  'Resuelta':    'resuelta',
 }
 
 function buildTimeline(estadoRaw) {
+  if (estadoRaw === 'resuelta')    return ['Recibida', 'Pendiente', 'En Revisión', 'Resuelta']
   if (estadoRaw === 'aprobada')    return ['Recibida', 'Pendiente', 'En Revisión', 'Aprobado']
   if (estadoRaw === 'rechazada')   return ['Recibida', 'Pendiente', 'En Revisión', 'Rechazado']
   if (estadoRaw === 'en_revision') return ['Recibida', 'Pendiente', 'En Revisión']
@@ -42,21 +46,22 @@ function buildTimeline(estadoRaw) {
 function normalizeSolicitud(s) {
   const estadoLabel = ESTADO_LABEL[s.estado] ?? 'En Proceso'
   return {
-    // UI id: primeros 8 chars del UUID en mayúsculas (legible)
-    id:         `#${s.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`,
-    _id:        s.id,   // UUID real para llamadas a la API
-    tipo:       TIPO_LABEL[s.tipo] ?? s.tipo,
-    subtipo:    s.descripcion?.slice(0, 60) ?? '',
-    descripcion: s.descripcion ?? '',
-    fecha:      formatDate(s.creado_en),
-    creadoEn:   s.creado_en,
-    estado:     estadoLabel,
-    estadoColor: ESTADO_COLOR[estadoLabel] ?? 'yellow',
-    solicitante: s.solicitante ?? '',
-    email:      s.email ?? '',
-    notas:      s.nota_admin ?? '',
-    timeline:   buildTimeline(s.estado),
-    revisor:    'Sin asignar',
+    id:           `#${s.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`,
+    _id:          s.id,
+    tipo:         TIPO_LABEL[s.tipo] ?? s.tipo,
+    tipoRaw:      s.tipo,
+    subtipo:      s.descripcion?.slice(0, 60) ?? '',
+    descripcion:  s.descripcion ?? '',
+    fecha:        formatDate(s.creado_en),
+    creadoEn:     s.creado_en,
+    estado:       estadoLabel,
+    estadoColor:  ESTADO_COLOR[estadoLabel] ?? 'yellow',
+    solicitante:  s.solicitante ?? '',
+    email:        s.email ?? '',
+    notas:        s.nota_admin ?? '',
+    respondidaEn: s.respondida_en ?? null,
+    timeline:     buildTimeline(s.estado),
+    revisor:      'Sin asignar',
   }
 }
 
@@ -111,5 +116,13 @@ export function useUpdateEstadoSolicitud() {
   })
 }
 
-// Exportar el mapa para uso en páginas
+export function useResponderSolicitud() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, respuesta }) =>
+      api.post(`/solicitudes/${id}/responder`, { respuesta }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: SOL_KEYS.all }),
+  })
+}
+
 export { ESTADO_API }

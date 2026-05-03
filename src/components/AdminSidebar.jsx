@@ -3,9 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Users, ClipboardList, Newspaper,
   FileText, Map, Settings, Activity, X,
-  LogOut, Globe, Shield, Tag,
+  LogOut, Globe, Shield, Tag, ShieldCheck,
 } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth, ROLES } from '@/contexts/AuthContext'
 
 const NAV_SECTIONS = [
   {
@@ -114,7 +114,7 @@ function SidebarContent({ onClose, onLogout, user }) {
             <div className="leading-tight">
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-bold text-text tracking-wide group-hover:text-primary-800 transition-colors">
-                  VIGIIAP
+                  VIGI-IIAP
                 </span>
                 <span className="text-[0.55rem] font-bold uppercase tracking-wider bg-primary-800 text-white px-1.5 py-0.5 rounded-full">
                   Admin
@@ -155,6 +155,18 @@ function SidebarContent({ onClose, onLogout, user }) {
             </motion.div>
           </div>
         ))}
+
+        {/* ── Sección exclusiva Super Admin ── */}
+        {user?.role === ROLES.SUPER_ADMIN && (
+          <div>
+            <p className="px-3 pb-1.5 text-[0.58rem] font-bold uppercase tracking-[0.14em] text-amber-600/80">
+              Super Admin
+            </p>
+            <motion.div variants={navContainer} initial="initial" animate="animate" className="space-y-0.5">
+              <AdminNavLink link={{ label: 'Gestión de Admins', path: '/admin/superadmin', icon: ShieldCheck }} />
+            </motion.div>
+          </div>
+        )}
       </nav>
 
       {/* ── Bottom ── */}

@@ -25,8 +25,9 @@ const PERFILES = [
 const CRITERIA_LABELS = [
   { key: 'length',      label: 'Mínimo 8 caracteres'           },
   { key: 'upper',       label: 'Al menos una mayúscula (A–Z)'  },
-  { key: 'lower',       label: 'Al menos una minúscula (a–z)'  },
-  { key: 'numOrSymbol', label: 'Al menos un número o símbolo'  },
+  { key: 'lower',   label: 'Al menos una minúscula (a–z)'        },
+  { key: 'number',  label: 'Al menos un número (0–9)'            },
+  { key: 'special', label: 'Al menos un carácter especial (!@#…)' },
 ]
 
 // ── Sub-componentes ───────────────────────────────────────────────────────────
@@ -62,16 +63,18 @@ function PasswordStrengthMeter({ value }) {
   if (!value) return null
 
   const bars = [
-    met <= 1 ? 'bg-red-400'    : 'bg-bg-alt',
-    met >= 2 ? 'bg-amber-400'  : 'bg-bg-alt',
-    met >= 3 ? 'bg-amber-400'  : 'bg-bg-alt',
-    met >= 4 ? 'bg-green-500'  : 'bg-bg-alt',
+    met <= 1 ? 'bg-red-400'   : 'bg-bg-alt',
+    met >= 2 ? 'bg-amber-400' : 'bg-bg-alt',
+    met >= 3 ? 'bg-amber-400' : 'bg-bg-alt',
+    met >= 4 ? 'bg-green-400' : 'bg-bg-alt',
+    met >= 5 ? 'bg-green-600' : 'bg-bg-alt',
   ]
   const label =
     met <= 1 ? { text: 'Muy débil',  color: 'text-red-500'   } :
     met === 2 ? { text: 'Débil',     color: 'text-amber-500' } :
     met === 3 ? { text: 'Moderada',  color: 'text-amber-600' } :
-               { text: 'Segura',     color: 'text-green-600' }
+    met === 4 ? { text: 'Fuerte',    color: 'text-green-500' } :
+               { text: 'Muy fuerte', color: 'text-green-700' }
 
   return (
     <motion.div

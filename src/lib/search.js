@@ -1,5 +1,5 @@
 /**
- * Búsqueda dinámica para VIGIIAP
+ * Búsqueda dinámica para VIGI-IIAP
  * - Normaliza acentos: "hidrología" == "hidrologia"
  * - Tokens independientes: "mapa hidro" busca ambas palabras (AND)
  * - Coincidencia parcial: "hidro" encuentra "Hidrología"
