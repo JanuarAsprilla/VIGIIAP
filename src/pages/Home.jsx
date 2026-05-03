@@ -216,7 +216,7 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
               </span>
             </h1>
             <p className="text-white/35 text-xs font-bold uppercase tracking-[0.3em] mt-2 ml-1">
-              Visor y Gestor de Información Ambiental del Pacífico
+              Visor Gestor de Información del Instituto de Investigaciones Ambientales del Pacífico
             </p>
           </div>
 

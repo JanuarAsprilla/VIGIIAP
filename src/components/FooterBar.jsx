@@ -60,8 +60,8 @@ export default function Footer() {
 
               {/* Description */}
               <p className="text-white/70 text-[0.95rem] leading-relaxed max-w-87.5 mb-6">
-                Visor y Gestor de Información Ambiental del Instituto de
-                Investigaciones Ambientales del Pacífico.
+                Visor Gestor de Información del Instituto de Investigaciones
+                Ambientales del Pacífico (IIAP).
               </p>
 
               {/* Social links */}

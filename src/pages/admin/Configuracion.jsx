@@ -58,7 +58,7 @@ function Toggle({ checked, onChange, label }) {
 export default function Configuracion() {
   const [general, setGeneral] = useState({
     siteName: 'VIGI-IIAP',
-    siteDesc: 'Visor y Gestor de Información Ambiental del IIAP',
+    siteDesc: 'Visor Gestor de Información del Instituto de Investigaciones Ambientales del Pacífico',
     region: 'Chocó Biogeográfico',
     email: 'info@iiap.org.co',
     phone: '+57 (4) 671 1767',
