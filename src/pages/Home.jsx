@@ -26,42 +26,42 @@ const ALL_MODULES = [
     description: 'Mapas temáticos de biodiversidad, suelos, hidrografía y cobertura vegetal del Chocó Biogeográfico producidos por el IIAP.',
     icon: Map, path: '/mapas', action: 'Explorar mapas', tag: 'Cartografía',
     gradient: 'from-[#1A5632] to-[#284E39]', chip: 'bg-primary-50 text-primary-800',
-    glow: 'rgba(26,86,50,0.28)', publicAccess: true,
+    glow: 'rgba(26,86,50,0.28)', ctaColor: '#1A5632', publicAccess: true,
   },
   {
     id: 'documentos', title: 'Biblioteca Documental',
     description: 'Informes técnicos, investigaciones científicas, protocolos ambientales y documentos institucionales del IIAP.',
     icon: FileText, path: '/documentos', action: 'Consultar biblioteca', tag: 'Documentos',
     gradient: 'from-[#F08143] to-[#F7AC42]', chip: 'bg-amber-50 text-amber-800',
-    glow: 'rgba(247,172,66,0.28)', publicAccess: true,
+    glow: 'rgba(247,172,66,0.28)', ctaColor: '#C45A1A', publicAccess: true,
   },
   {
     id: 'noticias', title: 'Noticias y Eventos',
     description: 'Últimas publicaciones, investigaciones destacadas, eventos y comunicados del Instituto de Investigaciones Ambientales del Pacífico.',
     icon: Newspaper, path: '/noticias', action: 'Ver noticias', tag: 'Actualidad',
     gradient: 'from-[#218842] to-[#009846]', chip: 'bg-emerald-50 text-emerald-800',
-    glow: 'rgba(0,152,70,0.22)', publicAccess: true,
+    glow: 'rgba(0,152,70,0.22)', ctaColor: '#1A7038', publicAccess: true,
   },
   {
     id: 'geovisor', title: 'Geovisor Interactivo',
     description: 'Herramienta SIG en línea para la visualización y análisis de capas geoespaciales sobre el territorio del Pacífico colombiano.',
     icon: Globe, path: '/geovisor', action: 'Abrir geovisor', tag: 'SIG',
     gradient: 'from-[#1A5632] to-[#218842]', chip: 'bg-primary-50 text-primary-800',
-    glow: 'rgba(26,86,50,0.22)', publicAccess: false,
+    glow: 'rgba(26,86,50,0.22)', ctaColor: '#1A5632', publicAccess: false,
   },
   {
     id: 'herramientas', title: 'Herramientas SIG',
     description: 'Calculadoras de área, convertidores de coordenadas y motores de análisis espacial para procesamiento de datos geográficos.',
     icon: Wrench, path: '/herramientas', action: 'Usar herramientas', tag: 'Análisis',
     gradient: 'from-[#B0CB1F] to-[#218842]', chip: 'bg-lime-50 text-lime-800',
-    glow: 'rgba(176,203,31,0.22)', publicAccess: false,
+    glow: 'rgba(176,203,31,0.22)', ctaColor: '#6B8A0C', publicAccess: false,
   },
   {
     id: 'solicitudes', title: 'Solicitudes de Acceso',
     description: 'Gestiona solicitudes de acceso a datos, información especializada y colaboración con el IIAP.',
     icon: ClipboardList, path: '/solicitudes', action: 'Gestionar solicitudes', tag: 'Gestión',
     gradient: 'from-[#284E39] to-[#1A5632]', chip: 'bg-primary-50 text-primary-800',
-    glow: 'rgba(40,78,57,0.22)', publicAccess: false,
+    glow: 'rgba(40,78,57,0.22)', ctaColor: '#1A5632', publicAccess: false,
   },
 ]
 
@@ -148,7 +148,8 @@ function ModuleCard({ mod, index, isVisitante, isPublico }) {
           </Link>
         ) : (
           <Link to={mod.path}
-            className={`inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider no-underline transition-all bg-gradient-to-r ${mod.gradient} bg-clip-text text-transparent group-hover:gap-3`}>
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider no-underline transition-all group-hover:gap-3"
+            style={{ color: mod.ctaColor }}>
             {mod.action}<ArrowRight className="w-3.5 h-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         )}
@@ -208,24 +209,24 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
           <div ref={titleRef} className="mb-6">
             <h1 className="font-display font-black leading-[0.9] tracking-tight"
               style={{ fontSize: 'clamp(4rem, 10vw, 7.5rem)' }}>
-              <span style={{
-                background: 'linear-gradient(140deg, #C8E6CE 0%, #009846 45%, #F7AC42 100%)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-              }}>
-                VIGI-IIAP
+              <span style={{ color: '#C8E6CE', textShadow: '0 0 80px rgba(0,152,70,0.4)' }}>
+                VIGI
+              </span>
+              <span style={{ color: 'rgba(176,203,31,0.92)', textShadow: '0 0 60px rgba(176,203,31,0.25)' }}>
+                -IIAP
               </span>
             </h1>
-            <p className="text-white/35 text-xs font-bold uppercase tracking-[0.3em] mt-2 ml-1">
-              Visor Gestor de Información del Instituto de Investigaciones Ambientales del Pacífico
+            <p className="text-white/55 text-xs font-semibold tracking-[0.22em] mt-3 ml-1">
+              Visor Gestor de Información Ambiental del Pacífico
             </p>
           </div>
 
           {/* Description */}
           <div ref={subtitleRef} className="max-w-lg mb-10">
-            <p className="text-white/55 text-[0.95rem] leading-[1.75]">
+            <p className="text-white/72 text-[0.95rem] leading-[1.8]">
               Plataforma institucional para la consulta, análisis y gestión de información
               ambiental y territorial del{' '}
-              <span className="text-green-300/85 font-semibold">Chocó Biogeográfico</span> colombiano —
+              <span className="text-[#B0CB1F] font-semibold">Chocó Biogeográfico</span> colombiano,
               la región más biodiversa del planeta.
             </p>
           </div>
@@ -324,13 +325,13 @@ function StatsSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-30px' }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: i * 0.08 }}
-            className="px-7 py-8 border-r border-b border-border last:border-r-0 md:[&:nth-child(4)]:border-r-0 [&:nth-child(3)]:border-r-0 md:[&:nth-child(3)]:border-r [&:nth-child(3)]:border-b-0 [&:nth-child(4)]:border-b-0 md:[&:nth-child(2)]:border-r group cursor-default"
+            className="px-7 py-9 border-r border-b border-border last:border-r-0 md:[&:nth-child(4)]:border-r-0 [&:nth-child(3)]:border-r-0 md:[&:nth-child(3)]:border-r [&:nth-child(3)]:border-b-0 [&:nth-child(4)]:border-b-0 md:[&:nth-child(2)]:border-r group cursor-default"
           >
-            <div className="font-display text-4xl font-bold text-primary-800 leading-none mb-2
-              group-hover:text-primary-600 transition-colors">
+            <div className="font-display text-5xl font-bold text-primary-800 leading-none mb-3
+              group-hover:text-primary-600 transition-colors duration-300">
               {stat.value}
             </div>
-            <div className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-text-muted">
+            <div className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-text-muted leading-relaxed">
               {stat.label}
             </div>
           </motion.div>
@@ -512,9 +513,9 @@ function InstitutionalBanner() {
       <div className="absolute inset-0 opacity-[0.055]"
         style={{ backgroundImage: 'radial-gradient(circle, #009846 1px, transparent 1px)', backgroundSize: '26px 26px' }} />
 
-      {/* Left accent line */}
-      <div className="absolute left-0 top-0 bottom-0 w-[3px]"
-        style={{ background: 'linear-gradient(180deg, transparent, #009846 30%, #F7AC42 70%, transparent)' }} />
+      {/* Top accent line */}
+      <div className="absolute top-0 left-0 right-0 h-[1px]"
+        style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(0,152,70,0.5) 30%, rgba(176,203,31,0.4) 70%, transparent 100%)' }} />
 
       <div className="relative px-10 py-10 flex flex-col sm:flex-row items-center gap-6">
         <div className="flex-1 text-center sm:text-left">
@@ -563,12 +564,12 @@ function WelcomeStrip({ user }) {
       </div>
       {!user?.isVisitante ? (
         <Link to="/herramientas"
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-800 text-white rounded-lg text-xs font-semibold hover:bg-primary-700 no-underline transition-colors">
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-800 text-white rounded-lg text-xs font-semibold hover:bg-primary-700 active:scale-[0.97] no-underline transition-all duration-150">
           <Plus className="w-3.5 h-3.5" />Nuevo análisis
         </Link>
       ) : (
         <Link to="/solicitar-acceso"
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-semibold hover:bg-amber-700 no-underline transition-colors">
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-semibold hover:bg-amber-700 active:scale-[0.97] no-underline transition-all duration-150">
           <ChevronRight className="w-3.5 h-3.5" />Solicitar acceso
         </Link>
       )}
@@ -649,7 +650,7 @@ export default function Home() {
       {isAuthenticated && !user?.isVisitante && (
         <motion.button
           onClick={() => setShowModal(true)}
-          whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.93 }}
           transition={{ type: 'spring', stiffness: 400, damping: 20 }}
           className="fixed bottom-20 lg:bottom-6 right-6 z-30 flex items-center justify-center rounded-full text-white"
           style={{ width: '3.25rem', height: '3.25rem', background: 'linear-gradient(135deg, #F7AC42, #F08143)', boxShadow: '0 8px 32px rgba(247,172,66,0.45)', color: '#284E39' }}>
