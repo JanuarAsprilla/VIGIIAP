@@ -1,3 +1,6 @@
+/* Hallmark · macrostructure: Bento Grid · genre: institutional-editorial
+ * tokens: design.md · stamp: 2026-05-25
+ */
 import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useMotionTemplate } from 'framer-motion'
@@ -116,7 +119,7 @@ function ModuleCard({ mod, index, isVisitante, isPublico }) {
       whileHover={!blocked ? { y: -4, boxShadow: `0 24px 64px ${mod.glow}, 0 4px 20px rgba(0,0,0,0.07)` } : {}}
     >
       {/* Top accent */}
-      <div className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${mod.gradient} ${blocked ? 'opacity-25' : ''}`} />
+      <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${mod.gradient} ${blocked ? 'opacity-25' : ''}`} />
       {!blocked && (
         <motion.div style={{ background: glareBg, opacity: glareOp }}
           className="absolute inset-0 rounded-[inherit] pointer-events-none z-20" />
@@ -148,7 +151,7 @@ function ModuleCard({ mod, index, isVisitante, isPublico }) {
           </Link>
         ) : (
           <Link to={mod.path}
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider no-underline transition-all group-hover:gap-3"
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider no-underline transition-colors"
             style={{ color: mod.ctaColor }}>
             {mod.action}<ArrowRight className="w-3.5 h-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
           </Link>
@@ -175,7 +178,7 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
 
   return (
     <div ref={heroRef}
-      className="relative rounded-3xl overflow-hidden flex flex-col"
+      className="hero-grain relative rounded-3xl overflow-hidden flex flex-col"
       style={{ minHeight: '640px', background: 'linear-gradient(135deg, #0c1f14 0%, #0f2b1a 45%, #122e1d 100%)' }}>
 
       {/* Dot grid */}
@@ -327,7 +330,7 @@ function StatsSection() {
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: i * 0.08 }}
             className="px-7 py-9 border-r border-b border-border last:border-r-0 md:[&:nth-child(4)]:border-r-0 [&:nth-child(3)]:border-r-0 md:[&:nth-child(3)]:border-r [&:nth-child(3)]:border-b-0 [&:nth-child(4)]:border-b-0 md:[&:nth-child(2)]:border-r group cursor-default"
           >
-            <div className="font-display text-5xl font-bold text-primary-800 leading-none mb-3
+            <div className="tabular font-display text-5xl font-bold text-primary-800 leading-none mb-3
               group-hover:text-primary-600 transition-colors duration-300">
               {stat.value}
             </div>
