@@ -450,5 +450,187 @@ body {
 .alert-danger {
   color: #C12A2B;
   background: rgba(227, 30, 36, 0.08);
-  border-left: 3px solid #E31E24;
+  border: 1px solid rgba(227, 30, 36, 0.25);
+  border-radius: var(--radius-md);
+}
+
+/* =====================================================
+   Premium Design System — Emil + Impeccable + Taste
+   ===================================================== */
+
+/* ── Custom easing curves (Emil Design Engineering) ── */
+:root {
+  /* Entrances: starts fast, feels responsive */
+  --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+  /* On-screen movement: natural acceleration/deceleration */
+  --ease-in-out-expo: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Drawer/sheet: iOS-like modal sheet */
+  --ease-drawer:     cubic-bezier(0.32, 0.72, 0, 1);
+  /* Exit: fast, clears immediately */
+  --ease-in-expo:    cubic-bezier(0.55, 0, 1, 0.45);
+
+  /* Duration scale */
+  --duration-instant:  100ms;
+  --duration-fast:     150ms;
+  --duration-normal:   250ms;
+  --duration-slow:     400ms;
+  --duration-enter:    320ms;
+  --duration-exit:     180ms;
+}
+
+/* ── Grain overlay — breaks digital flatness ── */
+/* Apply to hero sections and dark surfaces only     */
+/* Usage: <div class="grain-overlay"> inside relative parent */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+}
+
+/* Hero-scoped grain — not fixed, relative to section */
+.hero-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.032;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+}
+
+/* ── Text balance for headings ── */
+h1, h2, h3, .font-display {
+  text-wrap: balance;
+}
+
+/* ── Tabular nums for data/stats ── */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ── Focus ring — accessible, branded ── */
+:focus-visible {
+  outline: 2px solid var(--color-primary-600);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Button press feedback (Emil: all pressable elements) ── */
+.btn-press {
+  transition: transform var(--duration-instant) var(--ease-out-expo);
+}
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* ── Hover only on pointer devices (Emil: touch guard) ── */
+@media (hover: none) {
+  .lift-hover:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .card-3d:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* ── Spotlight card border — cursor-illuminated ── */
+/* Requires JS to set --mouse-x and --mouse-y CSS vars  */
+.spotlight-card {
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(26, 86, 50, 0.06),
+    transparent 40%
+  );
+}
+
+/* ── Reduced motion — fewer/gentler animations ── */
+@media (prefers-reduced-motion: reduce) {
+  .orb-1, .orb-2, .orb-3 {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ── Stagger utility — use with CSS var(--index) ── */
+/* <div style="--index: 0"> ... </div>               */
+.stagger-item {
+  animation: stagger-fade-up var(--duration-enter) var(--ease-out-expo) both;
+  animation-delay: calc(var(--index, 0) * 60ms);
+}
+
+@keyframes stagger-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Asymmetric enter/exit (Emil: slow in, fast out) ── */
+.popover-enter {
+  animation: popover-in var(--duration-enter) var(--ease-out-expo) both;
+  transform-origin: var(--radix-popover-content-transform-origin, center);
+}
+.popover-exit {
+  animation: popover-out var(--duration-exit) var(--ease-in-expo) both;
+}
+
+@keyframes popover-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes popover-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.95); }
+}
+
+/* ── @starting-style for native CSS enter animations ── */
+/* Modern replacement for JS-driven mount state         */
+@supports (selector(:has(*))) {
+  .toast-enter {
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+      opacity var(--duration-enter) var(--ease-out-expo),
+      transform var(--duration-enter) var(--ease-out-expo);
+
+    @starting-style {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+  }
+}
+
+/* ── Shimmer skeleton loader ── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-alt) 25%,
+    var(--color-border) 50%,
+    var(--color-bg-alt) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
