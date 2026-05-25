@@ -563,7 +563,7 @@ export default function GestionMapas() {
                 <div className="flex items-center gap-1">
                   {(m.archivo_pdf_url || m.archivo_img_url || m.geovisor_url) && (
                     <button
-                      onClick={() => window.open(m.archivo_img_url || m.archivo_pdf_url || m.geovisor_url, '_blank', 'noopener')}
+                      onClick={() => window.open(m.archivo_img_url || m.archivo_pdf_url || m.geovisor_url, '_blank', 'noopener,noreferrer')}
                       className="p-1.5 rounded-lg text-text-muted hover:text-blue-600 hover:bg-blue-50 transition-colors"
                       title="Ver archivo">
                       <ExternalLink className="w-3.5 h-3.5" />

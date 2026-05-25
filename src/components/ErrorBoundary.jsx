@@ -16,8 +16,10 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    // En producción aquí iría el reporte a un servicio (Sentry, etc.)
-    console.error('[ErrorBoundary]', error, info.componentStack)
+    // Solo loguear en desarrollo — en producción conectar a Sentry u otro servicio
+    if (import.meta.env.DEV) {
+      console.error('[ErrorBoundary]', error, info.componentStack)
+    }
   }
 
   handleReset = () => {
