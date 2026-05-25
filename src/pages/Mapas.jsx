@@ -115,7 +115,7 @@ async function forceDownload(url) {
     document.body.removeChild(a)
     URL.revokeObjectURL(tmp)
   } catch {
-    window.open(url, '_blank', 'noopener')
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 }
 

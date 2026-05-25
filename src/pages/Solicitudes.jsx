@@ -24,10 +24,16 @@ const fadeUp = (delay = 0) => ({
 })
 
 // ── CSV export ──
+/** Escapa un valor para CSV: elimina CRLF y escapa comillas dobles. */
+function csvField(val) {
+  const s = String(val ?? '').replace(/\r\n|\n|\r/g, ' ')
+  return `"${s.replace(/"/g, '""')}"`
+}
+
 function exportCSV(rows) {
-  const header = 'ID,Tipo,Subtipo,Fecha,Estado'
+  const header = ['ID', 'Tipo', 'Subtipo', 'Fecha', 'Estado'].map(csvField).join(',')
   const body = rows
-    .map((r) => `${r.id},"${r.tipo}","${r.subtipo}",${r.fecha},${r.estado}`)
+    .map((r) => [r.id, r.tipo, r.subtipo, r.fecha, r.estado].map(csvField).join(','))
     .join('\n')
   const blob = new Blob([header + '\n' + body], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)

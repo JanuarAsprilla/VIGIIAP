@@ -110,9 +110,14 @@ export default function GestionSolicitudes() {
   }
 
   const exportCSV = () => {
+    // csvField: elimina CRLF y escapa comillas dobles para prevenir inyección en CSV
+    const csvField = (val) => {
+      const s = String(val ?? '').replace(/\r\n|\n|\r/g, ' ')
+      return `"${s.replace(/"/g, '""')}"`
+    }
     const rows = [['ID', 'Tipo', 'Solicitante', 'Email', 'Fecha', 'Estado']]
     filtered.forEach((s) => rows.push([s.id, s.tipo, s.solicitante, s.email, s.fecha, s.estado]))
-    const csv = rows.map((r) => r.join(',')).join('\n')
+    const csv = rows.map((r) => r.map(csvField).join(',')).join('\n')
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
     a.download = 'solicitudes.csv'
