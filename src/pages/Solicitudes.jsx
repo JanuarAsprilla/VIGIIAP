@@ -1,3 +1,6 @@
+/* Hallmark · macrostructure: Long Document · genre: form-workflow
+ * tokens: design.md · stamp: 2026-05-25
+ */
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
