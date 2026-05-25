@@ -13,9 +13,9 @@ import axios from 'axios'
 //   3. En todos los endpoints protegidos: leer el token desde la cookie
 //      (además de aceptar el header Authorization como fallback).
 //
-// Cuando el backend implemente las cookies, cambiar USE_COOKIE_AUTH = true.
+// Backend (PR #10) implementa Set-Cookie: vigiiap_token=<jwt>; HttpOnly; Secure; SameSite=Strict
 // ─────────────────────────────────────────────────────────────────────────────
-const USE_COOKIE_AUTH = false
+const USE_COOKIE_AUTH = true
 
 // ─── Utilidad: decodifica payload JWT sin verificar firma ─────────────────────
 // Usado SOLO como optimización UX (evitar request con token ya expirado).
