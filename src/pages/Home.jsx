@@ -290,18 +290,14 @@ function MarqueeStrip() {
   const items = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS]
   return (
     <div className="overflow-hidden border-y border-border/60 bg-white py-3.5 select-none">
-      <motion.div
-        className="flex gap-10 whitespace-nowrap"
-        animate={{ x: ['0%', '-50%'] }}
-        transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
-      >
+      <div className="flex gap-10 whitespace-nowrap animate-marquee">
         {items.map((item, i) => (
           <span key={i} className="inline-flex items-center gap-4 text-[0.68rem] font-bold uppercase tracking-[0.22em] text-text-muted/60">
             {item}
             <span className="w-1 h-1 rounded-full bg-primary-300 shrink-0" />
           </span>
         ))}
-      </motion.div>
+      </div>
     </div>
   )
 }
