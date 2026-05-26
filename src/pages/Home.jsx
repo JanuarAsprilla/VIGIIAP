@@ -577,6 +577,151 @@ function WelcomeStrip({ user }) {
   )
 }
 
+// ── Territory map — puente entre la presentación 3D y el contenido claro ─────
+const CHOCO_MAP_URL =
+  'https://choco7dias.com/wp-content/uploads/2023/12/iiap-2040.jpg'
+
+function TerritoryMapSection() {
+  const sectionRef = useRef()
+
+  useEffect(() => {
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: sectionRef.current,
+        start: 'top 85%',
+        once: true,
+      },
+    })
+    tl.from('[data-map-line]', {
+      scaleX: 0,
+      transformOrigin: 'left center',
+      duration: 0.8,
+      stagger: 0.12,
+      ease: 'power3.out',
+    })
+      .from('[data-map-tag]', {
+        opacity: 0,
+        y: 14,
+        stagger: 0.08,
+        duration: 0.55,
+        ease: 'power3.out',
+      }, '-=0.4')
+    return () => tl.kill()
+  }, [])
+
+  return (
+    <div
+      ref={sectionRef}
+      className="-mx-4 lg:-mx-6 xl:-mx-10 relative overflow-hidden"
+      style={{ minHeight: '480px' }}
+    >
+      {/* Imagen del mapa */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${CHOCO_MAP_URL})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 30%',
+        }}
+      />
+
+      {/* Overlay degradado: oscuro arriba (viene del hero), blanco abajo */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(180deg, rgba(6,15,9,0.92) 0%, rgba(6,15,9,0.72) 30%, rgba(6,15,9,0.55) 60%, rgba(248,253,250,0.96) 100%)',
+        }}
+      />
+
+      {/* Contenido editorial sobre el mapa */}
+      <div className="relative z-10 px-8 lg:px-16 py-16 lg:py-20">
+        {/* Eyebrow */}
+        <div className="flex items-center gap-3 mb-8" data-map-tag>
+          <div data-map-line className="h-px w-12 bg-primary-400" />
+          <span
+            className="text-[0.58rem] font-black uppercase tracking-[0.3em]"
+            style={{ color: 'rgba(74,222,128,0.8)' }}
+          >
+            Territorio · Mapa IIAP 2040
+          </span>
+        </div>
+
+        {/* Headline */}
+        <h2
+          className="font-display font-black leading-tight mb-6 max-w-2xl"
+          style={{
+            fontSize: 'clamp(2rem, 4.5vw, 3.8rem)',
+            color: '#E8F5EC',
+            textShadow: '0 2px 40px rgba(0,0,0,0.5)',
+          }}
+          data-map-tag
+        >
+          El Chocó Biogeográfico:<br />
+          <span style={{ color: '#4ade80' }}>un patrimonio que se protege</span>
+          <br />con datos
+        </h2>
+
+        {/* Tags territoriales */}
+        <div className="flex flex-wrap gap-2 mb-12" data-map-tag>
+          {[
+            'Pacífico Colombiano',
+            'Darién — Panamá',
+            'Ecuador Norte',
+            '72 municipios',
+            '7 departamentos',
+          ].map((tag) => (
+            <span
+              key={tag}
+              className="text-[0.62rem] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full"
+              style={{
+                background: 'rgba(0,152,70,0.18)',
+                border: '1px solid rgba(0,152,70,0.3)',
+                color: 'rgba(255,255,255,0.75)',
+              }}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+
+        {/* Stats horizontales */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px overflow-hidden rounded-2xl"
+          style={{ background: 'rgba(0,152,70,0.15)', maxWidth: '640px' }}
+          data-map-tag
+        >
+          {[
+            { v: '187.000', u: 'km² de selva' },
+            { v: '9%',      u: 'del territorio CO' },
+            { v: '10.000+', u: 'especies flora' },
+            { v: '600+',    u: 'especies aves' },
+          ].map(({ v, u }) => (
+            <div
+              key={u}
+              className="px-5 py-4 text-center"
+              style={{ background: 'rgba(6,15,9,0.55)' }}
+            >
+              <div
+                className="font-display font-black leading-none mb-1"
+                style={{ fontSize: 'clamp(1.4rem, 3vw, 2rem)', color: '#4ade80' }}
+              >
+                {v}
+              </div>
+              <div
+                className="text-[0.58rem] uppercase tracking-wider"
+                style={{ color: 'rgba(255,255,255,0.45)' }}
+              >
+                {u}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 // ── Home ───────────────────────────────────────────────────────────────────────
 export default function Home() {
   const { isAuthenticated, user, loginVisitante, isVisitante } = useAuth()
@@ -623,6 +768,9 @@ export default function Home() {
 
         {/* Presentación 3D scroll-driven — visible solo fuera de búsqueda */}
         {!query.trim() && <PlatformIntroSection />}
+
+        {/* Mapa del Chocó — puente entre cinematic y contenido claro */}
+        {!query.trim() && <TerritoryMapSection />}
 
         {/* Welcome strip — usuario autenticado */}
         {isAuthenticated && !query.trim() && <WelcomeStrip user={user} />}

@@ -1,3 +1,8 @@
+/**
+ * VIGIA-IIAP — Sidebar cinematic
+ * Tema: dark forest — idéntico al hero y la presentación 3D.
+ * El mapa del Chocó Biogeográfico actúa como textura de fondo ultra-sutil.
+ */
 import { useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
 import { PlusCircle, LogOut, X, Sparkles, Lock, Shield, ChevronRight } from 'lucide-react'
@@ -6,23 +11,24 @@ import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/contexts/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
-import Card3D from '@/components/ui/Card3D'
 
-// Rutas que requieren cuenta institucional (no visitante, no anónimo)
+// URL del mapa del Chocó Biogeográfico (IIAP 2040)
+const CHOCO_MAP_URL =
+  'https://choco7dias.com/wp-content/uploads/2023/12/iiap-2040.jpg'
+
 const RESTRICTED_PATHS = ['/geovisor', '/herramientas', '/solicitudes']
 
-// ── Stagger presets ──
+// ── Animaciones ──────────────────────────────────────────────────────────────
 const navContainer = {
-  animate: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } },
+  animate: { transition: { staggerChildren: 0.045, delayChildren: 0.06 } },
 }
 const navItemVariant = {
-  initial: { opacity: 0, x: -14 },
-  animate: { opacity: 1, x: 0, transition: { ease: [0.22, 1, 0.36, 1], duration: 0.4 } },
+  initial: { opacity: 0, x: -12 },
+  animate: { opacity: 1, x: 0, transition: { ease: [0.22, 1, 0.36, 1], duration: 0.38 } },
 }
 
-// ── Single nav link with animated pill + role-aware lock ──
+// ── Nav link ─────────────────────────────────────────────────────────────────
 function SidebarLink({ link, onClose, userRole, isAuthenticated }) {
-  // Lock restricted paths for: visitantes, unauthenticated users, and "publico" role
   const needsInstitutional = RESTRICTED_PATHS.includes(link.path)
   const isLocked = needsInstitutional && (
     !isAuthenticated ||
@@ -33,8 +39,9 @@ function SidebarLink({ link, onClose, userRole, isAuthenticated }) {
   if (isLocked) {
     return (
       <motion.div variants={navItemVariant}>
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-text-muted/50 cursor-not-allowed select-none">
-          <link.icon className="w-[17px] h-[17px] shrink-0 opacity-40" aria-hidden="true" />
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm select-none cursor-not-allowed"
+          style={{ color: 'rgba(255,255,255,0.22)' }}>
+          <link.icon className="w-[16px] h-[16px] shrink-0 opacity-40" aria-hidden="true" />
           <span className="truncate">{link.label}</span>
           <Lock className="w-3 h-3 ml-auto shrink-0 opacity-40" aria-hidden="true" />
         </div>
@@ -46,34 +53,58 @@ function SidebarLink({ link, onClose, userRole, isAuthenticated }) {
     <NavLink to={link.path} end={link.path === '/'} onClick={onClose} className="block no-underline">
       {({ isActive }) => (
         <motion.div variants={navItemVariant} className="relative">
+          {/* Pill activa — glow verde */}
           {isActive && (
             <motion.div
               layoutId="nav-pill"
-              className="absolute inset-0 bg-primary-800 rounded-xl"
-              transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+              className="absolute inset-0 rounded-xl"
+              transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+              style={{
+                background: 'linear-gradient(135deg, rgba(0,152,70,0.28) 0%, rgba(26,86,50,0.38) 100%)',
+                border: '1px solid rgba(0,152,70,0.28)',
+                boxShadow: '0 0 20px rgba(0,152,70,0.12), inset 0 1px 0 rgba(255,255,255,0.06)',
+              }}
             />
           )}
-          <div className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors group ${
-            isActive ? 'text-white' : 'text-text-light hover:text-text hover:bg-bg-alt'
-          }`}>
+          {/* Indicador lateral activo */}
+          {isActive && (
             <motion.div
-              whileHover={{ scale: 1.18, rotate: isActive ? 0 : -8 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 18 }}
+              layoutId="nav-indicator"
+              className="absolute left-0 top-[6px] bottom-[6px] w-[3px] rounded-full"
+              style={{ background: 'linear-gradient(180deg, #4ade80, #009846)' }}
+              transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+            />
+          )}
+
+          <div
+            className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
+              isActive ? '' : 'hover:bg-white/[0.05]'
+            }`}
+            style={{ color: isActive ? '#d1fae5' : 'rgba(255,255,255,0.5)' }}
+          >
+            <motion.div
+              whileHover={{ scale: 1.16, rotate: isActive ? 0 : -8 }}
+              transition={{ type: 'spring', stiffness: 520, damping: 18 }}
             >
               <link.icon
-                className={`w-[17px] h-[17px] shrink-0 transition-colors ${
-                  isActive ? 'text-white' : 'text-text-muted group-hover:text-primary-700'
-                }`}
+                className="w-[16px] h-[16px] shrink-0 transition-colors"
+                style={{ color: isActive ? '#4ade80' : undefined }}
                 aria-hidden="true"
               />
             </motion.div>
-            <span className="truncate">{link.label}</span>
+            <span
+              className="truncate transition-colors"
+              style={{ color: isActive ? '#d1fae5' : undefined }}
+            >
+              {link.label}
+            </span>
             {isActive && (
               <motion.span
-                className="ml-auto w-1.5 h-1.5 rounded-full bg-primary-300 shrink-0"
+                className="ml-auto w-1.5 h-1.5 rounded-full shrink-0"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.18, type: 'spring' }}
+                transition={{ delay: 0.16, type: 'spring' }}
+                style={{ background: '#4ade80', boxShadow: '0 0 6px #4ade8066' }}
               />
             )}
           </div>
@@ -83,7 +114,7 @@ function SidebarLink({ link, onClose, userRole, isAuthenticated }) {
   )
 }
 
-// ── User mini card ──
+// ── User card ─────────────────────────────────────────────────────────────────
 function UserMiniCard({ user }) {
   return (
     <motion.div
@@ -91,74 +122,99 @@ function UserMiniCard({ user }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="mx-3 mt-2.5 mb-0.5"
+      className="mx-3 mt-2 mb-0.5"
     >
-      <Card3D
-          glow="rgba(26,86,50,0.18)"
-          intensity={4}
-          className="p-2.5 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 border border-primary-200/70"
-          whileHover={{ y: -1 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-        >
-        <div className="flex items-center gap-2.5">
-          <div className="relative shrink-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-900 rounded-lg flex items-center justify-center shadow-sm">
-              <span className="text-white text-xs font-bold">{user.initials}</span>
-            </div>
-            <span
-              className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-white"
-              aria-label="En línea"
-            />
+      <div
+        className="flex items-center gap-2.5 p-2.5 rounded-xl"
+        style={{
+          background: 'rgba(0,152,70,0.1)',
+          border: '1px solid rgba(0,152,70,0.2)',
+        }}
+      >
+        <div className="relative shrink-0">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
+            style={{ background: 'linear-gradient(135deg, #009846, #1A5632)' }}
+          >
+            <span className="text-white text-xs font-bold">{user.initials}</span>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-primary-900 truncate leading-tight">{user.name}</p>
-            <p className="text-[0.6rem] text-primary-700/70 uppercase tracking-wider truncate">{user.role}</p>
-          </div>
+          <span
+            className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
+            style={{ background: '#4ade80', borderColor: '#0a1a0e' }}
+            aria-label="En línea"
+          />
         </div>
-        </Card3D>
+        <div className="min-w-0 flex-1">
+          <p
+            className="text-xs font-bold truncate leading-tight"
+            style={{ color: 'rgba(255,255,255,0.85)' }}
+          >
+            {user.name}
+          </p>
+          <p
+            className="text-[0.6rem] uppercase tracking-wider truncate"
+            style={{ color: 'rgba(74,222,128,0.55)' }}
+          >
+            {user.role}
+          </p>
+        </div>
+      </div>
     </motion.div>
   )
 }
 
-// ── Sidebar inner content (stateless, receives all props) ──
+// ── Contenido del sidebar ─────────────────────────────────────────────────────
 function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }) {
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative z-10">
 
       {/* ── Logo area ── */}
-      <div className="relative overflow-hidden px-4 pt-5 pb-4 border-b border-border/60">
-        {/* Subtle topographic circles texture */}
+      <div
+        className="relative px-4 pt-5 pb-4 overflow-hidden"
+        style={{ borderBottom: '1px solid rgba(0,152,70,0.15)' }}
+      >
+        {/* SVG topo pattern — algo más visible en dark */}
         <svg
-          className="absolute inset-0 w-full h-full opacity-[0.05]"
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          style={{ opacity: 0.08 }}
           xmlns="http://www.w3.org/2000/svg"
           aria-hidden="true"
         >
           <defs>
-            <pattern id="topo" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-              <circle cx="20" cy="20" r="14" fill="none" stroke="#1A5632" strokeWidth="1"/>
-              <circle cx="20" cy="20" r="8"  fill="none" stroke="#1A5632" strokeWidth="0.8"/>
-              <circle cx="20" cy="20" r="3"  fill="none" stroke="#1A5632" strokeWidth="0.6"/>
+            <pattern id="topo-dark" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+              <circle cx="20" cy="20" r="14" fill="none" stroke="#4ade80" strokeWidth="0.8" />
+              <circle cx="20" cy="20" r="8"  fill="none" stroke="#4ade80" strokeWidth="0.6" />
+              <circle cx="20" cy="20" r="3"  fill="none" stroke="#4ade80" strokeWidth="0.5" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#topo)"/>
+          <rect width="100%" height="100%" fill="url(#topo-dark)" />
         </svg>
 
         <div className="relative flex items-center justify-between">
           <Link to="/" onClick={onClose} className="flex items-center gap-2.5 no-underline group">
-            {/* Gradient logo mark */}
             <motion.div
-              whileHover={{ scale: 1.06, rotate: -2 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 18 }}
-              className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-900 rounded-xl flex items-center justify-center shadow-sm shrink-0"
+              whileHover={{ scale: 1.06, rotate: -3 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 18 }}
+              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, #009846, #1A5632)',
+                boxShadow: '0 0 16px rgba(0,152,70,0.35)',
+              }}
             >
-              <span className="text-white font-bold text-sm font-display">V</span>
+              <span className="text-white font-black text-sm font-display">V</span>
             </motion.div>
 
             <div className="leading-tight">
-              <span className="block text-sm font-bold text-text tracking-wide group-hover:text-primary-800 transition-colors">
+              <span
+                className="block text-sm font-bold tracking-wide transition-colors"
+                style={{ color: 'rgba(255,255,255,0.9)' }}
+              >
                 VIGIA-IIAP
               </span>
-              <span className="block text-[0.6rem] text-text-muted uppercase tracking-wider">
+              <span
+                className="block text-[0.58rem] uppercase tracking-wider"
+                style={{ color: 'rgba(74,222,128,0.5)' }}
+              >
                 Chocó Biogeográfico
               </span>
             </div>
@@ -166,7 +222,8 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
 
           <button
             onClick={onClose}
-            className="lg:hidden p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"
+            className="lg:hidden p-1.5 rounded-lg transition-colors"
+            style={{ color: 'rgba(255,255,255,0.4)' }}
             aria-label="Cerrar menú"
           >
             <X className="w-5 h-5" />
@@ -174,9 +231,12 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
         </div>
       </div>
 
-      {/* ── Navigation ── */}
+      {/* ── Navegación ── */}
       <nav className="flex-1 py-3 px-3 overflow-y-auto">
-        <p className="px-3 pb-2 text-[0.58rem] font-bold uppercase tracking-[0.14em] text-text-muted/60">
+        <p
+          className="px-3 pb-2 text-[0.55rem] font-bold uppercase tracking-[0.18em]"
+          style={{ color: 'rgba(255,255,255,0.2)' }}
+        >
           Módulos
         </p>
 
@@ -187,15 +247,23 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
           className="space-y-0.5"
         >
           {NAV_LINKS.map((link) => (
-            <SidebarLink key={link.path} link={link} onClose={onClose} userRole={user?.role} isAuthenticated={isAuthenticated} />
+            <SidebarLink
+              key={link.path}
+              link={link}
+              onClose={onClose}
+              userRole={user?.role}
+              isAuthenticated={isAuthenticated}
+            />
           ))}
         </motion.div>
       </nav>
 
-      {/* ── Bottom actions ── */}
-      <div className="p-3 space-y-1 border-t border-border/60">
-
-        {/* No session — CTA de ingreso */}
+      {/* ── Acciones inferiores ── */}
+      <div
+        className="p-3 space-y-1.5"
+        style={{ borderTop: '1px solid rgba(0,152,70,0.15)' }}
+      >
+        {/* Sin sesión */}
         {!isAuthenticated && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -205,7 +273,13 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
             <Link
               to="/login"
               onClick={onClose}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-br from-primary-700 to-primary-900 hover:from-primary-600 hover:to-primary-800 transition-all no-underline"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold no-underline transition-all"
+              style={{
+                background: 'linear-gradient(135deg, rgba(0,152,70,0.2), rgba(26,86,50,0.3))',
+                border: '1px solid rgba(0,152,70,0.3)',
+                color: '#d1fae5',
+                boxShadow: '0 0 12px rgba(0,152,70,0.1)',
+              }}
             >
               <Shield className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
               <span>Iniciar sesión</span>
@@ -214,7 +288,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
           </motion.div>
         )}
 
-        {/* Session activa */}
+        {/* Con sesión */}
         <AnimatePresence>
           {isAuthenticated && (
             <motion.div
@@ -222,61 +296,78 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="space-y-1"
+              className="space-y-1.5"
             >
-              {/* Panel Admin — solo Administrador SIG */}
+              {/* Panel Admin */}
               {user?.role === ROLES.ADMIN && (
                 <Link
                   to="/admin"
                   onClick={onClose}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-primary-800 bg-primary-50 border border-primary-200/70 hover:bg-primary-100 transition-colors no-underline mb-1"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold no-underline transition-all mb-1"
+                  style={{
+                    background: 'rgba(176,203,31,0.1)',
+                    border: '1px solid rgba(176,203,31,0.25)',
+                    color: '#d9f99d',
+                  }}
                 >
                   <Shield className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                   <span>Panel Admin</span>
-                  <span className="ml-auto text-[0.55rem] font-bold uppercase tracking-wider bg-primary-800 text-white px-1.5 py-0.5 rounded-full">
+                  <span
+                    className="ml-auto text-[0.52rem] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                    style={{ background: 'rgba(176,203,31,0.2)', color: '#d9f99d' }}
+                  >
                     SIG
                   </span>
                 </Link>
               )}
 
-              {/* Visitante — solicitar acceso */}
+              {/* Visitante */}
               {user?.isVisitante ? (
                 <Link
                   to="/solicitar-acceso"
                   onClick={onClose}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors no-underline"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold no-underline transition-all"
+                  style={{
+                    background: 'rgba(251,191,36,0.1)',
+                    border: '1px solid rgba(251,191,36,0.22)',
+                    color: '#fde68a',
+                  }}
                 >
                   <Lock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                   <span>Solicitar acceso</span>
                   <ChevronRight className="w-3.5 h-3.5 ml-auto shrink-0" aria-hidden="true" />
                 </Link>
               ) : (
-                /* Nuevo Análisis — solo para usuarios institucionales */
-                <div className="relative overflow-hidden rounded-xl">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary-700 to-primary-900" aria-hidden="true" />
-                  <motion.button
-                    onClick={onOpenModal}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.96 }}
-                    transition={{ type: 'spring', stiffness: 420, damping: 24 }}
-                    className="btn-shimmer relative w-full flex items-center gap-2 px-3 py-2.5 text-white text-sm font-semibold"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-primary-200 shrink-0" aria-hidden="true" />
-                    <span>Nuevo Análisis</span>
-                    <PlusCircle className="w-3.5 h-3.5 ml-auto text-primary-300 shrink-0" aria-hidden="true" />
-                  </motion.button>
-                </div>
+                /* Nuevo Análisis */
+                <motion.button
+                  onClick={onOpenModal}
+                  whileHover={{ scale: 1.02, boxShadow: '0 0 24px rgba(0,152,70,0.4)' }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ type: 'spring', stiffness: 420, damping: 24 }}
+                  className="btn-shimmer w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-white text-sm font-semibold"
+                  style={{
+                    background: 'linear-gradient(135deg, #009846, #1A5632)',
+                    boxShadow: '0 4px 18px rgba(0,152,70,0.28)',
+                  }}
+                >
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: '#bbf7d0' }} aria-hidden="true" />
+                  <span>Nuevo Análisis</span>
+                  <PlusCircle className="w-3.5 h-3.5 ml-auto shrink-0" style={{ color: '#86efac' }} aria-hidden="true" />
+                </motion.button>
               )}
 
               {/* Cerrar sesión */}
               <motion.button
                 onClick={onLogout}
-                whileHover={{ x: 4 }}
+                whileHover={{ x: 3 }}
                 whileTap={{ x: 0 }}
                 transition={{ type: 'spring', stiffness: 400 }}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-text-muted hover:text-orange-500 hover:bg-orange-500/5 transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors"
+                style={{ color: 'rgba(255,255,255,0.3)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#fca5a5'; e.currentTarget.style.background = 'rgba(239,68,68,0.06)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'transparent' }}
               >
-                <LogOut className="w-[17px] h-[17px] shrink-0" aria-hidden="true" />
+                <LogOut className="w-[16px] h-[16px] shrink-0" aria-hidden="true" />
                 <span>Cerrar Sesión</span>
               </motion.button>
             </motion.div>
@@ -287,7 +378,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
   )
 }
 
-// ── Main export ──
+// ── Export principal ──────────────────────────────────────────────────────────
 export default function Sidebar({ mobileOpen, onClose }) {
   const { isAuthenticated, user, logout } = useAuth()
   const [showModal, setShowModal] = useState(false)
@@ -305,10 +396,45 @@ export default function Sidebar({ mobileOpen, onClose }) {
     isAuthenticated,
   }
 
+  const sidebarStyle = {
+    background: 'linear-gradient(180deg, #060f09 0%, #091a0e 55%, #0c1f14 100%)',
+    borderRight: '1px solid rgba(0,152,70,0.14)',
+  }
+
+  const mapTextureStyle = {
+    backgroundImage: `url(${CHOCO_MAP_URL})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center top',
+    opacity: 0.045,
+    mixBlendMode: 'luminosity',
+  }
+
   return (
     <>
       {/* Desktop */}
-      <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[210px] bg-white border-r border-border flex-col z-40">
+      <aside
+        className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[210px] flex-col z-40 overflow-hidden"
+        style={sidebarStyle}
+      >
+        {/* Mapa del Chocó como textura ultra-sutil */}
+        <div className="absolute inset-0 pointer-events-none" style={mapTextureStyle} />
+        {/* Dot grid overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: 'radial-gradient(circle, rgba(0,152,70,0.12) 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+            opacity: 0.5,
+          }}
+        />
+        {/* Orbe de luz verde en la parte superior */}
+        <div
+          className="absolute top-0 left-0 right-0 h-48 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse at 50% 0%, rgba(0,152,70,0.18) 0%, transparent 70%)',
+          }}
+        />
         <SidebarInner {...innerProps} />
       </aside>
 
@@ -322,7 +448,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] lg:hidden"
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[3px] lg:hidden"
               onClick={onClose}
             />
             <motion.aside
@@ -331,8 +457,25 @@ export default function Sidebar({ mobileOpen, onClose }) {
               animate={{ x: 0 }}
               exit={{ x: -260 }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="fixed top-0 left-0 bottom-0 w-[240px] bg-white z-50 flex flex-col shadow-float lg:hidden"
+              className="fixed top-0 left-0 bottom-0 w-[240px] z-50 flex flex-col overflow-hidden lg:hidden"
+              style={sidebarStyle}
             >
+              <div className="absolute inset-0 pointer-events-none" style={mapTextureStyle} />
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  backgroundImage: 'radial-gradient(circle, rgba(0,152,70,0.1) 1px, transparent 1px)',
+                  backgroundSize: '24px 24px',
+                  opacity: 0.5,
+                }}
+              />
+              <div
+                className="absolute top-0 left-0 right-0 h-48 pointer-events-none"
+                style={{
+                  background:
+                    'radial-gradient(ellipse at 50% 0%, rgba(0,152,70,0.18) 0%, transparent 70%)',
+                }}
+              />
               <SidebarInner {...innerProps} />
             </motion.aside>
           </>
@@ -341,9 +484,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
 
       {/* Modal */}
       <AnimatePresence>
-        {showModal && (
-          <NuevoAnalisisModal onClose={() => setShowModal(false)} />
-        )}
+        {showModal && <NuevoAnalisisModal onClose={() => setShowModal(false)} />}
       </AnimatePresence>
     </>
   )

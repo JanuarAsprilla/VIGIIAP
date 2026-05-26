@@ -649,3 +649,8 @@ h1, h2, h3, .font-display {
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+/* ── TopBar dark glass search placeholder ── */
+.topbar-search::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
