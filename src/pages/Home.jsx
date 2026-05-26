@@ -17,6 +17,7 @@ import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
 import { useNoticiasList } from '@/hooks/useNoticias'
+import PlatformIntroSection from '@/components/PlatformIntroSection'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -619,6 +620,9 @@ export default function Home() {
 
         {/* Marquee — solo fuera de búsqueda */}
         {!query.trim() && <MarqueeStrip />}
+
+        {/* Presentación 3D scroll-driven — visible solo fuera de búsqueda */}
+        {!query.trim() && <PlatformIntroSection />}
 
         {/* Welcome strip — usuario autenticado */}
         {isAuthenticated && !query.trim() && <WelcomeStrip user={user} />}
