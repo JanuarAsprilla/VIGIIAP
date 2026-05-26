@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { validatePasswordStrength, validatePasswordMatch, passwordCriteria } from '@/lib/validators'
 import { motion, AnimatePresence } from 'framer-motion'
+import { fadeUp, staggerContainer, staggerItem3D, EASE_OUT_EXPO } from '@/lib/animations'
+import Card3D from '@/components/ui/Card3D'
 import {
   User, Mail, Building2, Shield, Bell, Palette,
   Lock, Eye, EyeOff, CheckCircle, AlertCircle,
@@ -354,11 +356,15 @@ export default function Perfil() {
       </div>
 
       {/* Avatar card */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-white border border-border rounded-2xl p-6 flex items-center gap-5"
+      <Card3D
+        initial={{ opacity: 0, y: 20, rotateX: 5, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+        style={{ transformPerspective: 900 }}
+        glow="rgba(26,86,50,0.18)"
+        intensity={4}
+        className="bg-white border border-border/70 rounded-2xl p-6 flex items-center gap-5"
+        whileHover={{ y: -3 }}
       >
         {/* Avatar */}
         <div className="relative shrink-0">
@@ -387,13 +393,15 @@ export default function Perfil() {
           <span className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">Vista</span>
           <span className="text-xs font-semibold text-text capitalize">{density}</span>
         </div>
-      </motion.div>
+      </Card3D>
 
       {/* Información personal */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+        transition={{ delay: 0.08, duration: 0.5, ease: EASE_OUT_EXPO }}
+        style={{ transformPerspective: 900 }}
+        whileHover={{ y: -3 }}
       >
         <Section
           title="Información Personal"
@@ -461,9 +469,11 @@ export default function Perfil() {
 
       {/* Seguridad */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.14, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+        transition={{ delay: 0.14, duration: 0.5, ease: EASE_OUT_EXPO }}
+        style={{ transformPerspective: 900 }}
+        whileHover={{ y: -3 }}
       >
         <Section
           title="Seguridad"
@@ -475,9 +485,11 @@ export default function Perfil() {
 
       {/* Notificaciones */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.20, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+        transition={{ delay: 0.20, duration: 0.5, ease: EASE_OUT_EXPO }}
+        style={{ transformPerspective: 900 }}
+        whileHover={{ y: -3 }}
       >
         <Section
           title="Notificaciones"
@@ -489,9 +501,11 @@ export default function Perfil() {
 
       {/* Apariencia */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.26, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+        transition={{ delay: 0.26, duration: 0.5, ease: EASE_OUT_EXPO }}
+        style={{ transformPerspective: 900 }}
+        whileHover={{ y: -3 }}
       >
         <Section
           title="Apariencia"
@@ -503,10 +517,12 @@ export default function Perfil() {
 
       {/* Acciones de cuenta */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.32, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-white border border-border rounded-2xl overflow-hidden"
+        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+        transition={{ delay: 0.32, duration: 0.5, ease: EASE_OUT_EXPO }}
+        style={{ transformPerspective: 900 }}
+        whileHover={{ y: -3 }}
+        className="bg-white border border-border/70 rounded-2xl overflow-hidden"
       >
         <div className="px-6 py-4 border-b border-border">
           <h3 className="font-semibold text-text">Acciones de Cuenta</h3>
@@ -540,7 +556,7 @@ export default function Perfil() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-orange-600">Cerrar Sesión</p>
-                <p className="text-xs text-text-muted">Salir del portal VIGI-IIAP</p>
+                <p className="text-xs text-text-muted">Salir del portal VIGIA-IIAP</p>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-orange-400 group-hover:text-orange-600 transition-colors" />
@@ -550,7 +566,7 @@ export default function Perfil() {
 
       {/* Footer */}
       <p className="text-center text-[0.65rem] text-text-muted/50 font-mono pb-4">
-        VIGI-IIAP v1.0 · © {new Date().getFullYear()} IIAP · Chocó Biogeográfico
+        VIGIA-IIAP v1.0 · © {new Date().getFullYear()} IIAP · Chocó Biogeográfico
       </p>
     </div>
   )

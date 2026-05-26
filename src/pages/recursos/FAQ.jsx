@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HelpCircle, ChevronDown } from 'lucide-react'
+import Card3D from '@/components/ui/Card3D'
+import { EASE_OUT_EXPO } from '@/lib/animations'
 
 const FAQS = [
   { q: '¿Cómo puedo solicitar acceso al sistema?', a: 'Desde la pantalla de inicio de sesión, haga clic en "Solicitar Acceso" y complete el formulario. Un administrador revisará su solicitud y le enviará las credenciales por correo electrónico.' },
@@ -14,11 +16,15 @@ const FAQS = [
 function FAQItem({ faq, index }) {
   const [open, setOpen] = useState(false)
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="bg-white border border-border rounded-xl overflow-hidden"
+    <Card3D
+      initial={{ opacity: 0, y: 20, rotateX: 5, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+      transition={{ delay: index * 0.05, duration: 0.45, ease: EASE_OUT_EXPO }}
+      style={{ transformPerspective: 900 }}
+      glow="rgba(26,86,50,0.14)"
+      intensity={3}
+      className="bg-white border border-border/70 rounded-xl overflow-hidden"
+      whileHover={{ y: -2 }}
     >
       <button
         onClick={() => setOpen(!open)}
@@ -43,7 +49,7 @@ function FAQItem({ faq, index }) {
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </Card3D>
   )
 }
 
@@ -54,7 +60,7 @@ export default function FAQ() {
         <span className="page-header-tag block mb-2">Recursos</span>
         <h1 className="page-header-title mb-3">Preguntas Frecuentes</h1>
         <p className="page-header-description max-w-2xl">
-          Respuestas a las consultas más comunes sobre el uso del sistema VIGI-IIAP.
+          Respuestas a las consultas más comunes sobre el uso del sistema VIGIA-IIAP.
         </p>
       </div>
       <div className="space-y-3">

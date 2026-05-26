@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { EASE_OUT_EXPO } from '@/lib/animations'
 import {
   UserPlus, ArrowLeft, Mail, User,
   Building2, FileText, Briefcase, AlertCircle,
@@ -243,7 +244,13 @@ export default function SolicitarAcceso() {
         ) : (
 
           /* ── Formulario ── */
-          <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div key="form"
+            initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+            style={{ transformPerspective: 900 }}
+          >
             <div className="mb-6">
               <h2 className="font-display text-2xl font-bold text-text mb-1">Solicitar Acceso</h2>
               <p className="text-sm text-text-muted">Complete el formulario. Recibirá un correo para verificar su cuenta.</p>

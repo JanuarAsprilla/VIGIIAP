@@ -4,7 +4,8 @@ import {
   Plus, Trash2, Upload, X, CheckCircle,
   AlertCircle, Loader2, Tag, ImageOff, FolderOpen,
 } from 'lucide-react'
-import { fadeUpSm, panelAnim } from '@/lib/animations'
+import { fadeUpSm, panelAnim, staggerContainer, staggerItem3D } from '@/lib/animations'
+import Card3D from '@/components/ui/Card3D'
 import {
   useCategoriasList,
   useCreateCategoria,
@@ -118,13 +119,16 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
   const currentPreview = file ? URL.createObjectURL(file) : cat.thumbnail_url
 
   return (
-    <motion.div
+    <Card3D
       layout
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 16, rotateX: 5, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
       exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.2 }}
-      className="bg-white border border-border rounded-2xl overflow-hidden flex flex-col"
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      glow="rgba(26,86,50,0.16)"
+      intensity={5}
+      className="bg-white border border-border/70 rounded-2xl overflow-hidden flex flex-col"
+      whileHover={{ y: -4 }}
     >
       {/* Imagen */}
       <div className="relative aspect-video bg-bg-alt">
@@ -196,7 +200,7 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
           </>
         )}
       </div>
-    </motion.div>
+    </Card3D>
   )
 }
 
@@ -303,7 +307,11 @@ export default function GestionCategorias() {
 
       {/* Grid de tarjetas */}
       {categorias.length > 0 && (
-        <motion.div {...fadeUp(0.08)} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <motion.div
+          variants={staggerContainer(0.07, 0.08)}
+          initial="initial" animate="animate"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+        >
           <AnimatePresence mode="popLayout">
             {categorias.map((cat) => (
               <CategoriaCard

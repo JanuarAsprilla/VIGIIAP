@@ -5,7 +5,8 @@ import {
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
-import { fadeUpSm } from '@/lib/animations'
+import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
+import Card3D from '@/components/ui/Card3D'
 import { formatDate } from '@/lib/dateUtils'
 
 const fadeUp = fadeUpSm
@@ -156,7 +157,16 @@ export default function Actividad() {
       </motion.div>
 
       {/* Table */}
-      <motion.div {...fadeUp(0.14)} className="bg-white border border-border rounded-xl overflow-hidden">
+      <Card3D
+        initial={{ opacity: 0, y: 20, rotateX: 4, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+        transition={{ delay: 0.14, duration: 0.5, ease: EASE_OUT_EXPO }}
+        style={{ transformPerspective: 900 }}
+        glow="rgba(26,86,50,0.12)"
+        intensity={3}
+        className="bg-white border border-border/70 rounded-xl overflow-hidden"
+        whileHover={{ y: -2 }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -223,7 +233,7 @@ export default function Actividad() {
             </button>
           </div>
         </div>
-      </motion.div>
+      </Card3D>
     </div>
   )
 }

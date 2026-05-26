@@ -2,6 +2,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Calendar, User, Tag, Loader2, Newspaper } from 'lucide-react'
 import { useNoticiaBySlug } from '@/hooks/useNoticias'
+import { fadeUp, staggerContainer, staggerItem3D, EASE_OUT_EXPO } from '@/lib/animations'
+import Card3D from '@/components/ui/Card3D'
 
 export default function NoticiaDetalle() {
   const { slug }    = useParams()
@@ -43,10 +45,16 @@ export default function NoticiaDetalle() {
         </button>
       </motion.div>
 
-      <motion.article
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="bg-white border border-border rounded-2xl overflow-hidden max-w-3xl">
+      <Card3D
+        initial={{ opacity: 0, y: 28, rotateX: 5, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
+        style={{ transformPerspective: 900 }}
+        glow="rgba(26,86,50,0.16)"
+        intensity={3}
+        className="bg-white border border-border/70 rounded-2xl overflow-hidden max-w-3xl"
+        whileHover={{ y: -2 }}
+      >
 
         {article.thumbUrl && (
           <img src={article.thumbUrl} alt={article.title}
@@ -77,11 +85,15 @@ export default function NoticiaDetalle() {
           </div>
         </div>
 
-        <div className="px-8 py-8 space-y-4">
+        <motion.div
+          variants={staggerContainer(0.05, 0.1)}
+          initial="initial" animate="animate"
+          className="px-8 py-8 space-y-4"
+        >
           {paragraphs.map((p, i) => (
-            <p key={i} className="text-[0.95rem] text-text-light leading-[1.8]">{p}</p>
+            <motion.p key={i} variants={staggerItem3D} className="text-[0.95rem] text-text-light leading-[1.8]">{p}</motion.p>
           ))}
-        </div>
+        </motion.div>
 
         <div className="px-8 py-5 border-t border-border bg-bg-alt/30 flex items-center justify-between">
           <Link to="/noticias"
@@ -90,7 +102,7 @@ export default function NoticiaDetalle() {
             Todas las noticias
           </Link>
         </div>
-      </motion.article>
+      </Card3D>
     </div>
   )
 }

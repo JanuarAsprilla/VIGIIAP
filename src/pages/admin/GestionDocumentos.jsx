@@ -6,7 +6,8 @@ import {
   AlertCircle, Globe, Users, ShieldCheck,
   Loader2, FolderOpen, ChevronDown, Tag,
 } from 'lucide-react'
-import { fadeUpSm, panelAnim } from '@/lib/animations'
+import { fadeUpSm, panelAnim, EASE_OUT_EXPO } from '@/lib/animations'
+import Card3D from '@/components/ui/Card3D'
 import { useDocumentosList, useCreateDocumento, useUpdateDocumento, useDeleteDocumento } from '@/hooks/useDocumentos'
 import { useCategoriasList } from '@/hooks/useCategorias'
 
@@ -480,7 +481,7 @@ export default function GestionDocumentos() {
             <FolderOpen className="w-8 h-8 text-primary-400" />
           </div>
           <h3 className="text-base font-bold text-text mb-1">Aún no hay documentos registrados</h3>
-          <p className="text-sm text-text-muted mb-6 max-w-xs">Ingresa el primer documento para que aparezca en el portal público de VIGI-IIAP.</p>
+          <p className="text-sm text-text-muted mb-6 max-w-xs">Ingresa el primer documento para que aparezca en el portal público de VIGIA-IIAP.</p>
           <button onClick={openCreate}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors">
             <Plus className="w-4 h-4" /> Ingresar el primer documento
@@ -490,7 +491,16 @@ export default function GestionDocumentos() {
 
       {/* Table */}
       {docs.length > 0 && (
-        <motion.div {...fadeUp(0.16)} className="bg-white border border-border rounded-xl overflow-hidden">
+        <Card3D
+            initial={{ opacity: 0, y: 20, rotateX: 4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+            transition={{ delay: 0.16, duration: 0.5, ease: EASE_OUT_EXPO }}
+            style={{ transformPerspective: 900 }}
+            glow="rgba(26,86,50,0.12)"
+            intensity={3}
+            className="bg-white border border-border/70 rounded-xl overflow-hidden"
+            whileHover={{ y: -2 }}
+          >
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -549,7 +559,7 @@ export default function GestionDocumentos() {
           <div className="px-5 py-3 border-t border-border bg-bg-alt/30">
             <span className="text-xs text-text-muted">Mostrando {filtered.length} de {docs.length} documentos</span>
           </div>
-        </motion.div>
+        </Card3D>
       )}
 
       {/* Modal ingresar / editar documento */}

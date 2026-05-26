@@ -55,7 +55,7 @@ export default function Footer() {
                     IIAP
                   </text>
                 </svg>
-                <span className="font-display text-2xl font-bold">VIGI-IIAP</span>
+                <span className="font-display text-2xl font-bold">VIGIA-IIAP</span>
               </div>
 
               {/* Description */}

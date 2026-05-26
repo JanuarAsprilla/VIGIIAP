@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { PlusCircle, SearchX } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
-import { fadeUp } from '@/lib/animations'
+import { fadeUp, staggerContainer, staggerItem3D } from '@/lib/animations'
 import { useToast, ToastContainer } from '@/components/Toast'
 
 import CalculadoraAreas       from '@/components/herramientas/CalculadoraAreas'
@@ -59,11 +59,17 @@ export default function Herramientas() {
 
       {/* Tools grid */}
       {filteredTools.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <motion.div
+          variants={staggerContainer(0.07, 0.08)}
+          initial="initial" animate="animate"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        >
           {filteredTools.map(({ id, Component }) => (
-            <Component key={id} onToast={toast} />
+            <motion.div key={id} variants={staggerItem3D}>
+              <Component onToast={toast} />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       ) : (
         <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
           <SearchX className="w-10 h-10 mx-auto mb-3 opacity-30" aria-hidden="true" />

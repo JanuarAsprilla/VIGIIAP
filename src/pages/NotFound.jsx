@@ -1,6 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Home, Map, FileText, Search } from 'lucide-react'
+import Card3D from '@/components/ui/Card3D'
+import { EASE_OUT_EXPO } from '@/lib/animations'
 
 const QUICK_LINKS = [
   { to: '/',           icon: Home,     label: 'Inicio'       },
@@ -15,9 +17,10 @@ export default function NotFound() {
   return (
     <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center p-6">
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        initial={{ opacity: 0, y: 28, rotateX: 5, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+        transition={{ duration: 0.55, ease: EASE_OUT_EXPO }}
+        style={{ transformPerspective: 1000, transformOrigin: 'top center' }}
         className="w-full max-w-lg text-center"
       >
         {/* 404 visual */}
@@ -84,7 +87,7 @@ export default function NotFound() {
             Página no encontrada
           </h1>
           <p className="text-sm text-text-muted leading-relaxed max-w-sm mx-auto mb-8">
-            La ruta que solicitó no existe en el portal VIGI-IIAP. Puede haber sido movida,
+            La ruta que solicitó no existe en el portal VIGIA-IIAP. Puede haber sido movida,
             eliminada o nunca haber existido.
           </p>
         </motion.div>
@@ -122,15 +125,26 @@ export default function NotFound() {
             Accesos rápidos
           </p>
           <div className="flex flex-wrap gap-2 justify-center">
-            {QUICK_LINKS.map(({ to, icon: Icon, label }) => (
-              <Link
+            {QUICK_LINKS.map(({ to, icon: Icon, label }, i) => (
+              <Card3D
                 key={to}
-                to={to}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-bg-alt border border-border rounded-lg text-sm text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors no-underline"
+                initial={{ opacity: 0, y: 12, rotateX: 4 }}
+                animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                transition={{ delay: 0.45 + i * 0.05, duration: 0.4, ease: EASE_OUT_EXPO }}
+                style={{ transformPerspective: 600 }}
+                glow="rgba(26,86,50,0.16)"
+                intensity={5}
+                whileHover={{ y: -3 }}
+                className="inline-flex"
               >
-                <Icon className="w-3.5 h-3.5" />
-                {label}
-              </Link>
+                <Link
+                  to={to}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-bg-alt border border-border/70 rounded-lg text-sm text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors no-underline"
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                </Link>
+              </Card3D>
             ))}
           </div>
         </motion.div>
@@ -142,7 +156,7 @@ export default function NotFound() {
           transition={{ delay: 0.55 }}
           className="mt-10 text-xs text-text-muted/50 font-mono"
         >
-          VIGI-IIAP · Instituto de Investigaciones Ambientales del Pacífico
+          VIGIA-IIAP · Instituto de Investigaciones Ambientales del Pacífico
         </motion.p>
       </motion.div>
     </div>

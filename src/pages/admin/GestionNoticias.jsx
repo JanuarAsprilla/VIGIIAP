@@ -6,7 +6,8 @@ import {
   Users, ShieldCheck, AlertCircle, Loader2, Newspaper, CheckCircle,
   ChevronDown, Tag,
 } from 'lucide-react'
-import { fadeUpSm, panelAnim } from '@/lib/animations'
+import { fadeUpSm, panelAnim, staggerContainer, staggerItem3D } from '@/lib/animations'
+import Card3D from '@/components/ui/Card3D'
 import { useNoticiasList, useCreateNoticia, useUpdateNoticia, useDeleteNoticia } from '@/hooks/useNoticias'
 
 const fadeUp = fadeUpSm
@@ -445,7 +446,7 @@ export default function GestionNoticias() {
             <Newspaper className="w-8 h-8 text-primary-400" />
           </div>
           <h3 className="text-base font-bold text-text mb-1">Aún no hay noticias publicadas</h3>
-          <p className="text-sm text-text-muted mb-6 max-w-xs">Publica la primera noticia para que aparezca en el portal público de VIGI-IIAP.</p>
+          <p className="text-sm text-text-muted mb-6 max-w-xs">Publica la primera noticia para que aparezca en el portal público de VIGIA-IIAP.</p>
           <button onClick={openCreate}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors">
             <Plus className="w-4 h-4" /> Publicar la primera noticia
@@ -455,14 +456,25 @@ export default function GestionNoticias() {
 
       {/* Cards grid */}
       {noticias.length > 0 && (
-      <motion.div {...fadeUp(0.14)} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <motion.div
+          variants={staggerContainer(0.06, 0.14)}
+          initial="initial" animate="animate"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+        >
         {filtered.length === 0 && (
           <div className="col-span-2 py-12 text-center text-sm text-text-muted">No hay noticias que coincidan con la búsqueda</div>
         )}
         {filtered.map((n) => {
           const vis = visMap[n.visibilidad] ?? visMap.publico
           return (
-            <div key={n.id} className="bg-white border border-border rounded-xl overflow-hidden">
+            <motion.div key={n.id} variants={staggerItem3D}>
+            <Card3D
+              glow="rgba(26,86,50,0.14)"
+              intensity={4}
+              className="bg-white border border-border/70 rounded-xl overflow-hidden h-full"
+              whileHover={{ y: -3 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            >
               {n.thumbUrl && (
                 <div className="h-32 w-full overflow-hidden">
                   <img src={n.thumbUrl} alt={n.titulo} className="w-full h-full object-cover" />
@@ -521,7 +533,8 @@ export default function GestionNoticias() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Card3D>
+            </motion.div>
           )
         })}
       </motion.div>

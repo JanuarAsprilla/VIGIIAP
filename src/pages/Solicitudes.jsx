@@ -16,15 +16,10 @@ import { useSearch } from '@/contexts/SearchContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { matches } from '@/lib/search'
 import { useMisSolicitudes, useCreateSolicitud } from '@/hooks/useSolicitudes'
+import { fadeUp, cardEnter3D, staggerContainer, staggerItem3D } from '@/lib/animations'
+import Card3D from '@/components/ui/Card3D'
 
 const PAGE_SIZE = 4
-
-// ── Animation helper ──
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] },
-})
 
 // ── CSV export ──
 /** Escapa un valor para CSV: elimina CRLF y escapa comillas dobles. */
@@ -42,7 +37,7 @@ function exportCSV(rows) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = 'solicitudes_vigi-iiap.csv'
+  a.download = 'solicitudes_vigia-iiap.csv'
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -709,7 +704,14 @@ function MisSolicitudes({ onVerDetalle }) {
   if (isLoading || mis.length === 0) return null
 
   return (
-    <motion.div {...fadeUp(0.3)} className="bg-white border border-border rounded-xl overflow-hidden">
+    <Card3D
+      {...fadeUp(0.3)}
+      glow="rgba(26,86,50,0.14)"
+      intensity={3}
+      className="bg-white border border-border/70 rounded-xl overflow-hidden"
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+    >
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <div>
           <h3 className="text-sm font-bold text-text">Mis Solicitudes</h3>
@@ -742,16 +744,20 @@ function MisSolicitudes({ onVerDetalle }) {
           </div>
         ))}
       </div>
-    </motion.div>
+    </Card3D>
   )
 }
 
 // ── Help CTA ──
 function AyudaCTA() {
   return (
-    <motion.div
+    <Card3D
       {...fadeUp(0.35)}
+      glow="rgba(26,86,50,0.16)"
+      intensity={3}
       className="bg-primary-50 border border-primary-200 rounded-xl p-5"
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
     >
       <h4 className="text-sm font-bold text-primary-900 mb-1.5">
         ¿Necesitas ayuda técnica?
@@ -767,7 +773,7 @@ function AyudaCTA() {
         Consultar Guía Técnica
         <ArrowRight className="w-3.5 h-3.5" />
       </Link>
-    </motion.div>
+    </Card3D>
   )
 }
 
@@ -778,28 +784,34 @@ function BottomStats({ rows }) {
   const resuelta  = rows.filter((r) => r.estado === 'Resuelta' || r.estado === 'Aprobado').length
   const tasaStr   = total > 0 ? `${Math.round((resuelta / total) * 100)}%` : '—'
   const kpis = [
-    { label: 'Total',      value: String(total) },
-    { label: 'En Proceso', value: String(pendiente) },
-    { label: 'Resueltas',  value: tasaStr },
-    { label: 'Rechazadas', value: String(rows.filter((r) => r.estado === 'Rechazado').length) },
+    { label: 'Total',      value: String(total),      glow: 'rgba(26,86,50,0.18)'   },
+    { label: 'En Proceso', value: String(pendiente),  glow: 'rgba(247,172,66,0.18)' },
+    { label: 'Resueltas',  value: tasaStr,            glow: 'rgba(26,86,50,0.22)'   },
+    { label: 'Rechazadas', value: String(rows.filter((r) => r.estado === 'Rechazado').length), glow: 'rgba(231,111,81,0.18)' },
   ]
   return (
     <motion.div
-      {...fadeUp(0.4)}
+      variants={staggerContainer(0.07, 0.35)}
+      initial="initial" animate="animate"
       className="grid grid-cols-2 md:grid-cols-4 gap-4"
     >
       {kpis.map((kpi) => (
-        <div
-          key={kpi.label}
-          className="bg-white border border-border rounded-xl px-5 py-4 text-center"
-        >
-          <span className="block text-[0.6rem] font-bold uppercase tracking-widest text-text-muted mb-1">
-            {kpi.label}
-          </span>
-          <span className="block font-display text-3xl font-bold text-text">
-            {kpi.value}
-          </span>
-        </div>
+        <motion.div key={kpi.label} variants={staggerItem3D}>
+          <Card3D
+            glow={kpi.glow}
+            intensity={4}
+            className="bg-white border border-border/70 rounded-xl px-5 py-4 text-center"
+            whileHover={{ y: -3 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <span className="block text-[0.6rem] font-bold uppercase tracking-widest text-text-muted mb-1">
+              {kpi.label}
+            </span>
+            <span className="block font-display text-3xl font-bold text-text tabular-nums">
+              {kpi.value}
+            </span>
+          </Card3D>
+        </motion.div>
       ))}
     </motion.div>
   )

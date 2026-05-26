@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/contexts/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
+import Card3D from '@/components/ui/Card3D'
 
 // Rutas que requieren cuenta institucional (no visitante, no anónimo)
 const RESTRICTED_PATHS = ['/geovisor', '/herramientas', '/solicitudes']
@@ -92,7 +93,13 @@ function UserMiniCard({ user }) {
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       className="mx-3 mt-2.5 mb-0.5"
     >
-      <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 border border-primary-200/70">
+      <Card3D
+          glow="rgba(26,86,50,0.18)"
+          intensity={4}
+          className="p-2.5 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100/50 border border-primary-200/70"
+          whileHover={{ y: -1 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        >
         <div className="flex items-center gap-2.5">
           <div className="relative shrink-0">
             <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-900 rounded-lg flex items-center justify-center shadow-sm">
@@ -108,7 +115,7 @@ function UserMiniCard({ user }) {
             <p className="text-[0.6rem] text-primary-700/70 uppercase tracking-wider truncate">{user.role}</p>
           </div>
         </div>
-      </div>
+        </Card3D>
     </motion.div>
   )
 }
@@ -149,7 +156,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
 
             <div className="leading-tight">
               <span className="block text-sm font-bold text-text tracking-wide group-hover:text-primary-800 transition-colors">
-                VIGI-IIAP
+                VIGIA-IIAP
               </span>
               <span className="block text-[0.6rem] text-text-muted uppercase tracking-wider">
                 Chocó Biogeográfico

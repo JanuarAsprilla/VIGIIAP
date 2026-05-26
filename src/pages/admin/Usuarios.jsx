@@ -6,7 +6,8 @@ import {
   User, Clock, Loader2,
 } from 'lucide-react'
 import { ROLES } from '@/contexts/AuthContext'
-import { fadeUpSm, panelAnim, drawerAnim } from '@/lib/animations'
+import { fadeUpSm, panelAnim, drawerAnim, EASE_OUT_EXPO } from '@/lib/animations'
+import Card3D from '@/components/ui/Card3D'
 import { useUsuariosList, useCreateUsuario, useUpdateUsuarioRol, useToggleActivo, useDeleteUsuario } from '@/hooks/useUsuarios'
 import { useToast, ToastContainer } from '@/components/Toast'
 
@@ -370,7 +371,16 @@ export default function Usuarios() {
       </motion.div>
 
       {/* Table */}
-      <motion.div {...fadeUp(0.14)} className="bg-white border border-border rounded-xl overflow-hidden">
+      <Card3D
+        initial={{ opacity: 0, y: 20, rotateX: 4, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+        transition={{ delay: 0.14, duration: 0.5, ease: EASE_OUT_EXPO }}
+        style={{ transformPerspective: 900 }}
+        glow="rgba(26,86,50,0.12)"
+        intensity={3}
+        className="bg-white border border-border/70 rounded-xl overflow-hidden"
+        whileHover={{ y: -2 }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -459,7 +469,7 @@ export default function Usuarios() {
         <div className="px-5 py-3 border-t border-border bg-bg-alt/30">
           <span className="text-xs text-text-muted">Mostrando {filtered.length} de {users.length} usuarios</span>
         </div>
-      </motion.div>
+      </Card3D>
 
       {/* User detail drawer */}
       <AnimatePresence>

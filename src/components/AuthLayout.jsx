@@ -151,7 +151,7 @@ export default function AuthLayout({ children }) {
               Portal Territorial · IIAP
             </span>
             <h1 className="font-display text-4xl font-bold text-white mt-1 tracking-[0.18em]">
-              VIGI-IIAP
+              VIGIA-IIAP
             </h1>
           </motion.div>
 
@@ -202,7 +202,7 @@ export default function AuthLayout({ children }) {
             <div className="w-7 h-7 bg-primary-800 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xs">V</span>
             </div>
-            <span className="font-display font-bold text-text tracking-wider">VIGI-IIAP</span>
+            <span className="font-display font-bold text-text tracking-wider">VIGIA-IIAP</span>
           </div>
           <Link to="/"
             className="flex items-center gap-1.5 text-xs font-semibold text-text-muted hover:text-primary-800 no-underline transition-colors">
@@ -221,8 +221,10 @@ export default function AuthLayout({ children }) {
         {/* Form area */}
         <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
           <motion.div className="w-full max-w-md"
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
+            initial={{ opacity: 0, y: 20, rotateX: 4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            style={{ transformPerspective: 900, transformOrigin: 'top center' }}>
             {children}
           </motion.div>
         </div>

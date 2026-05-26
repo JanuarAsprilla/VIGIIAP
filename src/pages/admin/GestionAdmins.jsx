@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ShieldCheck, UserPlus, Users, Activity, RefreshCw, X, Eye, EyeOff } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { staggerContainer, staggerItem3D, EASE_OUT_EXPO } from '@/lib/animations'
+import Card3D from '@/components/ui/Card3D'
 import api from '@/lib/api'
 
 // ── API helpers ───────────────────────────────────────────────────────────────
@@ -18,13 +20,18 @@ function StatCard({ icon: Icon, label, value, color = 'primary' }) {
     red:     'bg-red-50    text-red-700    border-red-200',
   }
   return (
-    <div className={`flex items-center gap-3 p-4 rounded-xl border ${colors[color]}`}>
+    <Card3D
+      glow="rgba(26,86,50,0.12)"
+      intensity={4}
+      whileHover={{ y: -3 }}
+      className={`flex items-center gap-3 p-4 rounded-xl border ${colors[color]}`}
+    >
       <Icon className="w-5 h-5 shrink-0" />
       <div>
         <p className="text-2xl font-bold leading-none">{value ?? '—'}</p>
         <p className="text-xs mt-0.5 opacity-80">{label}</p>
       </div>
-    </div>
+    </Card3D>
   )
 }
 
@@ -263,15 +270,26 @@ export default function GestionAdmins() {
       </AnimatePresence>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard icon={Users}       label="Total usuarios"  value={stats?.total_usuarios} color="primary" />
-        <StatCard icon={ShieldCheck} label="Administradores" value={stats?.admins}         color="amber"   />
-        <StatCard icon={Activity}    label="Activos"         value={stats?.activos}         color="green"   />
-        <StatCard icon={Users}       label="Sin verificar"   value={stats?.pendientes_verificacion} color="red" />
-      </div>
+      <motion.div
+        className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+        variants={staggerContainer(0.07, 0.1)}
+        initial="hidden" animate="visible"
+      >
+        <motion.div variants={staggerItem3D}><StatCard icon={Users}       label="Total usuarios"  value={stats?.total_usuarios} color="primary" /></motion.div>
+        <motion.div variants={staggerItem3D}><StatCard icon={ShieldCheck} label="Administradores" value={stats?.admins}         color="amber"   /></motion.div>
+        <motion.div variants={staggerItem3D}><StatCard icon={Activity}    label="Activos"         value={stats?.activos}         color="green"   /></motion.div>
+        <motion.div variants={staggerItem3D}><StatCard icon={Users}       label="Sin verificar"   value={stats?.pendientes_verificacion} color="red" /></motion.div>
+      </motion.div>
 
       {/* Admins table */}
-      <div className="bg-white border border-border rounded-2xl overflow-hidden">
+      <Card3D
+        glow="rgba(26,86,50,0.10)"
+        intensity={3}
+        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+        transition={{ delay: 0.22, duration: 0.5, ease: EASE_OUT_EXPO }}
+        style={{ transformPerspective: 900 }}
+        className="bg-white border border-border rounded-2xl overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <h2 className="text-sm font-semibold text-text flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-primary-700" />
@@ -284,7 +302,7 @@ export default function GestionAdmins() {
         <div className="p-2">
           <AdminTable usuarios={usuariosData} isLoading={loadingUsuarios} />
         </div>
-      </div>
+      </Card3D>
 
       {/* Modal */}
       <AnimatePresence>

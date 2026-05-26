@@ -1,5 +1,5 @@
 /**
- * VIGI-IIAP — Smooth scroll global con Lenis
+ * VIGIA-IIAP — Smooth scroll global con Lenis
  * Se instancia una sola vez en MainLayout y se integra con GSAP ScrollTrigger.
  */
 import { useEffect } from 'react'

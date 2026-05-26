@@ -1,3 +1,6 @@
+/* Hallmark · macrostructure: Workbench · genre: admin-dashboard
+ * tokens: design.md · stamp: 2026-05-25
+ */
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -8,7 +11,8 @@ import {
   ArrowRight, Zap, AlertTriangle,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { fadeUpSm } from '@/lib/animations'
+import { fadeUpSm, cardEnter3D, staggerContainer, staggerItem3D, SPRING_SNAPPY } from '@/lib/animations'
+import Card3D from '@/components/ui/Card3D'
 import { useAdminStats } from '@/hooks/useStats'
 import { useSolicitudesAdmin, useUpdateEstadoSolicitud } from '@/hooks/useSolicitudes'
 import { useUsuariosList } from '@/hooks/useUsuarios'
@@ -19,7 +23,15 @@ const fadeUp = fadeUpSm
 
 const KPI_ICONS = [Users, ClipboardList, FileText, Newspaper, Eye]
 
-// ── KPI Cards ──
+// ── KPI Cards — 3D tilt ──
+const KPI_GLOW = [
+  'rgba(26,86,50,0.22)',
+  'rgba(249,115,22,0.20)',
+  'rgba(247,172,66,0.22)',
+  'rgba(0,152,70,0.20)',
+  'rgba(56,189,248,0.18)',
+]
+
 function KPICards({ stats, isLoading }) {
   const kpis = [
     { label: 'Usuarios Registrados',   value: stats?.usuarios ?? '—',             trendUp: true  },
@@ -29,31 +41,45 @@ function KPICards({ stats, isLoading }) {
     { label: 'Visitantes (30 días)',   value: stats?.visitantesUltimos30d ?? '—',  trendUp: true  },
   ]
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+    <motion.div
+      variants={staggerContainer(0.07, 0.05)}
+      initial="initial"
+      animate="animate"
+      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"
+    >
       {kpis.map((kpi, i) => {
         const Icon = KPI_ICONS[i]
         return (
-          <motion.div
-            key={kpi.label}
-            {...fadeUp(0.08 + i * 0.07)}
-            className="bg-white border border-border rounded-xl p-5"
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl flex items-center justify-center">
-                <Icon className="w-4.5 h-4.5 text-primary-700" aria-hidden="true" />
+          <motion.div key={kpi.label} variants={staggerItem3D}>
+            <Card3D
+              glow={KPI_GLOW[i]}
+              intensity={4}
+              className="bg-white border border-border/70 rounded-xl p-5 relative overflow-hidden"
+              whileHover={{ y: -3 }}
+            >
+              {/* Subtle corner glow */}
+              <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full opacity-30 pointer-events-none"
+                style={{ background: `radial-gradient(circle, ${KPI_GLOW[i]} 0%, transparent 70%)` }} />
+
+              <div className="flex items-start justify-between mb-3 relative">
+                <div className="w-9 h-9 bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl flex items-center justify-center">
+                  <Icon className="w-4 h-4 text-primary-700" aria-hidden="true" />
+                </div>
+                <span className={`inline-flex items-center gap-1 text-[0.65rem] font-semibold ${kpi.trendUp ? 'text-green-600' : 'text-orange-500'}`}>
+                  {kpi.trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                </span>
               </div>
-              <span className={`inline-flex items-center gap-1 text-[0.65rem] font-semibold ${kpi.trendUp ? 'text-green-600' : 'text-orange-500'}`}>
-                {kpi.trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              </span>
-            </div>
-            <div className="font-display text-3xl font-bold text-text">
-              {isLoading ? '…' : kpi.value}
-            </div>
-            <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">{kpi.label}</p>
+              <div className="tabular font-display text-3xl font-bold text-text relative">
+                {isLoading
+                  ? <span className="inline-block w-10 h-7 bg-bg-alt rounded animate-pulse" />
+                  : kpi.value}
+              </div>
+              <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">{kpi.label}</p>
+            </Card3D>
           </motion.div>
         )
       })}
-    </div>
+    </motion.div>
   )
 }
 
@@ -331,27 +357,46 @@ function ActividadReciente() {
   )
 }
 
-// ── Quick Actions ──
+// ── Quick Actions — 3D ──
+const QA_GLOW = [
+  'rgba(26,86,50,0.35)',
+  'rgba(212,163,115,0.35)',
+  'rgba(33,136,66,0.30)',
+  'rgba(249,115,22,0.32)',
+]
+
 function QuickActions() {
   const actions = [
     { label: 'Nueva Noticia',    to: '/admin/noticias',    icon: Newspaper,    color: 'from-primary-700 to-primary-900' },
-    { label: 'Nuevo Usuario',    to: '/admin/usuarios',    icon: Users,        color: 'from-gold-400 to-gold-500'       },
+    { label: 'Nuevo Usuario',    to: '/admin/usuarios',    icon: Users,        color: 'from-[#D4A373] to-[#B8860B]'    },
     { label: 'Ver Solicitudes',  to: '/admin/solicitudes', icon: ClipboardList,color: 'from-primary-500 to-primary-700' },
     { label: 'Ver Actividad',    to: '/admin/actividad',   icon: Zap,          color: 'from-orange-400 to-orange-600'   },
   ]
   return (
-    <motion.div {...fadeUp(0.35)} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      {actions.map((a) => (
-        <Link key={a.label} to={a.to} className="no-underline">
-          <motion.div
-            whileHover={{ y: -3, scale: 1.02 }}
-            transition={{ type: 'spring', stiffness: 400 }}
-            className={`bg-gradient-to-br ${a.color} rounded-xl p-4 text-center cursor-pointer`}
-          >
-            <a.icon className="w-5 h-5 text-white mx-auto mb-2" aria-hidden="true" />
-            <p className="text-xs font-bold text-white">{a.label}</p>
-          </motion.div>
-        </Link>
+    <motion.div
+      variants={staggerContainer(0.07, 0.3)}
+      initial="initial"
+      animate="animate"
+      className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+    >
+      {actions.map((a, i) => (
+        <motion.div key={a.label} variants={staggerItem3D}>
+          <Link to={a.to} className="no-underline block">
+            <Card3D
+              glow={QA_GLOW[i]}
+              intensity={6}
+              className={`bg-gradient-to-br ${a.color} rounded-xl p-4 text-center cursor-pointer relative overflow-hidden`}
+              whileHover={{ y: -4 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+            >
+              {/* Dot grid */}
+              <div className="absolute inset-0 opacity-[0.07]"
+                style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+              <a.icon className="w-5 h-5 text-white mx-auto mb-2 relative" aria-hidden="true" />
+              <p className="text-xs font-bold text-white relative">{a.label}</p>
+            </Card3D>
+          </Link>
+        </motion.div>
       ))}
     </motion.div>
   )
@@ -376,7 +421,7 @@ export default function Dashboard() {
           Bienvenido, {user?.name?.split(' ')[0]}
         </h1>
         <p className="text-sm text-text-muted mt-1">
-          Resumen general del sistema VIGI-IIAP · {new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}
+          Resumen general del sistema VIGIA-IIAP · {new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}
         </p>
       </motion.div>
 

@@ -13,6 +13,8 @@ import { useMapasList } from '@/hooks/useMapas'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { useToast, ToastContainer } from '@/components/Toast'
+import { staggerContainer, staggerItem3D, cardEnter3D } from '@/lib/animations'
+import Card3D from '@/components/ui/Card3D'
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 20 },
@@ -138,8 +140,14 @@ function MapCard({ map, index, onPreview }) {
   const hasGeovisor = map.formats.includes('GEOVISOR')
 
   return (
-    <motion.div {...fadeUp(0.06 + index * 0.04)}
-      className="group bg-white border border-border rounded-2xl overflow-hidden hover:border-primary-300 hover:shadow-lg transition-all duration-300 flex flex-col">
+    <Card3D
+      {...cardEnter3D(index)}
+      glow={`${colors.accent}38`}
+      intensity={5}
+      className="group bg-white border border-border/70 rounded-2xl overflow-hidden flex flex-col"
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+    >
 
       {/* Visual header */}
       <div className="relative h-44 overflow-hidden bg-bg-alt shrink-0">
@@ -220,7 +228,7 @@ function MapCard({ map, index, onPreview }) {
           )}
         </div>
       </div>
-    </motion.div>
+    </Card3D>
   )
 }
 

@@ -25,7 +25,7 @@ export default function ResumenActividad() {
       <div className="flex-1 text-white">
         <h3 className="text-base font-bold mb-1">Resumen del Sistema</h3>
         <p className="text-sm text-white/70 leading-relaxed">
-          Estado actual de contenidos y solicitudes gestionadas en VIGI-IIAP.
+          Estado actual de contenidos y solicitudes gestionadas en VIGIA-IIAP.
         </p>
       </div>
 

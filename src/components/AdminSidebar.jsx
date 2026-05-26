@@ -114,7 +114,7 @@ function SidebarContent({ onClose, onLogout, user }) {
             <div className="leading-tight">
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-bold text-text tracking-wide group-hover:text-primary-800 transition-colors">
-                  VIGI-IIAP
+                  VIGIA-IIAP
                 </span>
                 <span className="text-[0.55rem] font-bold uppercase tracking-wider bg-primary-800 text-white px-1.5 py-0.5 rounded-full">
                   Admin

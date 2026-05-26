@@ -390,7 +390,7 @@ function ModulesSection({ isVisitante, isPublico }) {
     <section>
       <SectionHeading
         eyebrow="Plataforma"
-        title="Módulos de VIGI-IIAP"
+        title="Módulos de VIGIA-IIAP"
         note={showNote ? `${restricted} módulos requieren cuenta de investigador` : undefined}
       />
 
@@ -562,7 +562,7 @@ function WelcomeStrip({ user }) {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold text-text">{greeting}, {firstName}</p>
         <p className="text-xs text-text-muted truncate">
-          {user?.isVisitante ? 'Modo visitante — acceso a información pública' : `${user?.role || 'Sesión activa'} · VIGI-IIAP`}
+          {user?.isVisitante ? 'Modo visitante — acceso a información pública' : `${user?.role || 'Sesión activa'} · VIGIA-IIAP`}
         </p>
       </div>
       {!user?.isVisitante ? (

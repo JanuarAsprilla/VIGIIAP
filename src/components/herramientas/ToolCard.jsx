@@ -1,22 +1,29 @@
+import Card3D from '@/components/ui/Card3D'
 import { motion } from 'framer-motion'
-import { fadeUp } from '@/lib/animations'
+import { cardEnter3D } from '@/lib/animations'
 
-const borderColors = {
-  primary: 'border-t-primary-800',
-  orange:  'border-t-gold-400',
-  gold:    'border-t-gold-500',
-  green:   'border-t-primary-500',
+const accentStyles = {
+  primary: { border: 'border-t-primary-800', glow: 'rgba(26,86,50,0.22)'   },
+  orange:  { border: 'border-t-gold-400',    glow: 'rgba(247,172,66,0.22)' },
+  gold:    { border: 'border-t-gold-500',    glow: 'rgba(212,163,115,0.22)'},
+  green:   { border: 'border-t-primary-500', glow: 'rgba(33,136,66,0.20)'  },
 }
 
 /**
- * Tarjeta contenedora para cada herramienta SIG.
+ * Tarjeta contenedora para cada herramienta SIG — 3D tilt.
  * Responsabilidad única: layout visual + animación de entrada.
  */
 export default function ToolCard({ tag, title, icon: Icon, color, children, index }) {
+  const styles = accentStyles[color] || accentStyles.primary
+
   return (
-    <motion.div
-      {...fadeUp(0.1 + index * 0.08)}
-      className={`bg-white border border-border rounded-xl overflow-hidden border-t-2 ${borderColors[color] || borderColors.primary}`}
+    <Card3D
+      {...cardEnter3D(index)}
+      glow={styles.glow}
+      intensity={4}
+      className={`bg-white border border-border/70 rounded-xl overflow-hidden border-t-2 ${styles.border}`}
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
     >
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
@@ -26,12 +33,16 @@ export default function ToolCard({ tag, title, icon: Icon, color, children, inde
             </span>
             <h3 className="text-lg font-bold text-text leading-snug">{title}</h3>
           </div>
-          <div className="w-10 h-10 bg-bg-alt rounded-lg flex items-center justify-center shrink-0">
+          <motion.div
+            whileHover={{ rotate: -6, scale: 1.08 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 20 }}
+            className="w-10 h-10 bg-bg-alt rounded-lg flex items-center justify-center shrink-0"
+          >
             <Icon className="w-5 h-5 text-primary-800" aria-hidden="true" />
-          </div>
+          </motion.div>
         </div>
         {children}
       </div>
-    </motion.div>
+    </Card3D>
   )
 }

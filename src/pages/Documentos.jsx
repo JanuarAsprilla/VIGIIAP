@@ -2,7 +2,7 @@
  * tokens: design.md · stamp: 2026-05-25
  */
 import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useMotionTemplate } from 'framer-motion'
 import {
   FileText, FileSpreadsheet, Search, SlidersHorizontal, ArrowUpDown, ArrowRight,
   Eye, Download,
@@ -258,21 +258,50 @@ function useClickOutside(ref, handler) {
   }, [ref, handler])
 }
 
-// ── Category Card ──
+// ── Category Card — 3D tilt ──
 function CategoryCard({ category, filteredCount, onOpen, index }) {
-  const Icon = categoryIcons[category.icon] || BookOpen
+  const Icon   = categoryIcons[category.icon] || BookOpen
   const colors = CATEGORY_COLORS[category.title] || CATEGORY_COLORS.default
   const hasFilter = filteredCount !== null
 
+  // 3D tilt
+  const ref    = useRef(null)
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+  const rawRX  = useTransform(mouseY, [-0.5, 0.5], [5, -5])
+  const rawRY  = useTransform(mouseX, [-0.5, 0.5], [-5, 5])
+  const rotateX = useSpring(rawRX, { stiffness: 300, damping: 30 })
+  const rotateY = useSpring(rawRY, { stiffness: 300, damping: 30 })
+  const glareX  = useTransform(mouseX, [-0.5, 0.5], ['0%', '100%'])
+  const glareY  = useTransform(mouseY, [-0.5, 0.5], ['0%', '100%'])
+  const glareOp = useMotionValue(0)
+  const glareBg = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(255,255,255,0.18), transparent 65%)`
+
+  const onMove = (e) => {
+    const r = ref.current?.getBoundingClientRect()
+    if (!r) return
+    mouseX.set((e.clientX - r.left) / r.width - 0.5)
+    mouseY.set((e.clientY - r.top) / r.height - 0.5)
+    glareOp.set(1)
+  }
+  const onLeave = () => { mouseX.set(0); mouseY.set(0); glareOp.set(0) }
+
   return (
     <motion.button
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.05 + index * 0.07, ease: [0.22, 1, 0.36, 1] }}
+      ref={ref}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      initial={{ opacity: 0, y: 28, rotateX: 6, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+      transition={{ duration: 0.55, delay: 0.05 + index * 0.07, ease: [0.16, 1, 0.3, 1] }}
+      whileHover={{ y: -5 }}
       onClick={onOpen}
+      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 900, aspectRatio: '4 / 3' }}
       className="group relative w-full text-left rounded-2xl overflow-hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-800 focus-visible:ring-offset-2"
-      style={{ aspectRatio: '4 / 3' }}
     >
+      {/* Glare */}
+      <motion.div style={{ background: glareBg, opacity: glareOp }}
+        className="absolute inset-0 rounded-[inherit] pointer-events-none z-20" />
       {/* Background — zooms on hover */}
       <div className="absolute inset-0 scale-100 group-hover:scale-110 transition-transform duration-700 ease-out">
         {category.thumbnail ? (

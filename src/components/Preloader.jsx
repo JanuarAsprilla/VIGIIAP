@@ -29,7 +29,7 @@ const HUD_LINES = [
   'LAT: 5°41\'13"N  LON: 76°39\'29"W',
   'EPSG:4326 → MAGNA-SIRGAS:3115',
   'SRS: WGS84 · CRS: Colombia Oeste',
-  'IIAP · VIGI-IIAP v2.1 · BUILD 2026',
+  'IIAP · VIGIA-IIAP v2.1 · BUILD 2026',
 ]
 
 // ── Globe SVG ──
@@ -310,7 +310,7 @@ export default function Preloader() {
                 Sistema de Información Territorial
               </p>
 
-              {/* VIGI-IIAP */}
+              {/* VIGIA-IIAP */}
               <h1
                 className="font-display font-bold text-white mb-2"
                 style={{ fontSize: 'clamp(2.8rem, 8vw, 4.5rem)', letterSpacing: '0.22em', lineHeight: 1 }}

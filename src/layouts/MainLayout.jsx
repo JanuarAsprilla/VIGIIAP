@@ -64,14 +64,15 @@ export default function MainLayout() {
       <div className="relative z-10 lg:ml-[210px] min-h-screen flex flex-col">
         <TopBar onMenuToggle={() => setMobileMenuOpen(true)} />
 
-        {/* Page transition wrapper */}
+        {/* Page transition wrapper — 3D perspective flip */}
         <AnimatePresence mode="wait" initial={false}>
           <motion.main
             key={location.pathname}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: 22, rotateX: 3, scale: 0.992 }}
+            animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1     }}
+            exit={{    opacity: 0, y: -10, rotateX: -1.5, scale: 0.994 }}
+            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            style={{ transformPerspective: 1400, transformOrigin: 'top center' }}
             className={isGeovisor ? 'flex-1' : `flex-1 ${mainPad}`}
           >
             <Outlet />

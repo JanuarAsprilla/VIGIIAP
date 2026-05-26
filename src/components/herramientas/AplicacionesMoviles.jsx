@@ -3,19 +3,19 @@ import ToolCard from './ToolCard'
 
 const APPS = [
   {
-    nombre: 'VIGI-IIAP Field',
+    nombre: 'VIGIA-IIAP Field',
     descripcion: 'Captura de datos en campo con soporte offline y sincronización automática.',
     plataformas: ['Android'],
     estado: 'desarrollo',
   },
   {
-    nombre: 'VIGI-IIAP Offline',
+    nombre: 'VIGIA-IIAP Offline',
     descripcion: 'Visualización de capas y mapas sin conexión a internet para zonas remotas.',
     plataformas: ['Android', 'iOS'],
     estado: 'desarrollo',
   },
   {
-    nombre: 'VIGI-IIAP Monitor',
+    nombre: 'VIGIA-IIAP Monitor',
     descripcion: 'Seguimiento de indicadores ambientales en tiempo real desde dispositivos móviles.',
     plataformas: ['Android', 'iOS'],
     estado: 'planeado',

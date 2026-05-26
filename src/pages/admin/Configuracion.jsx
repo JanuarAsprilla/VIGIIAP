@@ -6,14 +6,24 @@ import {
   Mail, Phone, MapPin, CheckCircle, AlertCircle,
 } from 'lucide-react'
 
-import { fadeUpSm } from '@/lib/animations'
+import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
+import Card3D from '@/components/ui/Card3D'
 import api from '@/lib/api'
 
 const fadeUp = fadeUpSm
 
 function SectionCard({ title, icon: Icon, children, delay = 0 }) {
   return (
-    <motion.div {...fadeUp(delay)} className="bg-white border border-border rounded-xl overflow-hidden">
+    <Card3D
+      initial={{ opacity: 0, y: 22, rotateX: 4, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+      transition={{ delay, duration: 0.5, ease: EASE_OUT_EXPO }}
+      style={{ transformPerspective: 900 }}
+      glow="rgba(26,86,50,0.12)"
+      intensity={3}
+      className="bg-white border border-border/70 rounded-xl overflow-hidden"
+      whileHover={{ y: -3 }}
+    >
       <div className="flex items-center gap-2.5 px-6 py-4 border-b border-border bg-bg-alt/40">
         <div className="w-7 h-7 bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg flex items-center justify-center">
           <Icon className="w-3.5 h-3.5 text-primary-700" />
@@ -21,7 +31,7 @@ function SectionCard({ title, icon: Icon, children, delay = 0 }) {
         <h3 className="text-sm font-bold text-text">{title}</h3>
       </div>
       <div className="p-6 space-y-4">{children}</div>
-    </motion.div>
+    </Card3D>
   )
 }
 
@@ -57,7 +67,7 @@ function Toggle({ checked, onChange, label }) {
 
 export default function Configuracion() {
   const [general, setGeneral] = useState({
-    siteName: 'VIGI-IIAP',
+    siteName: 'VIGIA-IIAP',
     siteDesc: 'Visor Gestor de Información del Instituto de Investigaciones Ambientales del Pacífico',
     region: 'Chocó Biogeográfico',
     email: 'info@iiap.org.co',
@@ -137,7 +147,7 @@ export default function Configuracion() {
         <div>
           <span className="text-[0.7rem] font-bold uppercase tracking-widest text-primary-700">Administración</span>
           <h1 className="font-display text-2xl font-bold text-text mt-0.5">Configuración del Sistema</h1>
-          <p className="text-sm text-text-muted mt-1">Ajustes globales de la plataforma VIGI-IIAP</p>
+          <p className="text-sm text-text-muted mt-1">Ajustes globales de la plataforma VIGIA-IIAP</p>
         </div>
         <button
           onClick={handleSave}
