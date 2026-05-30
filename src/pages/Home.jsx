@@ -290,12 +290,28 @@ const MARQUEE_ITEMS = [
 function MarqueeStrip() {
   const items = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS]
   return (
-    <div className="overflow-hidden border-y border-border/60 bg-white py-3.5 select-none">
+    <div
+      className="overflow-hidden select-none"
+      style={{
+        borderTop: '1px solid rgba(0,152,70,0.12)',
+        borderBottom: '1px solid rgba(0,152,70,0.12)',
+        background: 'rgba(6,15,9,0.90)',
+        backdropFilter: 'blur(12px)',
+        padding: '14px 0',
+      }}
+    >
       <div className="flex gap-10 whitespace-nowrap animate-marquee">
         {items.map((item, i) => (
-          <span key={i} className="inline-flex items-center gap-4 text-[0.68rem] font-bold uppercase tracking-[0.22em] text-text-muted/60">
+          <span
+            key={i}
+            className="inline-flex items-center gap-4 text-[0.68rem] font-bold uppercase tracking-[0.22em]"
+            style={{ color: 'rgba(255,255,255,0.28)' }}
+          >
             {item}
-            <span className="w-1 h-1 rounded-full bg-primary-300 shrink-0" />
+            <span
+              className="w-1 h-1 rounded-full shrink-0"
+              style={{ background: 'rgba(74,222,128,0.55)' }}
+            />
           </span>
         ))}
       </div>
@@ -307,6 +323,7 @@ function MarqueeStrip() {
 function StatsSection() {
   return (
     <div>
+      {/* Heading editorial */}
       <div className="mb-7 flex items-end gap-4">
         <div>
           <span className="text-[0.65rem] font-bold uppercase tracking-[0.22em] text-text-muted block mb-1.5">
@@ -317,7 +334,14 @@ function StatsSection() {
         <div className="flex-1 h-px bg-border mb-1.5 hidden sm:block" />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 bg-white border border-border rounded-2xl overflow-hidden">
+      {/* Stats grid — glass sutil con acento verde */}
+      <div
+        className="grid grid-cols-2 md:grid-cols-4 rounded-2xl overflow-hidden"
+        style={{
+          background: 'rgba(26,86,50,0.04)',
+          border: '1px solid rgba(26,86,50,0.12)',
+        }}
+      >
         {STATS.map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -325,13 +349,27 @@ function StatsSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-30px' }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: i * 0.08 }}
-            className="px-7 py-9 border-r border-b border-border last:border-r-0 md:[&:nth-child(4)]:border-r-0 [&:nth-child(3)]:border-r-0 md:[&:nth-child(3)]:border-r [&:nth-child(3)]:border-b-0 [&:nth-child(4)]:border-b-0 md:[&:nth-child(2)]:border-r group cursor-default"
+            className="px-7 py-9 cursor-default group relative"
+            style={{
+              borderRight: i < 3 ? '1px solid rgba(26,86,50,0.10)' : 'none',
+              borderBottom: i < 2 ? '1px solid rgba(26,86,50,0.10)' : 'none',
+            }}
           >
-            <div className="tabular font-display text-5xl font-bold text-primary-800 leading-none mb-3
-              group-hover:text-primary-600 transition-colors duration-300">
+            {/* Hover glow */}
+            <div
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(0,152,70,0.07) 0%, transparent 70%)' }}
+            />
+            <div
+              className="tabular font-display font-bold leading-none mb-3 transition-colors duration-300 relative"
+              style={{
+                fontSize: 'clamp(2.2rem, 4vw, 3rem)',
+                color: '#1A5632',
+              }}
+            >
               {stat.value}
             </div>
-            <div className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-text-muted leading-relaxed">
+            <div className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-text-muted leading-relaxed relative">
               {stat.label}
             </div>
           </motion.div>
@@ -344,24 +382,34 @@ function StatsSection() {
 // ── Section heading ────────────────────────────────────────────────────────────
 function SectionHeading({ eyebrow, title, action, actionTo, note }) {
   return (
-    <div className="mb-7">
-      <span className="text-[0.65rem] font-bold uppercase tracking-[0.22em] text-text-muted block mb-1.5">
-        {eyebrow}
-      </span>
-      <div className="flex items-end justify-between gap-4 flex-wrap">
-        <h2 className="font-display text-2xl font-bold text-text">{title}</h2>
-        <div className="flex items-center gap-3 mb-0.5">
-          {note && (
-            <span className="text-xs text-text-muted bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
-              {note}
-            </span>
-          )}
-          {action && (
-            <Link to={actionTo}
-              className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-primary-800 no-underline transition-colors">
-              {action} <ArrowRight className="w-3 h-3" />
-            </Link>
-          )}
+    <div className="mb-7 flex items-start gap-4">
+      {/* Acento vertical verde */}
+      <div
+        className="shrink-0 mt-1 w-[3px] rounded-full"
+        style={{
+          height: '36px',
+          background: 'linear-gradient(180deg, #009846, rgba(0,152,70,0.15))',
+        }}
+      />
+      <div className="flex-1">
+        <span className="text-[0.65rem] font-bold uppercase tracking-[0.22em] text-text-muted block mb-1">
+          {eyebrow}
+        </span>
+        <div className="flex items-end justify-between gap-4 flex-wrap">
+          <h2 className="font-display text-2xl font-bold text-text">{title}</h2>
+          <div className="flex items-center gap-3 mb-0.5">
+            {note && (
+              <span className="text-xs text-text-muted bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                {note}
+              </span>
+            )}
+            {action && (
+              <Link to={actionTo}
+                className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-primary-800 no-underline transition-colors">
+                {action} <ArrowRight className="w-3 h-3" />
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -417,10 +465,14 @@ function NewsCard({ article, variant = 'default' }) {
 
   return (
     <motion.div
-      whileHover={{ y: -3 }}
+      whileHover={{ y: -3, boxShadow: '0 16px 40px rgba(26,86,50,0.10), 0 2px 12px rgba(0,0,0,0.05)' }}
       transition={{ duration: 0.25 }}
-      className="bg-white border border-border/60 rounded-2xl overflow-hidden h-full group"
-      style={{ boxShadow: 'none' }}
+      className="rounded-2xl overflow-hidden h-full group cursor-pointer"
+      style={{
+        background: 'rgba(248,253,250,0.85)',
+        border: '1px solid rgba(26,86,50,0.11)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+      }}
       whileInView={{ opacity: 1 }}
       initial={{ opacity: 0 }}
       viewport={{ once: true }}
@@ -448,7 +500,10 @@ function NewsCard({ article, variant = 'default' }) {
           </p>
         )}
 
-        <div className="flex items-center justify-between mt-auto pt-3 border-t border-border/50">
+        <div
+          className="flex items-center justify-between mt-auto pt-3"
+          style={{ borderTop: '1px solid rgba(26,86,50,0.10)' }}
+        >
           <span className="text-xs text-text-muted">{article.time || article.date}</span>
           <ArrowUpRight className="w-3.5 h-3.5 text-primary-700 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
@@ -551,7 +606,11 @@ function WelcomeStrip({ user }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: 0.12 }}
-      className="flex items-center gap-4 bg-white border border-border/60 rounded-2xl px-5 py-3.5"
+      className="flex items-center gap-4 rounded-2xl px-5 py-3.5"
+      style={{
+        background: 'rgba(26,86,50,0.07)',
+        border: '1px solid rgba(26,86,50,0.16)',
+      }}
     >
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${user?.isVisitante ? 'bg-gradient-to-br from-amber-400 to-amber-600' : 'bg-gradient-to-br from-primary-700 to-primary-950'}`}>
         <span className="text-white font-bold text-xs">{(firstName[0] || 'V').toUpperCase()}</span>

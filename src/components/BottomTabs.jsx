@@ -17,7 +17,12 @@ export default function BottomTabs() {
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-50 bg-white border-t border-border lg:hidden"
+      className="fixed bottom-0 inset-x-0 z-50 lg:hidden"
+      style={{
+        background: 'rgba(6,15,9,0.94)',
+        backdropFilter: 'blur(20px) saturate(160%)',
+        borderTop: '1px solid rgba(0,152,70,0.14)',
+      }}
       aria-label="Navegación principal"
     >
       <div className="flex items-center justify-around h-16 px-2">
@@ -28,7 +33,8 @@ export default function BottomTabs() {
             return (
               <div
                 key={tab.path}
-                className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[60px] text-text-muted/40 select-none relative"
+                className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[60px] select-none relative"
+                style={{ color: 'rgba(255,255,255,0.20)' }}
                 aria-disabled="true"
                 title={`${tab.label} — requiere cuenta institucional`}
               >
@@ -36,7 +42,7 @@ export default function BottomTabs() {
                 <span className="text-[0.6rem] font-bold uppercase tracking-wider">
                   {tab.label}
                 </span>
-                <Lock className="absolute top-1 right-2 w-2.5 h-2.5 opacity-50" aria-hidden="true" />
+                <Lock className="absolute top-1 right-2 w-2.5 h-2.5 opacity-40" aria-hidden="true" />
               </div>
             )
           }
@@ -46,18 +52,20 @@ export default function BottomTabs() {
               key={tab.path}
               to={tab.path}
               end={tab.path === '/'}
-              className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[60px] no-underline transition-colors ${
-                  isActive
-                    ? 'bg-primary-800 text-white'
-                    : 'text-text-muted hover:text-primary-800'
-                }`
+              className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[60px] no-underline transition-all duration-200"
+              style={({ isActive }) => isActive
+                ? {
+                    background: 'rgba(0,152,70,0.18)',
+                    color: '#4ade80',
+                    boxShadow: '0 0 12px rgba(74,222,128,0.15)',
+                  }
+                : { color: 'rgba(255,255,255,0.40)' }
               }
             >
               {({ isActive }) => (
                 <>
                   <tab.icon className="w-5 h-5" aria-hidden="true" />
-                  <span className={`text-[0.6rem] font-bold uppercase tracking-wider ${isActive ? 'text-white' : ''}`}>
+                  <span className="text-[0.6rem] font-bold uppercase tracking-wider">
                     {tab.label}
                   </span>
                 </>
