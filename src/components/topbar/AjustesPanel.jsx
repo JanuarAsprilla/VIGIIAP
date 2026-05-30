@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
-import { Layers, Monitor, Sun, CheckCircle } from 'lucide-react'
+import { Layers, Monitor, Sun, Moon, CheckCircle } from 'lucide-react'
 import { useUI } from '@/contexts/UIContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import { panelAnim } from './panelAnim'
 
 const DENSITY_OPTIONS = [
@@ -11,6 +12,7 @@ const DENSITY_OPTIONS = [
 
 export default function AjustesPanel({ onClose }) {
   const { density, setDensity, notifications, setNotifications } = useUI()
+  const { isDark, toggleTheme } = useTheme()
 
   return (
     <motion.div
@@ -48,6 +50,37 @@ export default function AjustesPanel({ onClose }) {
           </p>
         </div>
 
+        {/* Tema claro / oscuro */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-text">Tema visual</p>
+            <p className="text-xs text-text-muted">
+              {isDark ? 'Modo oscuro activo' : 'Modo claro activo'}
+            </p>
+          </div>
+          <button
+            onClick={toggleTheme}
+            aria-pressed={isDark}
+            aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            className="relative w-10 h-6 rounded-full transition-colors"
+            style={{ background: isDark ? '#1A5632' : 'rgba(26,86,50,0.15)' }}
+          >
+            <span
+              className="absolute top-1 w-4 h-4 rounded-full shadow-sm transition-all flex items-center justify-center"
+              style={{
+                left: isDark ? '1.25rem' : '0.25rem',
+                background: isDark ? '#4ade80' : '#1A5632',
+              }}
+            >
+              {isDark
+                ? <Moon className="w-2.5 h-2.5 text-[#060f09]" />
+                : <Sun className="w-2.5 h-2.5 text-white" />
+              }
+            </span>
+          </button>
+        </div>
+
+        {/* Notificaciones */}
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-text">Notificaciones</p>

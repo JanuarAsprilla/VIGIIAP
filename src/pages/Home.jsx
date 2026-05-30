@@ -179,32 +179,38 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
 
   return (
     <div ref={heroRef}
-      className="hero-grain relative rounded-3xl overflow-hidden flex flex-col"
-      style={{ minHeight: '640px', background: 'linear-gradient(135deg, #0c1f14 0%, #0f2b1a 45%, #122e1d 100%)' }}>
+      className="relative rounded-3xl overflow-hidden flex flex-col"
+      style={{ minHeight: '640px', background: 'var(--hero-grad)' }}>
+
+      {/* Grain texture */}
+      <div className="absolute inset-0 noise-overlay pointer-events-none z-[1]" style={{ opacity: 0.028 }}
+        aria-hidden="true" />
 
       {/* Dot grid */}
-      <div className="absolute inset-0 opacity-[0.055]"
-        style={{ backgroundImage: 'radial-gradient(circle, #009846 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+      <div className="absolute inset-0 pointer-events-none z-[1]"
+        style={{ backgroundImage: 'radial-gradient(circle, var(--hero-dot-color) 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
 
       {/* Ambient orbs */}
-      <div className="absolute top-[-15%] left-[-8%] w-[640px] h-[640px] rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(0,152,70,0.14) 0%, transparent 70%)' }} />
-      <div className="absolute bottom-[-20%] right-[15%] w-[440px] h-[440px] rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(247,172,66,0.10) 0%, transparent 70%)' }} />
+      <div className="absolute top-[-15%] left-[-8%] w-[640px] h-[640px] rounded-full pointer-events-none z-[1]"
+        style={{ background: `radial-gradient(circle, var(--hero-orb-1) 0%, transparent 70%)` }} />
+      <div className="absolute bottom-[-20%] right-[15%] w-[440px] h-[440px] rounded-full pointer-events-none z-[1]"
+        style={{ background: `radial-gradient(circle, var(--hero-orb-2) 0%, transparent 70%)` }} />
 
-      {/* Horizontal rule accent */}
-      <div className="absolute top-0 left-0 right-0 h-[1px]"
-        style={{ background: 'linear-gradient(90deg, transparent, rgba(0,152,70,0.45), rgba(176,203,31,0.25), transparent)' }} />
+      {/* Top accent line */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] z-[1]"
+        style={{ background: 'var(--hero-top-line)' }} />
 
       <div className="relative z-10 flex flex-col lg:flex-row w-full flex-1">
         {/* Left — copy */}
         <div className="flex-1 flex flex-col justify-center px-10 py-16 lg:px-16 lg:py-16">
 
           {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-8"
-            style={{ border: '1px solid rgba(176,203,31,0.28)', background: 'rgba(0,152,70,0.10)' }}>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0" style={{ background: '#B0CB1F' }} />
-            <span className="text-[0.62rem] font-bold uppercase tracking-[0.25em]" style={{ color: 'rgba(176,203,31,0.9)' }}>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-8 self-start"
+            style={{ border: '1px solid var(--hero-eyebrow-border)', background: 'var(--hero-eyebrow-bg)' }}>
+            <span className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0"
+              style={{ background: 'var(--hero-eyebrow-dot)' }} />
+            <span className="text-[0.62rem] font-bold uppercase tracking-[0.25em]"
+              style={{ color: 'var(--hero-eyebrow-text)' }}>
               Sistema activo · IIAP Colombia · Chocó Biogeográfico
             </span>
           </div>
@@ -213,25 +219,28 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
           <div ref={titleRef} className="mb-6">
             <h1 className="font-display font-black leading-[0.9] tracking-tight"
               style={{ fontSize: 'clamp(4rem, 10vw, 7.5rem)' }}>
-              <span style={{ color: '#C8E6CE', textShadow: '0 0 80px rgba(0,152,70,0.4)' }}>
+              <span style={{ color: 'var(--hero-title-color)' }}>
                 VIGI
               </span>
-              <span style={{ color: 'rgba(176,203,31,0.92)', textShadow: '0 0 60px rgba(176,203,31,0.25)' }}>
+              <span style={{ color: 'var(--hero-title-accent)' }}>
                 -IIAP
               </span>
             </h1>
-            <p className="text-white/55 text-xs font-semibold tracking-[0.22em] mt-3 ml-1">
+            <p className="text-xs font-semibold tracking-[0.22em] mt-3 ml-1"
+              style={{ color: 'var(--hero-sub-color)' }}>
               Visor Gestor de Información Ambiental del Pacífico
             </p>
           </div>
 
           {/* Description */}
           <div ref={subtitleRef} className="max-w-lg mb-10">
-            <p className="text-white/72 text-[0.95rem] leading-[1.8]">
+            <p className="text-[0.95rem] leading-[1.8]" style={{ color: 'var(--hero-sub-color)' }}>
               Plataforma institucional para la consulta, análisis y gestión de información
               ambiental y territorial del{' '}
-              <span className="text-[#B0CB1F] font-semibold">Chocó Biogeográfico</span> colombiano,
-              la región más biodiversa del planeta.
+              <span className="font-semibold" style={{ color: 'var(--hero-accent-color)' }}>
+                Chocó Biogeográfico
+              </span>{' '}
+              colombiano, la región más biodiversa del planeta.
             </p>
           </div>
 
@@ -239,28 +248,29 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
           <div ref={ctaRef} className="flex flex-wrap items-center gap-3">
             <Link to="/geovisor"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold no-underline transition-all hover:scale-[1.03] active:scale-[0.98]"
-              style={{ background: 'linear-gradient(135deg, #009846, #1A5632)', color: '#fff', boxShadow: '0 4px 28px rgba(0,152,70,0.38)' }}>
+              style={{ background: 'linear-gradient(135deg, #009846, #1A5632)', color: '#fff', boxShadow: '0 4px 28px rgba(0,152,70,0.35)' }}>
               <Globe className="w-4 h-4" />Explorar Geovisor
             </Link>
 
             {!isAuthenticated && (
               <button onClick={onAccederVisitante}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all hover:scale-[1.03] active:scale-[0.98] border"
-                style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(8px)' }}>
+                style={{ background: 'var(--hero-cta-ghost-bg)', borderColor: 'var(--hero-cta-ghost-border)', color: 'var(--hero-cta-ghost-text)' }}>
                 <ArrowRight className="w-4 h-4" />Acceder como visitante
               </button>
             )}
             {isAuthenticated && !isVisitante && (
               <Link to="/mapas"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold no-underline transition-all hover:scale-[1.03] border"
-                style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(8px)' }}>
+                style={{ background: 'var(--hero-cta-ghost-bg)', borderColor: 'var(--hero-cta-ghost-border)', color: 'var(--hero-cta-ghost-text)' }}>
                 <Map className="w-4 h-4" />Ver Catálogo
               </Link>
             )}
           </div>
 
           {/* Scroll indicator */}
-          <div className="hidden lg:flex items-center gap-2 mt-12 text-white/25">
+          <div className="hidden lg:flex items-center gap-2 mt-12"
+            style={{ color: 'var(--hero-scroll-color)' }}>
             <ChevronDown className="w-3.5 h-3.5 animate-bounce" />
             <span className="text-[0.6rem] uppercase tracking-[0.22em]">Explorar</span>
           </div>
@@ -269,8 +279,8 @@ function HeroBanner({ onAccederVisitante, heroRef }) {
         {/* Right — globe */}
         <div className="hidden lg:flex w-[500px] items-center justify-center relative shrink-0">
           <Suspense fallback={
-            <div className="w-[400px] h-[400px] rounded-full border border-green-800/20 animate-pulse"
-              style={{ background: 'radial-gradient(circle, rgba(82,183,136,0.05) 0%, transparent 70%)' }} />
+            <div className="w-[400px] h-[400px] rounded-full border border-primary-600/20 animate-pulse"
+              style={{ background: 'radial-gradient(circle, var(--hero-orb-1) 0%, transparent 70%)' }} />
           }>
             <GlobeScene className="w-[440px] h-[440px]" />
           </Suspense>
@@ -293,9 +303,9 @@ function MarqueeStrip() {
     <div
       className="overflow-hidden select-none"
       style={{
-        borderTop: '1px solid rgba(0,152,70,0.12)',
-        borderBottom: '1px solid rgba(0,152,70,0.12)',
-        background: 'rgba(6,15,9,0.90)',
+        borderTop: '1px solid var(--marquee-border)',
+        borderBottom: '1px solid var(--marquee-border)',
+        background: 'var(--marquee-bg)',
         backdropFilter: 'blur(12px)',
         padding: '14px 0',
       }}
@@ -305,12 +315,12 @@ function MarqueeStrip() {
           <span
             key={i}
             className="inline-flex items-center gap-4 text-[0.68rem] font-bold uppercase tracking-[0.22em]"
-            style={{ color: 'rgba(255,255,255,0.28)' }}
+            style={{ color: 'var(--marquee-text)' }}
           >
             {item}
             <span
               className="w-1 h-1 rounded-full shrink-0"
-              style={{ background: 'rgba(74,222,128,0.55)' }}
+              style={{ background: 'var(--marquee-dot)' }}
             />
           </span>
         ))}

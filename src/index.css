@@ -654,3 +654,201 @@ h1, h2, h3, .font-display {
 .topbar-search::placeholder {
   color: rgba(255, 255, 255, 0.3);
 }
+
+/* =====================================================
+   VIGIIAP Dual-Theme Shell Tokens
+   :root = LIGHT CINEMATIC EDITORIAL (default)
+   .dark = DARK FOREST (toggle)
+   ===================================================== */
+
+:root {
+  /* ── Page shell ────────────────────────────────── */
+  --shell-bg:              #F2F7F3;
+
+  /* ── Sidebar / Navigation ─────────────────────── */
+  --nav-bg:                #FFFFFF;
+  --nav-border:            rgba(26,86,50,0.12);
+  --nav-text:              #1A2E22;
+  --nav-text-muted:        rgba(26,46,34,0.45);
+  --nav-text-locked:       rgba(26,46,34,0.22);
+  --nav-active-pill:       rgba(26,86,50,0.10);
+  --nav-active-border:     rgba(26,86,50,0.20);
+  --nav-active-text:       #1A5632;
+  --nav-indicator-from:    #4ade80;
+  --nav-indicator-to:      #009846;
+  --nav-hover-bg:          rgba(26,86,50,0.05);
+  --nav-section-label:     rgba(26,46,34,0.22);
+  --nav-separator:         rgba(26,86,50,0.12);
+  --nav-user-card-bg:      rgba(26,86,50,0.06);
+  --nav-user-card-border:  rgba(26,86,50,0.16);
+  --nav-user-name:         #1A2E22;
+  --nav-user-role:         rgba(26,86,50,0.55);
+  --nav-online-ring:       rgba(26,86,50,0.10);
+  --nav-login-bg:          rgba(26,86,50,0.08);
+  --nav-login-border:      rgba(26,86,50,0.20);
+  --nav-login-text:        #1A5632;
+  --nav-action-bg:         rgba(26,86,50,0.08);
+  --nav-action-border:     rgba(26,86,50,0.18);
+  --nav-action-text:       #1A5632;
+  --nav-logout-text:       rgba(26,46,34,0.38);
+  --nav-close-text:        rgba(26,46,34,0.38);
+  --nav-logo-glow:         rgba(26,86,50,0.20);
+  --nav-topo-stroke:       #009846;
+  --nav-topo-opacity:      0.06;
+  --nav-map-blend:         multiply;
+  --nav-map-opacity:       0.035;
+  --nav-orb-color:         rgba(26,86,50,0.07);
+  --nav-dot-grid:          rgba(26,86,50,0.08);
+  --nav-overlay-bg:        rgba(0,0,0,0.50);
+
+  /* ── TopBar ────────────────────────────────────── */
+  --topbar-bg:             rgba(255,255,255,0.94);
+  --topbar-border:         rgba(26,86,50,0.10);
+  --topbar-text:           #1A2E22;
+  --topbar-text-muted:     rgba(26,46,34,0.45);
+  --topbar-text-active:    #1A5632;
+  --topbar-icon-off:       rgba(26,46,34,0.42);
+  --topbar-icon-on:        #1A5632;
+  --topbar-icon-on-bg:     rgba(26,86,50,0.10);
+  --topbar-icon-on-bg2:    rgba(26,86,50,0.14);
+  --topbar-search-bg:      rgba(26,86,50,0.06);
+  --topbar-search-border:  rgba(26,86,50,0.14);
+  --topbar-search-text:    #1A2E22;
+  --topbar-sep:            rgba(26,86,50,0.14);
+  --topbar-active-ul:      #1A5632;
+  --topbar-ph-opacity:     0.35;
+
+  /* ── BottomTabs ────────────────────────────────── */
+  --tabs-bg:               rgba(255,255,255,0.97);
+  --tabs-border:           rgba(26,86,50,0.10);
+  --tabs-text:             rgba(26,46,34,0.36);
+  --tabs-active-text:      #1A5632;
+  --tabs-active-bg:        rgba(26,86,50,0.08);
+  --tabs-locked-text:      rgba(26,46,34,0.18);
+
+  /* ── Hero (cinematic editorial light) ─────────── */
+  --hero-grad:             linear-gradient(135deg,#ECF4EF 0%,#F0F7F2 50%,#EEF5F1 100%);
+  --hero-title-color:      #1A2E22;
+  --hero-title-accent:     #1A5632;
+  --hero-sub-color:        rgba(26,46,34,0.65);
+  --hero-accent-color:     #1A5632;
+  --hero-eyebrow-border:   rgba(176,203,31,0.32);
+  --hero-eyebrow-bg:       rgba(26,86,50,0.07);
+  --hero-eyebrow-text:     rgba(26,86,50,0.85);
+  --hero-eyebrow-dot:      #B0CB1F;
+  --hero-dot-color:        rgba(26,86,50,0.14);
+  --hero-orb-1:            rgba(26,86,50,0.08);
+  --hero-orb-2:            rgba(212,163,115,0.07);
+  --hero-top-line:         linear-gradient(90deg,transparent,rgba(26,86,50,0.30),rgba(176,203,31,0.20),transparent);
+  --hero-cta-ghost-bg:     rgba(26,86,50,0.06);
+  --hero-cta-ghost-border: rgba(26,86,50,0.20);
+  --hero-cta-ghost-text:   #1A5632;
+  --hero-scroll-color:     rgba(26,46,34,0.22);
+
+  /* ── Marquee ───────────────────────────────────── */
+  --marquee-bg:            rgba(242,247,243,0.96);
+  --marquee-border:        rgba(26,86,50,0.12);
+  --marquee-text:          rgba(26,46,34,0.28);
+  --marquee-dot:           rgba(26,86,50,0.38);
+}
+
+/* ── DARK FOREST overrides ─────────────────────────── */
+.dark {
+  /* Tailwind semantic token overrides */
+  --color-bg:              #060f09;
+  --color-bg-alt:          #091a0e;
+  --color-surface:         rgba(9,26,14,0.80);
+  --color-border:          rgba(0,152,70,0.12);
+  --color-text:            rgba(255,255,255,0.85);
+  --color-text-light:      rgba(255,255,255,0.65);
+  --color-text-muted:      rgba(255,255,255,0.40);
+
+  --shell-bg:              #060f09;
+
+  --nav-bg:                linear-gradient(180deg,#060f09 0%,#091a0e 55%,#0c1f14 100%);
+  --nav-border:            rgba(0,152,70,0.14);
+  --nav-text:              rgba(255,255,255,0.75);
+  --nav-text-muted:        rgba(255,255,255,0.38);
+  --nav-text-locked:       rgba(255,255,255,0.22);
+  --nav-active-pill:       rgba(0,152,70,0.28);
+  --nav-active-border:     rgba(0,152,70,0.28);
+  --nav-active-text:       #d1fae5;
+  --nav-hover-bg:          rgba(255,255,255,0.05);
+  --nav-section-label:     rgba(255,255,255,0.20);
+  --nav-separator:         rgba(0,152,70,0.15);
+  --nav-user-card-bg:      rgba(0,152,70,0.10);
+  --nav-user-card-border:  rgba(0,152,70,0.20);
+  --nav-user-name:         rgba(255,255,255,0.85);
+  --nav-user-role:         rgba(74,222,128,0.50);
+  --nav-online-ring:       #0a1a0e;
+  --nav-login-bg:          rgba(0,152,70,0.20);
+  --nav-login-border:      rgba(0,152,70,0.30);
+  --nav-login-text:        #d1fae5;
+  --nav-action-bg:         rgba(0,152,70,0.15);
+  --nav-action-border:     rgba(0,152,70,0.25);
+  --nav-action-text:       #d1fae5;
+  --nav-logout-text:       rgba(255,255,255,0.30);
+  --nav-close-text:        rgba(255,255,255,0.40);
+  --nav-logo-glow:         rgba(0,152,70,0.35);
+  --nav-topo-stroke:       #4ade80;
+  --nav-topo-opacity:      0.08;
+  --nav-map-blend:         luminosity;
+  --nav-map-opacity:       0.045;
+  --nav-orb-color:         rgba(0,152,70,0.18);
+  --nav-dot-grid:          rgba(0,152,70,0.12);
+  --nav-overlay-bg:        rgba(0,0,0,0.60);
+
+  --topbar-bg:             rgba(6,15,9,0.92);
+  --topbar-border:         rgba(0,152,70,0.14);
+  --topbar-text:           rgba(255,255,255,0.85);
+  --topbar-text-muted:     rgba(255,255,255,0.45);
+  --topbar-text-active:    #4ade80;
+  --topbar-icon-off:       rgba(255,255,255,0.45);
+  --topbar-icon-on:        #4ade80;
+  --topbar-icon-on-bg:     rgba(0,152,70,0.12);
+  --topbar-icon-on-bg2:    rgba(0,152,70,0.15);
+  --topbar-search-bg:      rgba(255,255,255,0.07);
+  --topbar-search-border:  rgba(0,152,70,0.18);
+  --topbar-search-text:    rgba(255,255,255,0.80);
+  --topbar-sep:            rgba(0,152,70,0.20);
+  --topbar-active-ul:      #4ade80;
+  --topbar-ph-opacity:     0.30;
+
+  --tabs-bg:               rgba(6,15,9,0.94);
+  --tabs-border:           rgba(0,152,70,0.14);
+  --tabs-text:             rgba(255,255,255,0.38);
+  --tabs-active-text:      #4ade80;
+  --tabs-active-bg:        rgba(0,152,70,0.18);
+  --tabs-locked-text:      rgba(255,255,255,0.18);
+
+  --hero-grad:             linear-gradient(135deg,#0c1f14 0%,#0f2b1a 50%,#122e1d 100%);
+  --hero-title-color:      #C8E6CE;
+  --hero-title-accent:     rgba(176,203,31,0.92);
+  --hero-sub-color:        rgba(255,255,255,0.55);
+  --hero-accent-color:     #B0CB1F;
+  --hero-eyebrow-border:   rgba(176,203,31,0.28);
+  --hero-eyebrow-bg:       rgba(0,152,70,0.10);
+  --hero-eyebrow-text:     rgba(176,203,31,0.90);
+  --hero-eyebrow-dot:      #B0CB1F;
+  --hero-dot-color:        rgba(0,152,70,0.055);
+  --hero-orb-1:            rgba(0,152,70,0.14);
+  --hero-orb-2:            rgba(247,172,66,0.10);
+  --hero-top-line:         linear-gradient(90deg,transparent,rgba(0,152,70,0.45),rgba(176,203,31,0.25),transparent);
+  --hero-cta-ghost-bg:     rgba(255,255,255,0.05);
+  --hero-cta-ghost-border: rgba(255,255,255,0.14);
+  --hero-cta-ghost-text:   rgba(255,255,255,0.75);
+  --hero-scroll-color:     rgba(255,255,255,0.25);
+
+  --marquee-bg:            rgba(6,15,9,0.90);
+  --marquee-border:        rgba(0,152,70,0.12);
+  --marquee-text:          rgba(255,255,255,0.28);
+  --marquee-dot:           rgba(74,222,128,0.55);
+}
+
+/* ── Dark mode: topbar placeholder ─────────────────── */
+.dark .topbar-search::placeholder {
+  color: rgba(255,255,255,0.30);
+}
+.topbar-search::placeholder {
+  color: rgba(26,46,34,0.35);
+}

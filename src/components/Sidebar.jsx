@@ -1,7 +1,7 @@
 /**
- * VIGIA-IIAP — Sidebar cinematic
- * Tema: dark forest — idéntico al hero y la presentación 3D.
- * El mapa del Chocó Biogeográfico actúa como textura de fondo ultra-sutil.
+ * VIGIA-IIAP — Sidebar cinematic dual-theme
+ * Light (default): editorial blanco con textura verde-sage
+ * Dark: dark forest — mapa del Chocó como textura + orbe verde
  */
 import { useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
@@ -40,7 +40,7 @@ function SidebarLink({ link, onClose, userRole, isAuthenticated }) {
     return (
       <motion.div variants={navItemVariant}>
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm select-none cursor-not-allowed"
-          style={{ color: 'rgba(255,255,255,0.22)' }}>
+          style={{ color: 'var(--nav-text-locked)' }}>
           <link.icon className="w-[16px] h-[16px] shrink-0 opacity-40" aria-hidden="true" />
           <span className="truncate">{link.label}</span>
           <Lock className="w-3 h-3 ml-auto shrink-0 opacity-40" aria-hidden="true" />
@@ -60,9 +60,9 @@ function SidebarLink({ link, onClose, userRole, isAuthenticated }) {
               className="absolute inset-0 rounded-xl"
               transition={{ type: 'spring', stiffness: 420, damping: 34 }}
               style={{
-                background: 'linear-gradient(135deg, rgba(0,152,70,0.28) 0%, rgba(26,86,50,0.38) 100%)',
-                border: '1px solid rgba(0,152,70,0.28)',
-                boxShadow: '0 0 20px rgba(0,152,70,0.12), inset 0 1px 0 rgba(255,255,255,0.06)',
+                background: 'linear-gradient(135deg, var(--nav-active-pill) 0%, var(--nav-active-pill) 100%)',
+                border: '1px solid var(--nav-active-border)',
+                boxShadow: '0 0 20px rgba(0,152,70,0.10), inset 0 1px 0 rgba(255,255,255,0.04)',
               }}
             />
           )}
@@ -78,9 +78,9 @@ function SidebarLink({ link, onClose, userRole, isAuthenticated }) {
 
           <div
             className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
-              isActive ? '' : 'hover:bg-white/[0.05]'
+              isActive ? '' : 'hover:bg-[var(--nav-hover-bg)]'
             }`}
-            style={{ color: isActive ? '#d1fae5' : 'rgba(255,255,255,0.5)' }}
+            style={{ color: isActive ? 'var(--nav-active-text)' : 'var(--nav-text-muted)' }}
           >
             <motion.div
               whileHover={{ scale: 1.16, rotate: isActive ? 0 : -8 }}
@@ -88,13 +88,13 @@ function SidebarLink({ link, onClose, userRole, isAuthenticated }) {
             >
               <link.icon
                 className="w-[16px] h-[16px] shrink-0 transition-colors"
-                style={{ color: isActive ? '#4ade80' : undefined }}
+                style={{ color: isActive ? 'var(--nav-indicator-from)' : undefined }}
                 aria-hidden="true"
               />
             </motion.div>
             <span
               className="truncate transition-colors"
-              style={{ color: isActive ? '#d1fae5' : undefined }}
+              style={{ color: isActive ? 'var(--nav-active-text)' : undefined }}
             >
               {link.label}
             </span>
@@ -104,7 +104,7 @@ function SidebarLink({ link, onClose, userRole, isAuthenticated }) {
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.16, type: 'spring' }}
-                style={{ background: '#4ade80', boxShadow: '0 0 6px #4ade8066' }}
+                style={{ background: 'var(--nav-indicator-from)', boxShadow: '0 0 6px rgba(74,222,128,0.4)' }}
               />
             )}
           </div>
@@ -127,8 +127,8 @@ function UserMiniCard({ user }) {
       <div
         className="flex items-center gap-2.5 p-2.5 rounded-xl"
         style={{
-          background: 'rgba(0,152,70,0.1)',
-          border: '1px solid rgba(0,152,70,0.2)',
+          background: 'var(--nav-user-card-bg)',
+          border: '1px solid var(--nav-user-card-border)',
         }}
       >
         <div className="relative shrink-0">
@@ -140,20 +140,20 @@ function UserMiniCard({ user }) {
           </div>
           <span
             className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-            style={{ background: '#4ade80', borderColor: '#0a1a0e' }}
+            style={{ background: '#4ade80', borderColor: 'var(--nav-online-ring)' }}
             aria-label="En línea"
           />
         </div>
         <div className="min-w-0 flex-1">
           <p
             className="text-xs font-bold truncate leading-tight"
-            style={{ color: 'rgba(255,255,255,0.85)' }}
+            style={{ color: 'var(--nav-user-name)' }}
           >
             {user.name}
           </p>
           <p
             className="text-[0.6rem] uppercase tracking-wider truncate"
-            style={{ color: 'rgba(74,222,128,0.55)' }}
+            style={{ color: 'var(--nav-user-role)' }}
           >
             {user.role}
           </p>
@@ -171,23 +171,23 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
       {/* ── Logo area ── */}
       <div
         className="relative px-4 pt-5 pb-4 overflow-hidden"
-        style={{ borderBottom: '1px solid rgba(0,152,70,0.15)' }}
+        style={{ borderBottom: '1px solid var(--nav-separator)' }}
       >
         {/* SVG topo pattern — algo más visible en dark */}
         <svg
           className="absolute inset-0 w-full h-full pointer-events-none"
-          style={{ opacity: 0.08 }}
+          style={{ opacity: 'var(--nav-topo-opacity)' }}
           xmlns="http://www.w3.org/2000/svg"
           aria-hidden="true"
         >
           <defs>
-            <pattern id="topo-dark" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-              <circle cx="20" cy="20" r="14" fill="none" stroke="#4ade80" strokeWidth="0.8" />
-              <circle cx="20" cy="20" r="8"  fill="none" stroke="#4ade80" strokeWidth="0.6" />
-              <circle cx="20" cy="20" r="3"  fill="none" stroke="#4ade80" strokeWidth="0.5" />
+            <pattern id="topo-nav" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+              <circle cx="20" cy="20" r="14" fill="none" stroke="var(--nav-topo-stroke)" strokeWidth="0.8" />
+              <circle cx="20" cy="20" r="8"  fill="none" stroke="var(--nav-topo-stroke)" strokeWidth="0.6" />
+              <circle cx="20" cy="20" r="3"  fill="none" stroke="var(--nav-topo-stroke)" strokeWidth="0.5" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#topo-dark)" />
+          <rect width="100%" height="100%" fill="url(#topo-nav)" />
         </svg>
 
         <div className="relative flex items-center justify-between">
@@ -198,7 +198,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
               className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shrink-0"
               style={{
                 background: 'linear-gradient(135deg, #009846, #1A5632)',
-                boxShadow: '0 0 16px rgba(0,152,70,0.35)',
+                boxShadow: '0 0 16px var(--nav-logo-glow)',
               }}
             >
               <span className="text-white font-black text-sm font-display">V</span>
@@ -207,13 +207,13 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
             <div className="leading-tight">
               <span
                 className="block text-sm font-bold tracking-wide transition-colors"
-                style={{ color: 'rgba(255,255,255,0.9)' }}
+                style={{ color: 'var(--nav-text)' }}
               >
                 VIGIA-IIAP
               </span>
               <span
                 className="block text-[0.58rem] uppercase tracking-wider"
-                style={{ color: 'rgba(74,222,128,0.5)' }}
+                style={{ color: 'var(--nav-user-role)' }}
               >
                 Chocó Biogeográfico
               </span>
@@ -223,7 +223,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
           <button
             onClick={onClose}
             className="lg:hidden p-1.5 rounded-lg transition-colors"
-            style={{ color: 'rgba(255,255,255,0.4)' }}
+            style={{ color: 'var(--nav-close-text)' }}
             aria-label="Cerrar menú"
           >
             <X className="w-5 h-5" />
@@ -235,7 +235,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
       <nav className="flex-1 py-3 px-3 overflow-y-auto">
         <p
           className="px-3 pb-2 text-[0.55rem] font-bold uppercase tracking-[0.18em]"
-          style={{ color: 'rgba(255,255,255,0.2)' }}
+          style={{ color: 'var(--nav-section-label)' }}
         >
           Módulos
         </p>
@@ -261,7 +261,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
       {/* ── Acciones inferiores ── */}
       <div
         className="p-3 space-y-1.5"
-        style={{ borderTop: '1px solid rgba(0,152,70,0.15)' }}
+        style={{ borderTop: '1px solid var(--nav-separator)' }}
       >
         {/* Sin sesión */}
         {!isAuthenticated && (
@@ -363,9 +363,9 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
                 whileTap={{ x: 0 }}
                 transition={{ type: 'spring', stiffness: 400 }}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors"
-                style={{ color: 'rgba(255,255,255,0.3)' }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = '#fca5a5'; e.currentTarget.style.background = 'rgba(239,68,68,0.06)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.3)'; e.currentTarget.style.background = 'transparent' }}
+                style={{ color: 'var(--nav-logout-text)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(239,68,68,0.06)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--nav-logout-text)'; e.currentTarget.style.background = 'transparent' }}
               >
                 <LogOut className="w-[16px] h-[16px] shrink-0" aria-hidden="true" />
                 <span>Cerrar Sesión</span>
@@ -397,16 +397,16 @@ export default function Sidebar({ mobileOpen, onClose }) {
   }
 
   const sidebarStyle = {
-    background: 'linear-gradient(180deg, #060f09 0%, #091a0e 55%, #0c1f14 100%)',
-    borderRight: '1px solid rgba(0,152,70,0.14)',
+    background: 'var(--nav-bg)',
+    borderRight: '1px solid var(--nav-border)',
   }
 
   const mapTextureStyle = {
     backgroundImage: `url(${CHOCO_MAP_URL})`,
     backgroundSize: 'cover',
     backgroundPosition: 'center top',
-    opacity: 0.045,
-    mixBlendMode: 'luminosity',
+    opacity: 'var(--nav-map-opacity)',
+    mixBlendMode: 'var(--nav-map-blend)',
   }
 
   return (
@@ -422,17 +422,16 @@ export default function Sidebar({ mobileOpen, onClose }) {
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: 'radial-gradient(circle, rgba(0,152,70,0.12) 1px, transparent 1px)',
+            backgroundImage: 'radial-gradient(circle, var(--nav-dot-grid) 1px, transparent 1px)',
             backgroundSize: '24px 24px',
-            opacity: 0.5,
+            opacity: 0.7,
           }}
         />
-        {/* Orbe de luz verde en la parte superior */}
+        {/* Orbe atmosférico superior */}
         <div
           className="absolute top-0 left-0 right-0 h-48 pointer-events-none"
           style={{
-            background:
-              'radial-gradient(ellipse at 50% 0%, rgba(0,152,70,0.18) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse at 50% 0%, var(--nav-orb-color) 0%, transparent 70%)',
           }}
         />
         <SidebarInner {...innerProps} />
@@ -448,7 +447,8 @@ export default function Sidebar({ mobileOpen, onClose }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[3px] lg:hidden"
+              className="fixed inset-0 z-50 backdrop-blur-[3px] lg:hidden"
+              style={{ background: 'var(--nav-overlay-bg)' }}
               onClick={onClose}
             />
             <motion.aside
@@ -464,16 +464,15 @@ export default function Sidebar({ mobileOpen, onClose }) {
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
-                  backgroundImage: 'radial-gradient(circle, rgba(0,152,70,0.1) 1px, transparent 1px)',
+                  backgroundImage: 'radial-gradient(circle, var(--nav-dot-grid) 1px, transparent 1px)',
                   backgroundSize: '24px 24px',
-                  opacity: 0.5,
+                  opacity: 0.7,
                 }}
               />
               <div
                 className="absolute top-0 left-0 right-0 h-48 pointer-events-none"
                 style={{
-                  background:
-                    'radial-gradient(ellipse at 50% 0%, rgba(0,152,70,0.18) 0%, transparent 70%)',
+                  background: 'radial-gradient(ellipse at 50% 0%, var(--nav-orb-color) 0%, transparent 70%)',
                 }}
               />
               <SidebarInner {...innerProps} />

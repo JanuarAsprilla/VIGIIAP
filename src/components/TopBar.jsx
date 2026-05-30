@@ -145,10 +145,10 @@ export default function TopBar({ onMenuToggle }) {
     <header
       className="sticky top-0 z-30"
       style={{
-        background: 'rgba(6,15,9,0.92)',
+        background: 'var(--topbar-bg)',
         backdropFilter: 'blur(18px) saturate(160%)',
         WebkitBackdropFilter: 'blur(18px) saturate(160%)',
-        borderBottom: '1px solid rgba(0,152,70,0.14)',
+        borderBottom: '1px solid var(--topbar-border)',
       }}
     >
 
@@ -160,26 +160,26 @@ export default function TopBar({ onMenuToggle }) {
           <button
             onClick={onMenuToggle}
             aria-label="Abrir menú de navegación"
-            className="lg:hidden p-2 -ml-2 rounded-lg transition-colors" style={{color:"rgba(255,255,255,0.7)"}}
+            className="lg:hidden p-2 -ml-2 rounded-lg transition-colors" style={{color:"var(--topbar-icon-off)"}}
           >
             <Menu className="w-5 h-5" aria-hidden="true" />
           </button>
 
-          <span className="lg:hidden text-sm font-bold tracking-wide" style={{color:"rgba(255,255,255,0.85)"}}>VIGIA-IIAP</span>
+          <span className="lg:hidden text-sm font-bold tracking-wide" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
 
           <div className="hidden lg:flex items-center gap-3 flex-1">
-            <span className="text-sm font-bold tracking-wide shrink-0" style={{color:"rgba(255,255,255,0.85)"}}>VIGIA-IIAP</span>
+            <span className="text-sm font-bold tracking-wide shrink-0" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
 
             {/* Búsqueda contextual por página */}
-            <div className="flex items-center gap-2 rounded-lg px-3 py-2 flex-1 max-w-sm" style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(0,152,70,0.18)"}}>
-              <Search className="w-4 h-4 shrink-0" style={{color:"rgba(255,255,255,0.35)"}} aria-hidden="true" />
+            <div className="flex items-center gap-2 rounded-lg px-3 py-2 flex-1 max-w-sm" style={{background:"var(--topbar-search-bg)",border:"1px solid var(--topbar-search-border)"}}>
+              <Search className="w-4 h-4 shrink-0" style={{color:"var(--topbar-icon-off)"}} aria-hidden="true" />
               <input
                 type="text"
                 placeholder={placeholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 aria-label={placeholder}
-                className="topbar-search bg-transparent border-none outline-none text-sm w-full" style={{color:"rgba(255,255,255,0.85)"}}
+                className="topbar-search bg-transparent border-none outline-none text-sm w-full" style={{color:"var(--topbar-text)"}}
               />
               {query && (
                 <button
@@ -197,7 +197,7 @@ export default function TopBar({ onMenuToggle }) {
               onClick={openPalette}
               aria-label="Abrir búsqueda global (Cmd+K)"
               title="Búsqueda global"
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-colors shrink-0" style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(0,152,70,0.18)",color:"rgba(255,255,255,0.45)"}}
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-colors shrink-0" style={{background:"var(--topbar-search-bg)",border:"1px solid var(--topbar-search-border)",color:"var(--topbar-icon-off)"}}
             >
               <Command className="w-3.5 h-3.5" aria-hidden="true" />
               <kbd className="text-[0.6rem] font-mono font-bold">K</kbd>
@@ -209,7 +209,7 @@ export default function TopBar({ onMenuToggle }) {
         <div className="flex items-center gap-1 lg:gap-2 ml-4" ref={panelRef}>
 
           {activeLabel && (
-            <span className="hidden md:inline text-sm font-bold pb-0.5 mr-2" style={{color:"rgba(255,255,255,0.85)",borderBottom:"2px solid #4ade80"}}>
+            <span className="hidden md:inline text-sm font-bold pb-0.5 mr-2" style={{color:"var(--topbar-text)",borderBottom:"2px solid var(--topbar-active-ul)"}}>
               {activeLabel}
             </span>
           )}
@@ -219,7 +219,7 @@ export default function TopBar({ onMenuToggle }) {
             onClick={() => setShowMobileSearch((v) => !v)}
             aria-label="Buscar"
             aria-expanded={showMobileSearch}
-            className="lg:hidden p-2 rounded-lg transition-colors" style={{color: showMobileSearch ? "#4ade80" : "rgba(255,255,255,0.5)"}}
+            className="lg:hidden p-2 rounded-lg transition-colors" style={{color: showMobileSearch ? "var(--topbar-icon-on)" : "var(--topbar-icon-off)"}}
           >
             <Search className="w-5 h-5" aria-hidden="true" />
           </button>
@@ -233,7 +233,7 @@ export default function TopBar({ onMenuToggle }) {
                     onClick={() => togglePanel('soporte')}
                     aria-expanded={activePanel === 'soporte'}
                     aria-haspopup="true"
-                    className="px-3 py-1.5 rounded-lg text-sm transition-all font-medium" style={{color: activePanel === 'soporte' ? '#4ade80' : 'rgba(255,255,255,0.5)', background: activePanel === 'soporte' ? 'rgba(0,152,70,0.15)' : 'transparent'}}
+                    className="px-3 py-1.5 rounded-lg text-sm transition-all font-medium" style={{color: activePanel === 'soporte' ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)', background: activePanel === 'soporte' ? 'var(--topbar-icon-on-bg2)' : 'transparent'}}
                   >
                     Soporte
                   </button>
@@ -246,7 +246,7 @@ export default function TopBar({ onMenuToggle }) {
 
                 <Link
                   to="/guia-usuario"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium no-underline transition-colors" style={{color:"rgba(255,255,255,0.5)"}}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium no-underline transition-colors" style={{color:"var(--topbar-icon-off)"}}
                 >
                   <HelpCircle className="w-3.5 h-3.5" aria-hidden="true" />
                   Ayuda
@@ -260,7 +260,7 @@ export default function TopBar({ onMenuToggle }) {
                   aria-label={`Notificaciones${hasUnread ? `, ${unreadCount} sin leer` : ''}`}
                   aria-expanded={activePanel === 'notificaciones'}
                   aria-haspopup="true"
-                  className="relative p-2 rounded-lg transition-colors" style={{color: activePanel === 'notificaciones' ? '#4ade80' : 'rgba(255,255,255,0.5)', background: activePanel === 'notificaciones' ? 'rgba(0,152,70,0.12)' : 'transparent'}}
+                  className="relative p-2 rounded-lg transition-colors" style={{color: activePanel === 'notificaciones' ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)', background: activePanel === 'notificaciones' ? 'var(--topbar-icon-on-bg)' : 'transparent'}}
                 >
                   <Bell className="w-5 h-5" aria-hidden="true" />
                   {hasUnread && (
@@ -292,7 +292,7 @@ export default function TopBar({ onMenuToggle }) {
                   aria-label="Ajustes rápidos"
                   aria-expanded={activePanel === 'ajustes'}
                   aria-haspopup="true"
-                  className="p-2 rounded-lg transition-colors" style={{color: activePanel === 'ajustes' ? '#4ade80' : 'rgba(255,255,255,0.5)', background: activePanel === 'ajustes' ? 'rgba(0,152,70,0.12)' : 'transparent'}}
+                  className="p-2 rounded-lg transition-colors" style={{color: activePanel === 'ajustes' ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)', background: activePanel === 'ajustes' ? 'var(--topbar-icon-on-bg)' : 'transparent'}}
                 >
                   <Settings className="w-5 h-5" aria-hidden="true" />
                 </button>
@@ -313,17 +313,17 @@ export default function TopBar({ onMenuToggle }) {
                 aria-label="Menú de perfil"
                 aria-expanded={activePanel === 'dropdown'}
                 aria-haspopup="true"
-                className="flex items-center gap-2 pl-3 lg:pl-4" style={{borderLeft:"1px solid rgba(0,152,70,0.2)"}}
+                className="flex items-center gap-2 pl-3 lg:pl-4" style={{borderLeft:"1px solid var(--topbar-sep)"}}
               >
                 <div className="text-right hidden sm:block">
-                  <span className="block text-sm font-medium leading-tight" style={{color:"rgba(255,255,255,0.85)"}}>{user.name}</span>
-                  <span className="block text-[0.7rem] uppercase tracking-wider" style={{color:"rgba(74,222,128,0.5)"}}>{user.role}</span>
+                  <span className="block text-sm font-medium leading-tight" style={{color:"var(--topbar-text)"}}>{user.name}</span>
+                  <span className="block text-[0.7rem] uppercase tracking-wider" style={{color:"var(--topbar-icon-on)"}}>{user.role}</span>
                 </div>
                 <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-800 rounded-full flex items-center justify-center shrink-0">
                   <span className="text-white text-sm font-bold">{user.initials}</span>
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 hidden sm:block transition-transform ${activePanel === 'dropdown' ? 'rotate-180' : ''}`} style={{color:"rgba(255,255,255,0.35)"}}
+                  className={`w-4 h-4 hidden sm:block transition-transform ${activePanel === 'dropdown' ? 'rotate-180' : ''}`} style={{color:"var(--topbar-icon-off)"}}
                   aria-hidden="true"
                 />
               </button>
@@ -340,10 +340,10 @@ export default function TopBar({ onMenuToggle }) {
           ) : (
             <Link
               to="/login"
-              className="flex items-center gap-2 pl-3 lg:pl-4 no-underline transition-colors" style={{borderLeft:"1px solid rgba(0,152,70,0.2)",color:"#4ade80"}}
+              className="flex items-center gap-2 pl-3 lg:pl-4 no-underline transition-colors" style={{borderLeft:"1px solid var(--topbar-sep)",color:"var(--topbar-icon-on)"}}
             >
               <span className="hidden sm:block text-sm font-semibold">Ingresar</span>
-              <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{background:"rgba(0,152,70,0.15)",border:"1px solid rgba(0,152,70,0.25)"}}>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{background:"var(--topbar-icon-on-bg2)",border:"1px solid var(--topbar-search-border)"}}>
                 <LogIn className="w-4.5 h-4.5" aria-hidden="true" />
               </div>
             </Link>
@@ -359,10 +359,10 @@ export default function TopBar({ onMenuToggle }) {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:hidden overflow-hidden" style={{borderTop:"1px solid rgba(0,152,70,0.14)"}}
+            className="lg:hidden overflow-hidden" style={{borderTop:"1px solid var(--topbar-border)"}}
           >
             <div className="px-4 py-2.5">
-              <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(0,152,70,0.18)"}}>
+              <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{background:"var(--topbar-search-bg)",border:"1px solid var(--topbar-search-border)"}}>
                 <Search className="w-4 h-4 text-text-muted shrink-0" aria-hidden="true" />
                 <input
                   type="text"
@@ -371,7 +371,7 @@ export default function TopBar({ onMenuToggle }) {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   aria-label={placeholder}
-                  className="topbar-search bg-transparent border-none outline-none text-sm w-full" style={{color:"rgba(255,255,255,0.85)"}}
+                  className="topbar-search bg-transparent border-none outline-none text-sm w-full" style={{color:"var(--topbar-text)"}}
                 />
                 <button
                   onClick={() => { setQuery(''); setShowMobileSearch(false) }}

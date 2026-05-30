@@ -51,7 +51,7 @@ export default function MainLayout() {
   const mainPad = DENSITY_PADDING[density] || DENSITY_PADDING.normal
 
   return (
-    <div className="relative min-h-screen bg-bg">
+    <div className="relative min-h-screen" style={{ background: 'var(--shell-bg)' }}>
       <AmbientBackground />
 
       {/* Sidebar */}

@@ -19,9 +19,9 @@ export default function BottomTabs() {
     <nav
       className="fixed bottom-0 inset-x-0 z-50 lg:hidden"
       style={{
-        background: 'rgba(6,15,9,0.94)',
+        background: 'var(--tabs-bg)',
         backdropFilter: 'blur(20px) saturate(160%)',
-        borderTop: '1px solid rgba(0,152,70,0.14)',
+        borderTop: '1px solid var(--tabs-border)',
       }}
       aria-label="Navegación principal"
     >
@@ -34,7 +34,7 @@ export default function BottomTabs() {
               <div
                 key={tab.path}
                 className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[60px] select-none relative"
-                style={{ color: 'rgba(255,255,255,0.20)' }}
+                style={{ color: 'var(--tabs-locked-text)' }}
                 aria-disabled="true"
                 title={`${tab.label} — requiere cuenta institucional`}
               >
@@ -54,12 +54,8 @@ export default function BottomTabs() {
               end={tab.path === '/'}
               className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[60px] no-underline transition-all duration-200"
               style={({ isActive }) => isActive
-                ? {
-                    background: 'rgba(0,152,70,0.18)',
-                    color: '#4ade80',
-                    boxShadow: '0 0 12px rgba(74,222,128,0.15)',
-                  }
-                : { color: 'rgba(255,255,255,0.40)' }
+                ? { background: 'var(--tabs-active-bg)', color: 'var(--tabs-active-text)' }
+                : { color: 'var(--tabs-text)' }
               }
             >
               {({ isActive }) => (

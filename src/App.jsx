@@ -3,6 +3,7 @@ import { lazy, Suspense, useState, useEffect } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
 import { SearchProvider } from './contexts/SearchContext'
 import { UIProvider } from './contexts/UIContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import MainLayout from './layouts/MainLayout'
 import AdminLayout from './layouts/AdminLayout'
 import RequireAuth, { RequireInvestigador, RequireAdmin, RequireSuperAdmin } from './components/RequireAuth'
@@ -74,6 +75,7 @@ export default function App() {
   if (!appReady) return <Preloader />
 
   return (
+    <ThemeProvider>
     <AuthProvider>
     <UIProvider>
     <SearchProvider>
@@ -163,5 +165,6 @@ export default function App() {
     </SearchProvider>
     </UIProvider>
     </AuthProvider>
+    </ThemeProvider>
   )
 }
