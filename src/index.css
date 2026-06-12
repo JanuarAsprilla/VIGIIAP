@@ -750,6 +750,33 @@ h1, h2, h3, .font-display {
   --marquee-border:        rgba(26,86,50,0.12);
   --marquee-text:          rgba(26,46,34,0.28);
   --marquee-dot:           rgba(26,86,50,0.38);
+
+  /* ── Content cards ─────────────────────────────── */
+  --card-bg:               #FFFFFF;
+  --card-border:           rgba(26,86,50,0.11);
+  --news-bg:               rgba(248,253,250,0.85);
+  --news-border:           rgba(26,86,50,0.11);
+  --welcome-bg:            rgba(26,86,50,0.07);
+  --welcome-border:        rgba(26,86,50,0.16);
+
+  /* ── Stats ─────────────────────────────────────── */
+  --stats-bg:              rgba(26,86,50,0.04);
+  --stats-border:          rgba(26,86,50,0.12);
+  --stats-divider:         rgba(26,86,50,0.10);
+  --stats-value:           #1A5632;
+
+  /* ── Territory map ─────────────────────────────── */
+  --territory-overlay:     linear-gradient(180deg,rgba(6,15,9,0.92) 0%,rgba(6,15,9,0.72) 30%,rgba(6,15,9,0.55) 60%,rgba(242,247,243,0.96) 100%);
+  --territory-stat-outer:  rgba(0,152,70,0.15);
+  --territory-stat-inner:  rgba(6,15,9,0.55);
+  --territory-tag-bg:      rgba(0,152,70,0.18);
+  --territory-tag-border:  rgba(0,152,70,0.3);
+  --territory-tag-text:    rgba(255,255,255,0.75);
+
+  /* ── Note badge ─────────────────────────────────── */
+  --note-bg:               rgba(251,191,36,0.10);
+  --note-border:           rgba(251,191,36,0.22);
+  --note-text:             #B45309;
 }
 
 /* ── DARK FOREST overrides ─────────────────────────── */
@@ -843,6 +870,33 @@ h1, h2, h3, .font-display {
   --marquee-border:        rgba(0,152,70,0.12);
   --marquee-text:          rgba(255,255,255,0.28);
   --marquee-dot:           rgba(74,222,128,0.55);
+
+  /* ── Content cards ─────────────────────────────── */
+  --card-bg:               rgba(9,26,14,0.80);
+  --card-border:           rgba(0,152,70,0.12);
+  --news-bg:               rgba(9,26,14,0.75);
+  --news-border:           rgba(0,152,70,0.14);
+  --welcome-bg:            rgba(0,152,70,0.10);
+  --welcome-border:        rgba(0,152,70,0.18);
+
+  /* ── Stats ─────────────────────────────────────── */
+  --stats-bg:              rgba(0,152,70,0.06);
+  --stats-border:          rgba(0,152,70,0.14);
+  --stats-divider:         rgba(0,152,70,0.10);
+  --stats-value:           #4ade80;
+
+  /* ── Territory map ─────────────────────────────── */
+  --territory-overlay:     linear-gradient(180deg,rgba(6,15,9,0.92) 0%,rgba(6,15,9,0.72) 30%,rgba(6,15,9,0.55) 60%,rgba(6,15,9,0.98) 100%);
+  --territory-stat-outer:  rgba(0,152,70,0.15);
+  --territory-stat-inner:  rgba(6,15,9,0.55);
+  --territory-tag-bg:      rgba(0,152,70,0.18);
+  --territory-tag-border:  rgba(0,152,70,0.3);
+  --territory-tag-text:    rgba(255,255,255,0.75);
+
+  /* ── Note badge ─────────────────────────────────── */
+  --note-bg:               rgba(251,191,36,0.08);
+  --note-border:           rgba(251,191,36,0.18);
+  --note-text:             #FCD34D;
 }
 
 /* ── Dark mode: topbar placeholder ─────────────────── */

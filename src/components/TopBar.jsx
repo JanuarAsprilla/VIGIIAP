@@ -11,9 +11,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Bell, Settings, Menu, LogIn,
-  ChevronDown, X, HelpCircle, Command,
+  ChevronDown, X, HelpCircle, Command, Sun, Moon,
 } from 'lucide-react'
 import { useAuth }   from '@/contexts/AuthContext'
+import { useTheme }  from '@/contexts/ThemeContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { useUI }     from '@/contexts/UIContext'
 import { useNoticiasList } from '@/hooks/useNoticias'
@@ -74,6 +75,7 @@ export default function TopBar({ onMenuToggle }) {
   const { isAuthenticated, user, logout } = useAuth()
   const { openPalette, notifications }     = useUI()
   const { query, setQuery }               = useSearch()
+  const { isDark, toggleTheme }           = useTheme()
 
   const placeholder = SEARCH_PLACEHOLDERS[location.pathname] ?? SEARCH_PLACEHOLDERS['/']
   const activeLabel = PAGE_LABELS[location.pathname]
@@ -223,6 +225,47 @@ export default function TopBar({ onMenuToggle }) {
           >
             <Search className="w-5 h-5" aria-hidden="true" />
           </button>
+
+          {/* ── Theme toggle — visible para todos ── */}
+          <motion.button
+            onClick={toggleTheme}
+            aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            title={isDark ? 'Modo claro' : 'Modo oscuro'}
+            whileTap={{ scale: 0.88 }}
+            className="relative p-2 rounded-lg overflow-hidden transition-colors"
+            style={{
+              color: isDark ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)',
+              background: isDark ? 'var(--topbar-icon-on-bg)' : 'transparent',
+              border: '1px solid',
+              borderColor: isDark ? 'var(--topbar-search-border)' : 'transparent',
+            }}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {isDark ? (
+                <motion.span
+                  key="sun"
+                  initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                  exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex"
+                >
+                  <Sun className="w-[1.125rem] h-[1.125rem]" aria-hidden="true" />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="moon"
+                  initial={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                  exit={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex"
+                >
+                  <Moon className="w-[1.125rem] h-[1.125rem]" aria-hidden="true" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
 
           {isAuthenticated && (
             <>

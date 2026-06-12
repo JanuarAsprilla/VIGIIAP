@@ -112,7 +112,8 @@ function ModuleCard({ mod, index, isVisitante, isPublico }) {
       onMouseMove={onMove}
       onMouseLeave={onLeave}
       style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 900 }}
-      className={`relative bg-white rounded-2xl border h-full overflow-hidden transition-shadow ${blocked ? 'border-border/30 opacity-55 cursor-not-allowed' : 'border-border/60 cursor-pointer group'}`}
+      style={{ background: 'var(--card-bg)' }}
+      className={`relative rounded-2xl border h-full overflow-hidden transition-shadow ${blocked ? 'border-border/30 opacity-55 cursor-not-allowed' : 'border-border/60 cursor-pointer group'}`}
       initial={{ opacity: 0, y: 32 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-50px' }}
@@ -348,8 +349,8 @@ function StatsSection() {
       <div
         className="grid grid-cols-2 md:grid-cols-4 rounded-2xl overflow-hidden"
         style={{
-          background: 'rgba(26,86,50,0.04)',
-          border: '1px solid rgba(26,86,50,0.12)',
+          background: 'var(--stats-bg)',
+          border: '1px solid var(--stats-border)',
         }}
       >
         {STATS.map((stat, i) => (
@@ -361,8 +362,8 @@ function StatsSection() {
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: i * 0.08 }}
             className="px-7 py-9 cursor-default group relative"
             style={{
-              borderRight: i < 3 ? '1px solid rgba(26,86,50,0.10)' : 'none',
-              borderBottom: i < 2 ? '1px solid rgba(26,86,50,0.10)' : 'none',
+              borderRight: i < 3 ? '1px solid var(--stats-divider)' : 'none',
+              borderBottom: i < 2 ? '1px solid var(--stats-divider)' : 'none',
             }}
           >
             {/* Hover glow */}
@@ -374,7 +375,7 @@ function StatsSection() {
               className="tabular font-display font-bold leading-none mb-3 transition-colors duration-300 relative"
               style={{
                 fontSize: 'clamp(2.2rem, 4vw, 3rem)',
-                color: '#1A5632',
+                color: 'var(--stats-value)',
               }}
             >
               {stat.value}
@@ -409,7 +410,10 @@ function SectionHeading({ eyebrow, title, action, actionTo, note }) {
           <h2 className="font-display text-2xl font-bold text-text">{title}</h2>
           <div className="flex items-center gap-3 mb-0.5">
             {note && (
-              <span className="text-xs text-text-muted bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+              <span
+                className="text-xs px-3 py-1 rounded-full"
+                style={{ background: 'var(--note-bg)', border: '1px solid var(--note-border)', color: 'var(--note-text)' }}
+              >
                 {note}
               </span>
             )}
@@ -479,8 +483,8 @@ function NewsCard({ article, variant = 'default' }) {
       transition={{ duration: 0.25 }}
       className="rounded-2xl overflow-hidden h-full group cursor-pointer"
       style={{
-        background: 'rgba(248,253,250,0.85)',
-        border: '1px solid rgba(26,86,50,0.11)',
+        background: 'var(--news-bg)',
+        border: '1px solid var(--news-border)',
         boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
       }}
       whileInView={{ opacity: 1 }}
@@ -618,8 +622,8 @@ function WelcomeStrip({ user }) {
       transition={{ duration: 0.45, delay: 0.12 }}
       className="flex items-center gap-4 rounded-2xl px-5 py-3.5"
       style={{
-        background: 'rgba(26,86,50,0.07)',
-        border: '1px solid rgba(26,86,50,0.16)',
+        background: 'var(--welcome-bg)',
+        border: '1px solid var(--welcome-border)',
       }}
     >
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${user?.isVisitante ? 'bg-gradient-to-br from-amber-400 to-amber-600' : 'bg-gradient-to-br from-primary-700 to-primary-950'}`}>
@@ -694,13 +698,10 @@ function TerritoryMapSection() {
         }}
       />
 
-      {/* Overlay degradado: oscuro arriba (viene del hero), blanco abajo */}
+      {/* Overlay degradado: oscuro arriba (viene del hero), fade al bg del shell abajo */}
       <div
         className="absolute inset-0"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(6,15,9,0.92) 0%, rgba(6,15,9,0.72) 30%, rgba(6,15,9,0.55) 60%, rgba(248,253,250,0.96) 100%)',
-        }}
+        style={{ background: 'var(--territory-overlay)' }}
       />
 
       {/* Contenido editorial sobre el mapa */}
@@ -744,9 +745,9 @@ function TerritoryMapSection() {
               key={tag}
               className="text-[0.62rem] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full"
               style={{
-                background: 'rgba(0,152,70,0.18)',
-                border: '1px solid rgba(0,152,70,0.3)',
-                color: 'rgba(255,255,255,0.75)',
+                background: 'var(--territory-tag-bg)',
+                border: '1px solid var(--territory-tag-border)',
+                color: 'var(--territory-tag-text)',
               }}
             >
               {tag}
@@ -756,7 +757,7 @@ function TerritoryMapSection() {
 
         {/* Stats horizontales */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-px overflow-hidden rounded-2xl"
-          style={{ background: 'rgba(0,152,70,0.15)', maxWidth: '640px' }}
+          style={{ background: 'var(--territory-stat-outer)', maxWidth: '640px' }}
           data-map-tag
         >
           {[
@@ -768,7 +769,7 @@ function TerritoryMapSection() {
             <div
               key={u}
               className="px-5 py-4 text-center"
-              style={{ background: 'rgba(6,15,9,0.55)' }}
+              style={{ background: 'var(--territory-stat-inner)' }}
             >
               <div
                 className="font-display font-black leading-none mb-1"
