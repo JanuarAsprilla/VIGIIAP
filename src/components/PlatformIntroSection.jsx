@@ -9,6 +9,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import * as THREE from 'three'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useReducedMotion } from '@/hooks/useReducedMotion'
 import MarqueeStrip from './MarqueeStrip'
 
 // ── Polígono oficial del Chocó Biogeográfico ──────────────────────────────────
@@ -221,7 +222,7 @@ const PAL = {
 // ── ChocoMapCloud ─────────────────────────────────────────────────────────────
 const GEO = buildGeometry(9000)   // precomputar al cargar el módulo
 
-function ChocoMapCloud({ isDark }) {
+function ChocoMapCloud({ isDark, prefersReduced }) {
   const matRef = useRef()
 
   const mat = useMemo(() => {
@@ -261,7 +262,7 @@ function ChocoMapCloud({ isDark }) {
 
   useFrame((state)=>{
     if(matRef.current){
-      matRef.current.uniforms.uTime.value = state.clock.getElapsedTime()
+      matRef.current.uniforms.uTime.value = prefersReduced ? 0 : state.clock.getElapsedTime()
       state.invalidate()
     }
   })
@@ -270,7 +271,7 @@ function ChocoMapCloud({ isDark }) {
 }
 
 // ── Partículas ambientales — polvo cinematográfico (~180 puntos) ──────────────
-function AmbientDust({ isDark }) {
+function AmbientDust({ isDark, prefersReduced }) {
   const matRef = useRef()
   const geo = useMemo(()=>{
     const N=180, p=new Float32Array(N*3), o=new Float32Array(N), s=new Float32Array(N)
@@ -322,7 +323,7 @@ function AmbientDust({ isDark }) {
 
   useFrame((state)=>{
     if(matRef.current){
-      matRef.current.uniforms.uTime.value=state.clock.getElapsedTime()
+      matRef.current.uniforms.uTime.value = prefersReduced ? 0 : state.clock.getElapsedTime()
       state.invalidate()
     }
   })
@@ -347,14 +348,14 @@ function CartographicGrid({ isDark }) {
 }
 
 // ── Escena ────────────────────────────────────────────────────────────────────
-function Scene({ isDark }) {
+function Scene({ isDark, prefersReduced }) {
   return(
     <>
       <fog attach="fog" args={[isDark?'#060f09':'#EEF5F1', 5, 24]}/>
       <group position={[0.90, 0, 0]}>
         <CartographicGrid isDark={isDark}/>
-        <ChocoMapCloud    isDark={isDark}/>
-        <AmbientDust      isDark={isDark}/>
+        <ChocoMapCloud    isDark={isDark} prefersReduced={prefersReduced}/>
+        <AmbientDust      isDark={isDark} prefersReduced={prefersReduced}/>
       </group>
     </>
   )
@@ -438,6 +439,7 @@ export default function PlatformIntroSection(){
   const [phase, setPhase] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
   const { isDark } = useTheme()
+  const prefersReduced = useReducedMotion()
 
   // A1: IntersectionObserver — pausa el canvas cuando no es visible en el viewport
   useEffect(()=>{
@@ -485,7 +487,7 @@ export default function PlatformIntroSection(){
               gl={{antialias:true,alpha:true}}
               style={{background:'transparent'}}
             >
-              <Scene isDark={isDark}/>
+              <Scene isDark={isDark} prefersReduced={prefersReduced}/>
             </Canvas>
           </div>
 
