@@ -1,19 +1,27 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckCircle, XCircle, Loader2, ArrowLeft, RefreshCw } from 'lucide-react'
 import AuthLayout from '@/components/AuthLayout'
 import api from '@/lib/api'
 
+// M-05: formato mínimo de token — al menos 20 caracteres alfanuméricos/guiones.
+const TOKEN_RE = /^[A-Za-z0-9_\-]{20,}$/
+
 export default function VerificarEmail() {
-  const { token } = useParams()
+  const { token }   = useParams()
+  const navigate    = useNavigate()
   const [status, setStatus] = useState('loading') // 'loading' | 'success' | 'already' | 'expired' | 'error'
   const [resending, setResending] = useState(false)
   const [resent, setResent] = useState(false)
   const [email, setEmail] = useState('')
 
   useEffect(() => {
-    if (!token) { setStatus('error'); return }
+    // M-05: validar formato del token antes de enviarlo a la API.
+    if (!token || !TOKEN_RE.test(token)) {
+      navigate('/login?error=token-invalido', { replace: true })
+      return
+    }
 
     api.get(`/auth/verificar-email/${token}`)
       .then((res) => {

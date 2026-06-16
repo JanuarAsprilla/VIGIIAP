@@ -2,9 +2,15 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 
 const ThemeContext = createContext(null)
 
+// M-04: solo valores conocidos son aceptados desde localStorage.
+const VALID_THEMES = ['light', 'dark']
+
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    try { return localStorage.getItem('vigiiap_theme') ?? 'light' }
+    try {
+      const stored = localStorage.getItem('vigiiap_theme')
+      return VALID_THEMES.includes(stored) ? stored : 'light'
+    }
     catch { return 'light' }
   })
 

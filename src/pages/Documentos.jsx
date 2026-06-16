@@ -76,8 +76,29 @@ function FileIcon({ type }) {
   )
 }
 
+// H-02: allowlist de orígenes confiables para descargas.
+const ALLOWED_ORIGINS = [
+  window.location.origin,
+  import.meta.env.VITE_R2_PUBLIC_URL || '',
+  import.meta.env.VITE_API_URL        || '',
+].filter(Boolean)
+
+function isTrustedUrl(url) {
+  try {
+    const parsed = new URL(url)
+    return ALLOWED_ORIGINS.some((o) => {
+      try { return parsed.origin === new URL(o).origin } catch { return false }
+    })
+  } catch { return false }
+}
+
 async function forceDownload(url, filename) {
   if (!url) return
+  // H-02: bloquear URLs de orígenes no confiables.
+  if (!isTrustedUrl(url)) {
+    console.error('[VIGIIAP] Descarga bloqueada — origen no permitido:', url)
+    return
+  }
   const name = filename || url.split('?')[0].split('/').pop() || 'archivo'
   try {
     const res  = await fetch(url)

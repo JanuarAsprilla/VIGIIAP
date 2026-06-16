@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { KeyRound, Eye, EyeOff, ShieldCheck, AlertCircle, Loader2, ArrowLeft } from 'lucide-react'
 import AuthLayout from '@/components/AuthLayout'
 import api from '@/lib/api'
+
+// M-05: formato mínimo de token — al menos 20 caracteres alfanuméricos/guiones.
+const TOKEN_RE = /^[A-Za-z0-9_\-]{20,}$/
 
 export default function ResetPassword() {
   const { token } = useParams()
@@ -14,6 +17,13 @@ export default function ResetPassword() {
   const [loading, setLoading]       = useState(false)
   const [success, setSuccess]       = useState(false)
   const [error, setError]           = useState('')
+
+  // M-05: validar formato del token al montar; redirigir si no es válido.
+  useEffect(() => {
+    if (!token || !TOKEN_RE.test(token)) {
+      navigate('/recuperar-password?error=token-invalido', { replace: true })
+    }
+  }, [token, navigate])
 
   const validate = () => {
     if (password.length < 8) return 'La contraseña debe tener al menos 8 caracteres'
@@ -86,6 +96,7 @@ export default function ResetPassword() {
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError('') }}
               placeholder="Mínimo 8 caracteres"
+              autoComplete="new-password"
               className="w-full px-4 pr-10 py-3 border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
             />
             <button
@@ -105,6 +116,7 @@ export default function ResetPassword() {
             value={confirm}
             onChange={(e) => { setConfirm(e.target.value); setError('') }}
             placeholder="Repite la contraseña"
+            autoComplete="new-password"
             className="w-full px-4 py-3 border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
           />
         </div>

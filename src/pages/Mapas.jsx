@@ -61,6 +61,7 @@ function MapPreviewModal({ map, format, onClose }) {
             {isImage ? (
               <div className="p-4 flex justify-center bg-bg-alt">
                 <img src={fileUrl} alt={map.title}
+                  width={1200} height={675}
                   className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-sm" />
               </div>
             ) : (
@@ -105,8 +106,29 @@ function MapPreviewModal({ map, format, onClose }) {
   )
 }
 
+// H-02: allowlist de orígenes confiables para descargas.
+const ALLOWED_ORIGINS = [
+  window.location.origin,
+  import.meta.env.VITE_R2_PUBLIC_URL || '',
+  import.meta.env.VITE_API_URL        || '',
+].filter(Boolean)
+
+function isTrustedUrl(url) {
+  try {
+    const parsed = new URL(url)
+    return ALLOWED_ORIGINS.some((o) => {
+      try { return parsed.origin === new URL(o).origin } catch { return false }
+    })
+  } catch { return false }
+}
+
 async function forceDownload(url) {
   if (!url) return
+  // H-02: bloquear URLs de orígenes no confiables.
+  if (!isTrustedUrl(url)) {
+    console.error('[VIGIIAP] Descarga bloqueada — origen no permitido:', url)
+    return
+  }
   const filename = url.split('?')[0].split('/').pop() || 'archivo'
   try {
     const res  = await fetch(url)
@@ -153,6 +175,7 @@ function MapCard({ map, index, onPreview }) {
       <div className="relative h-44 overflow-hidden bg-bg-alt shrink-0">
         {map.thumbnail_url ? (
           <img src={map.thumbnail_url} alt={map.title}
+            width={320} height={176}
             className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
             loading="lazy" />
         ) : (

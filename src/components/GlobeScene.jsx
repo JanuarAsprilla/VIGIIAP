@@ -2,7 +2,7 @@
  * VIGIA-IIAP — Globo 3D · Chocó Biogeográfico
  * Polígono real basado en límites del IIAP (Darién → Ecuador, Pacífico → Andes).
  */
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Points, PointMaterial, Line } from '@react-three/drei'
 import * as THREE from 'three'
@@ -131,7 +131,10 @@ function SurfacePoints() {
     }
     return arr
   }, [])
-  useFrame((s) => { if (ref.current) ref.current.rotation.y = s.clock.elapsedTime * 0.05 })
+  useFrame(({ clock, invalidate }) => {
+    if (ref.current) ref.current.rotation.y = clock.elapsedTime * 0.05
+    invalidate()
+  })
   return (
     <Points ref={ref} positions={pos} stride={3} frustumCulled={false}>
       <PointMaterial transparent color="#D8F3DC" size={0.018} sizeAttenuation depthWrite={false} opacity={0.5} />
@@ -166,13 +169,17 @@ function ChocoRegion() {
     return geo
   }, [])
 
+  // A2: dispose fillGeo BufferGeometry al desmontar ChocoRegion
+  useEffect(() => { return () => fillGeo.dispose() }, [fillGeo])
+
   // Pulso animado
-  useFrame(({ clock }) => {
+  useFrame(({ clock, invalidate }) => {
     const t = clock.elapsedTime
     const pulse = 0.5 + 0.5 * Math.sin(t * 0.9)
     if (fillRef.current)  fillRef.current.material.opacity  = 0.22 + 0.10 * pulse
     if (fill2Ref.current) fill2Ref.current.material.opacity = 0.08 + 0.04 * pulse
     if (glowRef.current)  glowRef.current.material.opacity  = 0.35 + 0.20 * pulse
+    invalidate()
   })
 
   return (
@@ -236,9 +243,10 @@ function ChocoParticles() {
     return arr
   }, [])
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, invalidate }) => {
     if (ref.current)
       ref.current.material.opacity = 0.6 + 0.4 * Math.abs(Math.sin(clock.elapsedTime * 1.4))
+    invalidate()
   })
 
   return (
@@ -268,10 +276,11 @@ function IIAPMarker() {
     return pts
   }, [])
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, invalidate }) => {
     const t = clock.elapsedTime
     if (ref.current)  ref.current.material.opacity = 0.7 + 0.3 * Math.abs(Math.sin(t * 2.5))
     if (ref2.current) ref2.current.material.opacity = 0.3 + 0.3 * Math.abs(Math.sin(t * 2.5 + 1))
+    invalidate()
   })
 
   return (
@@ -302,7 +311,10 @@ function BackgroundDust() {
     }
     return arr
   }, [])
-  useFrame((s) => { if (ref.current) ref.current.rotation.y = s.clock.elapsedTime * 0.012 })
+  useFrame(({ clock, invalidate }) => {
+    if (ref.current) ref.current.rotation.y = clock.elapsedTime * 0.012
+    invalidate()
+  })
   return (
     <Points ref={ref} positions={pos} stride={3} frustumCulled={false}>
       <PointMaterial transparent color="#52B788" size={0.009} sizeAttenuation depthWrite={false} opacity={0.18} />
@@ -317,13 +329,14 @@ function Globe() {
   // Inicia rotado para que Colombia quede de frente
   const initialized = useRef(false)
 
-  useFrame((_, delta) => {
+  useFrame(({ invalidate }, delta) => {
     if (!groupRef.current) return
     if (!initialized.current) {
       groupRef.current.rotation.y = INITIAL_Y
       initialized.current = true
     }
     groupRef.current.rotation.y += delta * 0.09
+    invalidate()
   })
 
   return (
@@ -364,6 +377,7 @@ export default function GlobeScene({ className = '' }) {
   return (
     <div className={className} aria-hidden="true">
       <Canvas
+        frameloop="demand"
         camera={{ position: [0, 1.0, 4.8], fov: 44 }}
         gl={{ antialias: true, alpha: true }}
         style={{ background: 'transparent' }}

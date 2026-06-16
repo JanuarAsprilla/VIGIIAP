@@ -46,18 +46,45 @@ function normalizeUser(raw) {
 // ─── Context ──────────────────────────────────────────────────────────────────
 const AuthContext = createContext(null)
 
-function loadPersistedUser() {
-  try {
-    const raw = localStorage.getItem('vigiiap_user')
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
-}
-
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(loadPersistedUser)
+  // C-01: estado de usuario solo en memoria (no localStorage).
+  // La sesión persiste a través de la cookie HttpOnly vigiiap_token;
+  // refreshProfile() rehidrata desde /auth/me al montar.
+  const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(false)
+
+  const persistUser = useCallback((normalized) => {
+    // C-01: No escribir datos de usuario en localStorage (XSS risk).
+    // El token JWT lo gestiona el backend con cookie HttpOnly (PR #10).
+    setUser(normalized)
+  }, [])
+
+  const clearSession = useCallback(() => {
+    // Limpia cualquier residuo de sesiones anteriores y el estado en memoria.
+    localStorage.removeItem('vigiiap_token')
+    localStorage.removeItem('vigiiap_user')
+    setUser(null)
+    queryClient.clear()
+  }, [])
+
+  // ── Refrescar perfil desde la API ──
+  // Definido antes de los effects para poder usarse en el effect de mount.
+  const refreshProfile = useCallback(async () => {
+    try {
+      const raw = await api.get('/auth/me')
+      const normalized = normalizeUser(raw)
+      persistUser(normalized)
+      return normalized
+    } catch {
+      clearSession()
+    }
+  }, [persistUser, clearSession])
+
+  // Rehidrata la sesión al montar usando la cookie HttpOnly vigiiap_token.
+  // Si la cookie no existe o expiró, clearSession limpia el estado.
+  useEffect(() => {
+    refreshProfile()
+  }, [refreshProfile])
 
   // Escucha el evento de logout forzado por el interceptor de axios (401)
   useEffect(() => {
@@ -69,45 +96,36 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('vigiiap:logout', handleForceLogout)
   }, [])
 
-  const persistUser = (normalized) => {
-    localStorage.setItem('vigiiap_user', JSON.stringify(normalized))
-    setUser(normalized)
-  }
-
-  const clearSession = () => {
-    localStorage.removeItem('vigiiap_token')
-    localStorage.removeItem('vigiiap_user')
-    setUser(null)
-    queryClient.clear()
-  }
-
   // ── Login institucional ──
   const login = useCallback(async (email, password) => {
     setLoading(true)
     try {
       const { token, user: raw } = await api.post('/auth/login', { email, password })
-      localStorage.setItem('vigiiap_token', token)
+      // C-01: token no se escribe en localStorage; el backend lo envía
+      // como cookie HttpOnly (Set-Cookie) y api.js usa withCredentials=true.
+      void token
       const normalized = normalizeUser(raw)
       persistUser(normalized)
       return normalized
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [persistUser])
 
   // ── Login visitante (acceso rápido sin credenciales) ──
   const loginVisitante = useCallback(async (nombre = '') => {
     setLoading(true)
     try {
       const { token, user: raw } = await api.post('/auth/visitante', { nombre: nombre || undefined })
-      localStorage.setItem('vigiiap_token', token)
+      // C-01: token no se escribe en localStorage; gestionado por cookie HttpOnly.
+      void token
       const normalized = normalizeUser(raw)
       persistUser(normalized)
       return normalized
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [persistUser])
 
   // ── Registro ──
   const register = useCallback(async (data) => {
@@ -117,19 +135,7 @@ export function AuthProvider({ children }) {
   // ── Logout ──
   const logout = useCallback(() => {
     clearSession()
-  }, [])
-
-  // ── Refrescar perfil desde la API ──
-  const refreshProfile = useCallback(async () => {
-    try {
-      const raw = await api.get('/auth/me')
-      const normalized = normalizeUser(raw)
-      persistUser(normalized)
-      return normalized
-    } catch {
-      clearSession()
-    }
-  }, [])
+  }, [clearSession])
 
   return (
     <AuthContext.Provider value={{

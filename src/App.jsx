@@ -69,8 +69,19 @@ function GeovisorLoader() {
 export default function App() {
   const [appReady, setAppReady] = useState(false)
   useEffect(() => {
-    const t = setTimeout(() => setAppReady(true), 2200)
-    return () => clearTimeout(t)
+    // A3: detectar carga real en vez de timeout mínimo hardcodeado (era 2200ms fijo)
+    if (document.readyState === 'complete') {
+      setAppReady(true)
+      return
+    }
+    const onLoad = () => setAppReady(true)
+    window.addEventListener('load', onLoad)
+    // Fallback máximo de 3s — garantiza que el preloader siempre termine
+    const fallback = setTimeout(() => setAppReady(true), 3000)
+    return () => {
+      window.removeEventListener('load', onLoad)
+      clearTimeout(fallback)
+    }
   }, [])
   if (!appReady) return <Preloader />
 

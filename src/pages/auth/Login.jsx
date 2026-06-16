@@ -5,7 +5,7 @@ import {
   LogIn, Mail, Lock, Eye, EyeOff, AlertCircle,
   ChevronRight, Building2, Globe, User, Send, Loader2,
 } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth, ROLES } from '@/contexts/AuthContext'
 import AuthLayout from '@/components/AuthLayout'
 import { validateEmail, validatePassword } from '@/lib/validators'
 import api from '@/lib/api'
@@ -62,7 +62,9 @@ export default function Login() {
   const navigate  = useNavigate()
   const location  = useLocation()
   const { login, loginVisitante, loading } = useAuth()
-  const from = location.state?.from?.pathname || '/'
+  const rawFrom = location.state?.from?.pathname || '/'
+  // C-02: solo permitir redirects internos (evitar open redirect).
+  const from = rawFrom.startsWith('/') && !rawFrom.startsWith('//') ? rawFrom : '/'
 
   const [modo, setModo]               = useState('institucional')
   const [email, setEmail]             = useState('')
@@ -101,7 +103,10 @@ export default function Login() {
         navigate(from === '/admin' ? '/' : from, { replace: true })
       } else {
         const user = await login(email, password)
-        navigate(user.role === 'Administrador SIG' ? '/admin' : (from === '/admin' ? '/' : from), { replace: true })
+        // C-02: comparar contra constante ROLES (evita hardcoding y cubre super_admin).
+        const isAdmin = user.role === ROLES.ADMIN || user.role === ROLES.SUPER_ADMIN
+        const safeTo  = from === '/admin' && !isAdmin ? '/' : from
+        navigate(isAdmin ? '/admin' : safeTo, { replace: true })
       }
     } catch (err) {
       setErrorCode(err.code ?? null)

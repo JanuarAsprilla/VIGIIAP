@@ -23,7 +23,9 @@ const USE_COOKIE_AUTH = true
 function getTokenExp(token) {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]))
-    return payload.exp ?? null
+    // M-01: valida shape mínima antes de usar el payload.
+    if (!payload || typeof payload !== 'object' || !payload.exp) return null
+    return payload.exp
   } catch {
     return null
   }

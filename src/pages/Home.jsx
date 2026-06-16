@@ -1,27 +1,21 @@
 /* Hallmark · macrostructure: Bento Grid · genre: institutional-editorial
  * tokens: design.md · stamp: 2026-05-25
  */
-import { useState, useRef, useEffect, lazy, Suspense } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useMotionTemplate } from 'framer-motion'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import {
   ArrowRight, Map, FileText, Globe, Wrench,
   ClipboardList, Newspaper, Plus, SearchX, ArrowUpRight,
-  ChevronRight, Lock, ChevronDown,
+  ChevronRight, Lock,
 } from 'lucide-react'
 import { STATS, NEWS } from '@/lib/constants'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth, ROLES } from '@/contexts/AuthContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
 import { useNoticiasList } from '@/hooks/useNoticias'
 import PlatformIntroSection from '@/components/PlatformIntroSection'
-
-gsap.registerPlugin(ScrollTrigger)
-
-const GlobeScene = lazy(() => import('@/components/GlobeScene'))
 
 // ── Módulos ──────────────────────────────────────────────────────────────────
 const ALL_MODULES = [
@@ -111,8 +105,7 @@ function ModuleCard({ mod, index, isVisitante, isPublico }) {
       ref={ref}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
-      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 900 }}
-      style={{ background: 'var(--card-bg)' }}
+      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 900, background: 'var(--card-bg)' }}
       className={`relative rounded-2xl border h-full overflow-hidden transition-shadow ${blocked ? 'border-border/30 opacity-55 cursor-not-allowed' : 'border-border/60 cursor-pointer group'}`}
       initial={{ opacity: 0, y: 32 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -163,172 +156,6 @@ function ModuleCard({ mod, index, isVisitante, isPublico }) {
   )
 }
 
-// ── Hero ───────────────────────────────────────────────────────────────────────
-function HeroBanner({ onAccederVisitante, heroRef }) {
-  const { isAuthenticated, isVisitante } = useAuth()
-  const titleRef    = useRef()
-  const subtitleRef = useRef()
-  const ctaRef      = useRef()
-
-  useEffect(() => {
-    const tl = gsap.timeline({ delay: 0.1 })
-    tl.from(titleRef.current,    { y: 70, opacity: 0, duration: 1.1, ease: 'power4.out' })
-      .from(subtitleRef.current, { y: 28, opacity: 0, duration: 0.8, ease: 'power3.out' }, '-=0.55')
-      .from(ctaRef.current?.children ?? [], { y: 20, opacity: 0, stagger: 0.1, duration: 0.5, ease: 'power2.out' }, '-=0.3')
-    return () => tl.kill()
-  }, [])
-
-  return (
-    <div ref={heroRef}
-      className="relative rounded-3xl overflow-hidden flex flex-col"
-      style={{ minHeight: '640px', background: 'var(--hero-grad)' }}>
-
-      {/* Grain texture */}
-      <div className="absolute inset-0 noise-overlay pointer-events-none z-[1]" style={{ opacity: 0.028 }}
-        aria-hidden="true" />
-
-      {/* Dot grid */}
-      <div className="absolute inset-0 pointer-events-none z-[1]"
-        style={{ backgroundImage: 'radial-gradient(circle, var(--hero-dot-color) 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-
-      {/* Ambient orbs */}
-      <div className="absolute top-[-15%] left-[-8%] w-[640px] h-[640px] rounded-full pointer-events-none z-[1]"
-        style={{ background: `radial-gradient(circle, var(--hero-orb-1) 0%, transparent 70%)` }} />
-      <div className="absolute bottom-[-20%] right-[15%] w-[440px] h-[440px] rounded-full pointer-events-none z-[1]"
-        style={{ background: `radial-gradient(circle, var(--hero-orb-2) 0%, transparent 70%)` }} />
-
-      {/* Top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-[1px] z-[1]"
-        style={{ background: 'var(--hero-top-line)' }} />
-
-      <div className="relative z-10 flex flex-col lg:flex-row w-full flex-1">
-        {/* Left — copy */}
-        <div className="flex-1 flex flex-col justify-center px-10 py-16 lg:px-16 lg:py-16">
-
-          {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-8 self-start"
-            style={{ border: '1px solid var(--hero-eyebrow-border)', background: 'var(--hero-eyebrow-bg)' }}>
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0"
-              style={{ background: 'var(--hero-eyebrow-dot)' }} />
-            <span className="text-[0.62rem] font-bold uppercase tracking-[0.25em]"
-              style={{ color: 'var(--hero-eyebrow-text)' }}>
-              Sistema activo · IIAP Colombia · Chocó Biogeográfico
-            </span>
-          </div>
-
-          {/* Logo word */}
-          <div ref={titleRef} className="mb-6">
-            <h1 className="font-display font-black leading-[0.9] tracking-tight"
-              style={{ fontSize: 'clamp(4rem, 10vw, 7.5rem)' }}>
-              <span style={{ color: 'var(--hero-title-color)' }}>
-                VIGI
-              </span>
-              <span style={{ color: 'var(--hero-title-accent)' }}>
-                -IIAP
-              </span>
-            </h1>
-            <p className="text-xs font-semibold tracking-[0.22em] mt-3 ml-1"
-              style={{ color: 'var(--hero-sub-color)' }}>
-              Visor Gestor de Información Ambiental del Pacífico
-            </p>
-          </div>
-
-          {/* Description */}
-          <div ref={subtitleRef} className="max-w-lg mb-10">
-            <p className="text-[0.95rem] leading-[1.8]" style={{ color: 'var(--hero-sub-color)' }}>
-              Plataforma institucional para la consulta, análisis y gestión de información
-              ambiental y territorial del{' '}
-              <span className="font-semibold" style={{ color: 'var(--hero-accent-color)' }}>
-                Chocó Biogeográfico
-              </span>{' '}
-              colombiano, la región más biodiversa del planeta.
-            </p>
-          </div>
-
-          {/* CTAs */}
-          <div ref={ctaRef} className="flex flex-wrap items-center gap-3">
-            <Link to="/geovisor"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold no-underline transition-all hover:scale-[1.03] active:scale-[0.98]"
-              style={{ background: 'linear-gradient(135deg, #009846, #1A5632)', color: '#fff', boxShadow: '0 4px 28px rgba(0,152,70,0.35)' }}>
-              <Globe className="w-4 h-4" />Explorar Geovisor
-            </Link>
-
-            {!isAuthenticated && (
-              <button onClick={onAccederVisitante}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all hover:scale-[1.03] active:scale-[0.98] border"
-                style={{ background: 'var(--hero-cta-ghost-bg)', borderColor: 'var(--hero-cta-ghost-border)', color: 'var(--hero-cta-ghost-text)' }}>
-                <ArrowRight className="w-4 h-4" />Acceder como visitante
-              </button>
-            )}
-            {isAuthenticated && !isVisitante && (
-              <Link to="/mapas"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold no-underline transition-all hover:scale-[1.03] border"
-                style={{ background: 'var(--hero-cta-ghost-bg)', borderColor: 'var(--hero-cta-ghost-border)', color: 'var(--hero-cta-ghost-text)' }}>
-                <Map className="w-4 h-4" />Ver Catálogo
-              </Link>
-            )}
-          </div>
-
-          {/* Scroll indicator */}
-          <div className="hidden lg:flex items-center gap-2 mt-12"
-            style={{ color: 'var(--hero-scroll-color)' }}>
-            <ChevronDown className="w-3.5 h-3.5 animate-bounce" />
-            <span className="text-[0.6rem] uppercase tracking-[0.22em]">Explorar</span>
-          </div>
-        </div>
-
-        {/* Right — globe */}
-        <div className="hidden lg:flex w-[500px] items-center justify-center relative shrink-0">
-          <Suspense fallback={
-            <div className="w-[400px] h-[400px] rounded-full border border-primary-600/20 animate-pulse"
-              style={{ background: 'radial-gradient(circle, var(--hero-orb-1) 0%, transparent 70%)' }} />
-          }>
-            <GlobeScene className="w-[440px] h-[440px]" />
-          </Suspense>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Marquee ────────────────────────────────────────────────────────────────────
-const MARQUEE_ITEMS = [
-  'Biogeografía', 'Cartografía Ambiental', 'Datos Espaciales',
-  'Chocó Colombiano', 'Investigación IIAP', 'Biodiversidad',
-  'Pacífico Colombiano', 'SIG & Geovisor', 'Gestión Territorial',
-]
-
-function MarqueeStrip() {
-  const items = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS]
-  return (
-    <div
-      className="overflow-hidden select-none"
-      style={{
-        borderTop: '1px solid var(--marquee-border)',
-        borderBottom: '1px solid var(--marquee-border)',
-        background: 'var(--marquee-bg)',
-        backdropFilter: 'blur(12px)',
-        padding: '14px 0',
-      }}
-    >
-      <div className="flex gap-10 whitespace-nowrap animate-marquee">
-        {items.map((item, i) => (
-          <span
-            key={i}
-            className="inline-flex items-center gap-4 text-[0.68rem] font-bold uppercase tracking-[0.22em]"
-            style={{ color: 'var(--marquee-text)' }}
-          >
-            {item}
-            <span
-              className="w-1 h-1 rounded-full shrink-0"
-              style={{ background: 'var(--marquee-dot)' }}
-            />
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 // ── Stats — editorial ──────────────────────────────────────────────────────────
 function StatsSection() {
@@ -391,7 +218,7 @@ function StatsSection() {
 }
 
 // ── Section heading ────────────────────────────────────────────────────────────
-function SectionHeading({ eyebrow, title, action, actionTo, note }) {
+function SectionHeading({ id, eyebrow, title, action, actionTo, note }) {
   return (
     <div className="mb-7 flex items-start gap-4">
       {/* Acento vertical verde */}
@@ -407,7 +234,7 @@ function SectionHeading({ eyebrow, title, action, actionTo, note }) {
           {eyebrow}
         </span>
         <div className="flex items-end justify-between gap-4 flex-wrap">
-          <h2 className="font-display text-2xl font-bold text-text">{title}</h2>
+          <h2 id={id} className="font-display text-2xl font-bold text-text">{title}</h2>
           <div className="flex items-center gap-3 mb-0.5">
             {note && (
               <span
@@ -446,8 +273,9 @@ function ModulesSection({ isVisitante, isPublico }) {
     : bentoOrder.map((id) => ALL_MODULES.find((m) => m.id === id)).filter(Boolean)
 
   return (
-    <section>
+    <section aria-labelledby="modules-section-title">
       <SectionHeading
+        id="modules-section-title"
         eyebrow="Plataforma"
         title="Módulos de VIGIA-IIAP"
         note={showNote ? `${restricted} módulos requieren cuenta de investigador` : undefined}
@@ -519,7 +347,7 @@ function NewsCard({ article, variant = 'default' }) {
           style={{ borderTop: '1px solid rgba(26,86,50,0.10)' }}
         >
           <span className="text-xs text-text-muted">{article.time || article.date}</span>
-          <ArrowUpRight className="w-3.5 h-3.5 text-primary-700 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <ArrowUpRight aria-hidden="true" className="w-3.5 h-3.5 text-primary-700 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
       </Link>
     </motion.div>
@@ -532,8 +360,9 @@ function NewsSection({ articles, query }) {
   const [featured, ...rest] = articles.slice(0, 4)
 
   return (
-    <section>
+    <section aria-labelledby="news-section-title">
       <SectionHeading
+        id="news-section-title"
         eyebrow="Actualidad"
         title={query.trim() ? `Noticias — "${query}"` : 'Noticias del IIAP'}
         action={!query.trim() ? 'Ver todas' : undefined}
@@ -560,54 +389,6 @@ function NewsSection({ articles, query }) {
         </div>
       )}
     </section>
-  )
-}
-
-// ── Institutional banner ───────────────────────────────────────────────────────
-function InstitutionalBanner() {
-  const ref = useRef()
-  useEffect(() => {
-    gsap.from(ref.current, {
-      opacity: 0, y: 24, duration: 0.9, ease: 'power3.out',
-      scrollTrigger: { trigger: ref.current, start: 'top 88%', once: true },
-    })
-  }, [])
-
-  return (
-    <div ref={ref}
-      className="relative rounded-2xl overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #0c1f14 0%, #122e1d 100%)' }}>
-
-      {/* Dot grid */}
-      <div className="absolute inset-0 opacity-[0.055]"
-        style={{ backgroundImage: 'radial-gradient(circle, #009846 1px, transparent 1px)', backgroundSize: '26px 26px' }} />
-
-      {/* Top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-[1px]"
-        style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(0,152,70,0.5) 30%, rgba(176,203,31,0.4) 70%, transparent 100%)' }} />
-
-      <div className="relative px-10 py-10 flex flex-col sm:flex-row items-center gap-6">
-        <div className="flex-1 text-center sm:text-left">
-          <p className="text-[0.62rem] font-bold uppercase tracking-[0.24em] text-green-400/65 mb-2">
-            Instituto de Investigaciones Ambientales del Pacífico
-          </p>
-          <h3 className="font-display text-2xl font-bold text-white mb-2 leading-snug">
-            Conocimiento al servicio<br className="hidden sm:block" /> del territorio
-          </h3>
-          <p className="text-white/45 text-sm leading-relaxed max-w-lg">
-            El IIAP genera, sistematiza y transfiere conocimiento sobre el Chocó Biogeográfico
-            para apoyar la toma de decisiones ambientales y el desarrollo sostenible.
-          </p>
-        </div>
-        <div className="shrink-0">
-          <Link to="/solicitar-acceso"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold no-underline transition-all hover:scale-105"
-            style={{ background: 'rgba(0,152,70,0.14)', color: '#C8E6CE', border: '1px solid rgba(0,152,70,0.25)' }}>
-            Solicitar acceso <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -650,177 +431,20 @@ function WelcomeStrip({ user }) {
   )
 }
 
-// ── Territory map — puente entre la presentación 3D y el contenido claro ─────
-const CHOCO_MAP_URL =
-  'https://choco7dias.com/wp-content/uploads/2023/12/iiap-2040.jpg'
-
-function TerritoryMapSection() {
-  const sectionRef = useRef()
-
-  useEffect(() => {
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: sectionRef.current,
-        start: 'top 85%',
-        once: true,
-      },
-    })
-    tl.from('[data-map-line]', {
-      scaleX: 0,
-      transformOrigin: 'left center',
-      duration: 0.8,
-      stagger: 0.12,
-      ease: 'power3.out',
-    })
-      .from('[data-map-tag]', {
-        opacity: 0,
-        y: 14,
-        stagger: 0.08,
-        duration: 0.55,
-        ease: 'power3.out',
-      }, '-=0.4')
-    return () => tl.kill()
-  }, [])
-
-  return (
-    <div
-      ref={sectionRef}
-      className="-mx-4 lg:-mx-6 xl:-mx-10 relative overflow-hidden"
-      style={{ minHeight: '480px' }}
-    >
-      {/* Imagen del mapa */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `url(${CHOCO_MAP_URL})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center 30%',
-        }}
-      />
-
-      {/* Overlay degradado: oscuro arriba (viene del hero), fade al bg del shell abajo */}
-      <div
-        className="absolute inset-0"
-        style={{ background: 'var(--territory-overlay)' }}
-      />
-
-      {/* Contenido editorial sobre el mapa */}
-      <div className="relative z-10 px-8 lg:px-16 py-16 lg:py-20">
-        {/* Eyebrow */}
-        <div className="flex items-center gap-3 mb-8" data-map-tag>
-          <div data-map-line className="h-px w-12 bg-primary-400" />
-          <span
-            className="text-[0.58rem] font-black uppercase tracking-[0.3em]"
-            style={{ color: 'rgba(74,222,128,0.8)' }}
-          >
-            Territorio · Mapa IIAP 2040
-          </span>
-        </div>
-
-        {/* Headline */}
-        <h2
-          className="font-display font-black leading-tight mb-6 max-w-2xl"
-          style={{
-            fontSize: 'clamp(2rem, 4.5vw, 3.8rem)',
-            color: '#E8F5EC',
-            textShadow: '0 2px 40px rgba(0,0,0,0.5)',
-          }}
-          data-map-tag
-        >
-          El Chocó Biogeográfico:<br />
-          <span style={{ color: '#4ade80' }}>un patrimonio que se protege</span>
-          <br />con datos
-        </h2>
-
-        {/* Tags territoriales */}
-        <div className="flex flex-wrap gap-2 mb-12" data-map-tag>
-          {[
-            'Pacífico Colombiano',
-            'Darién — Panamá',
-            'Ecuador Norte',
-            '72 municipios',
-            '7 departamentos',
-          ].map((tag) => (
-            <span
-              key={tag}
-              className="text-[0.62rem] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full"
-              style={{
-                background: 'var(--territory-tag-bg)',
-                border: '1px solid var(--territory-tag-border)',
-                color: 'var(--territory-tag-text)',
-              }}
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-
-        {/* Stats horizontales */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px overflow-hidden rounded-2xl"
-          style={{ background: 'var(--territory-stat-outer)', maxWidth: '640px' }}
-          data-map-tag
-        >
-          {[
-            { v: '187.000', u: 'km² de selva' },
-            { v: '9%',      u: 'del territorio CO' },
-            { v: '10.000+', u: 'especies flora' },
-            { v: '600+',    u: 'especies aves' },
-          ].map(({ v, u }) => (
-            <div
-              key={u}
-              className="px-5 py-4 text-center"
-              style={{ background: 'var(--territory-stat-inner)' }}
-            >
-              <div
-                className="font-display font-black leading-none mb-1"
-                style={{ fontSize: 'clamp(1.4rem, 3vw, 2rem)', color: '#4ade80' }}
-              >
-                {v}
-              </div>
-              <div
-                className="text-[0.58rem] uppercase tracking-wider"
-                style={{ color: 'rgba(255,255,255,0.45)' }}
-              >
-                {u}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-
 // ── Home ───────────────────────────────────────────────────────────────────────
 export default function Home() {
-  const { isAuthenticated, user, loginVisitante, isVisitante } = useAuth()
-  const isPublico = user?.role === 'Público'
-  const navigate  = useNavigate()
+  const { isAuthenticated, user, isVisitante } = useAuth()
+  const isPublico = user?.role === ROLES.PUBLICO
   const { query } = useSearch()
   const [showModal, setShowModal] = useState(false)
-  const heroRef = useRef()
 
-  const { data: noticiasData } = useNoticiasList({ limit: 4 })
-  const apiNews      = noticiasData?.data ?? []
-  const displayNews  = apiNews.length > 0 ? apiNews : NEWS
+  const { data: noticiasData, isError: noticiasError } = useNoticiasList({ limit: 4 })
+  const apiNews     = noticiasData?.data ?? []
+  // Si hay error de API, no mostrar datos estáticos falsos como si fueran reales
+  const displayNews = noticiasError ? [] : (apiNews.length > 0 ? apiNews : NEWS)
   const filteredNews = displayNews.filter((a) =>
     matches([a.title || a.titulo, a.excerpt || a.resumen, a.tag || a.categoria], query)
   )
-
-  const handleAccederVisitante = async () => {
-    try { await loginVisitante(); navigate('/') } catch { /* silent */ }
-  }
-
-  // Parallax hero
-  useEffect(() => {
-    if (!heroRef.current) return
-    const tween = gsap.to(heroRef.current, {
-      yPercent: -10, ease: 'none',
-      scrollTrigger: { trigger: heroRef.current, start: 'top top', end: 'bottom top', scrub: true },
-    })
-    return () => tween.kill()
-  }, [])
 
   const noResults = query.trim()
     && !ALL_MODULES.some((m) => matches([m.title, m.description], query))
@@ -830,17 +454,9 @@ export default function Home() {
     <>
       <div className="space-y-10">
 
-        {/* Hero */}
-        {!query.trim() && <HeroBanner onAccederVisitante={handleAccederVisitante} heroRef={heroRef} />}
-
-        {/* Marquee — solo fuera de búsqueda */}
-        {!query.trim() && <MarqueeStrip />}
-
-        {/* Presentación 3D scroll-driven — visible solo fuera de búsqueda */}
+        {/* Presentación 3D scroll-driven */}
         {!query.trim() && <PlatformIntroSection />}
 
-        {/* Mapa del Chocó — puente entre cinematic y contenido claro */}
-        {!query.trim() && <TerritoryMapSection />}
 
         {/* Welcome strip — usuario autenticado */}
         {isAuthenticated && !query.trim() && <WelcomeStrip user={user} />}
@@ -851,7 +467,7 @@ export default function Home() {
         {/* Sin resultados */}
         {noResults && (
           <div className="py-20 text-center text-text-muted">
-            <SearchX className="w-10 h-10 mx-auto mb-3 opacity-25" />
+            <SearchX aria-hidden="true" className="w-10 h-10 mx-auto mb-3 opacity-25" />
             <p className="text-sm">Sin resultados para <strong className="text-text">"{query}"</strong></p>
           </div>
         )}
@@ -859,8 +475,6 @@ export default function Home() {
         {/* Stats */}
         {!query.trim() && <StatsSection />}
 
-        {/* Banner institucional */}
-        {!query.trim() && <InstitutionalBanner />}
 
         {/* Noticias */}
         <NewsSection articles={filteredNews} query={query} />

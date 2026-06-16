@@ -58,6 +58,8 @@ export default function NoticiaDetalle() {
 
         {article.thumbUrl && (
           <img src={article.thumbUrl} alt={article.title}
+            width={800} height={450}
+            loading="lazy"
             className="w-full h-56 object-cover" />
         )}
 

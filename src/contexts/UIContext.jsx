@@ -2,6 +2,15 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 
 const UIContext = createContext(null)
 
+// M-04: allowlists para valores leídos desde localStorage.
+const VALID_DENSITIES = ['compact', 'normal', 'comfortable']
+
+function isValidNotifPrefs(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return false
+  const validKeys = ['noticias', 'solicitudes', 'mapas', 'email']
+  return validKeys.every((k) => typeof v[k] === 'boolean')
+}
+
 function useLocalStorage(key, defaultValue) {
   const [value, setValue] = useState(() => {
     try {
@@ -20,11 +29,18 @@ function useLocalStorage(key, defaultValue) {
 }
 
 export function UIProvider({ children }) {
-  const [density, setDensity]           = useLocalStorage('vigiiap_density', 'normal')
+  const [densityRaw, setDensity]            = useLocalStorage('vigiiap_density', 'normal')
+  // M-04: validar que el valor leído sea uno de los permitidos.
+  const density = VALID_DENSITIES.includes(densityRaw) ? densityRaw : 'normal'
+
   const [notifications, setNotifications]   = useLocalStorage('vigiiap_notif_enabled', true)
-  const [notifPrefs, setNotifPrefs]         = useLocalStorage('vigiiap_notif_prefs', {
+  const [notifPrefsRaw, setNotifPrefs]       = useLocalStorage('vigiiap_notif_prefs', {
     noticias: true, solicitudes: true, mapas: false, email: true,
   })
+  // M-04: validar shape de notifPrefs; usar defaults si es inválido.
+  const DEFAULT_NOTIF_PREFS = { noticias: true, solicitudes: true, mapas: false, email: true }
+  const notifPrefs = isValidNotifPrefs(notifPrefsRaw) ? notifPrefsRaw : DEFAULT_NOTIF_PREFS
+
   const [paletteOpen, setPaletteOpen]   = useState(false)
 
   const openPalette  = useCallback(() => setPaletteOpen(true),  [])

@@ -12,9 +12,6 @@ import { ROLES } from '@/contexts/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
 
-// URL del mapa del Chocó Biogeográfico (IIAP 2040)
-const CHOCO_MAP_URL =
-  'https://choco7dias.com/wp-content/uploads/2023/12/iiap-2040.jpg'
 
 const RESTRICTED_PATHS = ['/geovisor', '/herramientas', '/solicitudes']
 
@@ -232,7 +229,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
       </div>
 
       {/* ── Navegación ── */}
-      <nav className="flex-1 py-3 px-3 overflow-y-auto">
+      <nav aria-label="Navegación principal" className="flex-1 py-3 px-3 overflow-y-auto">
         <p
           className="px-3 pb-2 text-[0.55rem] font-bold uppercase tracking-[0.18em]"
           style={{ color: 'var(--nav-section-label)' }}
@@ -401,14 +398,6 @@ export default function Sidebar({ mobileOpen, onClose }) {
     borderRight: '1px solid var(--nav-border)',
   }
 
-  const mapTextureStyle = {
-    backgroundImage: `url(${CHOCO_MAP_URL})`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center top',
-    opacity: 'var(--nav-map-opacity)',
-    mixBlendMode: 'var(--nav-map-blend)',
-  }
-
   return (
     <>
       {/* Desktop */}
@@ -416,8 +405,6 @@ export default function Sidebar({ mobileOpen, onClose }) {
         className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[210px] flex-col z-40 overflow-hidden"
         style={sidebarStyle}
       >
-        {/* Mapa del Chocó como textura ultra-sutil */}
-        <div className="absolute inset-0 pointer-events-none" style={mapTextureStyle} />
         {/* Dot grid overlay */}
         <div
           className="absolute inset-0 pointer-events-none"
@@ -460,7 +447,6 @@ export default function Sidebar({ mobileOpen, onClose }) {
               className="fixed top-0 left-0 bottom-0 w-[240px] z-50 flex flex-col overflow-hidden lg:hidden"
               style={sidebarStyle}
             >
-              <div className="absolute inset-0 pointer-events-none" style={mapTextureStyle} />
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
