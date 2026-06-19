@@ -85,6 +85,9 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="category-modal-title"
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/50 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
@@ -104,7 +107,7 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }) {
               <Icon className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-white font-bold text-lg leading-tight">{category.title}</h2>
+              <h2 id="category-modal-title" className="text-white font-bold text-lg leading-tight">{category.title}</h2>
               <p className="text-white/70 text-sm mt-0.5">
                 {category.docs.length} documento{category.docs.length !== 1 ? 's' : ''} en esta categoría
               </p>

@@ -666,7 +666,7 @@ h1, h2, h3, .font-display {
   --shell-bg:              #F2F7F3;
 
   /* ── Sidebar / Navigation ─────────────────────── */
-  --nav-bg:                #FFFFFF;
+  --nav-bg:                #F2F7F3;
   --nav-border:            rgba(26,86,50,0.12);
   --nav-text:              #1A2E22;
   --nav-text-muted:        rgba(26,46,34,0.45);
@@ -766,7 +766,7 @@ h1, h2, h3, .font-display {
   --stats-value:           #1A5632;
 
   /* ── Territory map ─────────────────────────────── */
-  --territory-overlay:     linear-gradient(180deg,rgba(6,15,9,0.92) 0%,rgba(6,15,9,0.72) 30%,rgba(6,15,9,0.55) 60%,rgba(242,247,243,0.96) 100%);
+  --territory-overlay:     linear-gradient(180deg,rgba(6,15,9,0.92) 0%,rgba(6,15,9,0.80) 40%,rgba(6,15,9,0.70) 70%,rgba(6,15,9,0.86) 100%);
   --territory-stat-outer:  rgba(0,152,70,0.15);
   --territory-stat-inner:  rgba(6,15,9,0.55);
   --territory-tag-bg:      rgba(0,152,70,0.18);

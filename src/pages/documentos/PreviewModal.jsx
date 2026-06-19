@@ -19,6 +19,9 @@ export function PreviewModal({ doc, categoryTitle, onClose }) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="preview-modal-title"
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
@@ -34,7 +37,7 @@ export function PreviewModal({ doc, categoryTitle, onClose }) {
             <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded ${s.bg} ${s.text}`}>
               {s.label}
             </span>
-            <span className="text-sm font-semibold text-text truncate max-w-xs">{doc.name}</span>
+            <span id="preview-modal-title" className="text-sm font-semibold text-text truncate max-w-xs">{doc.name}</span>
           </div>
           <button onClick={onClose}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:bg-bg-alt transition-colors shrink-0">

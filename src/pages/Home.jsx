@@ -439,11 +439,12 @@ export default function Home() {
       {isAuthenticated && !user?.isVisitante && (
         <motion.button
           onClick={() => setShowModal(true)}
+          aria-label="Nuevo análisis"
           whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.93 }}
           transition={{ type: 'spring', stiffness: 400, damping: 20 }}
           className="fixed bottom-20 lg:bottom-6 right-6 z-30 flex items-center justify-center rounded-full text-white"
           style={{ width: '3.25rem', height: '3.25rem', background: 'linear-gradient(135deg, #F7AC42, #F08143)', boxShadow: '0 8px 32px rgba(247,172,66,0.45)', color: '#284E39' }}>
-          <Plus className="w-5 h-5" />
+          <Plus className="w-5 h-5" aria-hidden="true" />
         </motion.button>
       )}
 

@@ -8,6 +8,7 @@ export default function MarqueeStrip() {
   const items = [...ITEMS, ...ITEMS]
   return (
     <div
+      aria-hidden="true"
       className="overflow-hidden select-none"
       style={{
         borderTop: '1px solid var(--marquee-border)',

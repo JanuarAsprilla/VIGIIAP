@@ -19,7 +19,7 @@ const resourceLinks = [
 
 export default function Footer() {
   return (
-    <footer className="relative text-white mt-16" style={{ background: '#284E39' }}>
+    <footer className="relative text-white mt-16" style={{ background: '#1A2E22' }}>
       {/* ── Wave separator ── */}
       <div className="absolute -top-15 inset-x-0 h-15 overflow-hidden pointer-events-none">
         <svg
@@ -37,7 +37,7 @@ export default function Footer() {
       <div className="pt-16 pb-8 px-6">
         <div className="max-w-350 mx-auto">
           {/* ── Main grid ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_2fr] gap-12 pb-8 border-b border-white/10">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_2fr] gap-12 pb-8">
             {/* Brand column */}
             <div>
               {/* Logo */}
@@ -70,7 +70,7 @@ export default function Footer() {
                   <a
                     key={label}
                     href={href}
-                    title={label}
+                    aria-label={label}
                     className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-primary-300 hover:text-primary-900 transition-colors"
                   >
                     <Icon className="w-4.5 h-4.5" />

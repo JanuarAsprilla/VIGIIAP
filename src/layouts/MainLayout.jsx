@@ -52,7 +52,13 @@ export default function MainLayout() {
 
   return (
     <div className="relative min-h-screen" style={{ background: 'var(--shell-bg)' }}>
-      <AmbientBackground />
+    <a
+      href="#main-content"
+      className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:bg-primary-800 focus:text-white focus:rounded-lg focus:text-sm focus:font-semibold focus:shadow-lg"
+    >
+      Saltar al contenido principal
+    </a>
+          <AmbientBackground />
 
       {/* Sidebar */}
       <Sidebar
@@ -72,6 +78,7 @@ export default function MainLayout() {
             animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1     }}
             exit={{    opacity: 0, y: -10, rotateX: -1.5, scale: 0.994 }}
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            id="main-content"
             style={{ transformPerspective: 1400, transformOrigin: 'top center' }}
             className={isGeovisor ? 'flex-1' : `flex-1 ${mainPad}`}
           >
