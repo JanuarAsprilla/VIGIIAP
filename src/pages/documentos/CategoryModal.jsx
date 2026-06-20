@@ -63,12 +63,39 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }) {
   const [sortBy, setSortBy] = useState('name-asc')
   const [showSort, setShowSort] = useState(false)
   const sortRef = useRef(null)
+  const modalRef = useRef(null)
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [onClose])
+
+  // Focus trap: keep Tab cycling within the modal while it is open
+  useEffect(() => {
+    const el = modalRef.current
+    if (!el) return
+
+    const focusable = el.querySelectorAll(
+      'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    const first = focusable[0]
+    const last  = focusable[focusable.length - 1]
+
+    first?.focus()
+
+    const handleTab = (e) => {
+      if (e.key !== 'Tab') return
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last?.focus() }
+      } else {
+        if (document.activeElement === last)  { e.preventDefault(); first?.focus() }
+      }
+    }
+
+    el.addEventListener('keydown', handleTab)
+    return () => el.removeEventListener('keydown', handleTab)
+  }, [])
 
   useClickOutside(sortRef, () => setShowSort(false))
 
@@ -92,6 +119,7 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <motion.div
+        ref={modalRef}
         initial={{ opacity: 0, y: 40, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 40, scale: 0.98 }}

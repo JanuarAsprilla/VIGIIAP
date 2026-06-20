@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react'
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import api from '@/lib/api'
 import queryClient from '@/lib/queryClient'
@@ -50,8 +51,9 @@ export function AuthProvider({ children }) {
   // C-01: estado de usuario solo en memoria (no localStorage).
   // La sesión persiste a través de la cookie HttpOnly vigiiap_token;
   // refreshProfile() rehidrata desde /auth/me al montar.
-  const [user, setUser]       = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [user, setUser]               = useState(null)
+  const [loading, setLoading]         = useState(false)
+  const [initializing, setInitializing] = useState(true)
 
   const persistUser = useCallback((normalized) => {
     // C-01: No escribir datos de usuario en localStorage (XSS risk).
@@ -65,6 +67,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('vigiiap_user')
     setUser(null)
     queryClient.clear()
+    Sentry.setUser(null)
   }, [])
 
   // ── Refrescar perfil desde la API ──
@@ -82,8 +85,10 @@ export function AuthProvider({ children }) {
 
   // Rehidrata la sesión al montar usando la cookie HttpOnly vigiiap_token.
   // Si la cookie no existe o expiró, clearSession limpia el estado.
+  // initializing se mantiene true hasta que la promesa resuelva (éxito o error)
+  // para evitar que RequireAuth redirija al login antes de saber si hay sesión.
   useEffect(() => {
-    refreshProfile()
+    refreshProfile().finally(() => setInitializing(false))
   }, [refreshProfile])
 
   // Escucha el evento de logout forzado por el interceptor de axios (401)
@@ -106,6 +111,7 @@ export function AuthProvider({ children }) {
       void token
       const normalized = normalizeUser(raw)
       persistUser(normalized)
+      Sentry.setUser({ id: normalized.id, role: normalized.rol })
       return normalized
     } finally {
       setLoading(false)
@@ -121,6 +127,7 @@ export function AuthProvider({ children }) {
       void token
       const normalized = normalizeUser(raw)
       persistUser(normalized)
+      Sentry.setUser({ id: normalized.id, role: normalized.rol })
       return normalized
     } finally {
       setLoading(false)
@@ -133,7 +140,14 @@ export function AuthProvider({ children }) {
   }, [])
 
   // ── Logout ──
-  const logout = useCallback(() => {
+  // Invalida la cookie HttpOnly en el servidor antes de limpiar el estado local.
+  // Si el request falla (red caída, server error), igual limpia localmente.
+  const logout = useCallback(async () => {
+    try {
+      await api.post('/auth/logout')
+    } catch {
+      // Limpiar localmente aunque el server falle
+    }
     clearSession()
   }, [clearSession])
 
@@ -145,6 +159,7 @@ export function AuthProvider({ children }) {
       isSuperAdmin:     user?.rol === 'super_admin',
       isAdmin:          user?.rol === 'admin_sig' || user?.rol === 'super_admin',
       loading,
+      initializing,
       login,
       loginVisitante,
       logout,

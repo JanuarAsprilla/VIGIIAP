@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { FileText, FileSpreadsheet, Eye, Download, X } from 'lucide-react'
 import { typeStyles } from './documentos.constants'
@@ -10,12 +10,39 @@ export function PreviewModal({ doc, categoryTitle, onClose }) {
   const isPdf    = doc.type === 'pdf'
   const isOffice = doc.type === 'docx' || doc.type === 'doc' || doc.type === 'xlsx' || doc.type === 'xls'
   const OfficeIcon = (doc.type === 'xlsx' || doc.type === 'xls') ? FileSpreadsheet : FileText
+  const modalRef = useRef(null)
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [onClose])
+
+  // Focus trap: keep Tab cycling within the modal while it is open
+  useEffect(() => {
+    const el = modalRef.current
+    if (!el) return
+
+    const focusable = el.querySelectorAll(
+      'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    const first = focusable[0]
+    const last  = focusable[focusable.length - 1]
+
+    first?.focus()
+
+    const handleTab = (e) => {
+      if (e.key !== 'Tab') return
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last?.focus() }
+      } else {
+        if (document.activeElement === last)  { e.preventDefault(); first?.focus() }
+      }
+    }
+
+    el.addEventListener('keydown', handleTab)
+    return () => el.removeEventListener('keydown', handleTab)
+  }, [])
 
   return (
     <div
@@ -26,6 +53,7 @@ export function PreviewModal({ doc, categoryTitle, onClose }) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <motion.div
+        ref={modalRef}
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -39,9 +67,9 @@ export function PreviewModal({ doc, categoryTitle, onClose }) {
             </span>
             <span id="preview-modal-title" className="text-sm font-semibold text-text truncate max-w-xs">{doc.name}</span>
           </div>
-          <button onClick={onClose}
+          <button onClick={onClose} aria-label="Cerrar"
             className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:bg-bg-alt transition-colors shrink-0">
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
 

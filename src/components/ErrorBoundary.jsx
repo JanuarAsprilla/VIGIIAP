@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react'
 import { Component } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
@@ -16,10 +17,14 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    // Solo loguear en desarrollo — en producción conectar a Sentry u otro servicio
     if (import.meta.env.DEV) {
       console.error('[ErrorBoundary]', error, info.componentStack)
     }
+    Sentry.captureException(error, {
+      contexts: {
+        react: { componentStack: info.componentStack },
+      },
+    })
   }
 
   handleReset = () => {

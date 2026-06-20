@@ -30,13 +30,17 @@ const MODOS = [
   },
 ]
 
-function InputField({ label, icon: Icon, error, right, ...props }) {
+function InputField({ id, label, icon: Icon, error, right, ...props }) {
+  const errorId = id ? `error-${id}` : undefined
   return (
     <div>
-      <label className="block text-[0.8rem] font-semibold text-text mb-1.5">{label}</label>
+      <label htmlFor={id} className="block text-[0.8rem] font-semibold text-text mb-1.5">{label}</label>
       <div className="relative">
         <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
         <input
+          id={id}
+          aria-describedby={error && errorId ? errorId : undefined}
+          aria-invalid={error ? true : undefined}
           {...props}
           className={`w-full pl-10 ${right ? 'pr-11' : 'pr-4'} py-3 border rounded-xl text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 transition bg-white ${
             error
@@ -48,7 +52,10 @@ function InputField({ label, icon: Icon, error, right, ...props }) {
       </div>
       <AnimatePresence>
         {error && (
-          <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+          <motion.p
+            id={errorId}
+            role="alert"
+            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             className="text-xs text-red-500 mt-1 flex items-center gap-1">
             <AlertCircle className="w-3 h-3" />{error}
           </motion.p>
@@ -198,6 +205,7 @@ export default function Login() {
             onSubmit={handleSubmit} className="space-y-4" noValidate
           >
             <InputField
+              id="login-email"
               label="Correo Electrónico"
               icon={Mail}
               type="email"
@@ -208,6 +216,7 @@ export default function Login() {
               autoComplete="email"
             />
             <InputField
+              id="login-password"
               label="Contraseña"
               icon={Lock}
               type={showPass ? 'text' : 'password'}
@@ -267,6 +276,7 @@ export default function Login() {
             </div>
 
             <InputField
+              id="login-nombre-visitante"
               label="Tu nombre (opcional)"
               icon={User}
               type="text"
