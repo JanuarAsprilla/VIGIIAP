@@ -4,6 +4,15 @@ services:
     env: static
     buildCommand: npm run build
     staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://vigiiap-backend.onrender.com/api
+      - key: VITE_APP_ENV
+        value: production
+      - key: VITE_R2_PUBLIC_URL
+        sync: false
+      - key: VITE_SENTRY_DSN
+        sync: false
     headers:
       - path: /*
         name: X-Frame-Options
@@ -31,7 +40,7 @@ services:
           style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
           font-src 'self' https://fonts.gstatic.com;
           img-src 'self' data: https: blob:;
-          connect-src 'self';
+          connect-src 'self' https://vigiiap-backend.onrender.com https://*.ingest.sentry.io;
           frame-src 'none';
           object-src 'none';
           base-uri 'self';
