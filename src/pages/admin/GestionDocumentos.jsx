@@ -307,7 +307,7 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }) {
 
 
 export default function GestionDocumentos() {
-  const { data, isLoading } = useDocumentosList({ limit: 200, admin: 'true' })
+  const { data, isLoading, isError, refetch } = useDocumentosList({ limit: 200, admin: 'true' })
   const docs = data?.data ?? []
   const { data: categorias = [] } = useCategoriasList()
   const createDocumento = useCreateDocumento()
@@ -474,8 +474,20 @@ export default function GestionDocumentos() {
         </select>
       </motion.div>
 
+      {/* Error state */}
+      {isError && (
+        <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-red-50 border border-red-200 rounded-2xl">
+          <AlertCircle className="w-10 h-10 text-red-400 mb-3" />
+          <h3 className="text-base font-bold text-red-700 mb-1">Error al cargar los documentos</h3>
+          <p className="text-sm text-red-500 mb-5">No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.</p>
+          <button onClick={() => refetch()} className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-colors">
+            Reintentar
+          </button>
+        </motion.div>
+      )}
+
       {/* Empty state */}
-      {!isLoading && docs.length === 0 && (
+      {!isLoading && !isError && docs.length === 0 && (
         <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-white border border-dashed border-border rounded-2xl">
           <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mb-4">
             <FolderOpen className="w-8 h-8 text-primary-400" />
