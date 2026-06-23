@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ShieldCheck, UserPlus, Users, Activity, RefreshCw, X, Eye, EyeOff } from 'lucide-react'
+import { ShieldCheck, UserPlus, Users, Activity, RefreshCw, X, Eye, EyeOff, ChevronLeft, Globe } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { staggerContainer, staggerItem3D, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
@@ -233,6 +234,21 @@ export default function GestionAdmins() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
+
+      {/* Navegación rápida */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <Link to="/admin"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-text-muted hover:text-primary-800 transition-colors no-underline">
+          <ChevronLeft className="w-3.5 h-3.5" />
+          Panel de administración
+        </Link>
+        <span className="text-text-muted/40 text-xs">·</span>
+        <Link to="/"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-text-muted hover:text-primary-800 transition-colors no-underline">
+          <Globe className="w-3.5 h-3.5" />
+          Volver al sitio
+        </Link>
+      </div>
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
