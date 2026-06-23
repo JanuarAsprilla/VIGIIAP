@@ -71,7 +71,7 @@ export default function MainLayout() {
         <TopBar onMenuToggle={() => setMobileMenuOpen(true)} />
 
         {/* Page transition wrapper — 3D perspective flip */}
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="sync" initial={false}>
           <motion.main
             key={location.pathname}
             initial={{ opacity: 0, y: 22, rotateX: 3, scale: 0.992 }}

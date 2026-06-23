@@ -41,14 +41,16 @@ export default function GestionSolicitudes() {
   const responderMutation = useResponderSolicitud()
   const deleteArchivo     = useDeleteSolicitudArchivo()
   const downloadArchivo   = useDownloadSolicitudArchivo()
-  const archivosQuery     = useSolicitudArchivos(selected?._id)
-  const archivos          = archivosQuery.data ?? []
   const { toasts, toast, dismiss } = useToast()
 
   const [search, setSearch] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
   const [filtroTipo, setFiltroTipo] = useState('')
   const [selected, setSelected] = useState(null)
+
+  // selected debe declararse ANTES de este hook (usa selected?._id)
+  const archivosQuery = useSolicitudArchivos(selected?._id)
+  const archivos      = archivosQuery.data?.data ?? archivosQuery.data ?? []
   const [accionModal, setAccionModal] = useState(null)
   const [nota, setNota] = useState('')
   const [respuesta, setRespuesta] = useState('')
