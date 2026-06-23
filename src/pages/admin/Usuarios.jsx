@@ -266,7 +266,7 @@ export default function Usuarios() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [detailUser, setDetailUser] = useState(null)
   const [form, setForm] = useState({ rol: 'Público' })
-  const [formErrors, setFormErrors] = useState({})
+  const [_formErrors, setFormErrors] = useState({})
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase()

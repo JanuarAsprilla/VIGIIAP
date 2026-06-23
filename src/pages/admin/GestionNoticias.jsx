@@ -199,7 +199,7 @@ function UploadProgress({ progress }) {
 }
 
 // ── Thumbnail Dropzone ────────────────────────────────────────────────────────
-function ThumbnailDropzone({ file, previewUrl, onChange, onRemove, onError }) {
+function ThumbnailDropzone({ previewUrl, onChange, onRemove, onError }) {
   const inputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
 

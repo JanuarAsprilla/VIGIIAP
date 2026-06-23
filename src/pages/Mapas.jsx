@@ -13,7 +13,7 @@ import { useMapasList } from '@/hooks/useMapas'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { useToast, ToastContainer } from '@/components/Toast'
-import { staggerContainer, staggerItem3D, cardEnter3D } from '@/lib/animations'
+import { cardEnter3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 
 const fadeUp = (delay = 0) => ({
@@ -155,7 +155,7 @@ const CATEGORY_COLORS = {
   'Riesgo':           { pill: 'bg-red-100 text-red-600',      accent: '#ef4444' },
 }
 
-function MapCard({ map, index, onPreview }) {
+function MapCard({ map, index }) {
   const colors = CATEGORY_COLORS[map.category] ?? { pill: 'bg-primary-100 text-primary-700', accent: '#1B4332' }
   const hasPdf     = map.formats.includes('PDF')
   const hasImg     = map.formats.includes('IMG')
@@ -280,7 +280,7 @@ function FilterChip({ label, onRemove }) {
 
 export default function Mapas() {
   const { query }    = useSearch()
-  const { toasts, toast, dismiss } = useToast()
+  const { toasts, dismiss } = useToast()
   const [filters, setFilters] = useState({ category: '', format: '', year: '' })
   const [page, setPage]       = useState(1)
   const [previewMap, setPreviewMap]       = useState(null)

@@ -4,7 +4,7 @@ import {
   Plus, Trash2, Upload, X, CheckCircle,
   AlertCircle, Loader2, Tag, ImageOff, FolderOpen,
 } from 'lucide-react'
-import { fadeUpSm, panelAnim, staggerContainer, staggerItem3D } from '@/lib/animations'
+import { fadeUpSm, panelAnim, staggerContainer } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import {
   useCategoriasList,

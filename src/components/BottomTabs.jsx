@@ -58,7 +58,7 @@ export default function BottomTabs() {
                 : { color: 'var(--tabs-text)' }
               }
             >
-              {({ isActive }) => (
+              {() => (
                 <>
                   <tab.icon className="w-5 h-5" aria-hidden="true" />
                   <span className="text-[0.6rem] font-bold uppercase tracking-wider">

@@ -156,6 +156,7 @@ export default function CommandPalette() {
     if (!listRef.current) return
     const el = listRef.current.querySelector(`[id="${itemId(activeIndex)}"]`)
     el?.scrollIntoView({ block: 'nearest' })
+  // itemId is a stable pure function (no closure), omitting it from deps is safe.
   }, [activeIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelect = useCallback((to) => {
@@ -275,7 +276,6 @@ export default function CommandPalette() {
                 className="py-2"
               >
                 {Array.from(groups.entries()).map(([groupName, items]) => {
-                  const groupStartIndex = flatResults.indexOf(items[0])
                   return (
                     <li key={groupName} role="presentation">
                       <p className="px-4 py-1.5 text-[0.6rem] font-bold uppercase tracking-widest text-text-muted select-none">
