@@ -143,3 +143,45 @@ export function useResponderSolicitud() {
     onSuccess: () => qc.invalidateQueries({ queryKey: SOL_KEYS.all }),
   })
 }
+
+export function useSolicitudArchivos(solicitudId) {
+  return useQuery({
+    queryKey: [...SOL_KEYS.all, solicitudId, 'archivos'],
+    queryFn:  () => api.get(`/solicitudes/${solicitudId}/archivos`),
+    enabled:  !!solicitudId,
+  })
+}
+
+export function useUploadSolicitudArchivo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ solicitudId, file }) => {
+      const fd = new FormData()
+      fd.append('archivo', file)
+      return api.post(`/solicitudes/${solicitudId}/archivos`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    },
+    onSuccess: (_data, { solicitudId }) => {
+      qc.invalidateQueries({ queryKey: [...SOL_KEYS.all, solicitudId, 'archivos'] })
+    },
+  })
+}
+
+export function useDeleteSolicitudArchivo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ solicitudId, archivoId }) =>
+      api.delete(`/solicitudes/${solicitudId}/archivos/${archivoId}`),
+    onSuccess: (_data, { solicitudId }) => {
+      qc.invalidateQueries({ queryKey: [...SOL_KEYS.all, solicitudId, 'archivos'] })
+    },
+  })
+}
+
+export function useDownloadSolicitudArchivo() {
+  return useMutation({
+    mutationFn: ({ solicitudId, archivoId }) =>
+      api.get(`/solicitudes/${solicitudId}/archivos/${archivoId}/download`),
+  })
+}
