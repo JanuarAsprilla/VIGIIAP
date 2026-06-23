@@ -10,7 +10,8 @@ import {
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, drawerAnim, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
-import { useSolicitudesAdmin, useUpdateEstadoSolicitud, useResponderSolicitud } from '@/hooks/useSolicitudes'
+import { useSolicitudesAdmin, useUpdateEstadoSolicitud, useResponderSolicitud,
+         useSolicitudArchivos, useDeleteSolicitudArchivo, useDownloadSolicitudArchivo } from '@/hooks/useSolicitudes'
 import { useToast, ToastContainer } from '@/components/Toast'
 
 const fadeUp = fadeUpSm
@@ -36,8 +37,12 @@ function SectionLabel({ children }) {
 export default function GestionSolicitudes() {
   const { data } = useSolicitudesAdmin({ limit: 200 })
   const solicitudes = data?.data ?? []
-  const updateEstado = useUpdateEstadoSolicitud()
+  const updateEstado      = useUpdateEstadoSolicitud()
   const responderMutation = useResponderSolicitud()
+  const deleteArchivo     = useDeleteSolicitudArchivo()
+  const downloadArchivo   = useDownloadSolicitudArchivo()
+  const archivosQuery     = useSolicitudArchivos(selected?._id)
+  const archivos          = archivosQuery.data ?? []
   const { toasts, toast, dismiss } = useToast()
 
   const [search, setSearch] = useState('')
@@ -110,6 +115,26 @@ export default function GestionSolicitudes() {
       toast(`Respuesta enviada — solicitud ${selected.id} marcada como resuelta`, 'success')
     } catch {
       toast('Error al enviar la respuesta', 'error')
+    }
+  }
+
+  const handleDownloadArchivo = async (archivo) => {
+    try {
+      const result = await downloadArchivo.mutateAsync({
+        solicitudId: selected._id, archivoId: archivo.id,
+      })
+      window.open(result.url, '_blank', 'noopener,noreferrer')
+    } catch {
+      toast('No se pudo generar el enlace de descarga', 'error')
+    }
+  }
+
+  const handleDeleteArchivo = async (archivo) => {
+    try {
+      await deleteArchivo.mutateAsync({ solicitudId: selected._id, archivoId: archivo.id })
+      toast(`Archivo "${archivo.nombre}" eliminado`, 'success')
+    } catch {
+      toast('Error al eliminar el archivo', 'error')
     }
   }
 
@@ -464,7 +489,43 @@ export default function GestionSolicitudes() {
                   </div>
                 )}
 
-                {/* 6 — Comunicación / Enviar respuesta (solo si puede resolverse) */}
+                {/* 6 — Archivos adjuntos del solicitante */}
+                <div className="px-6 py-4">
+                  <SectionLabel>Documentos adjuntos</SectionLabel>
+                  {archivosQuery.isLoading && (
+                    <div className="flex items-center gap-2 text-xs text-text-muted py-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Cargando…
+                    </div>
+                  )}
+                  {!archivosQuery.isLoading && archivos.length === 0 && (
+                    <p className="text-xs text-text-muted py-1">Sin documentos adjuntos</p>
+                  )}
+                  {archivos.length > 0 && (
+                    <ul className="space-y-2">
+                      {archivos.map((a) => (
+                        <li key={a.id} className="flex items-center gap-2 bg-bg-alt border border-border rounded-lg px-3 py-2">
+                          <Download className="w-3.5 h-3.5 text-primary-600 shrink-0" />
+                          <span className="text-xs text-text truncate flex-1">{a.nombre}</span>
+                          <span className="text-xs text-text-muted shrink-0">
+                            {a.tamano_bytes ? `${(a.tamano_bytes / 1024).toFixed(0)} KB` : ''}
+                          </span>
+                          <button onClick={() => handleDownloadArchivo(a)}
+                            disabled={downloadArchivo.isPending}
+                            className="text-xs text-primary-700 hover:text-primary-900 font-medium ml-1 transition-colors disabled:opacity-50">
+                            Descargar
+                          </button>
+                          <button onClick={() => handleDeleteArchivo(a)}
+                            disabled={deleteArchivo.isPending}
+                            className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors disabled:opacity-50">
+                            Eliminar
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {/* 7 — Comunicación / Enviar respuesta (solo si puede resolverse) */}
                 {canDo(selected, 'Resuelta') && (
                   <div className="px-6 py-4 space-y-3">
                     <SectionLabel>Comunicación con el solicitante</SectionLabel>

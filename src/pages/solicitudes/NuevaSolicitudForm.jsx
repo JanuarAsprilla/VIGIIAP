@@ -1,17 +1,35 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, User, Mail, CheckCircle, AlertCircle } from 'lucide-react'
+import { Send, User, Mail, CheckCircle, AlertCircle, Paperclip, X, FileText, Image } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useCreateSolicitud } from '@/hooks/useSolicitudes'
+import { useCreateSolicitud, useUploadSolicitudArchivo } from '@/hooks/useSolicitudes'
 import { TRAMITE_TYPES } from '@/lib/constants'
 import { fadeUp } from '@/lib/animations'
 
-const MAX_DESC = 1000
+const MAX_DESC      = 1000
+const MAX_ARCHIVOS  = 5
+const MAX_MB        = 10
+const ACCEPT_TYPES  = '.pdf,.jpg,.jpeg,.png,.webp'
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function fileIcon(mime) {
+  return mime === 'application/pdf'
+    ? <FileText className="w-4 h-4 text-red-500 shrink-0" />
+    : <Image className="w-4 h-4 text-blue-500 shrink-0" />
+}
 
 export function NuevaSolicitudForm({ formRef }) {
   const { user, isAuthenticated } = useAuth()
-  const [showSuccess, setShowSuccess] = useState(false)
+  const [showSuccess, setShowSuccess]     = useState(false)
   const [submittedCorreo, setSubmittedCorreo] = useState('')
+  const [archivos, setArchivos]           = useState([])
+  const [archivoError, setArchivoError]   = useState('')
+  const fileInputRef                      = useRef(null)
   const [form, setForm] = useState({
     nombre:      isAuthenticated ? user?.name : '',
     correo:      isAuthenticated ? user?.email : '',
@@ -20,7 +38,32 @@ export function NuevaSolicitudForm({ formRef }) {
   })
   const [errors, setErrors]           = useState({})
   const [serverError, setServerError] = useState('')
-  const createSolicitud = useCreateSolicitud()
+  const createSolicitud   = useCreateSolicitud()
+  const uploadArchivo     = useUploadSolicitudArchivo()
+
+  const handleFileChange = (e) => {
+    setArchivoError('')
+    const selected = Array.from(e.target.files ?? [])
+    if (!selected.length) return
+
+    const combined = [...archivos, ...selected]
+    if (combined.length > MAX_ARCHIVOS) {
+      setArchivoError(`Máximo ${MAX_ARCHIVOS} archivos`)
+      e.target.value = ''
+      return
+    }
+    const oversized = selected.find((f) => f.size > MAX_MB * 1024 * 1024)
+    if (oversized) {
+      setArchivoError(`"${oversized.name}" supera los ${MAX_MB} MB`)
+      e.target.value = ''
+      return
+    }
+    setArchivos(combined)
+    e.target.value = ''
+  }
+
+  const removeArchivo = (idx) =>
+    setArchivos((prev) => prev.filter((_, i) => i !== idx))
 
   const set = (key, val) => {
     setForm((prev) => ({ ...prev, [key]: val }))
@@ -46,10 +89,16 @@ export function NuevaSolicitudForm({ formRef }) {
     if (Object.keys(e2).length) { setErrors(e2); return }
 
     try {
-      await createSolicitud.mutateAsync({
+      const solicitud = await createSolicitud.mutateAsync({
         tipo:        form.tipo,
         descripcion: form.descripcion.trim(),
       })
+      // Subir archivos adjuntos si hay, de forma secuencial
+      if (archivos.length && solicitud?.id) {
+        for (const file of archivos) {
+          await uploadArchivo.mutateAsync({ solicitudId: solicitud.id, file }).catch(() => {})
+        }
+      }
       setSubmittedCorreo(form.correo)
       setForm({
         nombre:      isAuthenticated ? user?.name : '',
@@ -57,11 +106,17 @@ export function NuevaSolicitudForm({ formRef }) {
         tipo:        '',
         descripcion: '',
       })
+      setArchivos([])
       setErrors({})
       setServerError('')
+      setArchivoError('')
       setShowSuccess(true)
     } catch (err) {
-      setServerError(err.message ?? 'No se pudo enviar la solicitud. Intente de nuevo.')
+      if (err?.response?.status === 429) {
+        setServerError('Has alcanzado el límite de solicitudes por día. Intenta mañana.')
+      } else {
+        setServerError(err.message ?? 'No se pudo enviar la solicitud. Intente de nuevo.')
+      }
     }
   }
 
@@ -96,8 +151,8 @@ export function NuevaSolicitudForm({ formRef }) {
                 <p className="text-sm text-text-muted leading-relaxed mb-2">
                   Le notificaremos a <strong className="text-text">{submittedCorreo}</strong> cuando haya novedades.
                 </p>
-                <p className="text-xs text-text-muted bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-5">
-                  Si necesita adjuntar documentos, por favor envíelos por correo referenciando su número de solicitud.
+                <p className="text-xs text-text-muted leading-relaxed mb-5">
+                  Recibirá un correo de confirmación. Puede adjuntar documentos adicionales desde «Mis Solicitudes» en cualquier momento.
                 </p>
                 <button onClick={() => setShowSuccess(false)}
                   className="w-full py-3 bg-primary-800 text-white rounded-xl text-sm font-bold hover:bg-primary-700 transition-colors">
@@ -188,10 +243,53 @@ export function NuevaSolicitudForm({ formRef }) {
           </div>
         </div>
 
-        <button type="submit" disabled={createSolicitud.isPending}
+        {/* Archivos adjuntos (opcional) */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">
+              Documentos adjuntos <span className="text-text-muted font-normal">(opcional, máx. {MAX_ARCHIVOS})</span>
+            </label>
+            {archivos.length < MAX_ARCHIVOS && (
+              <button type="button" onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-1 text-xs text-primary-700 hover:text-primary-900 font-medium transition-colors">
+                <Paperclip className="w-3.5 h-3.5" />
+                Adjuntar
+              </button>
+            )}
+          </div>
+          <input ref={fileInputRef} type="file" accept={ACCEPT_TYPES} multiple className="hidden"
+            onChange={handleFileChange} />
+
+          {archivos.length > 0 && (
+            <ul className="space-y-1.5 mb-2">
+              {archivos.map((f, i) => (
+                <li key={i} className="flex items-center gap-2 bg-bg-alt border border-border rounded-lg px-3 py-2">
+                  {fileIcon(f.type)}
+                  <span className="text-xs text-text truncate flex-1">{f.name}</span>
+                  <span className="text-xs text-text-muted shrink-0">{formatBytes(f.size)}</span>
+                  <button type="button" onClick={() => removeArchivo(i)}
+                    className="text-text-muted hover:text-red-500 transition-colors ml-1" aria-label="Quitar archivo">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {archivos.length === 0 && (
+            <button type="button" onClick={() => fileInputRef.current?.click()}
+              className="w-full flex items-center justify-center gap-2 border border-dashed border-border rounded-lg py-3 text-xs text-text-muted hover:border-primary-700 hover:text-primary-700 transition-colors">
+              <Paperclip className="w-4 h-4" />
+              PDF, JPEG, PNG o WebP — máx. {MAX_MB} MB por archivo
+            </button>
+          )}
+          {archivoError && <p className="text-xs text-red-500 mt-1" role="alert">{archivoError}</p>}
+        </div>
+
+        <button type="submit" disabled={createSolicitud.isPending || uploadArchivo.isPending}
           className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-800 text-white rounded-lg text-sm font-bold hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
-          {createSolicitud.isPending
-            ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
+          {createSolicitud.isPending || uploadArchivo.isPending
+            ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
+                {uploadArchivo.isPending ? 'Subiendo archivos…' : 'Enviando…'}</>
             : <><Send className="w-4 h-4" aria-hidden="true" />Enviar Solicitud</>
           }
         </button>
