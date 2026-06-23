@@ -23,7 +23,7 @@ const ESTADO_BADGE = {
   'Resuelta':    'bg-teal-100 text-teal-700',
 }
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 10
 
 function SectionLabel({ children }) {
   return (
@@ -128,8 +128,9 @@ export default function GestionSolicitudes() {
     a.click()
   }
 
-  const isResolved = (s) => s?.estado === 'Resuelta' || s?.estado === 'Aprobado' || s?.estado === 'Rechazado'
-  const canAct = (s) => s?.estado === 'Pendiente' || s?.estado === 'En Revisión'
+  const isResolved = (s) => !s?.accionesValidas?.length
+  const canAct     = (s) => !!s?.accionesValidas?.length
+  const canDo      = (s, accion) => s?.accionesValidas?.includes(accion) ?? false
 
   return (
     <div className="space-y-6">
@@ -198,7 +199,7 @@ export default function GestionSolicitudes() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-bg-alt/50">
-                {['ID', 'Tipo', 'Solicitante', 'Fecha', 'Estado', 'Acciones'].map((h) => (
+                {['ID', 'Tipo', 'Solicitante', 'Antigüedad', 'Estado', 'Acciones'].map((h) => (
                   <th key={h} className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted px-5 py-3">{h}</th>
                 ))}
               </tr>
@@ -218,7 +219,20 @@ export default function GestionSolicitudes() {
                     <p className="text-sm text-text">{s.solicitante}</p>
                     <p className="text-[0.65rem] text-text-muted">{s.email}</p>
                   </td>
-                  <td className="px-5 py-3.5 text-sm text-text-muted">{s.fecha}</td>
+                  <td className="px-5 py-3.5">
+                    <span className={`text-xs font-semibold ${
+                      s.diasPendiente >= 7 && canAct(s)
+                        ? 'text-red-600'
+                        : s.diasPendiente >= 3 && canAct(s)
+                        ? 'text-orange-500'
+                        : 'text-text-muted'
+                    }`}>
+                      {s.diasPendiente === 0 ? 'Hoy' : `${s.diasPendiente}d`}
+                    </span>
+                    {s.diasPendiente >= 7 && canAct(s) && (
+                      <span className="ml-1 text-[0.55rem] font-bold text-red-500 uppercase">urgente</span>
+                    )}
+                  </td>
                   <td className="px-5 py-3.5">
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ESTADO_BADGE[s.estado] ?? 'bg-gray-100 text-gray-600'}`}>
                       {s.estado}
@@ -233,35 +247,35 @@ export default function GestionSolicitudes() {
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
-                      {canAct(s) && (
-                        <>
-                          {s.estado === 'Pendiente' && (
-                            <button
-                              onClick={() => handleMarcarRevision(s)}
-                              disabled={updateEstado.isPending}
-                              className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 disabled:opacity-50 transition-colors"
-                              title="Marcar en revisión"
-                            >
-                              {updateEstado.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
-                            </button>
-                          )}
-                          <button
-                            onClick={() => { setAccionModal({ type: 'approve', sol: s }); setNota('') }}
-                            disabled={updateEstado.isPending}
-                            className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors"
-                            title="Aprobar"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => { setAccionModal({ type: 'reject', sol: s }); setNota('') }}
-                            disabled={updateEstado.isPending}
-                            className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
-                            title="Rechazar"
-                          >
-                            <XCircle className="w-3.5 h-3.5" />
-                          </button>
-                        </>
+                      {canDo(s, 'En Revisión') && (
+                        <button
+                          onClick={() => handleMarcarRevision(s)}
+                          disabled={updateEstado.isPending}
+                          className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 disabled:opacity-50 transition-colors"
+                          title="Marcar en revisión"
+                        >
+                          {updateEstado.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+                        </button>
+                      )}
+                      {canDo(s, 'Aprobado') && (
+                        <button
+                          onClick={() => { setAccionModal({ type: 'approve', sol: s }); setNota('') }}
+                          disabled={updateEstado.isPending}
+                          className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors"
+                          title="Aprobar"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {canDo(s, 'Rechazado') && (
+                        <button
+                          onClick={() => { setAccionModal({ type: 'reject', sol: s }); setNota('') }}
+                          disabled={updateEstado.isPending}
+                          className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                          title="Rechazar"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                        </button>
                       )}
                     </div>
                   </td>
@@ -353,6 +367,20 @@ export default function GestionSolicitudes() {
                       <p className="text-sm text-text">{selected.fecha}</p>
                     </div>
                     <div>
+                      <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-0.5">Antigüedad</p>
+                      <p className={`text-sm font-semibold ${
+                        selected.diasPendiente >= 7 && canAct(selected) ? 'text-red-600'
+                        : selected.diasPendiente >= 3 && canAct(selected) ? 'text-orange-500'
+                        : 'text-text'
+                      }`}>
+                        {selected.diasPendiente === 0 ? 'Hoy' : `${selected.diasPendiente} día${selected.diasPendiente !== 1 ? 's' : ''}`}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-0.5">Revisado por</p>
+                      <p className="text-sm text-text">{selected.revisor ?? <span className="text-text-muted italic">Sin asignar</span>}</p>
+                    </div>
+                    <div>
                       <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-0.5">ID único</p>
                       <p className="text-sm font-mono text-primary-800">{selected.id}</p>
                     </div>
@@ -436,12 +464,10 @@ export default function GestionSolicitudes() {
                   </div>
                 )}
 
-                {/* 6 — Comunicación / Enviar respuesta (solo si está activa) */}
-                {canAct(selected) && (
+                {/* 6 — Comunicación / Enviar respuesta (solo si puede resolverse) */}
+                {canDo(selected, 'Resuelta') && (
                   <div className="px-6 py-4 space-y-3">
                     <SectionLabel>Comunicación con el solicitante</SectionLabel>
-
-                    {/* Enviar respuesta formal */}
                     <div className="bg-primary-50 border border-primary-100 rounded-xl p-4 space-y-3">
                       <div className="flex items-center gap-2">
                         <MessageSquare className="w-4 h-4 text-primary-700" />
@@ -455,49 +481,60 @@ export default function GestionSolicitudes() {
                         rows={4}
                         value={respuesta}
                         onChange={(e) => setRespuesta(e.target.value)}
-                        placeholder="Redacta la respuesta oficial para el solicitante. Incluye los resultados del trámite, observaciones técnicas o instrucciones para recibir los documentos..."
+                        placeholder="Redacta la respuesta oficial. Incluye resultados del trámite, observaciones técnicas o instrucciones..."
                         className="w-full px-3 py-2.5 border border-primary-200 bg-white rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
                       />
-                      <button
-                        onClick={handleResponder}
-                        disabled={responderMutation.isPending || respuesta.trim().length < 10}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-xs font-bold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {responderMutation.isPending
-                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          : <Send className="w-3.5 h-3.5" />
-                        }
-                        Enviar respuesta al solicitante
-                      </button>
+                      <div className="flex items-center justify-between">
+                        <p className={`text-xs ${respuesta.trim().length < 10 ? 'text-text-muted' : 'text-primary-700'}`}>
+                          {respuesta.trim().length} / 2000 caracteres
+                        </p>
+                        <button
+                          onClick={handleResponder}
+                          disabled={responderMutation.isPending || respuesta.trim().length < 10}
+                          className="flex items-center gap-2 px-4 py-2 bg-primary-800 text-white rounded-lg text-xs font-bold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {responderMutation.isPending
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            : <Send className="w-3.5 h-3.5" />
+                          }
+                          Enviar y resolver
+                        </button>
+                      </div>
                     </div>
+                  </div>
+                )}
 
-                    {/* Acciones de estado */}
-                    <div className="space-y-2">
-                      <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">Acciones de estado</p>
-                      <div className="flex gap-2">
-                        {selected.estado === 'Pendiente' && (
-                          <button
-                            onClick={() => handleMarcarRevision(selected)}
-                            disabled={updateEstado.isPending}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 disabled:opacity-60 transition-colors"
-                          >
-                            {updateEstado.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
-                            En revisión
-                          </button>
-                        )}
+                {/* 7 — Acciones de estado (transiciones válidas) */}
+                {canAct(selected) && (
+                  <div className="px-6 py-4 space-y-2">
+                    <SectionLabel>Cambiar estado</SectionLabel>
+                    <div className="flex flex-wrap gap-2">
+                      {canDo(selected, 'En Revisión') && (
+                        <button
+                          onClick={() => handleMarcarRevision(selected)}
+                          disabled={updateEstado.isPending}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                        >
+                          {updateEstado.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
+                          En revisión
+                        </button>
+                      )}
+                      {canDo(selected, 'Aprobado') && (
                         <button
                           onClick={() => { setAccionModal({ type: 'approve', sol: selected }) }}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 transition-colors"
                         >
                           <CheckCircle className="w-3.5 h-3.5" /> Aprobar
                         </button>
+                      )}
+                      {canDo(selected, 'Rechazado') && (
                         <button
                           onClick={() => { setAccionModal({ type: 'reject', sol: selected }) }}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors"
                         >
                           <XCircle className="w-3.5 h-3.5" /> Rechazar
                         </button>
-                      </div>
+                      )}
                     </div>
                   </div>
                 )}

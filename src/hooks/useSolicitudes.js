@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
 
-// ─── Mapeo de tipos backend → etiqueta legible ────────────────────────────────
 const TIPO_LABEL = {
   'uso-suelo':         'Certificado de Uso de Suelo',
   'linderos':          'Consulta de Linderos',
@@ -12,7 +11,6 @@ const TIPO_LABEL = {
   'otro':              'Otro',
 }
 
-// ─── Mapeo de estados backend → UI ────────────────────────────────────────────
 const ESTADO_LABEL = {
   pendiente:   'Pendiente',
   en_revision: 'En Revisión',
@@ -27,12 +25,21 @@ const ESTADO_COLOR = {
   'Rechazado':   'red',
   'Resuelta':    'teal',
 }
-const ESTADO_API = {
+export const ESTADO_API = {
   'Pendiente':   'pendiente',
   'En Revisión': 'en_revision',
   'Aprobado':    'aprobada',
   'Rechazado':   'rechazada',
   'Resuelta':    'resuelta',
+}
+
+// Transiciones válidas por estado — espejo de la máquina del backend
+export const TRANSICIONES_VALIDAS = {
+  pendiente:   ['En Revisión', 'Aprobado', 'Rechazado'],
+  en_revision: ['Pendiente', 'Aprobado', 'Rechazado', 'Resuelta'],
+  aprobada:    ['Resuelta', 'En Revisión'],
+  rechazada:   ['En Revisión', 'Aprobado'],
+  resuelta:    [], // estado final
 }
 
 function buildTimeline(estadoRaw) {
@@ -46,33 +53,37 @@ function buildTimeline(estadoRaw) {
 function normalizeSolicitud(s) {
   const estadoLabel = ESTADO_LABEL[s.estado] ?? 'En Proceso'
   return {
-    id:           `#${s.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`,
-    _id:          s.id,
-    tipo:         TIPO_LABEL[s.tipo] ?? s.tipo,
-    tipoRaw:      s.tipo,
-    subtipo:      s.descripcion?.slice(0, 60) ?? '',
-    descripcion:  s.descripcion ?? '',
-    fecha:        formatDate(s.creado_en),
-    creadoEn:     s.creado_en,
-    estado:       estadoLabel,
-    estadoColor:  ESTADO_COLOR[estadoLabel] ?? 'yellow',
-    solicitante:  s.solicitante ?? '',
-    email:        s.email ?? '',
-    notas:        s.nota_admin ?? '',
-    respondidaEn: s.respondida_en ?? null,
-    timeline:     buildTimeline(s.estado),
-    revisor:      'Sin asignar',
+    id:             `#${s.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`,
+    _id:            s.id,
+    tipo:           TIPO_LABEL[s.tipo] ?? s.tipo,
+    tipoRaw:        s.tipo,
+    subtipo:        s.descripcion?.slice(0, 60) ?? '',
+    descripcion:    s.descripcion ?? '',
+    fecha:          formatDate(s.creado_en),
+    creadoEn:       s.creado_en,
+    estado:         estadoLabel,
+    estadoRaw:      s.estado,
+    estadoColor:    ESTADO_COLOR[estadoLabel] ?? 'yellow',
+    solicitante:    s.solicitante ?? '',
+    email:          s.email ?? '',
+    notas:          s.nota_admin ?? '',
+    respondidaEn:   s.respondida_en ?? null,
+    timeline:       buildTimeline(s.estado),
+    revisor:        s.revisado_por_nombre ?? null,
+    diasPendiente:  s.dias_pendiente ?? Math.floor(
+      (Date.now() - new Date(s.creado_en).getTime()) / 86_400_000
+    ),
+    accionesValidas: TRANSICIONES_VALIDAS[s.estado] ?? [],
   }
 }
 
-// ─── Keys ─────────────────────────────────────────────────────────────────────
 export const SOL_KEYS = {
-  all:  ['solicitudes'],
-  list: (params) => ['solicitudes', 'list', params],
-  mine: (params) => ['solicitudes', 'mine', params],
+  all:    ['solicitudes'],
+  list:   (params) => ['solicitudes', 'list', params],
+  mine:   (params) => ['solicitudes', 'mine', params],
+  detail: (id)     => ['solicitudes', 'detail', id],
 }
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
 export function useSolicitudesAdmin(params = {}) {
   return useQuery({
     queryKey: SOL_KEYS.list(params),
@@ -95,7 +106,15 @@ export function useMisSolicitudes(params = {}) {
   })
 }
 
-// ─── Mutations ────────────────────────────────────────────────────────────────
+export function useSolicitudById(id) {
+  return useQuery({
+    queryKey: SOL_KEYS.detail(id),
+    queryFn:  () => api.get(`/solicitudes/${id}`),
+    enabled:  !!id,
+    select:   (res) => normalizeSolicitud(res),
+  })
+}
+
 export function useCreateSolicitud() {
   const qc = useQueryClient()
   return useMutation({
@@ -124,5 +143,3 @@ export function useResponderSolicitud() {
     onSuccess: () => qc.invalidateQueries({ queryKey: SOL_KEYS.all }),
   })
 }
-
-export { ESTADO_API }

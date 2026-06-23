@@ -1,25 +1,25 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, User, Mail, UploadCloud, FileText, X, CheckCircle, AlertCircle } from 'lucide-react'
+import { Send, User, Mail, CheckCircle, AlertCircle } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCreateSolicitud } from '@/hooks/useSolicitudes'
 import { TRAMITE_TYPES } from '@/lib/constants'
 import { fadeUp } from '@/lib/animations'
+
+const MAX_DESC = 1000
 
 export function NuevaSolicitudForm({ formRef }) {
   const { user, isAuthenticated } = useAuth()
   const [showSuccess, setShowSuccess] = useState(false)
   const [submittedCorreo, setSubmittedCorreo] = useState('')
   const [form, setForm] = useState({
-    nombre:     isAuthenticated ? user?.name : '',
-    correo:     isAuthenticated ? user?.email : '',
-    tipo:       '',
+    nombre:      isAuthenticated ? user?.name : '',
+    correo:      isAuthenticated ? user?.email : '',
+    tipo:        '',
     descripcion: '',
   })
-  const [archivo, setArchivo] = useState(null)
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors]           = useState({})
   const [serverError, setServerError] = useState('')
-  const fileInputRef = useRef(null)
   const createSolicitud = useCreateSolicitud()
 
   const set = (key, val) => {
@@ -33,9 +33,10 @@ export function NuevaSolicitudForm({ formRef }) {
     if (!form.nombre.trim()) e.nombre = 'Requerido'
     if (!form.correo.trim()) e.correo = 'Requerido'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) e.correo = 'Correo no válido'
-    if (!form.tipo) e.tipo = 'Seleccione un tipo'
+    if (!form.tipo) e.tipo = 'Seleccione un tipo de trámite'
     if (!form.descripcion.trim()) e.descripcion = 'Requerido'
     else if (form.descripcion.trim().length < 20) e.descripcion = 'Mínimo 20 caracteres'
+    else if (form.descripcion.trim().length > MAX_DESC) e.descripcion = `Máximo ${MAX_DESC} caracteres`
     return e
   }
 
@@ -51,12 +52,11 @@ export function NuevaSolicitudForm({ formRef }) {
       })
       setSubmittedCorreo(form.correo)
       setForm({
-        nombre:     isAuthenticated ? user?.name : '',
-        correo:     isAuthenticated ? user?.email : '',
-        tipo:       '',
+        nombre:      isAuthenticated ? user?.name : '',
+        correo:      isAuthenticated ? user?.email : '',
+        tipo:        '',
         descripcion: '',
       })
-      setArchivo(null)
       setErrors({})
       setServerError('')
       setShowSuccess(true)
@@ -93,8 +93,11 @@ export function NuevaSolicitudForm({ formRef }) {
                 </motion.div>
                 <h3 className="font-display text-xl font-bold text-text mb-2">¡Solicitud enviada!</h3>
                 <p className="text-sm text-text-muted leading-relaxed mb-1">Su solicitud fue recibida correctamente.</p>
-                <p className="text-sm text-text-muted leading-relaxed mb-6">
+                <p className="text-sm text-text-muted leading-relaxed mb-2">
                   Le notificaremos a <strong className="text-text">{submittedCorreo}</strong> cuando haya novedades.
+                </p>
+                <p className="text-xs text-text-muted bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-5">
+                  Si necesita adjuntar documentos, por favor envíelos por correo referenciando su número de solicitud.
                 </p>
                 <button onClick={() => setShowSuccess(false)}
                   className="w-full py-3 bg-primary-800 text-white rounded-xl text-sm font-bold hover:bg-primary-700 transition-colors">
@@ -108,7 +111,7 @@ export function NuevaSolicitudForm({ formRef }) {
 
       <h3 className="text-lg font-bold text-text mb-1">Nueva Solicitud</h3>
       <p className="text-sm text-text-muted mb-5">
-        Complete el formulario para iniciar un nuevo proceso administrativo o consulta técnica.
+        Complete el formulario para iniciar un proceso administrativo o consulta técnica.
       </p>
 
       {serverError && (
@@ -169,47 +172,26 @@ export function NuevaSolicitudForm({ formRef }) {
           <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
             Descripción <span className="text-orange-500" aria-hidden="true">*</span>
           </label>
-          <textarea rows={3} value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)}
+          <textarea rows={4} value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)}
             placeholder="Describa el trámite, el predio o área de interés, y cualquier información relevante..."
+            maxLength={MAX_DESC}
             className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition resize-none ${errors.descripcion ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
           />
-          {errors.descripcion
-            ? <p className="text-xs text-red-500 mt-1" role="alert">{errors.descripcion}</p>
-            : <p className="text-xs text-text-muted mt-1 text-right">{form.descripcion.length} / 500</p>
-          }
-        </div>
-
-        <div>
-          <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-            Documentos Adjuntos
-          </label>
-          <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png"
-            className="sr-only" aria-label="Cargar documento"
-            onChange={(e) => setArchivo(e.target.files[0] || null)}
-          />
-          {archivo ? (
-            <div className="flex items-center gap-2 px-3 py-2.5 bg-primary-50 border border-primary-200 rounded-lg">
-              <FileText className="w-4 h-4 text-primary-700 shrink-0" aria-hidden="true" />
-              <span className="text-sm text-primary-800 font-medium truncate flex-1">{archivo.name}</span>
-              <button type="button" onClick={() => setArchivo(null)}
-                className="text-primary-600 hover:text-primary-800 shrink-0" aria-label="Quitar archivo">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <button type="button" onClick={() => fileInputRef.current?.click()}
-              className="w-full border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-primary-800 hover:bg-primary-800/[0.02] transition-colors">
-              <UploadCloud className="w-6 h-6 text-text-muted mx-auto mb-1.5" aria-hidden="true" />
-              <p className="text-xs text-text-muted">Haga clic para adjuntar archivo</p>
-              <p className="text-[0.65rem] text-text-muted mt-0.5">PDF, JPG — Máx. 10MB</p>
-            </button>
-          )}
+          <div className="flex items-start justify-between mt-1">
+            {errors.descripcion
+              ? <p className="text-xs text-red-500" role="alert">{errors.descripcion}</p>
+              : <p className="text-xs text-text-muted">Mínimo 20 caracteres</p>
+            }
+            <p className={`text-xs ml-2 shrink-0 ${form.descripcion.length > MAX_DESC * 0.9 ? 'text-orange-500' : 'text-text-muted'}`}>
+              {form.descripcion.length} / {MAX_DESC}
+            </p>
+          </div>
         </div>
 
         <button type="submit" disabled={createSolicitud.isPending}
           className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-800 text-white rounded-lg text-sm font-bold hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
           {createSolicitud.isPending
-            ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
             : <><Send className="w-4 h-4" aria-hidden="true" />Enviar Solicitud</>
           }
         </button>
