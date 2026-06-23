@@ -29,7 +29,7 @@ export default function AdminLayout() {
           </span>
         </div>
 
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="sync" initial={false}>
           <motion.main
             key={location.pathname}
             initial={{ opacity: 0, y: 14 }}
