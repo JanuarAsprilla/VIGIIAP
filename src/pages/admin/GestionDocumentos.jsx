@@ -463,7 +463,7 @@ export default function GestionDocumentos() {
       <motion.div {...fadeUp(0.1)} className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <input type="text" placeholder="Buscar documento por nombre o autor…"
+          <input type="text" aria-label="Buscar documentos por nombre o autor" placeholder="Buscar documento por nombre o autor…"
             value={search} onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition" />
         </div>
@@ -638,10 +638,10 @@ export default function GestionDocumentos() {
 
                 {/* Nombre */}
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                    Nombre del documento <span className="text-orange-500">*</span>
+                  <label htmlFor="gd-nombre" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Nombre del documento <span className="text-orange-500" aria-hidden="true">*</span>
                   </label>
-                  <input type="text" value={form.nombre}
+                  <input id="gd-nombre" type="text" value={form.nombre}
                     placeholder="Ej: Informe de biodiversidad cuenca del Baudó — 2024"
                     onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
                     className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.nombre ? 'border-red-400' : 'border-border focus:border-primary-800'}`} />
@@ -650,10 +650,10 @@ export default function GestionDocumentos() {
 
                 {/* Autor */}
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  <label htmlFor="gd-autor" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                     Autor / Responsable <span className="text-text-muted font-normal normal-case tracking-normal">(opcional)</span>
                   </label>
-                  <input type="text" value={form.autor}
+                  <input id="gd-autor" type="text" value={form.autor}
                     placeholder="Nombre del autor o institución responsable"
                     onChange={(e) => setForm((f) => ({ ...f, autor: e.target.value }))}
                     className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition" />
@@ -683,8 +683,8 @@ export default function GestionDocumentos() {
                   </div>
 
                   <div>
-                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Año de publicación</label>
-                    <input type="number" min="1900" max="2100" value={form.anio}
+                    <label htmlFor="gd-anio" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Año de publicación</label>
+                    <input id="gd-anio" type="number" min="1900" max="2100" value={form.anio}
                       placeholder={String(new Date().getFullYear())}
                       onChange={(e) => setForm((f) => ({ ...f, anio: e.target.value }))}
                       className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition" />

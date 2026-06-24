@@ -207,10 +207,11 @@ export default function Configuracion() {
             { key: 'address', label: 'Dirección', icon: MapPin },
           ].map(({ key, label, icon: Ic }) => (
             <div key={key}>
-              <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5 flex items-center gap-1">
-                <Ic className="w-3 h-3" />{label}
+              <label htmlFor={`conf-${key}`} className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5 flex items-center gap-1">
+                <Ic className="w-3 h-3" aria-hidden="true" />{label}
               </label>
               <input
+                id={`conf-${key}`}
                 type="text"
                 value={general[key]}
                 onChange={(e) => setGeneral((g) => ({ ...g, [key]: e.target.value }))}
@@ -296,8 +297,9 @@ export default function Configuracion() {
               <p className="text-xs text-amber-800">El modo mantenimiento está activo. Los usuarios no administradores verán el mensaje configurado.</p>
             </div>
             <div>
-              <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Mensaje de mantenimiento</label>
+              <label htmlFor="conf-mant-msg" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Mensaje de mantenimiento</label>
               <textarea
+                id="conf-mant-msg"
                 rows={3}
                 value={mantenimiento.mensaje}
                 onChange={(e) => setMantenimiento((m) => ({ ...m, mensaje: e.target.value }))}

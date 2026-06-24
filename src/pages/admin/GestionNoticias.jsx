@@ -589,10 +589,11 @@ export default function GestionNoticias() {
 
                 {/* Título */}
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                    Título <span className="text-orange-500">*</span>
+                  <label htmlFor="gn-titulo" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Título <span className="text-orange-500" aria-hidden="true">*</span>
                   </label>
                   <input
+                    id="gn-titulo"
                     type="text"
                     value={form.titulo}
                     onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
@@ -603,10 +604,11 @@ export default function GestionNoticias() {
 
                 {/* Resumen */}
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                    Resumen <span className="text-orange-500">*</span>
+                  <label htmlFor="gn-resumen" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Resumen <span className="text-orange-500" aria-hidden="true">*</span>
                   </label>
                   <input
+                    id="gn-resumen"
                     type="text"
                     value={form.resumen}
                     onChange={(e) => setForm((f) => ({ ...f, resumen: e.target.value }))}
@@ -634,8 +636,9 @@ export default function GestionNoticias() {
 
                 {/* Contenido */}
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Contenido completo</label>
+                  <label htmlFor="gn-contenido" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Contenido completo</label>
                   <textarea
+                    id="gn-contenido"
                     rows={6}
                     value={form.contenido}
                     onChange={(e) => setForm((f) => ({ ...f, contenido: e.target.value }))}

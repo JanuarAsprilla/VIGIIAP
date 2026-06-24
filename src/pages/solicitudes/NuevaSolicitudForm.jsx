@@ -178,64 +178,72 @@ export function NuevaSolicitudForm({ formRef }) {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+          <label htmlFor="nsf-nombre" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
             Nombre Completo <span className="text-orange-500" aria-hidden="true">*</span>
           </label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" aria-hidden="true" />
-            <input type="text" value={form.nombre} onChange={(e) => set('nombre', e.target.value)}
+            <input id="nsf-nombre" type="text" value={form.nombre} onChange={(e) => set('nombre', e.target.value)}
               placeholder="Nombre completo" readOnly={isAuthenticated}
+              aria-describedby={errors.nombre ? 'nsf-nombre-err' : undefined}
+              aria-invalid={!!errors.nombre}
               className={`w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
                 isAuthenticated ? 'bg-bg-alt cursor-default' : 'bg-white focus:border-primary-800'
               } ${errors.nombre ? 'border-red-400' : 'border-border'}`}
             />
           </div>
-          {errors.nombre && <p className="text-xs text-red-500 mt-1" role="alert">{errors.nombre}</p>}
+          {errors.nombre && <p id="nsf-nombre-err" role="alert" className="text-xs text-red-500 mt-1">{errors.nombre}</p>}
         </div>
 
         <div>
-          <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+          <label htmlFor="nsf-correo" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
             Correo Electrónico <span className="text-orange-500" aria-hidden="true">*</span>
           </label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" aria-hidden="true" />
-            <input type="email" value={form.correo} onChange={(e) => set('correo', e.target.value)}
+            <input id="nsf-correo" type="email" value={form.correo} onChange={(e) => set('correo', e.target.value)}
               placeholder="su@correo.com" readOnly={isAuthenticated}
+              aria-describedby={errors.correo ? 'nsf-correo-err' : undefined}
+              aria-invalid={!!errors.correo}
               className={`w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
                 isAuthenticated ? 'bg-bg-alt cursor-default' : 'bg-white focus:border-primary-800'
               } ${errors.correo ? 'border-red-400' : 'border-border'}`}
             />
           </div>
-          {errors.correo && <p className="text-xs text-red-500 mt-1" role="alert">{errors.correo}</p>}
+          {errors.correo && <p id="nsf-correo-err" role="alert" className="text-xs text-red-500 mt-1">{errors.correo}</p>}
         </div>
 
         <div>
-          <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+          <label htmlFor="nsf-tipo" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
             Tipo de Trámite <span className="text-orange-500" aria-hidden="true">*</span>
           </label>
-          <select value={form.tipo} onChange={(e) => set('tipo', e.target.value)}
+          <select id="nsf-tipo" value={form.tipo} onChange={(e) => set('tipo', e.target.value)}
+            aria-describedby={errors.tipo ? 'nsf-tipo-err' : undefined}
+            aria-invalid={!!errors.tipo}
             className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${errors.tipo ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
           >
             {TRAMITE_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
-          {errors.tipo && <p className="text-xs text-red-500 mt-1" role="alert">{errors.tipo}</p>}
+          {errors.tipo && <p id="nsf-tipo-err" role="alert" className="text-xs text-red-500 mt-1">{errors.tipo}</p>}
         </div>
 
         <div>
-          <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+          <label htmlFor="nsf-descripcion" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
             Descripción <span className="text-orange-500" aria-hidden="true">*</span>
           </label>
-          <textarea rows={4} value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)}
+          <textarea id="nsf-descripcion" rows={4} value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)}
             placeholder="Describa el trámite, el predio o área de interés, y cualquier información relevante..."
             maxLength={MAX_DESC}
+            aria-describedby={errors.descripcion ? 'nsf-desc-err' : 'nsf-desc-hint'}
+            aria-invalid={!!errors.descripcion}
             className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition resize-none ${errors.descripcion ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
           />
           <div className="flex items-start justify-between mt-1">
             {errors.descripcion
-              ? <p className="text-xs text-red-500" role="alert">{errors.descripcion}</p>
-              : <p className="text-xs text-text-muted">Mínimo 20 caracteres</p>
+              ? <p id="nsf-desc-err" role="alert" className="text-xs text-red-500">{errors.descripcion}</p>
+              : <p id="nsf-desc-hint" className="text-xs text-text-muted">Mínimo 20 caracteres</p>
             }
             <p className={`text-xs ml-2 shrink-0 ${form.descripcion.length > MAX_DESC * 0.9 ? 'text-orange-500' : 'text-text-muted'}`}>
               {form.descripcion.length} / {MAX_DESC}

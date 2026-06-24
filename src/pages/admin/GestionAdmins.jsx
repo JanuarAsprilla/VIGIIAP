@@ -89,8 +89,9 @@ function CrearAdminModal({ onClose, onSuccess }) {
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1.5">Nombre completo</label>
+            <label htmlFor="ga-nombre" className="block text-xs font-semibold text-text-muted mb-1.5">Nombre completo</label>
             <input
+              id="ga-nombre"
               type="text"
               value={form.nombre}
               onChange={set('nombre')}
@@ -102,8 +103,9 @@ function CrearAdminModal({ onClose, onSuccess }) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1.5">Correo electrónico</label>
+            <label htmlFor="ga-email" className="block text-xs font-semibold text-text-muted mb-1.5">Correo electrónico</label>
             <input
+              id="ga-email"
               type="email"
               value={form.email}
               onChange={set('email')}
@@ -115,8 +117,9 @@ function CrearAdminModal({ onClose, onSuccess }) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1.5">Institución</label>
+            <label htmlFor="ga-institucion" className="block text-xs font-semibold text-text-muted mb-1.5">Institución</label>
             <input
+              id="ga-institucion"
               type="text"
               value={form.institucion}
               onChange={set('institucion')}

@@ -495,7 +495,7 @@ export default function GestionMapas() {
       {/* Search */}
       <motion.div {...fadeUp(0.1)} className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-        <input type="text" placeholder="Buscar mapa por nombre o autor…"
+        <input type="text" aria-label="Buscar mapas por nombre o autor" placeholder="Buscar mapa por nombre o autor…"
           value={search} onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-9 pr-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
         />
@@ -683,10 +683,10 @@ export default function GestionMapas() {
                 {/* URL Geovisor */}
                 {form.formato === 'Geovisor' && (
                   <div>
-                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5 flex items-center gap-1">
-                      <LinkIcon className="w-3 h-3" /> URL del Geovisor <span className="text-orange-500">*</span>
+                    <label htmlFor="gm-url" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5 flex items-center gap-1">
+                      <LinkIcon className="w-3 h-3" aria-hidden="true" /> URL del Geovisor <span className="text-orange-500" aria-hidden="true">*</span>
                     </label>
-                    <input type="url" value={form.url}
+                    <input id="gm-url" type="url" value={form.url}
                       onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
                       placeholder="https://geovisor.iiap.gov.co/mapa/... o /geovisor"
                       className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.url ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
@@ -700,10 +700,10 @@ export default function GestionMapas() {
 
                 {/* Nombre del mapa */}
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                    Nombre del mapa <span className="text-orange-500">*</span>
+                  <label htmlFor="gm-nombre" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Nombre del mapa <span className="text-orange-500" aria-hidden="true">*</span>
                   </label>
-                  <input type="text" value={form.nombre}
+                  <input id="gm-nombre" type="text" value={form.nombre}
                     placeholder="Ej: Mapa de cuencas hidrográficas del Chocó — 2024"
                     onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
                     className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.nombre ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
@@ -713,10 +713,10 @@ export default function GestionMapas() {
 
                 {/* Descripción */}
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  <label htmlFor="gm-desc" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                     Descripción <span className="text-text-muted font-normal normal-case tracking-normal">(opcional)</span>
                   </label>
-                  <textarea rows={2} value={form.descripcion}
+                  <textarea id="gm-desc" rows={2} value={form.descripcion}
                     placeholder="Breve descripción del contenido y alcance del mapa…"
                     onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
                     className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition resize-none"
@@ -726,8 +726,8 @@ export default function GestionMapas() {
                 {/* Año · Temática */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Año</label>
-                    <input type="number" min="1900" max="2100" value={form.anio}
+                    <label htmlFor="gm-anio" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Año</label>
+                    <input id="gm-anio" type="number" min="1900" max="2100" value={form.anio}
                       onChange={(e) => setForm((f) => ({ ...f, anio: e.target.value }))}
                       className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
                     />

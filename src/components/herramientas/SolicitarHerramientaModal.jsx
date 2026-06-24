@@ -105,10 +105,11 @@ export default function SolicitarHerramientaModal({ onClose }) {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4" noValidate>
               <div>
-                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                <label htmlFor="shm-nombre" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                   Nombre de la herramienta <span className="text-orange-500" aria-hidden="true">*</span>
                 </label>
                 <input
+                  id="shm-nombre"
                   type="text"
                   value={form.nombre}
                   onChange={(e) => set('nombre', e.target.value)}
@@ -121,10 +122,11 @@ export default function SolicitarHerramientaModal({ onClose }) {
               </div>
 
               <div>
-                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                <label htmlFor="shm-tipo" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                   Tipo de herramienta <span className="text-orange-500" aria-hidden="true">*</span>
                 </label>
                 <select
+                  id="shm-tipo"
                   value={form.tipo}
                   onChange={(e) => set('tipo', e.target.value)}
                   className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
@@ -137,10 +139,11 @@ export default function SolicitarHerramientaModal({ onClose }) {
               </div>
 
               <div>
-                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                <label htmlFor="shm-desc" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                   Descripción funcional <span className="text-orange-500" aria-hidden="true">*</span>
                 </label>
                 <textarea
+                  id="shm-desc"
                   rows={3}
                   value={form.descripcion}
                   onChange={(e) => set('descripcion', e.target.value)}
@@ -159,11 +162,12 @@ export default function SolicitarHerramientaModal({ onClose }) {
               </div>
 
               <div>
-                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                <label htmlFor="shm-just" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                   Justificación o caso de uso{' '}
                   <span className="text-text-muted font-normal normal-case">(opcional)</span>
                 </label>
                 <textarea
+                  id="shm-just"
                   rows={2}
                   value={form.justificacion}
                   onChange={(e) => set('justificacion', e.target.value)}

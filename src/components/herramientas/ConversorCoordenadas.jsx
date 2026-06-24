@@ -78,8 +78,9 @@ export default function ConversorCoordenadas() {
               { label: 'Longitud (°W)',  val: lonInput, set: setLonInput, ph: 'ej. -76.7324' },
             ].map(({ label, val, set, ph }) => (
               <div key={label}>
-                <label className="block text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">{label}</label>
+                <label htmlFor={`cc-${label.replace(/[^a-z0-9]/gi,'-').toLowerCase()}`} className="block text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">{label}</label>
                 <input
+                  id={`cc-${label.replace(/[^a-z0-9]/gi,'-').toLowerCase()}`}
                   type="text"
                   value={val}
                   onChange={(e) => { set(e.target.value); setResult(null) }}
@@ -96,8 +97,9 @@ export default function ConversorCoordenadas() {
               { label: 'Y — Norte (m)',  val: yInput, set: setYInput, ph: 'ej. 1120943' },
             ].map(({ label, val, set, ph }) => (
               <div key={label}>
-                <label className="block text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">{label}</label>
+                <label htmlFor={`cc-${label.replace(/[^a-z0-9]/gi,'-').toLowerCase()}`} className="block text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">{label}</label>
                 <input
+                  id={`cc-${label.replace(/[^a-z0-9]/gi,'-').toLowerCase()}`}
                   type="text"
                   value={val}
                   onChange={(e) => { set(e.target.value); setResult(null) }}
