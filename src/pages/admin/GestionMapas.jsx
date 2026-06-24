@@ -173,7 +173,7 @@ function VisibilidadSelector({ value, onChange }) {
   )
 }
 
-function ThumbnailDropzone({ file, onFile, existing }) {
+function ThumbnailDropzone({ onFile, existing }) {
   const inputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
   const [preview, setPreview] = useState(null)
@@ -696,7 +696,7 @@ export default function GestionMapas() {
                 )}
 
                 {/* Thumbnail opcional */}
-                <ThumbnailDropzone file={uploadedThumb} onFile={setUploadedThumb} existing={editing?.thumbnail_url} />
+                <ThumbnailDropzone onFile={setUploadedThumb} existing={editing?.thumbnail_url} />
 
                 {/* Nombre del mapa */}
                 <div>

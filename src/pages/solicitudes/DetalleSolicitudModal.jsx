@@ -1,13 +1,27 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { X, Check, CheckCircle, AlertCircle, Clock, PlusCircle } from 'lucide-react'
 import { StatusBadge } from './StatusBadge'
 
 export function DetalleSolicitudModal({ sol, onClose, onNueva }) {
+  const modalRef = useRef(null)
+
   useEffect(() => {
-    const handleKey = (e) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', handleKey)
-    return () => document.removeEventListener('keydown', handleKey)
+    const el = modalRef.current
+    if (!el) return
+    const FOCUSABLE = 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'
+    const getFocusable = () => [...el.querySelectorAll(FOCUSABLE)]
+    getFocusable()[0]?.focus()
+    const trap = (e) => {
+      if (e.key === 'Escape') { onClose(); return }
+      if (e.key !== 'Tab') return
+      const nodes = getFocusable()
+      const last  = nodes[nodes.length - 1]
+      if (e.shiftKey) { if (document.activeElement === nodes[0]) { e.preventDefault(); last?.focus() } }
+      else            { if (document.activeElement === last)      { e.preventDefault(); nodes[0]?.focus() } }
+    }
+    el.addEventListener('keydown', trap)
+    return () => el.removeEventListener('keydown', trap)
   }, [onClose])
 
   const isRechazado = sol.estado === 'Rechazado'
@@ -27,6 +41,7 @@ export function DetalleSolicitudModal({ sol, onClose, onNueva }) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <motion.div
+        ref={modalRef}
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}

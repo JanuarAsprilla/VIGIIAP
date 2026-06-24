@@ -170,9 +170,10 @@ export default function GestionSolicitudes() {
         </div>
         <button
           onClick={exportCSV}
+          aria-label="Exportar solicitudes a CSV"
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors shrink-0"
         >
-          <Download className="w-4 h-4" />
+          <Download className="w-4 h-4" aria-hidden="true" />
           Exportar CSV
         </button>
       </motion.div>
@@ -183,6 +184,7 @@ export default function GestionSolicitudes() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input
             type="text"
+            aria-label="Buscar solicitudes por ID, tipo o solicitante"
             placeholder="Buscar por ID, tipo o solicitante..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
@@ -191,6 +193,7 @@ export default function GestionSolicitudes() {
         </div>
         <select
           value={filtroEstado}
+          aria-label="Filtrar por estado de solicitud"
           onChange={(e) => { setFiltroEstado(e.target.value); setPage(1) }}
           className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
         >
@@ -203,6 +206,7 @@ export default function GestionSolicitudes() {
         </select>
         <select
           value={filtroTipo}
+          aria-label="Filtrar por tipo de solicitud"
           onChange={(e) => { setFiltroTipo(e.target.value); setPage(1) }}
           className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
         >

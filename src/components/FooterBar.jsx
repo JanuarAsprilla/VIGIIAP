@@ -2,12 +2,12 @@ import { Link } from 'react-router-dom'
 import { MapPin, Phone, Mail, Globe, MessageCircle, Camera, PlayCircle } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 
-// ── Redes sociales ──
+// ── Redes sociales (próximamente — placeholder hasta tener URLs reales) ──
 const socialLinks = [
-  { icon: Globe, label: 'Facebook', href: '#' },
-  { icon: MessageCircle, label: 'Twitter', href: '#' },
-  { icon: Camera, label: 'Instagram', href: '#' },
-  { icon: PlayCircle, label: 'YouTube', href: '#' },
+  { icon: Globe, label: 'Facebook IIAP' },
+  { icon: MessageCircle, label: 'Twitter IIAP' },
+  { icon: Camera, label: 'Instagram IIAP' },
+  { icon: PlayCircle, label: 'YouTube IIAP' },
 ]
 
 // ── Links de recursos ──
@@ -66,15 +66,16 @@ export default function Footer() {
 
               {/* Social links */}
               <div className="flex gap-3">
-                {socialLinks.map(({ icon: Icon, label, href }) => (
-                  <a
+                {socialLinks.map(({ icon: Icon, label }) => (
+                  <button
                     key={label}
-                    href={href}
+                    type="button"
                     aria-label={label}
+                    title={label}
                     className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-primary-300 hover:text-primary-900 transition-colors"
                   >
-                    <Icon className="w-4.5 h-4.5" />
-                  </a>
+                    <Icon className="w-4.5 h-4.5" aria-hidden="true" />
+                  </button>
                 ))}
               </div>
             </div>

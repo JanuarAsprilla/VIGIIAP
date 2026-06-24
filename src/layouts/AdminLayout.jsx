@@ -23,7 +23,7 @@ export default function AdminLayout() {
 
         {/* Admin indicator bar */}
         <div className="bg-primary-900 px-6 py-1.5 flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" aria-hidden="true" />
           <span className="text-[0.65rem] font-bold uppercase tracking-widest text-white/60">
             Panel de Administración — VIGIA-IIAP
           </span>

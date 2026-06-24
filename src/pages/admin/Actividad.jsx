@@ -34,7 +34,6 @@ const ACCION_LABEL = {
   update_solicitud_estado:{ label: 'Estado solicitud',    badge: 'bg-yellow-100 text-yellow-700' },
   update_perfil:          { label: 'Actualizar perfil',   badge: 'bg-amber-100 text-amber-700'    },
   update_configuracion:   { label: 'Configuración',       badge: 'bg-primary-100 text-primary-800'},
-  registro:               { label: 'Registro',            badge: 'bg-blue-100 text-blue-700'      },
   create_mapa:            { label: 'Crear mapa',          badge: 'bg-green-100 text-green-700'    },
   update_mapa:            { label: 'Actualizar mapa',     badge: 'bg-amber-100 text-amber-700'    },
   delete_mapa:            { label: 'Eliminar mapa',       badge: 'bg-red-100 text-red-600'        },

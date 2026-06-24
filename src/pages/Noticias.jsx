@@ -8,7 +8,7 @@ import { ArrowRight, Newspaper, Search, X, Loader2, ChevronLeft, ChevronRight, A
 import { useNoticiasList } from '@/hooks/useNoticias'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
-import { fadeUp, staggerContainer, staggerItem3D, cardEnter3D } from '@/lib/animations'
+import { fadeUp, staggerContainer, staggerItem3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 
 const PAGE_SIZE = 12
@@ -43,7 +43,7 @@ const TAG_COLORS = {
 const defaultTag = { pill: 'bg-primary-50 text-primary-700', glow: 'rgba(26,86,50,0.18)' }
 
 // ── 3D News Card ──────────────────────────────────────────────────────────────
-function NewsCard({ article, index, featured = false }) {
+function NewsCard({ article, featured = false }) {
   const tc = TAG_COLORS[article.tag] ?? defaultTag
 
   return (
@@ -117,7 +117,7 @@ function NewsCard({ article, index, featured = false }) {
 }
 
 // ── Compact list card (non-featured) ─────────────────────────────────────────
-function NewsListItem({ article, index }) {
+function NewsListItem({ article }) {
   const tc = TAG_COLORS[article.tag] ?? defaultTag
 
   return (
@@ -251,7 +251,6 @@ export default function Noticias() {
           </button>
 
           {categories.map((cat) => {
-            const tc = TAG_COLORS[cat] ?? defaultTag
             return (
               <button key={cat}
                 onClick={() => { setActiveCategory(activeCategory === cat ? '' : cat); setPage(1) }}

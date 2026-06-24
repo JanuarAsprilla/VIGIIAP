@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Calendar, User, Tag, Loader2, Newspaper } from 'lucide-react'
 import { useNoticiaBySlug } from '@/hooks/useNoticias'
-import { fadeUp, staggerContainer, staggerItem3D, EASE_OUT_EXPO } from '@/lib/animations'
+import { staggerContainer, staggerItem3D, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 
 export default function NoticiaDetalle() {

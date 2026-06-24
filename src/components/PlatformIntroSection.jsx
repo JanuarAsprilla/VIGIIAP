@@ -242,6 +242,7 @@ function ChocoMapCloud({ isDark, prefersReduced }) {
     })
     matRef.current = m
     return m
+  // ShaderMaterial se crea una sola vez; isDark se actualiza vía el useEffect siguiente.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -309,6 +310,7 @@ function AmbientDust({ isDark, prefersReduced }) {
       blending:isDark?THREE.AdditiveBlending:THREE.NormalBlending,
     })
     matRef.current=m; return m
+  // Geometry se crea una sola vez; color se actualiza vía el useEffect siguiente.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[])
 

@@ -11,7 +11,7 @@ import {
   ArrowRight, Zap, AlertTriangle,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { fadeUpSm, cardEnter3D, staggerContainer, staggerItem3D, SPRING_SNAPPY } from '@/lib/animations'
+import { fadeUpSm, staggerContainer, staggerItem3D, SPRING_SNAPPY } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import { useAdminStats } from '@/hooks/useStats'
 import { useSolicitudesAdmin, useUpdateEstadoSolicitud } from '@/hooks/useSolicitudes'

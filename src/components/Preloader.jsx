@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useReducedMotion } from '@/hooks/useReducedMotion'
 
 // ── Deterministic data points on the globe ──
 const GLOBE_POINTS = [
@@ -189,6 +190,7 @@ function OrbitRing() {
 
 // ── Main Preloader ──
 export default function Preloader() {
+  const prefersReduced = useReducedMotion()
   const [visible, setVisible] = useState(true)
   const [progress, setProgress] = useState(0)
   const [hudLine, setHudLine] = useState(0)
@@ -219,8 +221,8 @@ export default function Preloader() {
           style={{
             background: 'radial-gradient(ellipse 80% 80% at 50% 40%, #0d2818 0%, #050e09 55%, #020805 100%)',
           }}
-          exit={{ opacity: 0, scale: 1.04 }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          exit={{ opacity: 0, scale: prefersReduced ? 1 : 1.04 }}
+          transition={{ duration: prefersReduced ? 0 : 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
           {/* ── Noise texture ── */}
           <div className="noise-overlay absolute inset-0 opacity-40" />

@@ -82,6 +82,9 @@ function PasswordStrengthMeter({ value }) {
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       className="mt-2 space-y-2"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-label={`Fortaleza de contraseña: ${label.text}`}
     >
       {/* Barras de fortaleza */}
       <div className="flex items-center gap-1.5">

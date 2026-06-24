@@ -6,7 +6,7 @@ import AuthLayout from '@/components/AuthLayout'
 import api from '@/lib/api'
 
 // M-05: formato mínimo de token — al menos 20 caracteres alfanuméricos/guiones.
-const TOKEN_RE = /^[A-Za-z0-9_\-]{20,}$/
+const TOKEN_RE = /^[A-Za-z0-9_-]{20,}$/
 
 export default function ResetPassword() {
   const { token } = useParams()
