@@ -41,10 +41,11 @@ export default function CalculadoraAreas() {
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+            <label htmlFor="ca-capa" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
               Capa de Entrada
             </label>
             <select
+              id="ca-capa"
               value={capa}
               onChange={(e) => { setCapa(e.target.value); setResult(null) }}
               className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
@@ -53,10 +54,11 @@ export default function CalculadoraAreas() {
             </select>
           </div>
           <div>
-            <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+            <label htmlFor="ca-unidad" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
               Sistema de Unidades
             </label>
             <select
+              id="ca-unidad"
               value={unidad}
               onChange={(e) => { setUnidad(e.target.value); setResult(null) }}
               className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"

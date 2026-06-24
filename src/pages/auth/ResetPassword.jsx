@@ -89,9 +89,10 @@ export default function ResetPassword() {
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div>
-          <label className="block text-[0.8rem] font-semibold text-text mb-1.5">Nueva contraseña</label>
+          <label htmlFor="rp-password" className="block text-[0.8rem] font-semibold text-text mb-1.5">Nueva contraseña</label>
           <div className="relative">
             <input
+              id="rp-password"
               type={showPass ? 'text' : 'password'}
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError('') }}
@@ -110,8 +111,9 @@ export default function ResetPassword() {
         </div>
 
         <div>
-          <label className="block text-[0.8rem] font-semibold text-text mb-1.5">Confirmar contraseña</label>
+          <label htmlFor="rp-confirm" className="block text-[0.8rem] font-semibold text-text mb-1.5">Confirmar contraseña</label>
           <input
+            id="rp-confirm"
             type={showPass ? 'text' : 'password'}
             value={confirm}
             onChange={(e) => { setConfirm(e.target.value); setError('') }}
