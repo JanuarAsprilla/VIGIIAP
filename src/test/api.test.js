@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest'
+import { describe, test, expect } from 'vitest'
 
 // ─── Helpers to build test JWTs ───────────────────────────────────────────────
 // getTokenExp is an internal function of api.js, so we test it by reproducing

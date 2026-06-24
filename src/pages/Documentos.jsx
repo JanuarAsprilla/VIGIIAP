@@ -182,9 +182,10 @@ export default function Documentos() {
           <Loader2 className="w-8 h-8 text-primary-800 animate-spin" />
         </div>
       ) : isError ? (
-        <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
-          <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No se pudo cargar los documentos. Verifique su conexión.</p>
+        <motion.div {...fadeUp(0.1)} role="alert" className="py-16 text-center text-text-muted">
+          <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" aria-hidden="true" />
+          <p className="text-sm font-semibold text-text">Error al cargar los documentos</p>
+          <p className="text-xs mt-1">No se pudo cargar los documentos. Verifique su conexión.</p>
         </motion.div>
       ) : displayCategories.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

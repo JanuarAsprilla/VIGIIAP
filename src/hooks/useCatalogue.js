@@ -100,10 +100,10 @@ function buildActionEntries(isAuthenticated) {
 export function useCatalogue() {
   const { isAuthenticated } = useAuth()
   const { data: noticiasData } = useNoticiasList({ limit: 5 })
-  const noticias = noticiasData?.data ?? []
+  const noticias = noticiasData?.data
 
   const newsEntries = useMemo(
-    () => noticias.map((n) => ({
+    () => (noticias ?? []).map((n) => ({
       id:       `new-${n.id}`,
       group:    'Noticias',
       label:    n.titulo ?? n.title ?? '—',

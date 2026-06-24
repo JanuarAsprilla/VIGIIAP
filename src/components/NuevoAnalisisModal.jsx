@@ -1,9 +1,30 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PlusCircle, X, ChevronRight, CheckCircle } from 'lucide-react'
 import { ANALYSIS_TYPES, ANALYSIS_DEPARTMENTS } from '@/lib/constants'
 
 export default function NuevoAnalisisModal({ onClose }) {
+  const modalRef = useRef(null)
+
+  useEffect(() => {
+    const el = modalRef.current
+    if (!el) return
+    const FOCUSABLE = 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'
+    const getFocusable = () => [...el.querySelectorAll(FOCUSABLE)]
+    const first = getFocusable()[0]
+    first?.focus()
+    const trap = (e) => {
+      if (e.key !== 'Tab') return
+      const nodes = getFocusable()
+      const last = nodes[nodes.length - 1]
+      if (e.shiftKey) { if (document.activeElement === nodes[0]) { e.preventDefault(); last?.focus() } }
+      else            { if (document.activeElement === last)      { e.preventDefault(); nodes[0]?.focus() } }
+    }
+    const close = (e) => { if (e.key === 'Escape') onClose() }
+    el.addEventListener('keydown', trap)
+    el.addEventListener('keydown', close)
+    return () => { el.removeEventListener('keydown', trap); el.removeEventListener('keydown', close) }
+  }, [onClose])
   const [step, setStep] = useState('form') // 'form' | 'success'
   const [form, setForm] = useState({ nombre: '', tipo: '', departamento: '', notas: '' })
   const [errors, setErrors] = useState({})
@@ -46,6 +67,7 @@ export default function NuevoAnalisisModal({ onClose }) {
 
         {/* Modal */}
         <motion.div
+          ref={modalRef}
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}

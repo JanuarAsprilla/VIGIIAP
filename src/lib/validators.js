@@ -73,7 +73,7 @@ export function validatePasswordStrength(value) {
   if (!/[A-Z]/.test(value))               return 'Debe incluir al menos una letra mayúscula'
   if (!/[a-z]/.test(value))               return 'Debe incluir al menos una letra minúscula'
   if (!/[0-9]/.test(value))               return 'Debe incluir al menos un número'
-  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(value))
+  if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(value))
     return 'Debe incluir al menos un carácter especial (!@#$%...)'
   return null
 }
@@ -89,7 +89,7 @@ export function passwordCriteria(value = '') {
     upper:   /[A-Z]/.test(value),
     lower:   /[a-z]/.test(value),
     number:  /[0-9]/.test(value),
-    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(value),
+    special: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(value),
   }
 }
 

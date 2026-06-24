@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { BookOpen, ChevronRight } from 'lucide-react'
 import Card3D from '@/components/ui/Card3D'
 import { EASE_OUT_EXPO } from '@/lib/animations'
