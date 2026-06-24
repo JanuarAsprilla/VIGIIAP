@@ -28,10 +28,11 @@ export default function GeneradorBuffers() {
 
       <div className="space-y-4">
         <div>
-          <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+          <label htmlFor="gb-distancia" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
             Distancia (m)
           </label>
           <input
+            id="gb-distancia"
             type="number"
             value={distancia}
             min={1}

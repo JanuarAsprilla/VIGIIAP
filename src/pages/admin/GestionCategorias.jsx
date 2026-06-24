@@ -348,10 +348,11 @@ export default function GestionCategorias() {
 
               <form onSubmit={handleCreate} className="p-6 space-y-4">
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                    Nombre <span className="text-orange-500">*</span>
+                  <label htmlFor="gc-nombre" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Nombre <span className="text-orange-500" aria-hidden="true">*</span>
                   </label>
                   <input
+                    id="gc-nombre"
                     type="text"
                     value={newName}
                     placeholder="Ej: Estudios Socioeconómicos"

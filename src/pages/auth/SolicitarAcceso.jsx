@@ -33,10 +33,10 @@ const CRITERIA_LABELS = [
 
 // ── Sub-componentes ───────────────────────────────────────────────────────────
 
-function Field({ label, icon: Icon, error, hint, children }) {
+function Field({ id, label, icon: Icon, error, hint, children }) {
   return (
     <div>
-      <label className="block text-[0.8rem] font-semibold text-text mb-1.5">{label}</label>
+      <label htmlFor={id} className="block text-[0.8rem] font-semibold text-text mb-1.5">{label}</label>
       <div className="relative">
         {Icon && (
           <Icon className="absolute left-3.5 top-3.5 w-4 h-4 text-text-muted pointer-events-none" />
@@ -274,8 +274,8 @@ export default function SolicitarAcceso() {
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
 
               {/* Nombre */}
-              <Field label="Nombre Completo" icon={User} error={errors.nombre}>
-                <input
+              <Field id="sa-nombre" label="Nombre Completo" icon={User} error={errors.nombre}>
+                <input id="sa-nombre"
                   type="text" value={form.nombre}
                   onChange={(e) => set('nombre', e.target.value)}
                   placeholder="Ej. Juan Pérez García"
@@ -285,8 +285,8 @@ export default function SolicitarAcceso() {
               </Field>
 
               {/* Email */}
-              <Field label="Correo Electrónico" icon={Mail} error={errors.email}>
-                <input
+              <Field id="sa-email" label="Correo Electrónico" icon={Mail} error={errors.email}>
+                <input id="sa-email"
                   type="email" value={form.email}
                   onChange={(e) => set('email', e.target.value)}
                   placeholder="correo@institucion.org"
@@ -297,8 +297,8 @@ export default function SolicitarAcceso() {
 
               {/* Contraseña con criterios */}
               <div>
-                <Field label="Contraseña" icon={Lock} error={errors.password}>
-                  <input
+                <Field id="sa-password" label="Contraseña" icon={Lock} error={errors.password}>
+                  <input id="sa-password"
                     type={showPass ? 'text' : 'password'}
                     value={form.password}
                     onChange={(e) => set('password', e.target.value)}
@@ -320,8 +320,8 @@ export default function SolicitarAcceso() {
               </div>
 
               {/* Confirmar contraseña */}
-              <Field label="Confirmar Contraseña" icon={Lock} error={errors.confirmPassword}>
-                <input
+              <Field id="sa-confirm" label="Confirmar Contraseña" icon={Lock} error={errors.confirmPassword}>
+                <input id="sa-confirm"
                   type={showConfirm ? 'text' : 'password'}
                   value={form.confirmPassword}
                   onChange={(e) => set('confirmPassword', e.target.value)}
@@ -341,8 +341,8 @@ export default function SolicitarAcceso() {
               </Field>
 
               {/* Institución */}
-              <Field label="Institución / Organización" icon={Building2} error={errors.institucion}>
-                <input
+              <Field id="sa-institucion" label="Institución / Organización" icon={Building2} error={errors.institucion}>
+                <input id="sa-institucion"
                   type="text" value={form.institucion}
                   onChange={(e) => set('institucion', e.target.value)}
                   placeholder="Nombre de la institución"
@@ -351,8 +351,8 @@ export default function SolicitarAcceso() {
               </Field>
 
               {/* Perfil */}
-              <Field label="Perfil de Acceso Requerido" icon={Briefcase} error={errors.perfil}>
-                <select
+              <Field id="sa-perfil" label="Perfil de Acceso Requerido" icon={Briefcase} error={errors.perfil}>
+                <select id="sa-perfil"
                   value={form.perfil}
                   onChange={(e) => set('perfil', e.target.value)}
                   className={inputCls(errors.perfil)}
@@ -365,10 +365,12 @@ export default function SolicitarAcceso() {
 
               {/* Motivo — opcional */}
               <Field
+                id="sa-motivo"
                 label="Motivo de la Solicitud (opcional)" icon={FileText} error={errors.motivo}
                 hint="Describa para qué proyecto o investigación necesita acceso"
               >
                 <textarea
+                  id="sa-motivo"
                   rows={3} value={form.motivo}
                   onChange={(e) => set('motivo', e.target.value)}
                   placeholder="Indique el proyecto, institución y propósito del acceso solicitado..."
