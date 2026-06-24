@@ -77,7 +77,7 @@ export function PreviewModal({ doc, categoryTitle, onClose }) {
           <div className="w-full">
             {isImage ? (
               <div className="p-4 flex justify-center bg-bg-alt">
-                <img src={doc.url} alt={doc.name}
+                <img src={doc.url} alt={doc.name} loading="eager"
                   className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-sm" />
               </div>
             ) : isPdf ? (

@@ -221,7 +221,7 @@ function ThumbnailDropzone({ previewUrl, onChange, onRemove, onError }) {
   if (previewUrl) {
     return (
       <div className="relative w-full h-36 rounded-xl overflow-hidden border border-border group">
-        <img src={previewUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+        <img src={previewUrl} alt="Thumbnail" className="w-full h-full object-cover" loading="eager" />
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
           <button
             type="button"
@@ -477,7 +477,7 @@ export default function GestionNoticias() {
             >
               {n.thumbUrl && (
                 <div className="h-32 w-full overflow-hidden">
-                  <img src={n.thumbUrl} alt={n.titulo} className="w-full h-full object-cover" />
+                  <img src={n.thumbUrl} alt={n.titulo} className="w-full h-full object-cover" loading="lazy" />
                 </div>
               )}
               <div className="p-5 space-y-3">
@@ -702,7 +702,7 @@ export default function GestionNoticias() {
               </div>
               {preview.thumbUrl && (
                 <div className="h-48 w-full overflow-hidden">
-                  <img src={preview.thumbUrl} alt={preview.titulo} className="w-full h-full object-cover" />
+                  <img src={preview.thumbUrl} alt={preview.titulo} className="w-full h-full object-cover" loading="eager" />
                 </div>
               )}
               <div className="p-6">

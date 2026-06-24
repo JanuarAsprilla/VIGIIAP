@@ -47,7 +47,7 @@ export function CategoryCard({ category, filteredCount, onOpen, index }) {
 
       <div className="absolute inset-0 scale-100 group-hover:scale-110 transition-transform duration-700 ease-out">
         {category.thumbnail ? (
-          <img src={category.thumbnail} alt="" className="w-full h-full object-cover" />
+          <img src={category.thumbnail} alt="" className="w-full h-full object-cover" loading="lazy" />
         ) : (
           <div
             className="w-full h-full"

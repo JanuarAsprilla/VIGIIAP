@@ -48,7 +48,7 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }) {
   if (preview) {
     return (
       <div className="relative group rounded-xl overflow-hidden border border-border aspect-video w-full">
-        <img src={preview} alt="Portada" className="w-full h-full object-cover" />
+        <img src={preview} alt="Portada" className="w-full h-full object-cover" loading="eager" />
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
           <button type="button" onClick={() => inputRef.current?.click()}
             className="px-3 py-1.5 bg-white text-text text-xs font-semibold rounded-lg hover:bg-bg-alt transition-colors">
@@ -133,7 +133,7 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
       {/* Imagen */}
       <div className="relative aspect-video bg-bg-alt">
         {currentPreview ? (
-          <img src={currentPreview} alt={cat.nombre} className="w-full h-full object-cover" />
+          <img src={currentPreview} alt={cat.nombre} className="w-full h-full object-cover" loading="lazy" />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-text-muted/40">
             <ImageOff className="w-8 h-8" />

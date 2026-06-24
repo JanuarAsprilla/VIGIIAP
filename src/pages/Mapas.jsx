@@ -62,6 +62,7 @@ function MapPreviewModal({ map, format, onClose }) {
               <div className="p-4 flex justify-center bg-bg-alt">
                 <img src={fileUrl} alt={map.title}
                   width={1200} height={675}
+                  loading="eager"
                   className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-sm" />
               </div>
             ) : (
@@ -174,7 +175,7 @@ function MapCard({ map, index }) {
       {/* Visual header */}
       <div className="relative h-44 overflow-hidden bg-bg-alt shrink-0">
         {map.thumbnail_url ? (
-          <img src={map.thumbnail_url} alt={map.title}
+          <img src={map.thumbnail_url} alt={map.title} loading="lazy"
             width={320} height={176}
             className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
             loading="lazy" />
