@@ -35,10 +35,10 @@ export default class ErrorBoundary extends Component {
     if (!this.state.hasError) return this.props.children
 
     return (
-      <div className="min-h-[50vh] flex items-center justify-center p-8">
+      <div role="alert" className="min-h-[50vh] flex items-center justify-center p-8">
         <div className="max-w-md w-full text-center">
           <div className="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-7 h-7 text-orange-500" />
+            <AlertTriangle className="w-7 h-7 text-orange-500" aria-hidden="true" />
           </div>
           <h2 className="font-display text-xl font-bold text-text mb-2">
             Ocurrió un error inesperado

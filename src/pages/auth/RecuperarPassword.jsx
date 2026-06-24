@@ -45,12 +45,15 @@ export default function RecuperarPassword() {
           const active = i === stepIndex
           return (
             <div key={s.id} className="flex items-center">
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-                done || active
-                  ? 'bg-primary-800 text-white'
-                  : 'bg-bg-alt text-text-muted'
-              }`}>
-                <s.icon className="w-3 h-3" />
+              <div
+                aria-current={active ? 'step' : undefined}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  done || active
+                    ? 'bg-primary-800 text-white'
+                    : 'bg-bg-alt text-text-muted'
+                }`}
+              >
+                <s.icon className="w-3 h-3" aria-hidden="true" />
                 {s.label}
               </div>
               {i < STEPS.length - 2 && (

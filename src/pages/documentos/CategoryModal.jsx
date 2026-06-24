@@ -212,7 +212,7 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }) {
         <div className="flex-1 overflow-y-auto">
           {docs.length > 0 ? (
             <div className="px-6 py-4">
-              <table className="w-full">
+              <table className="w-full" aria-label={`Documentos en ${category?.title ?? 'esta categoría'}`}>
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-primary-700 pb-3 pr-4">Archivo</th>
@@ -234,8 +234,8 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }) {
               </table>
             </div>
           ) : (
-            <div className="py-14 text-center text-text-muted">
-              <FileText className="w-8 h-8 mx-auto mb-3 opacity-30" />
+            <div role="status" className="py-14 text-center text-text-muted">
+              <FileText className="w-8 h-8 mx-auto mb-3 opacity-30" aria-hidden="true" />
               <p className="text-sm">
                 No se encontraron documentos{localQuery && <> para &quot;{localQuery}&quot;</>}
               </p>

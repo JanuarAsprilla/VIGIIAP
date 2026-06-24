@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, X, Send, Trash2, Edit2,
   CheckCircle, XCircle, UserPlus,
-  User, Clock, Loader2,
+  User, Clock, Loader2, AlertCircle,
 } from 'lucide-react'
 import { ROLES } from '@/contexts/AuthContext'
 import { fadeUpSm, panelAnim, drawerAnim, EASE_OUT_EXPO } from '@/lib/animations'
@@ -266,7 +266,7 @@ export default function Usuarios() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [detailUser, setDetailUser] = useState(null)
   const [form, setForm] = useState({ rol: 'Público' })
-  const [_formErrors, setFormErrors] = useState({})
+  const [formErrors, setFormErrors] = useState({})
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase()
@@ -484,32 +484,47 @@ export default function Usuarios() {
       {/* Create/Edit Modal */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false) }}>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+            role="dialog" aria-modal="true" aria-labelledby="modal-rol-title"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false) }}
+          >
             <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
               <div className="flex items-center justify-between px-6 py-5 border-b border-border">
                 <div>
-                  <h3 className="text-base font-bold text-text">Cambiar Rol</h3>
+                  <h3 id="modal-rol-title" className="text-base font-bold text-text">Cambiar Rol</h3>
                   {editingUser && <p className="text-xs text-text-muted mt-0.5">{editingUser.nombre}</p>}
                 </div>
-                <button onClick={() => setShowModal(false)} className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors">
-                  <X className="w-5 h-5" />
+                <button onClick={() => setShowModal(false)} aria-label="Cerrar modal" className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors">
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
-              <form onSubmit={handleSave} className="p-6 space-y-4">
+              <form onSubmit={handleSave} className="p-6 space-y-4" noValidate>
                 <div className="bg-bg-alt/60 rounded-xl px-4 py-3 text-xs text-text-muted border border-border/50">
                   El rol determina los permisos del usuario. Para activar o desactivar una cuenta usa el botón de estado en la tabla.
                 </div>
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Rol</label>
-                  <select value={form.rol} onChange={(e) => setForm((f) => ({ ...f, rol: e.target.value }))} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
+                  <label htmlFor="select-rol" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Rol</label>
+                  <select
+                    id="select-rol"
+                    value={form.rol}
+                    onChange={(e) => { setForm((f) => ({ ...f, rol: e.target.value })); setFormErrors({}) }}
+                    aria-describedby={formErrors.rol ? 'error-rol' : undefined}
+                    className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.rol ? 'border-red-400' : 'border-border'}`}
+                  >
                     {ROLES_LIST.map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
+                  {formErrors.rol && (
+                    <p id="error-rol" role="alert" className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" aria-hidden="true" />{formErrors.rol}
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors">Cancelar</button>
                   <button type="submit" disabled={updateRol.isPending} className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors">
-                    {updateRol.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    Guardar Cambios
+                    {updateRol.isPending ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Send className="w-4 h-4" aria-hidden="true" />}
+                    {updateRol.isPending ? 'Guardando…' : 'Guardar Cambios'}
                   </button>
                 </div>
               </form>
