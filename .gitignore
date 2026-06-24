@@ -31,3 +31,29 @@ dist-ssr
 # Playwright
 test-results/
 playwright-report/
+# Logs
+logs
+*.log
+npm-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+
+# Playwright / Coverage
+test-results/
+playwright-report/
+coverage/
