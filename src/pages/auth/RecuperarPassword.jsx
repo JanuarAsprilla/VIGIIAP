@@ -82,12 +82,13 @@ export default function RecuperarPassword() {
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div>
-                <label className="block text-[0.8rem] font-semibold text-text mb-1.5">
+                <label htmlFor="rcp-email" className="block text-[0.8rem] font-semibold text-text mb-1.5">
                   Correo Electrónico
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" aria-hidden="true" />
                   <input
+                    id="rcp-email"
                     type="email"
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setError('') }}

@@ -495,7 +495,7 @@ export default function GestionMapas() {
       {/* Search */}
       <motion.div {...fadeUp(0.1)} className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-        <input type="text" placeholder="Buscar mapa por nombre o autor…"
+        <input type="text" aria-label="Buscar mapas por nombre o autor" placeholder="Buscar mapa por nombre o autor…"
           value={search} onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-9 pr-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
         />

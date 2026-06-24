@@ -121,10 +121,11 @@ export default function NuevoAnalisisModal({ onClose }) {
               <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 {/* Nombre */}
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  <label htmlFor="na-nombre" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                     Nombre del análisis <span className="text-orange-500" aria-hidden="true">*</span>
                   </label>
                   <input
+                    id="na-nombre"
                     type="text"
                     placeholder="Ej. Cobertura Cuenca Atrato 2026"
                     value={form.nombre}
@@ -136,10 +137,11 @@ export default function NuevoAnalisisModal({ onClose }) {
 
                 {/* Tipo */}
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  <label htmlFor="na-tipo" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                     Tipo de análisis <span className="text-orange-500" aria-hidden="true">*</span>
                   </label>
                   <select
+                    id="na-tipo"
                     value={form.tipo}
                     onChange={(e) => set('tipo', e.target.value)}
                     className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${errors.tipo ? 'border-red-400 focus:border-red-400' : 'border-border focus:border-primary-800'}`}
@@ -153,10 +155,11 @@ export default function NuevoAnalisisModal({ onClose }) {
 
                 {/* Departamento */}
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  <label htmlFor="na-area" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                     Área de interés
                   </label>
                   <select
+                    id="na-area"
                     value={form.departamento}
                     onChange={(e) => set('departamento', e.target.value)}
                     className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
@@ -169,10 +172,11 @@ export default function NuevoAnalisisModal({ onClose }) {
 
                 {/* Notas */}
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  <label htmlFor="na-notas" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                     Notas adicionales
                   </label>
                   <textarea
+                    id="na-notas"
                     rows={3}
                     placeholder="Describa el objetivo del análisis o capas de interés..."
                     value={form.notas}

@@ -15,10 +15,11 @@ export default function Geoformularios() {
       <div className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+            <label htmlFor="gf-tipo" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
               Tipo de observación
             </label>
             <select
+              id="gf-tipo"
               value={tipoObservacion}
               onChange={(e) => setTipoObservacion(e.target.value)}
               className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"

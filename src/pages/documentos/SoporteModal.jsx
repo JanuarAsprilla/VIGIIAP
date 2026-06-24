@@ -110,10 +110,10 @@ export function SoporteDocumentalModal({ onClose }) {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  <label htmlFor="sm-nombre" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                     Nombre <span className="text-orange-500" aria-hidden="true">*</span>
                   </label>
-                  <input type="text" value={form.nombre}
+                  <input id="sm-nombre" type="text" value={form.nombre}
                     onChange={(e) => set('nombre', e.target.value)}
                     placeholder="Su nombre completo" readOnly={isAuthenticated}
                     className={`w-full px-3 py-2.5 border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
@@ -123,10 +123,10 @@ export function SoporteDocumentalModal({ onClose }) {
                   {errors.nombre && <p className="text-xs text-red-500 mt-1" role="alert">{errors.nombre}</p>}
                 </div>
                 <div>
-                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                  <label htmlFor="sm-correo" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                     Correo <span className="text-orange-500" aria-hidden="true">*</span>
                   </label>
-                  <input type="email" value={form.correo}
+                  <input id="sm-correo" type="email" value={form.correo}
                     onChange={(e) => set('correo', e.target.value)}
                     placeholder="su@correo.com" readOnly={isAuthenticated}
                     className={`w-full px-3 py-2.5 border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
@@ -138,10 +138,10 @@ export function SoporteDocumentalModal({ onClose }) {
               </div>
 
               <div>
-                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                <label htmlFor="sm-tipo" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                   Tipo de consulta <span className="text-orange-500" aria-hidden="true">*</span>
                 </label>
-                <select value={form.tipo} onChange={(e) => set('tipo', e.target.value)}
+                <select id="sm-tipo" value={form.tipo} onChange={(e) => set('tipo', e.target.value)}
                   className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${errors.tipo ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
                 >
                   {CONSULTA_TYPES.map((t) => (
@@ -152,10 +152,10 @@ export function SoporteDocumentalModal({ onClose }) {
               </div>
 
               <div>
-                <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                <label htmlFor="sm-desc" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                   Descripción <span className="text-orange-500" aria-hidden="true">*</span>
                 </label>
-                <textarea rows={4} value={form.descripcion}
+                <textarea id="sm-desc" rows={4} value={form.descripcion}
                   onChange={(e) => set('descripcion', e.target.value)}
                   placeholder="Describa con detalle el documento o formato que necesita..."
                   className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition resize-none ${errors.descripcion ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
