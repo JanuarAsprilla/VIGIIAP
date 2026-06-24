@@ -1,0 +1,56 @@
+version: 2
+
+updates:
+  # npm — dependencias del frontend
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Bogota"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "JanuarAsprilla"
+    labels:
+      - "dependencies"
+      - "automated"
+    groups:
+      # Actualiza todas las dev tools juntas para reducir ruido
+      dev-tooling:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
+          - "vitest*"
+          - "@vitest/*"
+          - "prettier*"
+          - "husky*"
+          - "lint-staged*"
+          - "@playwright/*"
+          - "@testing-library/*"
+      # React y su ecosistema juntos
+      react-ecosystem:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "react-router*"
+          - "@types/react*"
+          - "framer-motion"
+      # Three.js y 3D juntos
+      three-ecosystem:
+        patterns:
+          - "three"
+          - "@react-three/*"
+    ignore:
+      # Major versions — revisar manualmente
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "ci"

@@ -1,0 +1,349 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for lib/constants/news.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">lib/constants</a> news.js</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>2/2</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/0</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/0</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>2/2</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line high'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">export const NEWS = [
+  {
+    id: 1,
+    slug: 'nueva-capa-reservas-naturales-2024',
+    tag: 'ACTUALIZACIÓN DE DATOS',
+    title: 'Publicada nueva capa cartográfica de Reservas Naturales de la Sociedad Civil 2024.',
+    excerpt: 'La actualización incluye 14 nuevas reservas en el departamento del Chocó, sumando más de...',
+    time: 'Hace 2 horas',
+    author: 'Geoportal Regional',
+  },
+  {
+    id: 2,
+    slug: 'encuentro-planificadores-territoriales',
+    tag: 'EVENTO REGIONAL',
+    title: 'Encuentro de Planificadores Territoriales: Desafíos del cambio climático en el litoral Pacífico.',
+    excerpt: 'Representantes de 4 departamentos se reunirán en Quibdó para unificar criterios de resiliencia...',
+    time: 'Hace 1 día',
+    author: 'Evento',
+  },
+]
+&nbsp;
+export const ALL_NEWS = [
+  {
+    id: 1,
+    slug: 'nueva-capa-reservas-naturales-2024',
+    tag: 'ACTUALIZACIÓN DE DATOS',
+    tagColor: 'primary',
+    title: 'Publicada nueva capa cartográfica de Reservas Naturales de la Sociedad Civil 2024.',
+    excerpt: 'La actualización incluye 14 nuevas reservas en el departamento del Chocó, sumando más de...',
+    content: 'La actualización incluye 14 nuevas reservas en el departamento del Chocó, sumando más de 45,000 hectáreas al inventario de áreas protegidas de la sociedad civil. Esta nueva capa cartográfica permite identificar con precisión los límites de cada reserva, facilitando los procesos de planificación territorial y monitoreo ambiental.\n\nEl equipo técnico del IIAP realizó el levantamiento de información en campo durante los meses de agosto y septiembre de 2024, utilizando equipos GPS de alta precisión y verificando los límites con las comunidades locales.\n\nLa capa está disponible para descarga en formato PDF e imagen desde el Repositorio de Mapas, y puede visualizarse interactivamente en el Geovisor SIAT-PC.',
+    time: 'Hace 2 horas',
+    date: '01 Abril 2026',
+    author: 'Geoportal Regional',
+    category: 'Ambiente',
+  },
+  {
+    id: 2,
+    slug: 'encuentro-planificadores-territoriales',
+    tag: 'EVENTO REGIONAL',
+    tagColor: 'gold',
+    title: 'Encuentro de Planificadores Territoriales: Desafíos del cambio climático en el litoral Pacífico.',
+    excerpt: 'Representantes de 4 departamentos se reunirán en Quibdó para unificar criterios de resiliencia...',
+    content: 'Representantes de los departamentos de Chocó, Valle del Cauca, Cauca y Nariño se reunirán en la ciudad de Quibdó los días 15 y 16 de abril de 2026 para unificar criterios de resiliencia climática en la planificación territorial del litoral Pacífico colombiano.\n\nEl encuentro, organizado por el IIAP en coordinación con el Ministerio de Ambiente y Desarrollo Sostenible, abordará temas como la gestión del riesgo por inundaciones, la erosión costera y la protección de manglares como barreras naturales.\n\nSe espera la participación de más de 120 planificadores territoriales, funcionarios ambientales y líderes comunitarios de la región.',
+    time: 'Hace 1 día',
+    date: '31 Marzo 2026',
+    author: 'Coordinación de Eventos IIAP',
+    category: 'Social',
+  },
+  {
+    id: 3,
+    slug: 'lanzamiento-geoportal-biodiversidad',
+    tag: 'TECNOLOGÍA',
+    tagColor: 'primary',
+    title: 'Lanzamiento del nuevo Geoportal de Biodiversidad del Chocó Biogeográfico.',
+    excerpt: 'Nuevas capas de información geográfica ahora disponibles para consulta pública con datos actualizados...',
+    content: 'El Instituto de Investigaciones Ambientales del Pacífico lanza oficialmente el Geoportal de Biodiversidad, una herramienta que integra más de 200 capas de información geográfica sobre la diversidad biológica del Chocó Biogeográfico.\n\nEl geoportal incluye datos de distribución de especies endémicas, áreas de importancia para la conservación, corredores biológicos y zonas de amortiguamiento. Toda la información está disponible para consulta pública y descarga.\n\nEste desarrollo representa un avance significativo en la democratización de la información ambiental de la región.',
+    time: 'Hace 3 días',
+    date: '29 Marzo 2026',
+    author: 'Laboratorio de Datos IIAP',
+    category: 'Ambiente',
+  },
+  {
+    id: 4,
+    slug: 'taller-herramientas-sig-comunidades',
+    tag: 'CAPACITACIÓN',
+    tagColor: 'gold',
+    title: 'Taller de Herramientas SIG para comunidades del medio Atrato.',
+    excerpt: 'Capacitación técnica en el uso de mapas digitales para líderes comunitarios del Chocó...',
+    content: 'El IIAP realizó con éxito el taller de capacitación en Herramientas SIG dirigido a 35 líderes comunitarios del medio Atrato. Los participantes aprendieron a utilizar el Geovisor SIAT-PC para consultar información territorial de sus comunidades.\n\nEl taller incluyó módulos prácticos sobre lectura de mapas digitales, uso de coordenadas GPS y generación de reportes territoriales básicos.\n\nEsta iniciativa forma parte del programa de transferencia tecnológica del instituto, que busca empoderar a las comunidades locales en la gestión de su territorio.',
+    time: 'Hace 5 días',
+    date: '27 Marzo 2026',
+    author: 'Programa de Extensión IIAP',
+    category: 'Social',
+  },
+  {
+    id: 5,
+    slug: 'actualizacion-datos-hidrograficos',
+    tag: 'ACTUALIZACIÓN DE DATOS',
+    tagColor: 'primary',
+    title: 'Actualización de la red hidrográfica del Pacífico colombiano con datos 2025-2026.',
+    excerpt: 'Se incorporan más de 1,200 nuevos tramos de ríos y quebradas al sistema de información...',
+    content: 'El equipo de hidrografía del IIAP completó la actualización de la red hidrográfica del Pacífico colombiano, incorporando más de 1,200 nuevos tramos de ríos y quebradas identificados mediante imágenes satelitales de alta resolución.\n\nLa actualización mejora significativamente la precisión de la cartografía hídrica de la región y permite una mejor planificación de proyectos de acueducto rural, manejo de cuencas y prevención de inundaciones.\n\nLos datos están disponibles para consulta en el Geovisor y descarga desde el Repositorio de Mapas.',
+    time: 'Hace 1 semana',
+    date: '25 Marzo 2026',
+    author: 'Equipo de Hidrografía IIAP',
+    category: 'Ambiente',
+  },
+]
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-06-24T13:11:54.216Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    
