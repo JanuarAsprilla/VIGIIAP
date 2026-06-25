@@ -1,7 +1,7 @@
 /* Hallmark · macrostructure: Workbench · genre: admin-crud
  * tokens: design.md · stamp: 2026-05-25
  */
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, X, Edit2, Trash2, Eye, EyeOff,
@@ -9,7 +9,8 @@ import {
   FileText, Image, Link as LinkIcon, Loader2, MapPin,
   ExternalLink, Globe, Users, ShieldCheck, ChevronDown, Tag,
 } from 'lucide-react'
-import { fadeUpSm, panelAnim, staggerContainer, staggerItem3D } from '@/lib/animations'
+import { fadeUpSm, panelAnim } from '@/lib/animations'
+import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import Card3D from '@/components/ui/Card3D'
 import { useMapasList, useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa } from '@/hooks/useMapas'
 
@@ -354,6 +355,31 @@ export default function GestionMapas() {
     return matchQ && matchT
   })
 
+  const listRef = useRef(null)
+  const [cols, setCols] = useState(() => (typeof window !== 'undefined' && window.innerWidth >= 1024) ? 2 : 1)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const handler = (e) => setCols(e.matches ? 2 : 1)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
+  const rows = useMemo(() => {
+    const result = []
+    for (let i = 0; i < filtered.length; i += cols) {
+      result.push(filtered.slice(i, i + cols))
+    }
+    return result
+  }, [filtered, cols])
+
+  const virtualizer = useWindowVirtualizer({
+    count: rows.length,
+    estimateSize: () => 224,
+    overscan: 4,
+    scrollMargin: listRef.current?.offsetTop ?? 0,
+  })
+
   const openCreate = () => {
     setEditing(null); setForm(EMPTY_FORM); setFormErrors({})
     setUploadedFile(null); setUploadedThumb(null); setUploadError(null); setSubmitError(null)
@@ -528,88 +554,105 @@ export default function GestionMapas() {
         </motion.div>
       )}
 
-      {/* Cards */}
-      {mapas.length > 0 && (
-        <motion.div
-            variants={staggerContainer(0.06, 0.16)}
-            initial="initial" animate="animate"
-            className="grid grid-cols-1 lg:grid-cols-2 gap-4"
-          >
-          {filtered.length === 0 && (
-            <div className="col-span-2 py-12 text-center text-sm text-text-muted">
-              No hay mapas que coincidan con la búsqueda
-            </div>
-          )}
-          {filtered.map((m) => (
-            <motion.div key={m.id} variants={staggerItem3D}>
-            <Card3D
-              glow="rgba(26,86,50,0.14)"
-              intensity={4}
-              className={`bg-white border rounded-xl p-5 transition-all h-full ${m.visible ? 'border-border/70' : 'border-border/50 opacity-55'}`}
-              whileHover={{ y: -3 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${TEMATICA_COLORS[m.tematica] ?? 'bg-gray-100 text-gray-600'}`}>{m.tematica}</span>
-                    <span className={`text-[0.6rem] font-semibold px-1.5 py-0.5 rounded border ${
-                      m.formato === 'PDF' ? 'border-red-200 text-red-500' :
-                      m.formato === 'IMG' ? 'border-blue-200 text-blue-500' :
-                      'border-primary-200 text-primary-700'
-                    }`}>{m.formato}</span>
-                    {!m.visible && (
-                      <span className="text-[0.6rem] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Oculto</span>
-                    )}
-                  </div>
-                  <p className="text-sm font-bold text-text">{m.nombre}</p>
-                  <p className="text-xs text-text-muted mt-0.5">{m.autor || 'IIAP'} · {m.fecha}</p>
-                  {m.descripcion && <p className="text-xs text-text-muted mt-1 line-clamp-1">{m.descripcion}</p>}
-                </div>
-                <button
-                  onClick={() => toggleVisible(m.id)}
-                  className={`shrink-0 p-1.5 rounded-lg transition-colors ${m.visible ? 'text-primary-700 hover:bg-primary-50' : 'text-text-muted hover:bg-bg-alt'}`}
-                  title={m.visible ? 'Visible — clic para ocultar' : 'Oculto — clic para publicar'}
+      {/* Cards — virtualized with @tanstack/react-virtual */}
+      {mapas.length > 0 && filtered.length === 0 && (
+        <div className="py-12 text-center text-sm text-text-muted">
+          No hay mapas que coincidan con la búsqueda
+        </div>
+      )}
+      {mapas.length > 0 && filtered.length > 0 && (
+        <div ref={listRef}>
+          <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+            {virtualizer.getVirtualItems().map((vRow) => {
+              const rowItems = rows[vRow.index]
+              return (
+                <div
+                  key={vRow.key}
+                  data-index={vRow.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${vRow.start - virtualizer.options.scrollMargin}px)`,
+                  }}
+                  className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4"
                 >
-                  {m.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                </button>
-              </div>
-              <div className="flex items-center justify-between pt-1 border-t border-border/50">
-                <div className="flex items-center gap-2">
-                  {(() => {
-                    const vis = visMap[m.visibilidad] ?? visMap.publico
-                    return (
-                      <span className={`text-[0.6rem] font-semibold px-1.5 py-0.5 rounded ${vis.pill}`}>
-                        {vis.label}
-                      </span>
-                    )
-                  })()}
+                  {rowItems.map((m) => (
+                    <motion.div key={m.id} {...fadeUpSm()}>
+                      <Card3D
+                        glow="rgba(26,86,50,0.14)"
+                        intensity={4}
+                        className={`bg-white border rounded-xl p-5 transition-all h-full ${m.visible ? 'border-border/70' : 'border-border/50 opacity-55'}`}
+                        whileHover={{ y: -3 }}
+                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${TEMATICA_COLORS[m.tematica] ?? 'bg-gray-100 text-gray-600'}`}>{m.tematica}</span>
+                              <span className={`text-[0.6rem] font-semibold px-1.5 py-0.5 rounded border ${
+                                m.formato === 'PDF' ? 'border-red-200 text-red-500' :
+                                m.formato === 'IMG' ? 'border-blue-200 text-blue-500' :
+                                'border-primary-200 text-primary-700'
+                              }`}>{m.formato}</span>
+                              {!m.visible && (
+                                <span className="text-[0.6rem] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Oculto</span>
+                              )}
+                            </div>
+                            <p className="text-sm font-bold text-text">{m.nombre}</p>
+                            <p className="text-xs text-text-muted mt-0.5">{m.autor || 'IIAP'} · {m.fecha}</p>
+                            {m.descripcion && <p className="text-xs text-text-muted mt-1 line-clamp-1">{m.descripcion}</p>}
+                          </div>
+                          <button
+                            onClick={() => toggleVisible(m.id)}
+                            className={`shrink-0 p-1.5 rounded-lg transition-colors ${m.visible ? 'text-primary-700 hover:bg-primary-50' : 'text-text-muted hover:bg-bg-alt'}`}
+                            title={m.visible ? 'Visible — clic para ocultar' : 'Oculto — clic para publicar'}
+                          >
+                            {m.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between pt-1 border-t border-border/50">
+                          <div className="flex items-center gap-2">
+                            {(() => {
+                              const vis = visMap[m.visibilidad] ?? visMap.publico
+                              return (
+                                <span className={`text-[0.6rem] font-semibold px-1.5 py-0.5 rounded ${vis.pill}`}>
+                                  {vis.label}
+                                </span>
+                              )
+                            })()}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {(m.archivo_pdf_url || m.archivo_img_url || m.geovisor_url) && (
+                              <button
+                                onClick={() => window.open(m.archivo_img_url || m.archivo_pdf_url || m.geovisor_url, '_blank', 'noopener,noreferrer')}
+                                className="p-1.5 rounded-lg text-text-muted hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                title="Ver archivo">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <button onClick={() => openEdit(m)}
+                              className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
+                              title="Editar mapa">
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => setDeleteTarget(m)}
+                              className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
+                              title="Eliminar mapa">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </Card3D>
+                    </motion.div>
+                  ))}
                 </div>
-                <div className="flex items-center gap-1">
-                  {(m.archivo_pdf_url || m.archivo_img_url || m.geovisor_url) && (
-                    <button
-                      onClick={() => window.open(m.archivo_img_url || m.archivo_pdf_url || m.geovisor_url, '_blank', 'noopener,noreferrer')}
-                      className="p-1.5 rounded-lg text-text-muted hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                      title="Ver archivo">
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  <button onClick={() => openEdit(m)}
-                    className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
-                    title="Editar mapa">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => setDeleteTarget(m)}
-                    className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
-                    title="Eliminar mapa">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </Card3D>
-            </motion.div>
-          ))}
-        </motion.div>
+              )
+            })}
+          </div>
+        </div>
       )}
 
       {/* Modal ingresar / editar mapa */}
