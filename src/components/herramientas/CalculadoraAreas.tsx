@@ -25,6 +25,7 @@ export default function CalculadoraAreas() {
     setResult(null)
     setTimeout(() => {
       const found = CAPAS.find((c) => c.value === capa)
+      if (!found || found.area === undefined || found.perimetro === undefined) { setLoading(false); return }
       const f = UNIDAD_FACTOR[unidad] || 1
       setResult({
         area:      (found.area * f).toFixed(2),

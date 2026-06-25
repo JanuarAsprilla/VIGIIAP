@@ -119,28 +119,28 @@ describe('normalizeSolicitud — TIPO_LABEL branches', () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ tipo: 'uso-suelo' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].tipo).toBe('Certificado de Uso de Suelo')
+    expect(result.current.data!.data[0].tipo).toBe('Certificado de Uso de Suelo')
   })
 
   test('falls back to raw tipo when not in map', async () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ tipo: 'tipo-desconocido' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].tipo).toBe('tipo-desconocido')
+    expect(result.current.data!.data[0].tipo).toBe('tipo-desconocido')
   })
 
   test('maps linderos', async () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ tipo: 'linderos' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].tipo).toBe('Consulta de Linderos')
+    expect(result.current.data!.data[0].tipo).toBe('Consulta de Linderos')
   })
 
   test('maps estudio-ambiental', async () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ tipo: 'estudio-ambiental' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].tipo).toBe('Estudio Técnico Ambiental')
+    expect(result.current.data!.data[0].tipo).toBe('Estudio Técnico Ambiental')
   })
 })
 
@@ -160,7 +160,7 @@ describe('normalizeSolicitud — ESTADO branches', () => {
       api.get.mockResolvedValue({ data: [makeSolicitud({ estado })], meta: {} })
       const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
-      const item = result.current.data.data[0]
+      const item = result.current.data!.data[0]
       expect(item.estado).toBe(expectedLabel)
       expect(item.estadoColor).toBe(expectedColor)
       expect(item.estadoRaw).toBe(estado)
@@ -171,7 +171,7 @@ describe('normalizeSolicitud — ESTADO branches', () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'estado-raro' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    const item = result.current.data.data[0]
+    const item = result.current.data!.data[0]
     expect(item.estado).toBe('En Proceso')
     expect(item.estadoColor).toBe('yellow')
   })
@@ -184,35 +184,35 @@ describe('normalizeSolicitud — buildTimeline branches', () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'pendiente' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].timeline).toEqual(['Recibida', 'Pendiente'])
+    expect(result.current.data!.data[0].timeline).toEqual(['Recibida', 'Pendiente'])
   })
 
   test('en_revision timeline', async () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'en_revision' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].timeline).toEqual(['Recibida', 'Pendiente', 'En Revisión'])
+    expect(result.current.data!.data[0].timeline).toEqual(['Recibida', 'Pendiente', 'En Revisión'])
   })
 
   test('aprobada timeline', async () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'aprobada' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].timeline).toEqual(['Recibida', 'Pendiente', 'En Revisión', 'Aprobado'])
+    expect(result.current.data!.data[0].timeline).toEqual(['Recibida', 'Pendiente', 'En Revisión', 'Aprobado'])
   })
 
   test('rechazada timeline', async () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'rechazada' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].timeline).toEqual(['Recibida', 'Pendiente', 'En Revisión', 'Rechazado'])
+    expect(result.current.data!.data[0].timeline).toEqual(['Recibida', 'Pendiente', 'En Revisión', 'Rechazado'])
   })
 
   test('resuelta timeline', async () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'resuelta' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].timeline).toEqual(['Recibida', 'Pendiente', 'En Revisión', 'Resuelta'])
+    expect(result.current.data!.data[0].timeline).toEqual(['Recibida', 'Pendiente', 'En Revisión', 'Resuelta'])
   })
 })
 
@@ -223,15 +223,15 @@ describe('normalizeSolicitud — nullable fields', () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ descripcion: null })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].subtipo).toBe('')
-    expect(result.current.data.data[0].descripcion).toBe('')
+    expect(result.current.data!.data[0].subtipo).toBe('')
+    expect(result.current.data!.data[0].descripcion).toBe('')
   })
 
   test('nota_admin present → notas populated', async () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ nota_admin: 'Requiere revisión adicional' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].notas).toBe('Requiere revisión adicional')
+    expect(result.current.data!.data[0].notas).toBe('Requiere revisión adicional')
   })
 
   test('respondida_en present → not null', async () => {
@@ -239,14 +239,14 @@ describe('normalizeSolicitud — nullable fields', () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ respondida_en: fecha })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].respondidaEn).toBe(fecha)
+    expect(result.current.data!.data[0].respondidaEn).toBe(fecha)
   })
 
   test('revisado_por_nombre present → revisor populated', async () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ revisado_por_nombre: 'Ana López' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].revisor).toBe('Ana López')
+    expect(result.current.data!.data[0].revisor).toBe('Ana López')
   })
 
   test('dias_pendiente missing → calculated from creado_en', async () => {
@@ -256,37 +256,37 @@ describe('normalizeSolicitud — nullable fields', () => {
     })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(typeof result.current.data.data[0].diasPendiente).toBe('number')
-    expect(result.current.data.data[0].diasPendiente).toBeGreaterThanOrEqual(0)
+    expect(typeof result.current.data!.data[0].diasPendiente).toBe('number')
+    expect(result.current.data!.data[0].diasPendiente).toBeGreaterThanOrEqual(0)
   })
 
   test('dias_pendiente present → uses API value', async () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ dias_pendiente: 7 })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].diasPendiente).toBe(7)
+    expect(result.current.data!.data[0].diasPendiente).toBe(7)
   })
 
   test('id normalized — dashes stripped and uppercased', async () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ id: 'abc-123-def-456' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].id).toMatch(/^#[A-F0-9]+$/)
-    expect(result.current.data.data[0]._id).toBe('abc-123-def-456')
+    expect(result.current.data!.data[0].id).toMatch(/^#[A-F0-9]+$/)
+    expect(result.current.data!.data[0]._id).toBe('abc-123-def-456')
   })
 
   test('accionesValidas maps TRANSICIONES_VALIDAS for estado', async () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'pendiente' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].accionesValidas).toEqual(TRANSICIONES_VALIDAS.pendiente)
+    expect(result.current.data!.data[0].accionesValidas).toEqual(TRANSICIONES_VALIDAS.pendiente)
   })
 
   test('unknown estado → accionesValidas is empty array', async () => {
     api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'estado-raro' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].accionesValidas).toEqual([])
+    expect(result.current.data!.data[0].accionesValidas).toEqual([])
   })
 })
 
@@ -300,8 +300,8 @@ describe('useSolicitudesAdmin', () => {
     const { result } = renderHook(() => useSolicitudesAdmin({ page: 1 }), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(api.get).toHaveBeenCalledWith('/solicitudes', { params: { page: 1 } })
-    expect(result.current.data.data).toHaveLength(1)
-    expect(result.current.data.meta).toEqual({ total: 1 })
+    expect(result.current.data!.data).toHaveLength(1)
+    expect(result.current.data!.meta).toEqual({ total: 1 })
   })
 
   test('exposes isError on failure', async () => {

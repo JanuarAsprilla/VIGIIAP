@@ -297,7 +297,7 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }) {
             <p className="text-xs text-text-muted mt-1">{TIPO_HINT[tipo] ?? ''}</p>
           </div>
           <input ref={inputRef} type="file" accept={accept}
-            onChange={(e) => { validateAndAccept(e.target.files[0]); e.target.value = '' }}
+            onChange={(e) => { validateAndAccept(e.target.files?.[0]); e.target.value = '' }}
             className="sr-only" />
         </div>
       )}
@@ -402,6 +402,7 @@ export default function GestionDocumentos() {
   }
 
   const confirmDelete = async () => {
+    if (!deleteTarget) return
     await deleteDocumento.mutateAsync(deleteTarget.id)
     setToast(`Documento "${deleteTarget.nombre}" eliminado`)
     setDeleteTarget(null)

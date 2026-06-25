@@ -17,19 +17,18 @@
     /* JSX */
     "jsx": "react-jsx",
 
-    /* Strictness — gradual: empieza sin strict para no bloquear componentes legacy */
-    "strict": false,
+    /* Strictness — activado completamente */
+    "strict": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "exactOptionalPropertyTypes": false,
+    "ignoreDeprecations": "5.0",
 
     /* Paths */
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src"]
 }

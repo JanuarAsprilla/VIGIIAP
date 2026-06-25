@@ -84,7 +84,7 @@ export default function GestionSolicitudes() {
     try {
       await updateEstado.mutateAsync({ id: sol._id, estado: nuevoEstado, nota })
       if (selected?._id === sol._id)
-        setSelected((prev) => ({ ...prev, estado: nuevoEstado, notas: nota || prev.notas }))
+        setSelected((prev) => prev ? { ...prev, estado: nuevoEstado, notas: nota || prev!.notas } : prev)
       setAccionModal(null)
       setNota('')
       toast(
@@ -99,6 +99,7 @@ export default function GestionSolicitudes() {
   }
 
   const handleResponder = async () => {
+    if (!selected) return
     if (!respuesta.trim() || respuesta.trim().length < 10) {
       toast('La respuesta debe tener al menos 10 caracteres', 'error')
       return
@@ -119,6 +120,7 @@ export default function GestionSolicitudes() {
   }
 
   const handleDownloadArchivo = async (archivo) => {
+    if (!selected) return
     try {
       const result = await downloadArchivo.mutateAsync({
         solicitudId: selected._id, archivoId: archivo.id,
@@ -130,6 +132,7 @@ export default function GestionSolicitudes() {
   }
 
   const handleDeleteArchivo = async (archivo) => {
+    if (!selected) return
     try {
       await deleteArchivo.mutateAsync({ solicitudId: selected._id, archivoId: archivo.id })
       toast(`Archivo "${archivo.nombre}" eliminado`, 'success')

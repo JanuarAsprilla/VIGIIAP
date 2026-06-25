@@ -66,7 +66,7 @@ describe('useNoticias normalizeNoticia — null field branches', () => {
     })
     const { result } = renderHook(() => useNoticiasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    const n = result.current.data.data[0]
+    const n = result.current.data!.data[0]
     expect(n.tag).toBe('NOTICIAS')         // ?? 'NOTICIAS' branch
     expect(n.excerpt).toBe('')             // null resumen → ''
     expect(n.content).toBe('')             // null contenido → ''
@@ -90,7 +90,7 @@ describe('useNoticias normalizeNoticia — null field branches', () => {
     })
     const { result } = renderHook(() => useNoticiasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    const n = result.current.data.data[0]
+    const n = result.current.data!.data[0]
     // Both date and time use publicado_en ?? creado_en
     expect(typeof n.date).toBe('string')
     expect(typeof n.time).toBe('string')
@@ -106,7 +106,7 @@ describe('useNoticias normalizeNoticia — null field branches', () => {
     })
     const { result } = renderHook(() => useNoticiasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].tag).toBe('BIODIVERSIDAD')
+    expect(result.current.data!.data[0].tag).toBe('BIODIVERSIDAD')
   })
 })
 
@@ -130,49 +130,49 @@ describe('useUsuarios normalizeUser — null/unknown field branches', () => {
     api.get.mockResolvedValue({ data: [makeUser({ activo: false })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].estado).toBe('Inactivo')
+    expect(result.current.data!.data[0].estado).toBe('Inactivo')
   })
 
   test('nombre null → initials falls back to ?', async () => {
     api.get.mockResolvedValue({ data: [makeUser({ nombre: null })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].initials).toBe('?')
+    expect(result.current.data!.data[0].initials).toBe('?')
   })
 
   test('unknown rol → falls back to PUBLICO', async () => {
     api.get.mockResolvedValue({ data: [makeUser({ rol: 'rol-desconocido' })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].rol).toBe('Público')
+    expect(result.current.data!.data[0].rol).toBe('Público')
   })
 
   test('email_verified null → defaults to false', async () => {
     api.get.mockResolvedValue({ data: [makeUser({ email_verified: null })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].emailVerified).toBe(false)
+    expect(result.current.data!.data[0].emailVerified).toBe(false)
   })
 
   test('motivo_acceso null → empty string', async () => {
     api.get.mockResolvedValue({ data: [makeUser({ motivo_acceso: null })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].motivoAcceso).toBe('')
+    expect(result.current.data!.data[0].motivoAcceso).toBe('')
   })
 
   test('institucion null → empty string', async () => {
     api.get.mockResolvedValue({ data: [makeUser({ institucion: null })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].institucion).toBe('')
+    expect(result.current.data!.data[0].institucion).toBe('')
   })
 
   test('actualizado_en null → falls back to creado_en', async () => {
     api.get.mockResolvedValue({ data: [makeUser({ actualizado_en: null })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(typeof result.current.data.data[0].ultimoAcceso).toBe('string')
+    expect(typeof result.current.data!.data[0].ultimoAcceso).toBe('string')
   })
 
   test('all known roles map correctly', async () => {
@@ -181,7 +181,7 @@ describe('useUsuarios normalizeUser — null/unknown field branches', () => {
       api.get.mockResolvedValue({ data: [makeUser({ rol })], meta: {} })
       const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
-      expect(result.current.data.data[0].rolBackend).toBe(rol)
+      expect(result.current.data!.data[0].rolBackend).toBe(rol)
     }
   })
 })
@@ -337,7 +337,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
     })
     const { result } = renderHook(() => useMapasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    const m = result.current.data.data[0]
+    const m = result.current.data!.data[0]
     expect(m.formato).toBe('Geovisor')
   })
 
@@ -348,7 +348,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
     })
     const { result } = renderHook(() => useMapasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].formato).toBe('IMG')
+    expect(result.current.data!.data[0].formato).toBe('IMG')
   })
 
   test('pdf_url with .pdf extension → formato PDF', async () => {
@@ -358,7 +358,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
     })
     const { result } = renderHook(() => useMapasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].formato).toBe('PDF')
+    expect(result.current.data!.data[0].formato).toBe('PDF')
   })
 
   test('pdf_url with image extension and no img_url → formato IMG', async () => {
@@ -368,7 +368,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
     })
     const { result } = renderHook(() => useMapasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].formato).toBe('IMG')
+    expect(result.current.data!.data[0].formato).toBe('IMG')
   })
 
   test('no files at all → defaults to PDF', async () => {
@@ -378,7 +378,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
     })
     const { result } = renderHook(() => useMapasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].formato).toBe('PDF')
+    expect(result.current.data!.data[0].formato).toBe('PDF')
   })
 
   test('both img and pdf urls → IMG takes priority', async () => {
@@ -391,7 +391,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
     })
     const { result } = renderHook(() => useMapasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].formato).toBe('IMG')
+    expect(result.current.data!.data[0].formato).toBe('IMG')
   })
 
   test('activo=false → visible field is false', async () => {
@@ -401,7 +401,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
     })
     const { result } = renderHook(() => useMapasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data.data[0].visible).toBe(false)
+    expect(result.current.data!.data[0].visible).toBe(false)
   })
 
   test('missing descripcion → descripcion field present', async () => {
@@ -412,6 +412,6 @@ describe('useMapasList — normalizeMap branch coverage', () => {
     const { result } = renderHook(() => useMapasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     // Should normalize gracefully
-    expect(result.current.data.data[0]).toHaveProperty('nombre')
+    expect(result.current.data!.data[0]).toHaveProperty('nombre')
   })
 })

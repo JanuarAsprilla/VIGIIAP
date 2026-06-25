@@ -229,7 +229,7 @@ function ThumbnailDropzone({ onFile, existing }) {
         </div>
       )}
       <input ref={inputRef} type="file" accept="image/*"
-        onChange={(e) => { accept(e.target.files[0]); e.target.value = '' }}
+        onChange={(e) => { accept(e.target.files?.[0]); e.target.value = '' }}
         className="sr-only" />
     </div>
   )
@@ -310,7 +310,7 @@ function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, o
             ref={inputRef}
             type="file"
             accept={accept}
-            onChange={(e) => { validateAndAccept(e.target.files[0]); e.target.value = '' }}
+            onChange={(e) => { validateAndAccept(e.target.files?.[0]); e.target.value = '' }}
             className="sr-only"
           />
         </div>
@@ -470,6 +470,7 @@ export default function GestionMapas() {
   }
 
   const confirmDelete = async () => {
+    if (!deleteTarget) return
     await deleteMapa.mutateAsync(deleteTarget.id)
     setToast(`Mapa "${deleteTarget.nombre}" eliminado`)
     setDeleteTarget(null)

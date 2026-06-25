@@ -238,7 +238,7 @@ function ThumbnailDropzone({ previewUrl, onChange, onRemove, onError }) {
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
-        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files[0])} />
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
       </div>
     )
   }
@@ -260,7 +260,7 @@ function ThumbnailDropzone({ previewUrl, onChange, onRemove, onError }) {
         <span className="font-semibold text-primary-800">Seleccionar imagen</span> o arrastrar aquí<br />
         <span className="text-[0.65rem]">JPG, PNG, WEBP · máx. 2 MB</span>
       </p>
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files[0])} />
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
     </div>
   )
 }
@@ -383,6 +383,7 @@ export default function GestionNoticias() {
   }
 
   const confirmDelete = async () => {
+    if (!deleteTarget) return
     await deleteNoticia.mutateAsync(deleteTarget.id)
     setToast(`Noticia "${deleteTarget.titulo}" eliminada`)
     setDeleteTarget(null)

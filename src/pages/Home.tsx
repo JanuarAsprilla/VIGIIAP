@@ -224,7 +224,7 @@ function ModulesSection({ isVisitante, isPublico }) {
   const bentoOrder = ['mapas', 'geovisor', 'herramientas', 'documentos', 'noticias', 'solicitudes']
   const sortedModules = query.trim()
     ? filtered
-    : bentoOrder.map((id) => ALL_MODULES.find((m) => m.id === id)).filter(Boolean)
+    : bentoOrder.map((id) => ALL_MODULES.find((m) => m.id === id)).filter((m): m is typeof ALL_MODULES[number] => Boolean(m))
 
   return (
     <section aria-labelledby="modules-section-title">

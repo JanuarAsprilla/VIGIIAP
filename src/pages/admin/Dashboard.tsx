@@ -256,10 +256,10 @@ function SolicitudesPendientes({ solicitudes }) {
                 {isConfirming ? (
                   <>
                     <span className="text-xs text-text-muted mr-1">
-                      {confirm.accion === 'Aprobado' ? '¿Aprobar?' : '¿Rechazar?'}
+                      {confirm!.accion === 'Aprobado' ? '¿Aprobar?' : '¿Rechazar?'}
                     </span>
                     <button
-                      onClick={() => doAction(sol._id, confirm.accion)}
+                      onClick={() => doAction(sol._id, confirm!.accion)}
                       disabled={isPending}
                       className="px-2.5 py-1 rounded-lg text-xs font-bold bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
                     >

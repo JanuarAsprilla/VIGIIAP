@@ -62,7 +62,7 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }) {
           )}
         </div>
         <input ref={inputRef} type="file" accept="image/*"
-          onChange={(e) => { accept(e.target.files[0]); e.target.value = '' }}
+          onChange={(e) => { accept(e.target.files?.[0]); e.target.value = '' }}
           className="sr-only" />
       </div>
     )
@@ -84,7 +84,7 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }) {
       </p>
       <p className="text-[0.6rem] text-text-muted">JPG, PNG, WebP · máx. 5 MB</p>
       <input ref={inputRef} type="file" accept="image/*"
-        onChange={(e) => { accept(e.target.files[0]); e.target.value = '' }}
+        onChange={(e) => { accept(e.target.files?.[0]); e.target.value = '' }}
         className="sr-only" />
     </div>
   )
@@ -245,7 +245,8 @@ export default function GestionCategorias() {
 
   const confirmDelete = async () => {
     try {
-      await deleteCategoria.mutateAsync(deleteTarget.nombre)
+      if (!deleteTarget) return
+    await deleteCategoria.mutateAsync(deleteTarget.nombre)
       setToast(`Categoría "${deleteTarget.nombre}" eliminada`)
     } catch {
       setToast('No se pudo eliminar la categoría')
