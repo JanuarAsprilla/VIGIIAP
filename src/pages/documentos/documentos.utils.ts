@@ -18,7 +18,7 @@ export function isTrustedUrl(url) {
 export async function forceDownload(url, filename) {
   if (!url) return
   if (!isTrustedUrl(url)) {
-    console.error('[VIGIIAP] Descarga bloqueada — origen no permitido:', url)
+    if (import.meta.env.DEV) console.error('[VIGIIAP] Descarga bloqueada — origen no permitido:', url)
     return
   }
   const name = filename || url.split('?')[0].split('/').pop() || 'archivo'

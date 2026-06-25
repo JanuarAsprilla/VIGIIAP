@@ -1,5 +1,5 @@
 /** Formatea ISO timestamp → "15 Mar 2026" */
-export function formatDate(iso) {
+export function formatDate(iso: string | null | undefined): string {
   if (!iso) return ''
   return new Intl.DateTimeFormat('es-CO', {
     day:   '2-digit',
@@ -9,14 +9,14 @@ export function formatDate(iso) {
 }
 
 /** Tiempo relativo → "hace 3 días" */
-export function timeAgo(iso) {
+export function timeAgo(iso: string | null | undefined): string {
   if (!iso) return ''
-  const diff = Date.now() - new Date(iso).getTime()
+  const diff  = Date.now() - new Date(iso).getTime()
   const mins  = Math.floor(diff / 60_000)
-  if (mins < 60)   return `hace ${mins} min`
+  if (mins < 60)  return `hace ${mins} min`
   const hours = Math.floor(mins / 60)
-  if (hours < 24)  return `hace ${hours}h`
+  if (hours < 24) return `hace ${hours}h`
   const days  = Math.floor(hours / 24)
-  if (days < 30)   return `hace ${days} días`
+  if (days < 30)  return `hace ${days} días`
   return formatDate(iso)
 }

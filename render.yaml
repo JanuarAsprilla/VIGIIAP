@@ -1,50 +1,39 @@
 services:
   - type: web
     name: vigiiap-frontend
-    env: static
-    buildCommand: npm run build
-    staticPublishPath: ./dist
-    envVars:
-      - key: VITE_API_URL
-        value: https://vigiiap-backend.onrender.com/api
-      - key: VITE_APP_ENV
-        value: production
-      - key: VITE_R2_PUBLIC_URL
-        sync: false
-      - key: VITE_SENTRY_DSN
-        sync: false
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    pullRequestPreviewsEnabled: true
     headers:
       - path: /*
-        name: X-Frame-Options
-        value: DENY
+        name: Strict-Transport-Security
+        value: max-age=31536000; includeSubDomains; preload
       - path: /*
         name: X-Content-Type-Options
         value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
       - path: /*
         name: Referrer-Policy
         value: strict-origin-when-cross-origin
       - path: /*
         name: Permissions-Policy
-        value: "camera=(), microphone=(), geolocation=()"
-      - path: /*
-        name: Strict-Transport-Security
-        value: "max-age=31536000; includeSubDomains"
-      - path: /*
-        name: X-XSS-Protection
-        value: "0"
+        value: camera=(), microphone=(), geolocation=(), interest-cohort=()
       - path: /*
         name: Content-Security-Policy
-        value: >-
-          default-src 'self';
-          script-src 'self';
-          style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-          font-src 'self' https://fonts.gstatic.com;
-          img-src 'self' data: https: blob:;
-          connect-src 'self' https://vigiiap-backend.onrender.com https://*.ingest.sentry.io;
-          frame-src 'none';
-          object-src 'none';
-          base-uri 'self';
+        value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://browser.sentry-cdn.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.sentry.io https://o*.ingest.sentry.io https://*.onrender.com http://localhost:4000; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
+    envVars:
+      - key: VITE_APP_ENV
+        value: production
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_R2_PUBLIC_URL
+        sync: false
+      - key: VITE_SENTRY_DSN
+        sync: false

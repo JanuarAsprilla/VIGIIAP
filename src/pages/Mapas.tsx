@@ -127,7 +127,7 @@ async function forceDownload(url) {
   if (!url) return
   // H-02: bloquear URLs de orígenes no confiables.
   if (!isTrustedUrl(url)) {
-    console.error('[VIGIIAP] Descarga bloqueada — origen no permitido:', url)
+    if (import.meta.env.DEV) console.error('[VIGIIAP] Descarga bloqueada — origen no permitido:', url)
     return
   }
   const filename = url.split('?')[0].split('/').pop() || 'archivo'

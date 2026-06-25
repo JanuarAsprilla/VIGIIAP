@@ -20,6 +20,9 @@ export default defineConfig({
         manualChunks: (id) => {
           if (id.includes('three') || id.includes('@react-three')) return 'three-vendor'
           if (id.includes('framer-motion') || id.includes('gsap')) return 'motion-vendor'
+          if (id.includes('@tanstack/react-query') || id.includes('axios')) return 'query-vendor'
+          if (id.includes('leaflet') || id.includes('react-leaflet')) return 'map-vendor'
+          if (id.includes('@sentry')) return 'sentry-vendor'
         },
       },
     },

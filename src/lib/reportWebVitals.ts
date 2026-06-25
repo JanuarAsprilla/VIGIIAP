@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react'
-import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals'
+import { onCLS, onFCP, onINP, onLCP, onTTFB, type Metric } from 'web-vitals'
 
-function handleVital({ name, value, rating, delta, id }) {
+function handleVital({ name, value, rating, delta, id }: Metric): void {
   Sentry.addBreadcrumb({
     type: 'performance',
     category: 'web-vitals',
@@ -24,7 +24,7 @@ function handleVital({ name, value, rating, delta, id }) {
   }
 }
 
-export function reportWebVitals() {
+export function reportWebVitals(): void {
   onCLS(handleVital)
   onINP(handleVital)
   onLCP(handleVital)
