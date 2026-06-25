@@ -76,7 +76,7 @@ describe('useCreateSolicitud', () => {
     const { result } = renderHook(() => useCreateSolicitud(), { wrapper: makeWrapper() })
 
     await act(async () => {
-      try { await result.current.mutateAsync({}) } catch {}
+      try { await result.current.mutateAsync({}) } catch { /* expected */ }
     })
     expect(result.current.isError).toBe(true)
   })
