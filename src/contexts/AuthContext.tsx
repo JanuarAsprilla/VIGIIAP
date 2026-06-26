@@ -1,7 +1,36 @@
 import * as Sentry from '@sentry/react'
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import api from '@/lib/api'
 import queryClient from '@/lib/queryClient'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface AuthUser {
+  id: string
+  name: string
+  email: string | null
+  role: string
+  rol: string
+  tipo: string | null
+  isVisitante: boolean
+  initials: string
+  institucion: string | null
+}
+
+export interface AuthContextValue {
+  user: AuthUser | null
+  isAuthenticated: boolean
+  isVisitante: boolean
+  isSuperAdmin: boolean
+  isAdmin: boolean
+  loading: boolean
+  initializing: boolean
+  login: (email: string, password: string) => Promise<AuthUser>
+  loginVisitante: (nombre?: string) => Promise<AuthUser>
+  logout: () => Promise<void>
+  register: (data: Record<string, unknown>) => Promise<unknown>
+  refreshProfile: () => Promise<AuthUser | undefined>
+}
 
 // ─── Mapeo de roles backend → etiquetas UI ────────────────────────────────────
 export const ROLES = {
@@ -45,9 +74,9 @@ function normalizeUser(raw) {
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
-const AuthContext = createContext(null)
+const AuthContext = createContext<AuthContextValue | null>(null)
 
-export function AuthProvider({ children }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   // C-01: estado de usuario solo en memoria (no localStorage).
   // La sesión persiste a través de la cookie HttpOnly vigiiap_token;
   // refreshProfile() rehidrata desde /auth/me al montar.

@@ -53,7 +53,7 @@ describe('useCreateSolicitud', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls POST /solicitudes with payload', async () => {
-    api.post.mockResolvedValue({ id: 1 })
+    vi.mocked(api.post).mockResolvedValue({ id: 1 })
     const { result } = renderHook(() => useCreateSolicitud(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -64,7 +64,7 @@ describe('useCreateSolicitud', () => {
   })
 
   test('exposes isSuccess after mutation', async () => {
-    api.post.mockResolvedValue({ id: 42 })
+    vi.mocked(api.post).mockResolvedValue({ id: 42 })
     const { result } = renderHook(() => useCreateSolicitud(), { wrapper: makeWrapper() })
 
     await act(async () => { await result.current.mutateAsync({ tipo: 'linderos' }) })
@@ -72,7 +72,7 @@ describe('useCreateSolicitud', () => {
   })
 
   test('exposes isError when API fails', async () => {
-    api.post.mockRejectedValue(new Error('500'))
+    vi.mocked(api.post).mockRejectedValue(new Error('500'))
     const { result } = renderHook(() => useCreateSolicitud(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -86,7 +86,7 @@ describe('useUpdateEstadoSolicitud', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls PATCH /solicitudes/:id/estado with mapped estado', async () => {
-    api.patch.mockResolvedValue({})
+    vi.mocked(api.patch).mockResolvedValue({})
     const { result } = renderHook(() => useUpdateEstadoSolicitud(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -104,7 +104,7 @@ describe('useResponderSolicitud', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls POST /solicitudes/:id/responder', async () => {
-    api.post.mockResolvedValue({})
+    vi.mocked(api.post).mockResolvedValue({})
     const { result } = renderHook(() => useResponderSolicitud(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -121,7 +121,7 @@ describe('useSolicitudArchivos', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('fetches archivos for a solicitud', async () => {
-    api.get.mockResolvedValue([{ id: 1, nombre: 'doc.pdf' }])
+    vi.mocked(api.get).mockResolvedValue([{ id: 1, nombre: 'doc.pdf' }])
     const { result } = renderHook(() => useSolicitudArchivos(7), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(api.get).toHaveBeenCalledWith(expect.stringContaining('solicitudes/7'))
@@ -137,7 +137,7 @@ describe('useUploadSolicitudArchivo', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls POST /solicitudes/:id/archivos with FormData', async () => {
-    api.post.mockResolvedValue({ id: 99 })
+    vi.mocked(api.post).mockResolvedValue({ id: 99 })
     const { result } = renderHook(() => useUploadSolicitudArchivo(), { wrapper: makeWrapper() })
     const file = new File(['content'], 'test.pdf', { type: 'application/pdf' })
 
@@ -157,7 +157,7 @@ describe('useDeleteSolicitudArchivo', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls DELETE /solicitudes/:id/archivos/:archivoId', async () => {
-    api.delete.mockResolvedValue({})
+    vi.mocked(api.delete).mockResolvedValue({})
     const { result } = renderHook(() => useDeleteSolicitudArchivo(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -172,7 +172,7 @@ describe('useDownloadSolicitudArchivo', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls GET /solicitudes/:id/archivos/:archivoId/download', async () => {
-    api.get.mockResolvedValue({ url: 'https://example.com/file.pdf' })
+    vi.mocked(api.get).mockResolvedValue({ url: 'https://example.com/file.pdf' })
     const { result } = renderHook(() => useDownloadSolicitudArchivo(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -189,7 +189,7 @@ describe('useCreateMapa', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls POST /mapas with formData', async () => {
-    api.post.mockResolvedValue({ id: 1 })
+    vi.mocked(api.post).mockResolvedValue({ id: 1 })
     const { result } = renderHook(() => useCreateMapa(), { wrapper: makeWrapper() })
     const fd = new FormData()
 
@@ -215,7 +215,7 @@ describe('useToggleMapaActivo', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls PATCH /mapas/:id/activo', async () => {
-    api.patch.mockResolvedValue({})
+    vi.mocked(api.patch).mockResolvedValue({})
     const { result } = renderHook(() => useToggleMapaActivo(), { wrapper: makeWrapper() })
 
     await act(async () => { await result.current.mutateAsync({ id: 3, activo: false }) })
@@ -227,7 +227,7 @@ describe('useDeleteMapa', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls DELETE /mapas/:id', async () => {
-    api.delete.mockResolvedValue({})
+    vi.mocked(api.delete).mockResolvedValue({})
     const { result } = renderHook(() => useDeleteMapa(), { wrapper: makeWrapper() })
 
     await act(async () => { await result.current.mutateAsync(7) })
@@ -239,7 +239,7 @@ describe('useMapaBySlug', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('fetches mapa by slug', async () => {
-    api.get.mockResolvedValue({ id: 1, slug: 'test-map', titulo: 'Test' })
+    vi.mocked(api.get).mockResolvedValue({ id: 1, slug: 'test-map', titulo: 'Test' })
     const { result } = renderHook(() => useMapaBySlug('test-map'), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(api.get).toHaveBeenCalledWith(expect.stringContaining('test-map'))
@@ -257,7 +257,7 @@ describe('useCreateDocumento', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls POST /documentos', async () => {
-    api.post.mockResolvedValue({ id: 1 })
+    vi.mocked(api.post).mockResolvedValue({ id: 1 })
     const { result } = renderHook(() => useCreateDocumento(), { wrapper: makeWrapper() })
     const fd = new FormData()
 
@@ -283,7 +283,7 @@ describe('useDeleteDocumento', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls DELETE /documentos/:id', async () => {
-    api.delete.mockResolvedValue({})
+    vi.mocked(api.delete).mockResolvedValue({})
     const { result } = renderHook(() => useDeleteDocumento(), { wrapper: makeWrapper() })
 
     await act(async () => { await result.current.mutateAsync(4) })
@@ -295,7 +295,7 @@ describe('useDocumentoBySlug', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('fetches documento by slug', async () => {
-    api.get.mockResolvedValue({ id: 1, slug: 'doc-1', titulo: 'Documento Test' })
+    vi.mocked(api.get).mockResolvedValue({ id: 1, slug: 'doc-1', titulo: 'Documento Test' })
     const { result } = renderHook(() => useDocumentoBySlug('doc-1'), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(api.get).toHaveBeenCalledWith(expect.stringContaining('doc-1'))
@@ -313,7 +313,7 @@ describe('useCreateNoticia', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls POST /noticias', async () => {
-    api.post.mockResolvedValue({ id: 1 })
+    vi.mocked(api.post).mockResolvedValue({ id: 1 })
     const { result } = renderHook(() => useCreateNoticia(), { wrapper: makeWrapper() })
     const fd = new FormData()
 
@@ -340,7 +340,7 @@ describe('useDeleteNoticia', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls DELETE /noticias/:id', async () => {
-    api.delete.mockResolvedValue({})
+    vi.mocked(api.delete).mockResolvedValue({})
     const { result } = renderHook(() => useDeleteNoticia(), { wrapper: makeWrapper() })
 
     await act(async () => { await result.current.mutateAsync(8) })
@@ -354,7 +354,7 @@ describe('useCreateUsuario', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls POST /admin/usuarios', async () => {
-    api.post.mockResolvedValue({ id: 10 })
+    vi.mocked(api.post).mockResolvedValue({ id: 10 })
     const { result } = renderHook(() => useCreateUsuario(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -368,7 +368,7 @@ describe('useUpdateUsuarioRol', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls PATCH /admin/usuarios/:id/rol', async () => {
-    api.patch.mockResolvedValue({})
+    vi.mocked(api.patch).mockResolvedValue({})
     const { result } = renderHook(() => useUpdateUsuarioRol(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -382,7 +382,7 @@ describe('useToggleActivo', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls PATCH to toggle user active status', async () => {
-    api.patch.mockResolvedValue({})
+    vi.mocked(api.patch).mockResolvedValue({})
     const { result } = renderHook(() => useToggleActivo(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -396,7 +396,7 @@ describe('useDeleteUsuario', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls DELETE /admin/usuarios/:id', async () => {
-    api.delete.mockResolvedValue({})
+    vi.mocked(api.delete).mockResolvedValue({})
     const { result } = renderHook(() => useDeleteUsuario(), { wrapper: makeWrapper() })
 
     await act(async () => { await result.current.mutateAsync(5) })
@@ -408,7 +408,7 @@ describe('useUpdatePerfil', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls PATCH /usuarios/me with user data', async () => {
-    api.patch.mockResolvedValue({ nombre: 'Updated' })
+    vi.mocked(api.patch).mockResolvedValue({ nombre: 'Updated' })
     const { result } = renderHook(() => useUpdatePerfil(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -422,7 +422,7 @@ describe('useUpdatePassword', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls PATCH /usuarios/me/password with passwords', async () => {
-    api.patch.mockResolvedValue({})
+    vi.mocked(api.patch).mockResolvedValue({})
     const { result } = renderHook(() => useUpdatePassword(), { wrapper: makeWrapper() })
 
     await act(async () => {
@@ -441,7 +441,7 @@ describe('useCreateCategoria', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls POST /categorias with nombre', async () => {
-    api.post.mockResolvedValue({ id: 1, nombre: 'Nueva' })
+    vi.mocked(api.post).mockResolvedValue({ id: 1, nombre: 'Nueva' })
     const { result } = renderHook(() => useCreateCategoria(), { wrapper: makeWrapper() })
 
     await act(async () => { await result.current.mutateAsync('Nueva categoría') })
@@ -453,7 +453,7 @@ describe('useDeleteCategoria', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls DELETE /categorias/:nombre (URL-encoded)', async () => {
-    api.delete.mockResolvedValue({})
+    vi.mocked(api.delete).mockResolvedValue({})
     const { result } = renderHook(() => useDeleteCategoria(), { wrapper: makeWrapper() })
 
     await act(async () => { await result.current.mutateAsync('Biodiversidad') })
@@ -465,7 +465,7 @@ describe('useUploadCategoriaThumbnail', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls POST /categorias/:nombre/thumbnail with FormData', async () => {
-    api.post.mockResolvedValue({ id: 2 })
+    vi.mocked(api.post).mockResolvedValue({ id: 2 })
     const { result } = renderHook(() => useUploadCategoriaThumbnail(), { wrapper: makeWrapper() })
     const file = new File(['img'], 'thumb.jpg', { type: 'image/jpeg' })
 

@@ -116,28 +116,28 @@ describe('normalizeSolicitud — TIPO_LABEL branches', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('maps known tipo to label', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ tipo: 'uso-suelo' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ tipo: 'uso-suelo' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].tipo).toBe('Certificado de Uso de Suelo')
   })
 
   test('falls back to raw tipo when not in map', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ tipo: 'tipo-desconocido' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ tipo: 'tipo-desconocido' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].tipo).toBe('tipo-desconocido')
   })
 
   test('maps linderos', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ tipo: 'linderos' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ tipo: 'linderos' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].tipo).toBe('Consulta de Linderos')
   })
 
   test('maps estudio-ambiental', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ tipo: 'estudio-ambiental' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ tipo: 'estudio-ambiental' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].tipo).toBe('Estudio Técnico Ambiental')
@@ -157,7 +157,7 @@ describe('normalizeSolicitud — ESTADO branches', () => {
 
   for (const { estado, expectedLabel, expectedColor } of estadosCases) {
     test(`estado ${estado} → label ${expectedLabel}, color ${expectedColor}`, async () => {
-      api.get.mockResolvedValue({ data: [makeSolicitud({ estado })], meta: {} })
+      vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ estado })], meta: {} })
       const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
       const item = result.current.data!.data[0]
@@ -168,7 +168,7 @@ describe('normalizeSolicitud — ESTADO branches', () => {
   }
 
   test('unknown estado falls back to En Proceso and yellow color', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'estado-raro' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ estado: 'estado-raro' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     const item = result.current.data!.data[0]
@@ -181,35 +181,35 @@ describe('normalizeSolicitud — buildTimeline branches', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('pendiente timeline', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'pendiente' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ estado: 'pendiente' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].timeline).toEqual(['Recibida', 'Pendiente'])
   })
 
   test('en_revision timeline', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'en_revision' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ estado: 'en_revision' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].timeline).toEqual(['Recibida', 'Pendiente', 'En Revisión'])
   })
 
   test('aprobada timeline', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'aprobada' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ estado: 'aprobada' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].timeline).toEqual(['Recibida', 'Pendiente', 'En Revisión', 'Aprobado'])
   })
 
   test('rechazada timeline', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'rechazada' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ estado: 'rechazada' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].timeline).toEqual(['Recibida', 'Pendiente', 'En Revisión', 'Rechazado'])
   })
 
   test('resuelta timeline', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'resuelta' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ estado: 'resuelta' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].timeline).toEqual(['Recibida', 'Pendiente', 'En Revisión', 'Resuelta'])
@@ -220,7 +220,7 @@ describe('normalizeSolicitud — nullable fields', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('descripcion null → subtipo is empty string', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ descripcion: null })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ descripcion: null })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].subtipo).toBe('')
@@ -228,7 +228,7 @@ describe('normalizeSolicitud — nullable fields', () => {
   })
 
   test('nota_admin present → notas populated', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ nota_admin: 'Requiere revisión adicional' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ nota_admin: 'Requiere revisión adicional' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].notas).toBe('Requiere revisión adicional')
@@ -236,21 +236,21 @@ describe('normalizeSolicitud — nullable fields', () => {
 
   test('respondida_en present → not null', async () => {
     const fecha = '2024-04-01T12:00:00Z'
-    api.get.mockResolvedValue({ data: [makeSolicitud({ respondida_en: fecha })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ respondida_en: fecha })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].respondidaEn).toBe(fecha)
   })
 
   test('revisado_por_nombre present → revisor populated', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ revisado_por_nombre: 'Ana López' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ revisado_por_nombre: 'Ana López' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].revisor).toBe('Ana López')
   })
 
   test('dias_pendiente missing → calculated from creado_en', async () => {
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [makeSolicitud({ dias_pendiente: undefined, creado_en: '2024-01-01T00:00:00Z' })],
       meta: {},
     })
@@ -261,14 +261,14 @@ describe('normalizeSolicitud — nullable fields', () => {
   })
 
   test('dias_pendiente present → uses API value', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ dias_pendiente: 7 })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ dias_pendiente: 7 })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].diasPendiente).toBe(7)
   })
 
   test('id normalized — dashes stripped and uppercased', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ id: 'abc-123-def-456' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ id: 'abc-123-def-456' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].id).toMatch(/^#[A-F0-9]+$/)
@@ -276,14 +276,14 @@ describe('normalizeSolicitud — nullable fields', () => {
   })
 
   test('accionesValidas maps TRANSICIONES_VALIDAS for estado', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'pendiente' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ estado: 'pendiente' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].accionesValidas).toEqual(TRANSICIONES_VALIDAS.pendiente)
   })
 
   test('unknown estado → accionesValidas is empty array', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud({ estado: 'estado-raro' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud({ estado: 'estado-raro' })], meta: {} })
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].accionesValidas).toEqual([])
@@ -296,7 +296,7 @@ describe('useSolicitudesAdmin', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls GET /solicitudes and returns normalized list', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud()], meta: { total: 1 } })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud()], meta: { total: 1 } })
     const { result } = renderHook(() => useSolicitudesAdmin({ page: 1 }), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(api.get).toHaveBeenCalledWith('/solicitudes', { params: { page: 1 } })
@@ -305,7 +305,7 @@ describe('useSolicitudesAdmin', () => {
   })
 
   test('exposes isError on failure', async () => {
-    api.get.mockRejectedValue(new Error('500'))
+    vi.mocked(api.get).mockRejectedValue(new Error('500'))
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isError).toBe(true))
   })
@@ -315,7 +315,7 @@ describe('useMisSolicitudes', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls GET /solicitudes/mis-solicitudes', async () => {
-    api.get.mockResolvedValue({ data: [makeSolicitud()], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeSolicitud()], meta: {} })
     const { result } = renderHook(() => useMisSolicitudes(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(api.get).toHaveBeenCalledWith('/solicitudes/mis-solicitudes', { params: {} })
@@ -326,7 +326,7 @@ describe('useSolicitudById', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls GET /solicitudes/:id when id provided', async () => {
-    api.get.mockResolvedValue(makeSolicitud())
+    vi.mocked(api.get).mockResolvedValue(makeSolicitud())
     const { result } = renderHook(() => useSolicitudById('sol-001'), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(api.get).toHaveBeenCalledWith('/solicitudes/sol-001')
@@ -351,7 +351,7 @@ describe('useCreateSolicitud', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls POST /solicitudes and invalidates cache on success', async () => {
-    api.post.mockResolvedValue({ id: 'new-id' })
+    vi.mocked(api.post).mockResolvedValue({ id: 'new-id' })
     const { result } = renderHook(() => useCreateSolicitud(), { wrapper: makeWrapper() })
     await act(async () => {
       await result.current.mutateAsync({ tipo: 'linderos', descripcion: 'Test' })
@@ -361,7 +361,7 @@ describe('useCreateSolicitud', () => {
   })
 
   test('exposes isError on failure', async () => {
-    api.post.mockRejectedValue(new Error('400'))
+    vi.mocked(api.post).mockRejectedValue(new Error('400'))
     const { result } = renderHook(() => useCreateSolicitud(), { wrapper: makeWrapper() })
     await act(async () => {
       try { await result.current.mutateAsync({}) } catch { /* expected */ }
@@ -374,7 +374,7 @@ describe('useUpdateEstadoSolicitud', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('maps display label to backend estado via ESTADO_API', async () => {
-    api.patch.mockResolvedValue({})
+    vi.mocked(api.patch).mockResolvedValue({})
     const { result } = renderHook(() => useUpdateEstadoSolicitud(), { wrapper: makeWrapper() })
     await act(async () => {
       await result.current.mutateAsync({ id: 'sol-1', estado: 'En Revisión', nota: 'Nota' })
@@ -386,7 +386,7 @@ describe('useUpdateEstadoSolicitud', () => {
   })
 
   test('passes through estado when not in ESTADO_API map (fallback branch)', async () => {
-    api.patch.mockResolvedValue({})
+    vi.mocked(api.patch).mockResolvedValue({})
     const { result } = renderHook(() => useUpdateEstadoSolicitud(), { wrapper: makeWrapper() })
     await act(async () => {
       await result.current.mutateAsync({ id: 'sol-1', estado: 'custom-estado', nota: '' })
@@ -398,7 +398,7 @@ describe('useUpdateEstadoSolicitud', () => {
   })
 
   test('exposes isError on failure', async () => {
-    api.patch.mockRejectedValue(new Error('500'))
+    vi.mocked(api.patch).mockRejectedValue(new Error('500'))
     const { result } = renderHook(() => useUpdateEstadoSolicitud(), { wrapper: makeWrapper() })
     await act(async () => {
       try { await result.current.mutateAsync({ id: 'x', estado: 'Pendiente', nota: '' }) } catch { /* expected */ }
@@ -411,7 +411,7 @@ describe('useResponderSolicitud', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls POST /solicitudes/:id/responder', async () => {
-    api.post.mockResolvedValue({})
+    vi.mocked(api.post).mockResolvedValue({})
     const { result } = renderHook(() => useResponderSolicitud(), { wrapper: makeWrapper() })
     await act(async () => {
       await result.current.mutateAsync({ id: 'sol-1', respuesta: 'Aprobado con condiciones.' })
@@ -426,7 +426,7 @@ describe('useSolicitudArchivos', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls GET /solicitudes/:id/archivos when solicitudId provided', async () => {
-    api.get.mockResolvedValue([{ id: 'f1', nombre: 'plano.pdf' }])
+    vi.mocked(api.get).mockResolvedValue([{ id: 'f1', nombre: 'plano.pdf' }])
     const { result } = renderHook(() => useSolicitudArchivos('sol-1'), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(api.get).toHaveBeenCalledWith('/solicitudes/sol-1/archivos')
@@ -443,7 +443,7 @@ describe('useUploadSolicitudArchivo', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls POST /solicitudes/:id/archivos with multipart form', async () => {
-    api.post.mockResolvedValue({ id: 'file-1' })
+    vi.mocked(api.post).mockResolvedValue({ id: 'file-1' })
     const file = new File(['content'], 'doc.pdf', { type: 'application/pdf' })
     const { result } = renderHook(() => useUploadSolicitudArchivo(), { wrapper: makeWrapper() })
     await act(async () => {
@@ -461,7 +461,7 @@ describe('useDeleteSolicitudArchivo', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls DELETE /solicitudes/:solicitudId/archivos/:archivoId', async () => {
-    api.delete.mockResolvedValue({})
+    vi.mocked(api.delete).mockResolvedValue({})
     const { result } = renderHook(() => useDeleteSolicitudArchivo(), { wrapper: makeWrapper() })
     await act(async () => {
       await result.current.mutateAsync({ solicitudId: 'sol-1', archivoId: 'f-1' })
@@ -474,7 +474,7 @@ describe('useDownloadSolicitudArchivo', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls GET /solicitudes/:solicitudId/archivos/:archivoId/download', async () => {
-    api.get.mockResolvedValue({ url: 'https://cdn.example.com/doc.pdf' })
+    vi.mocked(api.get).mockResolvedValue({ url: 'https://cdn.example.com/doc.pdf' })
     const { result } = renderHook(() => useDownloadSolicitudArchivo(), { wrapper: makeWrapper() })
     await act(async () => {
       await result.current.mutateAsync({ solicitudId: 'sol-1', archivoId: 'f-1' })

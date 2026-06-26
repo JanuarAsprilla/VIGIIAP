@@ -61,7 +61,7 @@ describe('useAdminStats', () => {
 
   test('fetches admin stats from /admin/stats', async () => {
     const fakeStats = { mapas: 10, documentos: 25, solicitudes: 5, usuarios: 50 }
-    api.get.mockResolvedValue(fakeStats)
+    vi.mocked(api.get).mockResolvedValue(fakeStats)
 
     const { result } = renderHook(() => useAdminStats(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -78,7 +78,7 @@ describe('useAdminStats', () => {
   })
 
   test('exposes isError on API failure', async () => {
-    api.get.mockRejectedValue(new Error('500'))
+    vi.mocked(api.get).mockRejectedValue(new Error('500'))
 
     const { result } = renderHook(() => useAdminStats(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isError).toBe(true))
@@ -96,7 +96,7 @@ describe('useNoticiasList', () => {
   }
 
   test('fetches noticias and normalizes the shape', async () => {
-    api.get.mockResolvedValue({ data: [rawNoticia], total: 1 })
+    vi.mocked(api.get).mockResolvedValue({ data: [rawNoticia], total: 1 })
 
     const { result } = renderHook(() => useNoticiasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -113,7 +113,7 @@ describe('useNoticiasList', () => {
   })
 
   test('calls the noticias API endpoint', async () => {
-    api.get.mockResolvedValue({ data: [], total: 0 })
+    vi.mocked(api.get).mockResolvedValue({ data: [], total: 0 })
 
     renderHook(() => useNoticiasList({ limit: 5 }), { wrapper: makeWrapper() })
     await waitFor(() => expect(api.get).toHaveBeenCalled())
@@ -132,7 +132,7 @@ describe('useNoticiaBySlug', () => {
       categoria: 'mapas', autor: 'Autor', publicado_en: '2025-06-01',
       publicado: true, imagen_url: null, visibilidad: 'publico',
     }
-    api.get.mockResolvedValue(raw)
+    vi.mocked(api.get).mockResolvedValue(raw)
 
     const { result } = renderHook(() => useNoticiaBySlug('mi-slug'), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -142,7 +142,7 @@ describe('useNoticiaBySlug', () => {
   })
 
   test('does not fetch when slug is falsy', () => {
-    api.get.mockResolvedValue({})
+    vi.mocked(api.get).mockResolvedValue({})
 
     renderHook(() => useNoticiaBySlug(null), { wrapper: makeWrapper() })
     expect(api.get).not.toHaveBeenCalled()
@@ -161,7 +161,7 @@ describe('useMapasList', () => {
   }
 
   test('fetches and normalizes maps list', async () => {
-    api.get.mockResolvedValue({ data: [rawMap], total: 1 })
+    vi.mocked(api.get).mockResolvedValue({ data: [rawMap], total: 1 })
 
     const { result } = renderHook(() => useMapasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -173,7 +173,7 @@ describe('useMapasList', () => {
   })
 
   test('derived formats includes PDF when archivo_pdf_url is present', async () => {
-    api.get.mockResolvedValue({ data: [rawMap], total: 1 })
+    vi.mocked(api.get).mockResolvedValue({ data: [rawMap], total: 1 })
 
     const { result } = renderHook(() => useMapasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -196,7 +196,7 @@ describe('useDocumentosList', () => {
   }
 
   test('fetches and normalizes documents list', async () => {
-    api.get.mockResolvedValue({ data: [rawDoc], total: 1 })
+    vi.mocked(api.get).mockResolvedValue({ data: [rawDoc], total: 1 })
 
     const { result } = renderHook(() => useDocumentosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -213,7 +213,7 @@ describe('useSolicitudesAdmin', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('fetches admin solicitudes list', async () => {
-    api.get.mockResolvedValue({ data: [], total: 0 })
+    vi.mocked(api.get).mockResolvedValue({ data: [], total: 0 })
 
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -222,7 +222,7 @@ describe('useSolicitudesAdmin', () => {
   })
 
   test('exposes isError on API failure', async () => {
-    api.get.mockRejectedValue(new Error('403'))
+    vi.mocked(api.get).mockRejectedValue(new Error('403'))
 
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isError).toBe(true))
@@ -233,7 +233,7 @@ describe('useMisSolicitudes', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('fetches current user solicitudes', async () => {
-    api.get.mockResolvedValue({ data: [], total: 0 })
+    vi.mocked(api.get).mockResolvedValue({ data: [], total: 0 })
 
     const { result } = renderHook(() => useMisSolicitudes(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -253,7 +253,7 @@ describe('useUsuariosList', () => {
   }
 
   test('fetches users from /admin/usuarios', async () => {
-    api.get.mockResolvedValue({ data: [rawUser], total: 1 })
+    vi.mocked(api.get).mockResolvedValue({ data: [rawUser], total: 1 })
 
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -262,7 +262,7 @@ describe('useUsuariosList', () => {
   })
 
   test('normalizes user rol to display label', async () => {
-    api.get.mockResolvedValue({ data: [rawUser], total: 1 })
+    vi.mocked(api.get).mockResolvedValue({ data: [rawUser], total: 1 })
 
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -277,7 +277,7 @@ describe('useCategoriasList', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('fetches categories and returns an array', async () => {
-    api.get.mockResolvedValue([{ id: 1, nombre: 'Biodiversidad' }])
+    vi.mocked(api.get).mockResolvedValue([{ id: 1, nombre: 'Biodiversidad' }])
 
     const { result } = renderHook(() => useCategoriasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -287,7 +287,7 @@ describe('useCategoriasList', () => {
   })
 
   test('handles data-envelope response format', async () => {
-    api.get.mockResolvedValue({ data: [{ id: 2, nombre: 'Mapas' }] })
+    vi.mocked(api.get).mockResolvedValue({ data: [{ id: 2, nombre: 'Mapas' }] })
 
     const { result } = renderHook(() => useCategoriasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -307,7 +307,7 @@ describe('useAdminNotificaciones', () => {
   })
 
   test('fetches /admin/notificaciones when enabled=true', async () => {
-    api.get.mockResolvedValue([{ id: 1, mensaje: 'Nueva solicitud' }])
+    vi.mocked(api.get).mockResolvedValue([{ id: 1, mensaje: 'Nueva solicitud' }])
 
     const { result } = renderHook(() => useAdminNotificaciones(true), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -322,7 +322,7 @@ describe('useCatalogue', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('returns an array of catalogue entries', async () => {
-    api.get.mockResolvedValue({ data: [], total: 0 })
+    vi.mocked(api.get).mockResolvedValue({ data: [], total: 0 })
 
     const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
     await waitFor(() => expect(Array.isArray(result.current)).toBe(true))
@@ -331,7 +331,7 @@ describe('useCatalogue', () => {
   })
 
   test('each entry has required shape', async () => {
-    api.get.mockResolvedValue({ data: [], total: 0 })
+    vi.mocked(api.get).mockResolvedValue({ data: [], total: 0 })
 
     const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
     await waitFor(() => expect(Array.isArray(result.current)).toBe(true))
@@ -345,7 +345,7 @@ describe('useCatalogue', () => {
   })
 
   test('includes news entries when noticias are returned by API', async () => {
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [{
         id: 1, slug: 'noticia-1', titulo: 'Noticia X', categoria: 'Mapas',
         resumen: 'resumen', publicado_en: '2025-01-01', publicado: true,
@@ -367,7 +367,7 @@ describe('useCatalogue', () => {
   })
 
   test('includes static Módulos entries regardless of API', async () => {
-    api.get.mockResolvedValue({ data: [], total: 0 })
+    vi.mocked(api.get).mockResolvedValue({ data: [], total: 0 })
 
     const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.length).toBeGreaterThan(0))

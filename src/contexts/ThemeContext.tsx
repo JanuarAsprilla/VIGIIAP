@@ -1,11 +1,19 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 
-const ThemeContext = createContext(null)
+type Theme = 'light' | 'dark'
+
+interface ThemeContextValue {
+  theme: Theme
+  toggleTheme: () => void
+  isDark: boolean
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 // M-04: solo valores conocidos son aceptados desde localStorage.
 const VALID_THEMES = ['light', 'dark']
 
-export function ThemeProvider({ children }) {
+export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState(() => {
     try {
       const stored = localStorage.getItem('vigiiap_theme')

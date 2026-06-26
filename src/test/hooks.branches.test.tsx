@@ -55,7 +55,7 @@ describe('useNoticias normalizeNoticia — null field branches', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('null categoria → tag falls back to NOTICIAS', async () => {
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [{
         id: 'n1', slug: 'nota-1', titulo: 'Nota uno',
         resumen: null, contenido: null, categoria: null,
@@ -80,7 +80,7 @@ describe('useNoticias normalizeNoticia — null field branches', () => {
   })
 
   test('publicado_en null → date falls back to creado_en', async () => {
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [{
         id: 'n2', slug: 'nota-2', titulo: 'Nota dos',
         publicado_en: null, creado_en: '2024-06-01T00:00:00Z',
@@ -97,7 +97,7 @@ describe('useNoticias normalizeNoticia — null field branches', () => {
   })
 
   test('categoria toUpperCase applied when present', async () => {
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [{
         id: 'n3', slug: 'nota-3', titulo: 'T', categoria: 'biodiversidad',
         creado_en: '2024-01-01T00:00:00Z', publicado: true,
@@ -127,49 +127,49 @@ describe('useUsuarios normalizeUser — null/unknown field branches', () => {
   }
 
   test('activo=false → estado Inactivo', async () => {
-    api.get.mockResolvedValue({ data: [makeUser({ activo: false })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeUser({ activo: false })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].estado).toBe('Inactivo')
   })
 
   test('nombre null → initials falls back to ?', async () => {
-    api.get.mockResolvedValue({ data: [makeUser({ nombre: null })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeUser({ nombre: null })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].initials).toBe('?')
   })
 
   test('unknown rol → falls back to PUBLICO', async () => {
-    api.get.mockResolvedValue({ data: [makeUser({ rol: 'rol-desconocido' })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeUser({ rol: 'rol-desconocido' })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].rol).toBe('Público')
   })
 
   test('email_verified null → defaults to false', async () => {
-    api.get.mockResolvedValue({ data: [makeUser({ email_verified: null })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeUser({ email_verified: null })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].emailVerified).toBe(false)
   })
 
   test('motivo_acceso null → empty string', async () => {
-    api.get.mockResolvedValue({ data: [makeUser({ motivo_acceso: null })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeUser({ motivo_acceso: null })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].motivoAcceso).toBe('')
   })
 
   test('institucion null → empty string', async () => {
-    api.get.mockResolvedValue({ data: [makeUser({ institucion: null })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeUser({ institucion: null })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data!.data[0].institucion).toBe('')
   })
 
   test('actualizado_en null → falls back to creado_en', async () => {
-    api.get.mockResolvedValue({ data: [makeUser({ actualizado_en: null })], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [makeUser({ actualizado_en: null })], meta: {} })
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(typeof result.current.data!.data[0].ultimoAcceso).toBe('string')
@@ -178,7 +178,7 @@ describe('useUsuarios normalizeUser — null/unknown field branches', () => {
   test('all known roles map correctly', async () => {
     const roles = ['admin_sig', 'investigador', 'tecnico', 'institucional', 'publico']
     for (const rol of roles) {
-      api.get.mockResolvedValue({ data: [makeUser({ rol })], meta: {} })
+      vi.mocked(api.get).mockResolvedValue({ data: [makeUser({ rol })], meta: {} })
       const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(result.current.data!.data[0].rolBackend).toBe(rol)
@@ -193,7 +193,7 @@ describe('useAdminNotificaciones — select branches', () => {
 
   test('res.data present → returns res.data', async () => {
     const items = [{ id: '1', mensaje: 'Nueva solicitud' }]
-    api.get.mockResolvedValue({ data: items })
+    vi.mocked(api.get).mockResolvedValue({ data: items })
     const { result } = renderHook(() => useAdminNotificaciones(true), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual(items)
@@ -201,7 +201,7 @@ describe('useAdminNotificaciones — select branches', () => {
 
   test('res.data null but res is array → returns res directly', async () => {
     const items = [{ id: '2', mensaje: 'Otra' }]
-    api.get.mockResolvedValue(items) // res IS the array, no .data wrapper
+    vi.mocked(api.get).mockResolvedValue(items) // res IS the array, no .data wrapper
     const { result } = renderHook(() => useAdminNotificaciones(true), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual(items)
@@ -221,7 +221,7 @@ describe('useCategoriasList — select branches', () => {
 
   test('res is array → returned directly (Array.isArray true)', async () => {
     const cats = [{ nombre: 'Fauna' }, { nombre: 'Flora' }]
-    api.get.mockResolvedValue(cats)
+    vi.mocked(api.get).mockResolvedValue(cats)
     const { result } = renderHook(() => useCategoriasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual(cats)
@@ -229,14 +229,14 @@ describe('useCategoriasList — select branches', () => {
 
   test('res is object with data → returns res.data (Array.isArray false)', async () => {
     const cats = [{ nombre: 'Suelos' }]
-    api.get.mockResolvedValue({ data: cats })
+    vi.mocked(api.get).mockResolvedValue({ data: cats })
     const { result } = renderHook(() => useCategoriasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual(cats)
   })
 
   test('res.data undefined → falls back to empty array', async () => {
-    api.get.mockResolvedValue({ otrocampo: true }) // no data, not an array
+    vi.mocked(api.get).mockResolvedValue({ otrocampo: true }) // no data, not an array
     const { result } = renderHook(() => useCategoriasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual([])
@@ -250,7 +250,7 @@ describe('useCatalogue — auth and news branches', () => {
 
   test('unauthenticated → no account entries in catalogue', async () => {
     mockAuth = { isAuthenticated: false }
-    api.get.mockResolvedValue({ data: [], meta: {} }) // empty noticias
+    vi.mocked(api.get).mockResolvedValue({ data: [], meta: {} }) // empty noticias
     const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current).toBeDefined())
     const ids = result.current.map((e) => e.id)
@@ -260,7 +260,7 @@ describe('useCatalogue — auth and news branches', () => {
 
   test('authenticated → account entries present', async () => {
     mockAuth = { isAuthenticated: true }
-    api.get.mockResolvedValue({ data: [], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [], meta: {} })
     const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current).toBeDefined())
     const ids = result.current.map((e) => e.id)
@@ -270,7 +270,7 @@ describe('useCatalogue — auth and news branches', () => {
 
   test('noticias with null titulo → falls back to title then —', async () => {
     mockAuth = { isAuthenticated: true }
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [{
         id: 'n1', slug: 'slug-1',
         titulo: null, title: null,
@@ -288,7 +288,7 @@ describe('useCatalogue — auth and news branches', () => {
 
   test('noticias with titulo → uses titulo', async () => {
     mockAuth = { isAuthenticated: true }
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [{
         id: 'n2', slug: 'slug-2', titulo: 'Avance investigativo',
         categoria: 'ciencia', resumen: 'Breve resumen',
@@ -305,7 +305,7 @@ describe('useCatalogue — auth and news branches', () => {
 
   test('resource entries always present (Guía, FAQ, Términos)', async () => {
     mockAuth = { isAuthenticated: false }
-    api.get.mockResolvedValue({ data: [], meta: {} })
+    vi.mocked(api.get).mockResolvedValue({ data: [], meta: {} })
     const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current).toBeDefined())
     const ids = result.current.map((e) => e.id)
@@ -331,7 +331,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
   }
 
   test('only geovisor_url → formato Geovisor', async () => {
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [makeMapa({ geovisor_url: 'https://geovisor.test/map' })],
       meta: {},
     })
@@ -342,7 +342,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
   })
 
   test('only archivo_img_url → formato IMG', async () => {
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [makeMapa({ archivo_img_url: 'https://cdn.test/img.jpg' })],
       meta: {},
     })
@@ -352,7 +352,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
   })
 
   test('pdf_url with .pdf extension → formato PDF', async () => {
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [makeMapa({ archivo_pdf_url: 'https://cdn.test/documento.pdf' })],
       meta: {},
     })
@@ -362,7 +362,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
   })
 
   test('pdf_url with image extension and no img_url → formato IMG', async () => {
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [makeMapa({ archivo_pdf_url: 'https://cdn.test/mapa.png', archivo_img_url: null })],
       meta: {},
     })
@@ -372,7 +372,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
   })
 
   test('no files at all → defaults to PDF', async () => {
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [makeMapa()], // all urls null
       meta: {},
     })
@@ -382,7 +382,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
   })
 
   test('both img and pdf urls → IMG takes priority', async () => {
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [makeMapa({
         archivo_img_url: 'https://cdn.test/img.jpg',
         archivo_pdf_url: 'https://cdn.test/doc.pdf',
@@ -395,7 +395,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
   })
 
   test('activo=false → visible field is false', async () => {
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [makeMapa({ activo: false })],
       meta: {},
     })
@@ -405,7 +405,7 @@ describe('useMapasList — normalizeMap branch coverage', () => {
   })
 
   test('missing descripcion → descripcion field present', async () => {
-    api.get.mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({
       data: [makeMapa({ descripcion: null })],
       meta: {},
     })

@@ -1,6 +1,27 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 
-const UIContext = createContext(null)
+type Density = 'compact' | 'normal' | 'comfortable'
+
+interface NotifPrefs {
+  noticias: boolean
+  solicitudes: boolean
+  mapas: boolean
+  email: boolean
+}
+
+interface UIContextValue {
+  density: Density
+  setDensity: (d: Density) => void
+  notifications: boolean
+  setNotifications: (n: boolean) => void
+  notifPrefs: NotifPrefs
+  setNotifPrefs: (p: NotifPrefs) => void
+  paletteOpen: boolean
+  openPalette: () => void
+  closePalette: () => void
+}
+
+const UIContext = createContext<UIContextValue | null>(null)
 
 // M-04: allowlists para valores leídos desde localStorage.
 const VALID_DENSITIES = ['compact', 'normal', 'comfortable']
@@ -28,7 +49,7 @@ function useLocalStorage(key, defaultValue) {
   return [value, setValue]
 }
 
-export function UIProvider({ children }) {
+export function UIProvider({ children }: { children: ReactNode }) {
   const [densityRaw, setDensity]            = useLocalStorage('vigiiap_density', 'normal')
   // M-04: validar que el valor leído sea uno de los permitidos.
   const density = VALID_DENSITIES.includes(densityRaw) ? densityRaw : 'normal'

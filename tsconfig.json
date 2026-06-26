@@ -17,15 +17,14 @@
     /* JSX */
     "jsx": "react-jsx",
 
-    /* Strictness — activado completamente */
+    /* Strictness — null safety completa, implicit any gradual */
     "strict": true,
+    "noImplicitAny": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "exactOptionalPropertyTypes": false,
-    "ignoreDeprecations": "5.0",
-
-    /* Paths */
+    /* Paths — en TS 6 con moduleResolution bundler, paths resuelve sin baseUrl */
     "paths": {
       "@/*": ["./src/*"]
     }
