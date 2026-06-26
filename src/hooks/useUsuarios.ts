@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
 import { ROLES } from '@/contexts/AuthContext'
+import type { ApiMeta } from '@/types'
 
 const ROLE_MAP = {
   admin_sig:    ROLES.ADMIN,
@@ -42,6 +43,10 @@ function normalizeUser(u) {
   }
 }
 
+// ─── Tipos derivados ──────────────────────────────────────────────────────────
+export type UsuarioData = ReturnType<typeof normalizeUser>
+export type UsuarioListResult = { data: UsuarioData[]; meta: ApiMeta }
+
 // ─── Keys ─────────────────────────────────────────────────────────────────────
 export const USUARIOS_KEYS = {
   all:  ['usuarios'],
@@ -49,8 +54,8 @@ export const USUARIOS_KEYS = {
 }
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
-export function useUsuariosList(params = {}) {
-  return useQuery({
+export function useUsuariosList(params: Record<string, unknown> = {}) {
+  return useQuery<UsuarioListResult>({
     queryKey: USUARIOS_KEYS.list(params),
     queryFn:  () => api.get('/admin/usuarios', { params }),
     select:   (res) => ({
@@ -63,7 +68,7 @@ export function useUsuariosList(params = {}) {
 // ─── Mutations ────────────────────────────────────────────────────────────────
 export function useCreateUsuario() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { nombre: string; email: string; rol: string; institucion?: string }>({
     mutationFn: ({ nombre, email, rol, institucion }) =>
       api.post('/admin/usuarios', {
         nombre,
@@ -78,7 +83,7 @@ export function useCreateUsuario() {
 
 export function useUpdateUsuarioRol() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { id: string; rol: string }>({
     mutationFn: ({ id, rol }) =>
       api.patch(`/admin/usuarios/${id}`, {
         rol: ROLE_MAP_REVERSE[rol] ?? rol,
@@ -90,7 +95,7 @@ export function useUpdateUsuarioRol() {
 /** Activa o desactiva un usuario sin tocar su rol */
 export function useToggleActivo() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { id: string; activo: boolean }>({
     mutationFn: ({ id, activo }) =>
       api.patch(`/admin/usuarios/${id}`, { activo }),
     onSuccess: () => qc.invalidateQueries({ queryKey: USUARIOS_KEYS.all }),

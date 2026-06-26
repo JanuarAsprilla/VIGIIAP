@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
+import type { ApiMeta } from '@/types'
 
 // ─── Normalizar respuesta de backend → shape que usan las pages ───────────────
 // Detecta el formato real del archivo a partir de la URL cuando no hay campo explícito
@@ -71,6 +72,10 @@ function normalizeMap(m) {
   }
 }
 
+// ─── Tipos derivados ──────────────────────────────────────────────────────────
+export type MapaData = ReturnType<typeof normalizeMap>
+export type MapaListResult = { data: MapaData[]; meta: ApiMeta }
+
 // ─── Keys ─────────────────────────────────────────────────────────────────────
 export const MAPAS_KEYS = {
   all:    ['mapas'],
@@ -79,8 +84,8 @@ export const MAPAS_KEYS = {
 }
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
-export function useMapasList(params = {}) {
-  return useQuery({
+export function useMapasList(params: Record<string, unknown> = {}) {
+  return useQuery<MapaListResult>({
     queryKey:  MAPAS_KEYS.list(params),
     queryFn:   () => api.get('/mapas', { params }),
     select:    (res) => ({
@@ -90,8 +95,8 @@ export function useMapasList(params = {}) {
   })
 }
 
-export function useMapaBySlug(slug) {
-  return useQuery({
+export function useMapaBySlug(slug: string | null | undefined) {
+  return useQuery<MapaData>({
     queryKey: MAPAS_KEYS.detail(slug),
     queryFn:  () => api.get(`/mapas/${slug}`),
     select:   normalizeMap,
@@ -102,7 +107,7 @@ export function useMapaBySlug(slug) {
 // ─── Mutations ────────────────────────────────────────────────────────────────
 export function useCreateMapa() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { formData: FormData; onUploadProgress?: (e: ProgressEvent) => void }>({
     mutationFn: ({ formData, onUploadProgress }) =>
       api.post('/mapas', formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
@@ -111,7 +116,7 @@ export function useCreateMapa() {
 
 export function useUpdateMapa() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { id: string; formData: FormData; onUploadProgress?: (e: ProgressEvent) => void }>({
     mutationFn: ({ id, formData, onUploadProgress }) =>
       api.put(`/mapas/${id}`, formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
@@ -120,7 +125,7 @@ export function useUpdateMapa() {
 
 export function useToggleMapaActivo() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { id: string; activo: boolean }>({
     mutationFn: ({ id, activo }) => api.patch(`/mapas/${id}/activo`, { activo }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
   })
@@ -128,7 +133,7 @@ export function useToggleMapaActivo() {
 
 export function useDeleteMapa() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, string>({
     mutationFn: (id) => api.delete(`/mapas/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
   })

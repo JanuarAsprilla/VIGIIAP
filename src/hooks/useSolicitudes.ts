@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
+import type { ApiMeta } from '@/types'
 
 const TIPO_LABEL = {
   'uso-suelo':         'Certificado de Uso de Suelo',
@@ -77,6 +78,10 @@ function normalizeSolicitud(s) {
   }
 }
 
+// ─── Tipos derivados ──────────────────────────────────────────────────────────
+export type SolicitudData = ReturnType<typeof normalizeSolicitud>
+export type SolicitudListResult = { data: SolicitudData[]; meta: ApiMeta }
+
 export const SOL_KEYS = {
   all:    ['solicitudes'],
   list:   (params) => ['solicitudes', 'list', params],
@@ -84,8 +89,8 @@ export const SOL_KEYS = {
   detail: (id)     => ['solicitudes', 'detail', id],
 }
 
-export function useSolicitudesAdmin(params = {}) {
-  return useQuery({
+export function useSolicitudesAdmin(params: Record<string, unknown> = {}) {
+  return useQuery<SolicitudListResult>({
     queryKey: SOL_KEYS.list(params),
     queryFn:  () => api.get('/solicitudes', { params }),
     select:   (res) => ({
@@ -95,8 +100,8 @@ export function useSolicitudesAdmin(params = {}) {
   })
 }
 
-export function useMisSolicitudes(params = {}) {
-  return useQuery({
+export function useMisSolicitudes(params: Record<string, unknown> = {}) {
+  return useQuery<SolicitudListResult>({
     queryKey: SOL_KEYS.mine(params),
     queryFn:  () => api.get('/solicitudes/mis-solicitudes', { params }),
     select:   (res) => ({
@@ -106,8 +111,8 @@ export function useMisSolicitudes(params = {}) {
   })
 }
 
-export function useSolicitudById(id) {
-  return useQuery({
+export function useSolicitudById(id: string | null | undefined) {
+  return useQuery<SolicitudData>({
     queryKey: SOL_KEYS.detail(id),
     queryFn:  () => api.get(`/solicitudes/${id}`),
     enabled:  !!id,
@@ -117,7 +122,7 @@ export function useSolicitudById(id) {
 
 export function useCreateSolicitud() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, Record<string, unknown>>({
     mutationFn: (data) => api.post('/solicitudes', data),
     onSuccess:  () => qc.invalidateQueries({ queryKey: SOL_KEYS.all }),
   })
@@ -125,7 +130,7 @@ export function useCreateSolicitud() {
 
 export function useUpdateEstadoSolicitud() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { id: string; estado: string; nota?: string }>({
     mutationFn: ({ id, estado, nota }) =>
       api.patch(`/solicitudes/${id}/estado`, {
         estado: ESTADO_API[estado] ?? estado,
@@ -137,15 +142,15 @@ export function useUpdateEstadoSolicitud() {
 
 export function useResponderSolicitud() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { id: string; respuesta: string }>({
     mutationFn: ({ id, respuesta }) =>
       api.post(`/solicitudes/${id}/responder`, { respuesta }),
     onSuccess: () => qc.invalidateQueries({ queryKey: SOL_KEYS.all }),
   })
 }
 
-export function useSolicitudArchivos(solicitudId) {
-  return useQuery({
+export function useSolicitudArchivos(solicitudId: string | null | undefined) {
+  return useQuery<unknown[]>({
     queryKey: [...SOL_KEYS.all, solicitudId, 'archivos'],
     queryFn:  () => api.get(`/solicitudes/${solicitudId}/archivos`),
     enabled:  !!solicitudId,
@@ -154,7 +159,7 @@ export function useSolicitudArchivos(solicitudId) {
 
 export function useUploadSolicitudArchivo() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { solicitudId: string; file: File }>({
     mutationFn: ({ solicitudId, file }) => {
       const fd = new FormData()
       fd.append('archivo', file)
@@ -170,7 +175,7 @@ export function useUploadSolicitudArchivo() {
 
 export function useDeleteSolicitudArchivo() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, { solicitudId: string; archivoId: string }>({
     mutationFn: ({ solicitudId, archivoId }) =>
       api.delete(`/solicitudes/${solicitudId}/archivos/${archivoId}`),
     onSuccess: (_data, { solicitudId }) => {
@@ -180,7 +185,7 @@ export function useDeleteSolicitudArchivo() {
 }
 
 export function useDownloadSolicitudArchivo() {
-  return useMutation({
+  return useMutation<{ url: string }, Error, { solicitudId: string; archivoId: string }>({
     mutationFn: ({ solicitudId, archivoId }) =>
       api.get(`/solicitudes/${solicitudId}/archivos/${archivoId}/download`),
   })

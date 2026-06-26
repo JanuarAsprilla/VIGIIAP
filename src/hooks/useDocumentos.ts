@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
+import type { ApiMeta } from '@/types'
 
 function formatBytes(bytes) {
   if (!bytes) return null
@@ -39,14 +40,17 @@ function normalizeDoc(d) {
   }
 }
 
+export type DocumentoData = ReturnType<typeof normalizeDoc>
+export type DocumentoListResult = { data: DocumentoData[]; meta: ApiMeta }
+
 export const DOCS_KEYS = {
   all:    ['documentos'],
   list:   (params) => ['documentos', 'list', params],
   detail: (slug)   => ['documentos', 'detail', slug],
 }
 
-export function useDocumentosList(params = {}) {
-  return useQuery({
+export function useDocumentosList(params: Record<string, unknown> = {}) {
+  return useQuery<DocumentoListResult>({
     queryKey: DOCS_KEYS.list(params),
     queryFn:  () => api.get('/documentos', { params }),
     select:   (res) => ({

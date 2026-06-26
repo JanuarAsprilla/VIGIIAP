@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { Categoria } from '@/types'
 import api from '@/lib/api'
 
 const KEYS = {
@@ -7,7 +8,7 @@ const KEYS = {
 }
 
 export function useCategoriasList() {
-  return useQuery({
+  return useQuery<Categoria[]>({
     queryKey: KEYS.list(),
     queryFn:  () => api.get('/categorias'),
     select:   (res) => (Array.isArray(res) ? res : res.data ?? []),
