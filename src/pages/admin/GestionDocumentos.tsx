@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import type { DocumentoData } from '@/hooks/useDocumentos'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, X, Edit2, Trash2,
@@ -81,7 +82,7 @@ function useClickOutside(ref, handler) {
 function CategoryCombobox({ value, onChange, allCategories }) {
   const [input, setInput] = useState(value || '')
   const [open, setOpen]   = useState(false)
-  const ref = useRef(null)
+  const ref = useRef<HTMLDivElement>(null)
   useClickOutside(ref, () => setOpen(false))
 
   // Sincronizar si el valor externo cambia (ej: al abrir el modal de edición)
@@ -240,7 +241,7 @@ function VisibilidadSelector({ value, onChange }) {
 
 // ── Dropzone ──────────────────────────────────────────────────────────────────
 function FileDropzone({ tipo, onFile, currentFile, editing, onError }) {
-  const inputRef = useRef(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const accept = ACCEPT[tipo]
 
@@ -317,15 +318,15 @@ export default function GestionDocumentos() {
   const [filtroCategoria, setFiltroCategoria] = useState('')
   const [filtroTipo, setFiltroTipo] = useState('')
   const [showModal, setShowModal] = useState(false)
-  const [editing, setEditing] = useState(null)
+  const [editing, setEditing] = useState<DocumentoData | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
-  const [formErrors, setFormErrors] = useState({})
-  const [uploadedFile, setUploadedFile] = useState(null)
-  const [uploadError, setUploadError] = useState(null)
-  const [submitError, setSubmitError] = useState(null)
-  const [uploadProgress, setUploadProgress] = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [toast, setToast] = useState(null)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<DocumentoData | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
 
   const isSubmitting = createDocumento.isPending || updateDocumento.isPending
 
@@ -358,7 +359,7 @@ export default function GestionDocumentos() {
   }
 
   const validate = () => {
-    const e = {}
+    const e: Record<string, string> = {}
     if (!form.nombre.trim()) e.nombre = 'El nombre del documento es obligatorio'
     if (!form.categoria.trim()) e.categoria = 'Selecciona o escribe una categoría'
     if (!editing && !uploadedFile)
@@ -395,7 +396,7 @@ export default function GestionDocumentos() {
         : `Documento "${form.nombre}" registrado correctamente`)
       setShowModal(false)
     } catch (err) {
-      setSubmitError(err?.response?.data?.error ?? err?.message ?? 'No se pudo guardar. Verifica la conexión e intenta de nuevo.')
+      setSubmitError((err as any)?.response?.data?.error ?? (err as any)?.message ?? 'No se pudo guardar. Verifica la conexión e intenta de nuevo.')
     } finally {
       setUploadProgress(null)
     }

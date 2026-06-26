@@ -4,7 +4,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion'
 
 // ─── matchMedia mock (jsdom no lo incluye) ────────────────────────────────────
 function makeMq(initialMatches) {
-  const listeners = []
+  const listeners: Function[] = []
   const mq = {
     matches: initialMatches,
     media: '(prefers-reduced-motion: reduce)',

@@ -38,7 +38,7 @@ function StatCard({ icon: Icon, label, value, color = 'primary' }) {
 function CrearAdminModal({ onClose, onSuccess }) {
   const [form, setForm] = useState({ nombre: '', email: '', institucion: '' })
   const [showConfirm, setShowConfirm] = useState(false)
-  const [serverError, setServerError] = useState(null)
+  const [serverError, setServerError] = useState<string | null>(null)
 
   const mutation = useMutation({
     mutationFn: crearAdmin,
@@ -212,7 +212,7 @@ function AdminTable({ usuarios, isLoading }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function GestionAdmins() {
   const [showModal, setShowModal] = useState(false)
-  const [successMsg, setSuccessMsg] = useState(null)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
   const { data: stats } = useQuery({
@@ -224,7 +224,7 @@ export default function GestionAdmins() {
   const { data: usuariosData, isLoading: loadingUsuarios } = useQuery({
     queryKey: ['admin-usuarios', 'admin_sig'],
     queryFn: fetchAdminUsers,
-    select: (d) => d.data?.usuarios ?? d.usuarios ?? [],
+    select: (d: any) => d?.data?.usuarios ?? d?.usuarios ?? [],
   })
 
   const handleSuccess = () => {

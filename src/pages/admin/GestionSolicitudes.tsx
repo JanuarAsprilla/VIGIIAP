@@ -2,6 +2,7 @@
  * tokens: design.md · stamp: 2026-05-25
  */
 import { useState } from 'react'
+import type { SolicitudData } from '@/hooks/useSolicitudes'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, X, CheckCircle, XCircle, Clock, Eye,
@@ -41,15 +42,16 @@ export default function GestionSolicitudes() {
   const responderMutation = useResponderSolicitud()
   const deleteArchivo     = useDeleteSolicitudArchivo()
   const downloadArchivo   = useDownloadSolicitudArchivo()
-  const archivosQuery     = useSolicitudArchivos(selected?._id)
-  const archivos          = archivosQuery.data ?? []
   const { toasts, toast, dismiss } = useToast()
 
   const [search, setSearch] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
   const [filtroTipo, setFiltroTipo] = useState('')
-  const [selected, setSelected] = useState(null)
-  const [accionModal, setAccionModal] = useState(null)
+  const [selected, setSelected] = useState<SolicitudData | null>(null)
+  const [accionModal, setAccionModal] = useState<{ type: 'approve' | 'reject'; sol: SolicitudData } | null>(null)
+
+  const archivosQuery     = useSolicitudArchivos(selected?._id)
+  const archivos          = archivosQuery.data ?? []
   const [nota, setNota] = useState('')
   const [respuesta, setRespuesta] = useState('')
   const [page, setPage] = useState(1)
@@ -71,7 +73,7 @@ export default function GestionSolicitudes() {
     try {
       await updateEstado.mutateAsync({ id: sol._id, estado: 'En Revisión' })
       if (selected?._id === sol._id)
-        setSelected((prev) => ({ ...prev, estado: 'En Revisión', timeline: ['Recibida', 'Pendiente', 'En Revisión'] }))
+        setSelected((prev) => prev ? { ...prev, estado: 'En Revisión', timeline: ['Recibida', 'Pendiente', 'En Revisión'] } : prev)
       toast(`Solicitud ${sol.id} marcada en revisión`, 'info')
     } catch {
       toast('Error al actualizar la solicitud', 'error')
@@ -79,6 +81,7 @@ export default function GestionSolicitudes() {
   }
 
   const handleAction = async () => {
+    if (!accionModal) return
     const { type, sol } = accionModal
     const nuevoEstado = type === 'approve' ? 'Aprobado' : 'Rechazado'
     try {
@@ -106,12 +109,12 @@ export default function GestionSolicitudes() {
     }
     try {
       await responderMutation.mutateAsync({ id: selected._id, respuesta: respuesta.trim() })
-      setSelected((prev) => ({
+      setSelected((prev) => prev ? ({
         ...prev,
         estado: 'Resuelta',
         notas: respuesta.trim(),
         timeline: ['Recibida', 'Pendiente', 'En Revisión', 'Resuelta'],
-      }))
+      }) : prev)
       setRespuesta('')
       toast(`Respuesta enviada — solicitud ${selected.id} marcada como resuelta`, 'success')
     } catch {

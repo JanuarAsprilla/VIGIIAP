@@ -4,21 +4,21 @@ import { X, Check, CheckCircle, AlertCircle, Clock, PlusCircle } from 'lucide-re
 import { StatusBadge } from './StatusBadge'
 
 export function DetalleSolicitudModal({ sol, onClose, onNueva }) {
-  const modalRef = useRef(null)
+  const modalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const el = modalRef.current
     if (!el) return
     const FOCUSABLE = 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'
     const getFocusable = () => [...el.querySelectorAll(FOCUSABLE)]
-    getFocusable()[0]?.focus()
+    ;(getFocusable()[0] as HTMLElement)?.focus()
     const trap = (e) => {
       if (e.key === 'Escape') { onClose(); return }
       if (e.key !== 'Tab') return
       const nodes = getFocusable()
       const last  = nodes[nodes.length - 1]
-      if (e.shiftKey) { if (document.activeElement === nodes[0]) { e.preventDefault(); last?.focus() } }
-      else            { if (document.activeElement === last)      { e.preventDefault(); nodes[0]?.focus() } }
+      if (e.shiftKey) { if (document.activeElement === nodes[0]) { e.preventDefault(); (last as HTMLElement)?.focus() } }
+      else            { if (document.activeElement === last)      { e.preventDefault(); (nodes[0] as HTMLElement)?.focus() } }
     }
     el.addEventListener('keydown', trap)
     return () => el.removeEventListener('keydown', trap)

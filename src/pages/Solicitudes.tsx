@@ -21,7 +21,7 @@ export default function Solicitudes() {
   const [filtroEstado, setFiltroEstado] = useState('')
   const [page, setPage] = useState(1)
   const [detalleItem, setDetalleItem] = useState(null)
-  const formRef = useRef(null)
+  const formRef = useRef<HTMLDivElement>(null)
 
   const { data } = useMisSolicitudes()
   const allRows = data?.data ?? []
@@ -41,7 +41,7 @@ export default function Solicitudes() {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     setTimeout(() => {
       const first = formRef.current?.querySelector('input:not([readonly]), select, textarea')
-      first?.focus()
+      ;(first as HTMLElement)?.focus()
     }, 400)
   }
 

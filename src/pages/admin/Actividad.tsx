@@ -67,9 +67,9 @@ function useAuditLog(params = {}) {
   return useQuery({
     queryKey: ['admin', 'audit', params],
     queryFn:  () => api.get('/admin/audit', { params }),
-    select:   (res) => ({
-      data: res.data.map(normalizeLog),
-      meta: res.meta,
+    select:   (res: any) => ({
+      data: (res?.data ?? res ?? []).map(normalizeLog),
+      meta: res?.meta,
     }),
     staleTime: 30_000,
   })

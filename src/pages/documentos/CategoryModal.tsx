@@ -62,8 +62,8 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }) {
   const [localQuery, setLocalQuery] = useState('')
   const [sortBy, setSortBy] = useState('name-asc')
   const [showSort, setShowSort] = useState(false)
-  const sortRef = useRef(null)
-  const modalRef = useRef(null)
+  const sortRef = useRef<HTMLDivElement>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose() }
@@ -82,14 +82,14 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }) {
     const first = focusable[0]
     const last  = focusable[focusable.length - 1]
 
-    first?.focus()
+    ;(first as HTMLElement)?.focus()
 
     const handleTab = (e) => {
       if (e.key !== 'Tab') return
       if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last?.focus() }
+        if (document.activeElement === first) { e.preventDefault(); (last as HTMLElement)?.focus() }
       } else {
-        if (document.activeElement === last)  { e.preventDefault(); first?.focus() }
+        if (document.activeElement === last)  { e.preventDefault(); (first as HTMLElement)?.focus() }
       }
     }
 
@@ -103,8 +103,8 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }) {
   docs = [...docs].sort((a, b) => {
     if (sortBy === 'name-asc')  return a.name.localeCompare(b.name)
     if (sortBy === 'name-desc') return b.name.localeCompare(a.name)
-    if (sortBy === 'date-desc') return new Date(b.dateISO) - new Date(a.dateISO)
-    if (sortBy === 'date-asc')  return new Date(a.dateISO) - new Date(b.dateISO)
+    if (sortBy === 'date-desc') return new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
+    if (sortBy === 'date-asc')  return new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime()
     return 0
   })
 

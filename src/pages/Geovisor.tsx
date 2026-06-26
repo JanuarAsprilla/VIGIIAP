@@ -11,7 +11,7 @@ import 'leaflet/dist/leaflet.css'
 import { useToast, ToastContainer } from '@/components/Toast'
 
 // ── Map config ──
-const MAP_CENTER = [5.6878, -76.6581]
+const MAP_CENTER: [number, number] = [5.6878, -76.6581]
 const MAP_ZOOM = 10
 
 const TILE_LAYERS = [
@@ -33,7 +33,7 @@ const TILE_LAYERS = [
 ]
 
 // ── Chocó region polygon ──
-const CHOCO_POLYGON = [
+const CHOCO_POLYGON: [number, number][] = [
   [8.5, -77.5], [8.2, -76.5], [7.5, -76.8], [6.5, -77.2],
   [5.5, -77.5], [4.5, -77.8], [3.5, -78.0], [2.0, -78.5],
   [1.5, -79.0], [1.8, -79.2], [2.5, -78.8], [3.5, -78.2],
@@ -270,7 +270,7 @@ function BasemapSelector({ active, onChange }) {
 
 // ── Main Geovisor Page ──
 export default function Geovisor() {
-  const mapRef = useRef(null)
+  const mapRef = useRef<import('leaflet').Map | null>(null)
   const [coords, setCoords] = useState("5°41'13\"N 76°39'31\"W")
   const [zoom, setZoom] = useState(MAP_ZOOM)
   const [activeLayers, setActiveLayers] = useState(['limites', 'ecosistemas'])

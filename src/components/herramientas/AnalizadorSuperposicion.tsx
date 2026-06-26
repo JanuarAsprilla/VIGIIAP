@@ -29,7 +29,7 @@ const OPERACIONES = [
 export default function AnalizadorSuperposicion() {
   const [operacion, setOperacion] = useState('interseccion')
   const [loading,   setLoading]   = useState(false)
-  const [result,    setResult]    = useState(null)
+  const [result,    setResult]    = useState<{ area: number; porc: number; poligonos: number; alerta: string | null } | null>(null)
 
   const ejecutar = () => {
     setLoading(true)

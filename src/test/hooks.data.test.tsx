@@ -71,7 +71,7 @@ describe('useAdminStats', () => {
   })
 
   test('exposes isLoading while fetching', () => {
-    api.get.mockReturnValue(new Promise(() => {}))
+    vi.mocked(api.get).mockReturnValue(new Promise(() => {}))
 
     const { result } = renderHook(() => useAdminStats(), { wrapper: makeWrapper() })
     expect(result.current.isLoading).toBe(true)
@@ -103,7 +103,7 @@ describe('useNoticiasList', () => {
 
     const items = result.current.data?.data
     expect(Array.isArray(items)).toBe(true)
-    expect(items[0]).toMatchObject({
+    expect(items![0]).toMatchObject({
       id: 1,
       slug: 'prueba',
       title: 'Test noticia',
@@ -168,8 +168,8 @@ describe('useMapasList', () => {
 
     const maps = result.current.data?.data
     expect(Array.isArray(maps)).toBe(true)
-    expect(maps[0]).toMatchObject({ id: 1, slug: 'mapa-1', title: 'Mapa Test' })
-    expect(Array.isArray(maps[0].formats)).toBe(true)
+    expect(maps![0]).toMatchObject({ id: 1, slug: 'mapa-1', title: 'Mapa Test' })
+    expect(Array.isArray(maps![0].formats)).toBe(true)
   })
 
   test('derived formats includes PDF when archivo_pdf_url is present', async () => {
@@ -178,8 +178,8 @@ describe('useMapasList', () => {
     const { result } = renderHook(() => useMapasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-    const map = result.current.data?.data[0]
-    expect(map.formats).toContain('PDF')
+    const map = result.current.data?.data?.[0]
+    expect(map!.formats).toContain('PDF')
   })
 })
 
@@ -203,8 +203,8 @@ describe('useDocumentosList', () => {
 
     const docs = result.current.data?.data
     expect(Array.isArray(docs)).toBe(true)
-    expect(docs[0]).toMatchObject({ id: 1, nombre: 'Documento Test', type: 'pdf' })
-    expect(docs[0].tamano).toBe('100 KB')
+    expect(docs![0]).toMatchObject({ id: 1, nombre: 'Documento Test', type: 'pdf' })
+    expect(docs![0].tamano).toBe('100 KB')
   })
 })
 
@@ -268,7 +268,7 @@ describe('useUsuariosList', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     const users = result.current.data?.data
-    expect(users[0].rol).toBe('Investigador')
+    expect(users![0].rol).toBe('Investigador')
   })
 })
 
@@ -283,7 +283,7 @@ describe('useCategoriasList', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(Array.isArray(result.current.data)).toBe(true)
-    expect(result.current.data[0]).toMatchObject({ id: 1, nombre: 'Biodiversidad' })
+    expect((result.current.data as any)[0]).toMatchObject({ id: 1, nombre: 'Biodiversidad' })
   })
 
   test('handles data-envelope response format', async () => {
@@ -293,7 +293,7 @@ describe('useCategoriasList', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(Array.isArray(result.current.data)).toBe(true)
-    expect(result.current.data[0].nombre).toBe('Mapas')
+    expect((result.current.data as any)[0].nombre).toBe('Mapas')
   })
 })
 

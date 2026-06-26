@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // C-01: estado de usuario solo en memoria (no localStorage).
   // La sesión persiste a través de la cookie HttpOnly vigiiap_token;
   // refreshProfile() rehidrata desde /auth/me al montar.
-  const [user, setUser]               = useState(null)
+  const [user, setUser]               = useState<AuthUser | null>(null)
   const [loading, setLoading]         = useState(false)
   const [initializing, setInitializing] = useState(true)
 
@@ -134,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email, password) => {
     setLoading(true)
     try {
-      const { token, user: raw } = await api.post('/auth/login', { email, password })
+      const { token, user: raw } = (await api.post('/auth/login', { email, password })) as { token: string; user: Record<string, unknown> }
       // C-01: token no se escribe en localStorage; el backend lo envía
       // como cookie HttpOnly (Set-Cookie) y api.js usa withCredentials=true.
       void token
@@ -151,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginVisitante = useCallback(async (nombre = '') => {
     setLoading(true)
     try {
-      const { token, user: raw } = await api.post('/auth/visitante', { nombre: nombre || undefined })
+      const { token, user: raw } = (await api.post('/auth/visitante', { nombre: nombre || undefined })) as { token: string; user: Record<string, unknown> }
       // C-01: token no se escribe en localStorage; gestionado por cookie HttpOnly.
       void token
       const normalized = normalizeUser(raw)

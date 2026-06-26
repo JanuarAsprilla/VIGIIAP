@@ -14,10 +14,10 @@ const ThemeContext = createContext<ThemeContextValue | null>(null)
 const VALID_THEMES = ['light', 'dark']
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState(() => {
+  const [theme, setTheme] = useState<Theme>(() => {
     try {
       const stored = localStorage.getItem('vigiiap_theme')
-      return VALID_THEMES.includes(stored) ? stored : 'light'
+      return VALID_THEMES.includes(stored as string) ? (stored as Theme) : 'light'
     }
     catch { return 'light' }
   })

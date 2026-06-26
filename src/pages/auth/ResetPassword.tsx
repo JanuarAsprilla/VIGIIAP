@@ -43,7 +43,7 @@ export default function ResetPassword() {
       setSuccess(true)
       setTimeout(() => navigate('/login'), 3000)
     } catch (err) {
-      setError(err.message ?? 'Ocurrió un error. El enlace puede haber expirado.')
+      setError((err as Error)?.message ?? 'Ocurrió un error. El enlace puede haber expirado.')
     } finally {
       setLoading(false)
     }

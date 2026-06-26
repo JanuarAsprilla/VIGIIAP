@@ -106,9 +106,9 @@ export default function CommandPalette() {
   const [query,       setQuery]       = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
 
-  const inputRef  = useRef(null)
-  const listRef   = useRef(null)
-  const panelRef  = useRef(null)
+  const inputRef  = useRef<HTMLInputElement>(null)
+  const listRef   = useRef<HTMLDivElement>(null)
+  const panelRef  = useRef<HTMLDivElement>(null)
 
   const baseId    = useId()
   const inputId   = `${baseId}-input`
@@ -196,9 +196,9 @@ export default function CommandPalette() {
     const last  = focusable[focusable.length - 1]
 
     if (e.shiftKey) {
-      if (document.activeElement === first) { e.preventDefault(); last?.focus() }
+      if (document.activeElement === first) { e.preventDefault(); (last as HTMLElement)?.focus() }
     } else {
-      if (document.activeElement === last)  { e.preventDefault(); first?.focus() }
+      if (document.activeElement === last)  { e.preventDefault(); (first as HTMLElement)?.focus() }
     }
   }, [])
 
@@ -216,6 +216,7 @@ export default function CommandPalette() {
         onClick={(e) => { if (e.target === e.currentTarget) closePalette() }}
         onKeyDown={handleFocusTrap}
       >
+        {/* @ts-ignore framer-motion v12 spread type */}
         <motion.div
           {...PANEL_ANIM}
           ref={panelRef}

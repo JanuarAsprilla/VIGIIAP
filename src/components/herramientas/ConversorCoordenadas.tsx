@@ -10,7 +10,7 @@ export default function ConversorCoordenadas() {
   const [lonInput, setLonInput] = useState('-76.7324')
   const [xInput,   setXInput]   = useState('1042482')
   const [yInput,   setYInput]   = useState('1120943')
-  const [result,   setResult]   = useState(null)
+  const [result,   setResult]   = useState<{ x?: number; y?: number; lat?: number; lon?: number } | null>(null)
   const [error,    setError]    = useState('')
   const [copied,   setCopied]   = useState(false)
 
@@ -32,14 +32,14 @@ export default function ConversorCoordenadas() {
         setResult(magnaToWgs84(x, y))
       }
     } catch (e) {
-      setError(e.message)
+      setError((e as Error)?.message ?? 'Error desconocido')
     }
   }
 
   const copyResult = () => {
     if (!result) return
     const text = modo === 'wgs2magna'
-      ? `X: ${result.x.toLocaleString('es-CO')} | Y: ${result.y.toLocaleString('es-CO')}`
+      ? `X: ${result.x?.toLocaleString('es-CO')} | Y: ${result.y?.toLocaleString('es-CO')}`
       : `Lat: ${result.lat}° | Lon: ${result.lon}°`
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true)
@@ -149,13 +149,13 @@ export default function ConversorCoordenadas() {
                 <div>
                   <p className="text-[0.6rem] text-primary-700 mb-0.5">X — Este</p>
                   <p className="text-sm font-mono font-bold text-primary-900">
-                    {result.x.toLocaleString('es-CO', { maximumFractionDigits: 2 })} m
+                    {result.x?.toLocaleString('es-CO', { maximumFractionDigits: 2 })} m
                   </p>
                 </div>
                 <div>
                   <p className="text-[0.6rem] text-primary-700 mb-0.5">Y — Norte</p>
                   <p className="text-sm font-mono font-bold text-primary-900">
-                    {result.y.toLocaleString('es-CO', { maximumFractionDigits: 2 })} m
+                    {result.y?.toLocaleString('es-CO', { maximumFractionDigits: 2 })} m
                   </p>
                 </div>
               </div>

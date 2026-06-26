@@ -28,7 +28,7 @@ export default function RecuperarPassword() {
       await api.post('/auth/recuperar-password', { email })
       setStep('enviado')
     } catch (err) {
-      setError(err.message ?? 'Ocurrió un error. Intenta de nuevo.')
+      setError((err as Error)?.message ?? 'Ocurrió un error. Intenta de nuevo.')
     } finally {
       setLoading(false)
     }

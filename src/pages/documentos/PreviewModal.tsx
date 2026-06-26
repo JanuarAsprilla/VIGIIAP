@@ -10,7 +10,7 @@ export function PreviewModal({ doc, categoryTitle, onClose }) {
   const isPdf    = doc.type === 'pdf'
   const isOffice = doc.type === 'docx' || doc.type === 'doc' || doc.type === 'xlsx' || doc.type === 'xls'
   const OfficeIcon = (doc.type === 'xlsx' || doc.type === 'xls') ? FileSpreadsheet : FileText
-  const modalRef = useRef(null)
+  const modalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose() }
@@ -29,14 +29,14 @@ export function PreviewModal({ doc, categoryTitle, onClose }) {
     const first = focusable[0]
     const last  = focusable[focusable.length - 1]
 
-    first?.focus()
+    ;(first as HTMLElement)?.focus()
 
     const handleTab = (e) => {
       if (e.key !== 'Tab') return
       if (e.shiftKey) {
-        if (document.activeElement === first) { e.preventDefault(); last?.focus() }
+        if (document.activeElement === first) { e.preventDefault(); (last as HTMLElement)?.focus() }
       } else {
-        if (document.activeElement === last)  { e.preventDefault(); first?.focus() }
+        if (document.activeElement === last)  { e.preventDefault(); (first as HTMLElement)?.focus() }
       }
     }
 

@@ -223,7 +223,7 @@ function RolesChart({ usuarios }) {
 function SolicitudesPendientes({ solicitudes }) {
   const pendientes   = solicitudes.filter((s) => s.estado === 'Pendiente' || s.estado === 'En Revisión')
   const updateEstado = useUpdateEstadoSolicitud()
-  const [confirm, setConfirm] = useState(null) // { _id, accion: 'Aprobado'|'Rechazado' }
+  const [confirm, setConfirm] = useState<{ _id: string; accion: 'Aprobado' | 'Rechazado' } | null>(null)
 
   const doAction = async (_id, accion) => {
     await updateEstado.mutateAsync({ id: _id, estado: accion })

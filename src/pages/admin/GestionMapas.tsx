@@ -2,6 +2,7 @@
  * tokens: design.md · stamp: 2026-05-25
  */
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import type { MapaData } from '@/hooks/useMapas'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, X, Edit2, Trash2, Eye, EyeOff,
@@ -62,7 +63,7 @@ function useClickOutside(ref, handler) {
 function CategoryCombobox({ value, onChange, allOptions, placeholder = 'Selecciona o escribe una temática nueva…' }) {
   const [input, setInput] = useState(value || '')
   const [open, setOpen]   = useState(false)
-  const ref = useRef(null)
+  const ref = useRef<HTMLDivElement>(null)
   useClickOutside(ref, () => setOpen(false))
   useEffect(() => { setInput(value || '') }, [value])
 
@@ -175,9 +176,9 @@ function VisibilidadSelector({ value, onChange }) {
 }
 
 function ThumbnailDropzone({ onFile, existing }) {
-  const inputRef = useRef(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
-  const [preview, setPreview] = useState(null)
+  const [preview, setPreview] = useState<string | null>(null)
 
   const accept = useCallback((f) => {
     if (!f || !f.type.startsWith('image/')) return
@@ -236,7 +237,7 @@ function ThumbnailDropzone({ onFile, existing }) {
 }
 
 function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, onError }) {
-  const inputRef = useRef(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const accept = ACCEPT[formato]
 
@@ -330,16 +331,16 @@ export default function GestionMapas() {
   const [search, setSearch] = useState('')
   const [filtroTematica, setFiltroTematica] = useState('')
   const [showModal, setShowModal] = useState(false)
-  const [editing, setEditing] = useState(null)
+  const [editing, setEditing] = useState<MapaData | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
-  const [formErrors, setFormErrors] = useState({})
-  const [uploadedFile, setUploadedFile] = useState(null)
-  const [uploadedThumb, setUploadedThumb] = useState(null)
-  const [uploadError, setUploadError] = useState(null)
-  const [submitError, setSubmitError] = useState(null)
-  const [uploadProgress, setUploadProgress] = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [toast, setToast] = useState(null)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [uploadedThumb, setUploadedThumb] = useState<File | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<MapaData | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
 
   const isSubmitting = createMapa.isPending || updateMapa.isPending
 
@@ -355,7 +356,7 @@ export default function GestionMapas() {
     return matchQ && matchT
   })
 
-  const listRef = useRef(null)
+  const listRef = useRef<HTMLDivElement>(null)
   const [cols, setCols] = useState(() => (typeof window !== 'undefined' && window.innerWidth >= 1024) ? 2 : 1)
 
   useEffect(() => {
@@ -366,7 +367,7 @@ export default function GestionMapas() {
   }, [])
 
   const rows = useMemo(() => {
-    const result = []
+    const result: MapaData[][] = []
     for (let i = 0; i < filtered.length; i += cols) {
       result.push(filtered.slice(i, i + cols))
     }
@@ -403,7 +404,7 @@ export default function GestionMapas() {
   }
 
   const validate = () => {
-    const e = {}
+    const e: Record<string, string> = {}
     if (!form.nombre.trim()) e.nombre = 'El nombre del mapa es obligatorio'
     if (!form.tematica.trim()) e.tematica = 'Selecciona o escribe una temática'
     if (form.formato !== 'Geovisor' && !editing && !uploadedFile)
@@ -458,7 +459,7 @@ export default function GestionMapas() {
       }
       setShowModal(false)
     } catch (err) {
-      setSubmitError(err?.response?.data?.error ?? err?.message ?? 'No se pudo guardar. Verifica la conexión e intenta de nuevo.')
+      setSubmitError((err as any)?.response?.data?.error ?? (err as any)?.message ?? 'No se pudo guardar. Verifica la conexión e intenta de nuevo.')
       setUploadProgress(null)
     }
   }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -30,7 +30,7 @@ const MODOS = [
   },
 ]
 
-function InputField({ id, label, icon: Icon, error, right, ...props }) {
+function InputField({ id, label, icon: Icon, error, right = null, ...props }: { id?: string; label?: string; icon: React.ComponentType<{ className?: string }>; error?: string; right?: React.ReactNode; [key: string]: unknown }) {
   const errorId = id ? `error-${id}` : undefined
   return (
     <div>
@@ -78,14 +78,14 @@ export default function Login() {
   const [password, setPassword]       = useState('')
   const [nombreVisitante, setNombre]  = useState('')
   const [showPass, setShowPass]       = useState(false)
-  const [errors, setErrors]           = useState({})
+  const [errors, setErrors]           = useState<Record<string, string | undefined>>({})
   const [serverError, setServerError] = useState('')
-  const [errorCode, setErrorCode]     = useState(null)
+  const [errorCode, setErrorCode]     = useState<string | null>(null)
   const [resendLoading, setResendLoading] = useState(false)
   const [resendSent, setResendSent]   = useState(false)
 
   const validate = () => {
-    const e = {}
+    const e: Record<string, string> = {}
     if (modo === 'institucional') {
       const emailErr    = validateEmail(email)
       const passwordErr = validatePassword(password, 6)
@@ -116,8 +116,8 @@ export default function Login() {
         navigate(isAdmin ? '/admin' : safeTo, { replace: true })
       }
     } catch (err) {
-      setErrorCode(err.code ?? null)
-      setServerError(err.message || 'No se pudo acceder. Intente de nuevo.')
+      setErrorCode((err as any)?.code ?? null)
+      setServerError((err as Error)?.message || 'No se pudo acceder. Intente de nuevo.')
     }
   }
 

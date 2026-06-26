@@ -149,8 +149,16 @@ export function useResponderSolicitud() {
   })
 }
 
+export interface ArchivoSolicitud {
+  id: string
+  nombre: string
+  tamano_bytes?: number
+  url?: string
+  tipo?: string
+}
+
 export function useSolicitudArchivos(solicitudId: string | null | undefined) {
-  return useQuery<unknown[]>({
+  return useQuery<ArchivoSolicitud[]>({
     queryKey: [...SOL_KEYS.all, solicitudId, 'archivos'],
     queryFn:  () => api.get(`/solicitudes/${solicitudId}/archivos`),
     enabled:  !!solicitudId,

@@ -32,7 +32,7 @@ export default function AjustesPanel({ onClose }) {
             {DENSITY_OPTIONS.map(({ value, label, Icon }) => (
               <button
                 key={value}
-                onClick={() => setDensity(value)}
+                onClick={() => setDensity(value as Parameters<typeof setDensity>[0])}
                 aria-pressed={density === value}
                 className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg border text-[0.65rem] font-bold uppercase tracking-wider transition-colors ${
                   density === value
@@ -87,7 +87,7 @@ export default function AjustesPanel({ onClose }) {
             <p className="text-xs text-text-muted">Alertas de nuevos datos</p>
           </div>
           <button
-            onClick={() => setNotifications((v) => !v)}
+            onClick={() => setNotifications(!notifications)}
             aria-pressed={notifications}
             aria-label={notifications ? 'Desactivar notificaciones' : 'Activar notificaciones'}
             className={`relative w-10 h-6 rounded-full transition-colors ${

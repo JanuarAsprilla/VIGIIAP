@@ -22,7 +22,7 @@ function buildPageButtons(current, total) {
     if (n > 1 && n < total) pages.add(n)
   }
   const sorted = [...pages].sort((a, b) => a - b)
-  const result = []
+  const result: (number | string)[] = []
   let prev = 0
   for (const n of sorted) {
     if (n - prev > 1) result.push('…')
@@ -43,7 +43,7 @@ const TAG_COLORS = {
 const defaultTag = { pill: 'bg-primary-50 text-primary-700', glow: 'rgba(26,86,50,0.18)' }
 
 // ── 3D News Card ──────────────────────────────────────────────────────────────
-function NewsCard({ article, featured = false }) {
+function NewsCard({ article, featured = false, index: _index }: { article: any; featured?: boolean; index?: number }) {
   const tc = TAG_COLORS[article.tag] ?? defaultTag
 
   return (
@@ -117,7 +117,7 @@ function NewsCard({ article, featured = false }) {
 }
 
 // ── Compact list card (non-featured) ─────────────────────────────────────────
-function NewsListItem({ article }) {
+function NewsListItem({ article, index: _index }: { article: any; index?: number }) {
   const tc = TAG_COLORS[article.tag] ?? defaultTag
 
   return (
@@ -361,7 +361,7 @@ export default function Noticias() {
               ) : (
                 <button key={item} onClick={() => goPage(item)}
                   className={`w-8 h-8 rounded-lg text-xs font-semibold transition-all active:scale-[0.96] ${
-                    item === page
+                    (item as number) === page
                       ? 'bg-primary-800 text-white shadow-sm'
                       : 'border border-border text-text-muted hover:border-primary-800 hover:text-primary-800'
                   }`}>

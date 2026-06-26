@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import {
@@ -35,7 +35,7 @@ function SectionCard({ title, icon: Icon, children, delay = 0 }) {
   )
 }
 
-function FieldRow({ label, hint, children }) {
+function FieldRow({ label, hint, children }: { label?: string; hint?: string; children?: React.ReactNode }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-3 items-start">
       <div>
@@ -93,7 +93,7 @@ export default function Configuracion() {
     mensaje: 'El sistema estará en mantenimiento programado. Disculpe las molestias.',
   })
 
-  const [saveStatus, setSaveStatus] = useState(null) // null | 'ok' | 'error'
+  const [saveStatus, setSaveStatus] = useState<'ok' | 'error' | null>(null)
 
   // ── Load config from API ──
   const { data: remoteConfig } = useQuery({
@@ -120,7 +120,7 @@ export default function Configuracion() {
   }, [remoteConfig])
 
   // ── Save mutation ──
-  const saveMutation = useMutation({
+  const saveMutation = useMutation<unknown, Error, Record<string, unknown>>({
     mutationFn: (body) => api.put('/admin/configuracion', body),
     onSuccess: () => {
       setSaveStatus('ok')

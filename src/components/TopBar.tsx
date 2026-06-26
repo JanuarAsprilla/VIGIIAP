@@ -83,8 +83,8 @@ export default function TopBar({ onMenuToggle }) {
   const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [activePanel, setActivePanel]           = useState(null)
 
-  const panelRef    = useRef(null)
-  const dropdownRef = useRef(null)
+  const panelRef    = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const { readIds, markRead, markAllRead } = useReadNotifications()
 
@@ -359,11 +359,11 @@ export default function TopBar({ onMenuToggle }) {
                 className="flex items-center gap-2 pl-3 lg:pl-4" style={{borderLeft:"1px solid var(--topbar-sep)"}}
               >
                 <div className="text-right hidden sm:block">
-                  <span className="block text-sm font-medium leading-tight" style={{color:"var(--topbar-text)"}}>{user.name}</span>
-                  <span className="block text-[0.7rem] uppercase tracking-wider" style={{color:"var(--topbar-icon-on)"}}>{user.role}</span>
+                  <span className="block text-sm font-medium leading-tight" style={{color:"var(--topbar-text)"}}>{user?.name}</span>
+                  <span className="block text-[0.7rem] uppercase tracking-wider" style={{color:"var(--topbar-icon-on)"}}>{user?.role}</span>
                 </div>
                 <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-800 rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-white text-sm font-bold">{user.initials}</span>
+                  <span className="text-white text-sm font-bold">{user?.initials}</span>
                 </div>
                 <ChevronDown
                   className={`w-4 h-4 hidden sm:block transition-transform ${activePanel === 'dropdown' ? 'rotate-180' : ''}`} style={{color:"var(--topbar-icon-off)"}}

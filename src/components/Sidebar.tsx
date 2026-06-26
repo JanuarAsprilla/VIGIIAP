@@ -21,7 +21,7 @@ const navContainer = {
 }
 const navItemVariant = {
   initial: { opacity: 0, x: -12 },
-  animate: { opacity: 1, x: 0, transition: { ease: [0.22, 1, 0.36, 1], duration: 0.38 } },
+  animate: { opacity: 1, x: 0, transition: { ease: [0.22, 1, 0.36, 1] as const, duration: 0.38 } },
 }
 
 // ── Nav link ─────────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ function UserMiniCard({ user }) {
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
-      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
       className="mx-3 mt-2 mb-0.5"
     >
       <div
@@ -265,7 +265,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
           >
             <Link
               to="/login"
@@ -292,7 +292,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
               className="space-y-1.5"
             >
               {/* Panel Admin */}

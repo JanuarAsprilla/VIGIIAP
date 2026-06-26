@@ -9,18 +9,17 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 gsap.registerPlugin(ScrollTrigger)
 
-let lenisInstance = null
+let lenisInstance: Lenis | null = null
 
 export function getLenis() { return lenisInstance }
 
 export function useLenis() {
   useEffect(() => {
     const lenis = new Lenis({
-      duration:  1.4,
-      easing:    (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smooth:    true,
+      duration:    1.4,
+      easing:      (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothTouch: false,
-    })
+    } as ConstructorParameters<typeof Lenis>[0])
 
     lenisInstance = lenis
 

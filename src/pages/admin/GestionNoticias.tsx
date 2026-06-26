@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import type { NoticiaData } from '@/hooks/useNoticias'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, X, Edit2, Trash2, Eye, EyeOff,
@@ -66,7 +67,7 @@ function useClickOutside(ref, handler) {
 function CategoryCombobox({ value, onChange, allOptions }) {
   const [input, setInput] = useState(value || '')
   const [open, setOpen]   = useState(false)
-  const ref = useRef(null)
+  const ref = useRef<HTMLDivElement>(null)
   useClickOutside(ref, () => setOpen(false))
   useEffect(() => { setInput(value || '') }, [value])
 
@@ -199,8 +200,8 @@ function UploadProgress({ progress }) {
 }
 
 // ── Thumbnail Dropzone ────────────────────────────────────────────────────────
-function ThumbnailDropzone({ previewUrl, onChange, onRemove, onError }) {
-  const inputRef = useRef(null)
+function ThumbnailDropzone({ previewUrl, onChange, onRemove, onError, file: _file }: { previewUrl?: string; onChange?: (f: any, url: any) => void; onRemove?: () => void; onError?: any; file?: File | null }) {
+  const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
 
   const handleFile = useCallback((f) => {
@@ -210,7 +211,7 @@ function ThumbnailDropzone({ previewUrl, onChange, onRemove, onError }) {
       return
     }
     onError?.(null)
-    onChange(f, URL.createObjectURL(f))
+    onChange?.(f, URL.createObjectURL(f))
   }, [onChange, onError])
 
   const onDrop = useCallback((e) => {
@@ -275,17 +276,17 @@ export default function GestionNoticias() {
   const [search, setSearch] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
   const [showModal, setShowModal] = useState(false)
-  const [editing, setEditing] = useState(null)
+  const [editing, setEditing] = useState<NoticiaData | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
-  const [formErrors, setFormErrors] = useState({})
-  const [submitError, setSubmitError] = useState(null)
-  const [uploadProgress, setUploadProgress] = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [preview, setPreview] = useState(null)
-  const [thumbnail, setThumbnail] = useState(null)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<NoticiaData | null>(null)
+  const [preview, setPreview] = useState<NoticiaData | null>(null)
+  const [thumbnail, setThumbnail] = useState<File | null>(null)
   const [thumbUrl, setThumbUrl] = useState('')
-  const [thumbError, setThumbError] = useState(null)
-  const [toast, setToast] = useState(null)
+  const [thumbError, setThumbError] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
 
   const isSubmitting = createNoticia.isPending || updateNoticia.isPending
 
@@ -296,7 +297,7 @@ export default function GestionNoticias() {
 
   const filtered = noticias.filter((n) => {
     const q = search.toLowerCase()
-    const matchQ = !q || n.titulo?.toLowerCase().includes(q) || n.autor?.toLowerCase().includes(q)
+    const matchQ = !q || n.titulo?.toLowerCase().includes(q) || n.author?.toLowerCase().includes(q)
     const matchC = !filtroCategoria || n.categoria === filtroCategoria
     return matchQ && matchC
   })
@@ -331,7 +332,7 @@ export default function GestionNoticias() {
   }
 
   const validate = () => {
-    const e = {}
+    const e: Record<string, string> = {}
     if (!form.titulo.trim()) e.titulo = 'Requerido'
     if (!form.resumen.trim()) e.resumen = 'Requerido'
     if (!form.categoria.trim()) e.categoria = 'Selecciona o escribe una categoría'
@@ -367,7 +368,7 @@ export default function GestionNoticias() {
       }
       setShowModal(false)
     } catch (err) {
-      setSubmitError(err?.response?.data?.error ?? err?.message ?? 'Error al guardar')
+      setSubmitError((err as any)?.response?.data?.error ?? (err as any)?.message ?? 'Error al guardar')
       setUploadProgress(null)
     }
   }
@@ -487,14 +488,14 @@ export default function GestionNoticias() {
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="text-[0.6rem] font-bold uppercase tracking-wider bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full">{n.tag}</span>
                       <span className="text-[0.6rem] text-text-muted">{n.categoria}</span>
-                      {n.thumbUrl && <Image className="w-3 h-3 text-text-muted" title="Tiene imagen" />}
+                      {n.thumbUrl && <Image className="w-3 h-3 text-text-muted" aria-label="Tiene imagen" />}
                       <span className={`inline-flex items-center gap-1 text-[0.6rem] font-semibold px-2 py-0.5 rounded-full ${vis.badge}`}>
                         <vis.Icon className="w-2.5 h-2.5" />
                         {vis.label}
                       </span>
                     </div>
                     <p className="text-sm font-bold text-text line-clamp-2">{n.titulo}</p>
-                    <p className="text-xs text-text-muted mt-0.5">{n.autor || 'IIAP'} · {n.date || n.time}</p>
+                    <p className="text-xs text-text-muted mt-0.5">{n.author || 'IIAP'} · {n.date || n.time}</p>
                   </div>
                   <button
                     onClick={() => togglePublished(n.id)}
@@ -709,7 +710,7 @@ export default function GestionNoticias() {
               <div className="p-6">
                 <span className="text-[0.6rem] font-bold uppercase tracking-widest bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full">{preview.tag}</span>
                 <h2 className="font-display text-xl font-bold text-text mt-3 mb-2">{preview.titulo}</h2>
-                <p className="text-xs text-text-muted mb-4">{preview.autor || 'IIAP'} · {preview.date}</p>
+                <p className="text-xs text-text-muted mb-4">{preview.author || 'IIAP'} · {preview.date}</p>
                 <p className="text-sm text-text-muted leading-relaxed mb-4">{preview.resumen}</p>
                 <hr className="border-border mb-4" />
                 <p className="text-sm text-text leading-relaxed whitespace-pre-line">{preview.contenido}</p>

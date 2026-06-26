@@ -6,10 +6,10 @@
  */
 
 // ── Easing curves (design.md) ───────────────────────────────────────────────
-export const EASE_OUT_EXPO  = [0.16, 1,    0.3, 1]   // enter
-export const EASE_IN_EXPO   = [0.55, 0,    1,   0.45] // exit
-export const EASE_SPRING    = [0.22, 1,    0.36, 1]   // general
-export const EASE_DRAWER    = [0.32, 0.72, 0,   1]    // drawers
+export const EASE_OUT_EXPO: [number, number, number, number]  = [0.16, 1,    0.3, 1]    // enter
+export const EASE_IN_EXPO: [number, number, number, number]   = [0.55, 0,    1,   0.45] // exit
+export const EASE_SPRING: [number, number, number, number]    = [0.22, 1,    0.36, 1]   // general
+export const EASE_DRAWER: [number, number, number, number]    = [0.32, 0.72, 0,   1]    // drawers
 
 // ── Basic fades ─────────────────────────────────────────────────────────────
 
@@ -125,7 +125,7 @@ export const drawerAnim = {
   initial:    { x: '100%', opacity: 0.7 },
   animate:    { x: 0,      opacity: 1   },
   exit:       { x: '100%', opacity: 0.7 },
-  transition: { type: 'spring', damping: 28, stiffness: 320 },
+  transition: { type: 'spring' as const, damping: 28, stiffness: 320 },
 }
 
 // ── Hover variants (para motion.div con whileHover) ──────────────────────────

@@ -300,7 +300,7 @@ describe('useCatalogue — auth and news branches', () => {
     await waitFor(() => expect(result.current.some((e) => e.group === 'Noticias')).toBe(true))
     const entry = result.current.find((e) => e.id === 'new-n2')
     expect(entry?.label).toBe('Avance investigativo')
-    expect(entry?.meta).toBe('ciencia')
+    expect((entry as any)?.meta).toBe('ciencia')
   })
 
   test('resource entries always present (Guía, FAQ, Términos)', async () => {

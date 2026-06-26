@@ -90,7 +90,7 @@ describe('useUpdateEstadoSolicitud', () => {
     const { result } = renderHook(() => useUpdateEstadoSolicitud(), { wrapper: makeWrapper() })
 
     await act(async () => {
-      await result.current.mutateAsync({ id: 5, estado: 'En Revisión', nota: 'ok' })
+      await result.current.mutateAsync({ id: '5', estado: 'En Revisión', nota: 'ok' })
     })
 
     expect(api.patch).toHaveBeenCalledWith('/solicitudes/5/estado', {
@@ -108,7 +108,7 @@ describe('useResponderSolicitud', () => {
     const { result } = renderHook(() => useResponderSolicitud(), { wrapper: makeWrapper() })
 
     await act(async () => {
-      await result.current.mutateAsync({ id: 3, respuesta: 'Aprobado con observaciones' })
+      await result.current.mutateAsync({ id: '3', respuesta: 'Aprobado con observaciones' })
     })
 
     expect(api.post).toHaveBeenCalledWith('/solicitudes/3/responder', {
@@ -122,7 +122,7 @@ describe('useSolicitudArchivos', () => {
 
   test('fetches archivos for a solicitud', async () => {
     vi.mocked(api.get).mockResolvedValue([{ id: 1, nombre: 'doc.pdf' }])
-    const { result } = renderHook(() => useSolicitudArchivos(7), { wrapper: makeWrapper() })
+    const { result } = renderHook(() => useSolicitudArchivos('7'), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(api.get).toHaveBeenCalledWith(expect.stringContaining('solicitudes/7'))
   })
@@ -142,7 +142,7 @@ describe('useUploadSolicitudArchivo', () => {
     const file = new File(['content'], 'test.pdf', { type: 'application/pdf' })
 
     await act(async () => {
-      await result.current.mutateAsync({ solicitudId: 2, file })
+      await result.current.mutateAsync({ solicitudId: '2', file })
     })
 
     expect(api.post).toHaveBeenCalledWith(
@@ -161,7 +161,7 @@ describe('useDeleteSolicitudArchivo', () => {
     const { result } = renderHook(() => useDeleteSolicitudArchivo(), { wrapper: makeWrapper() })
 
     await act(async () => {
-      await result.current.mutateAsync({ solicitudId: 1, archivoId: 10 })
+      await result.current.mutateAsync({ solicitudId: '1', archivoId: '10' })
     })
 
     expect(api.delete).toHaveBeenCalledWith('/solicitudes/1/archivos/10')
@@ -176,7 +176,7 @@ describe('useDownloadSolicitudArchivo', () => {
     const { result } = renderHook(() => useDownloadSolicitudArchivo(), { wrapper: makeWrapper() })
 
     await act(async () => {
-      await result.current.mutateAsync({ solicitudId: 1, archivoId: 5 })
+      await result.current.mutateAsync({ solicitudId: '1', archivoId: '5' })
     })
 
     expect(api.get).toHaveBeenCalledWith('/solicitudes/1/archivos/5/download')
@@ -202,11 +202,11 @@ describe('useUpdateMapa', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls PUT /mapas/:id', async () => {
-    api.put.mockResolvedValue({ id: 5 })
+    vi.mocked(api.put).mockResolvedValue({ id: 5 })
     const { result } = renderHook(() => useUpdateMapa(), { wrapper: makeWrapper() })
     const fd = new FormData()
 
-    await act(async () => { await result.current.mutateAsync({ id: 5, formData: fd }) })
+    await act(async () => { await result.current.mutateAsync({ id: '5', formData: fd }) })
     expect(api.put).toHaveBeenCalledWith('/mapas/5', fd, expect.any(Object))
   })
 })
@@ -218,7 +218,7 @@ describe('useToggleMapaActivo', () => {
     vi.mocked(api.patch).mockResolvedValue({})
     const { result } = renderHook(() => useToggleMapaActivo(), { wrapper: makeWrapper() })
 
-    await act(async () => { await result.current.mutateAsync({ id: 3, activo: false }) })
+    await act(async () => { await result.current.mutateAsync({ id: '3', activo: false }) })
     expect(api.patch).toHaveBeenCalledWith('/mapas/3/activo', { activo: false })
   })
 })
@@ -230,7 +230,7 @@ describe('useDeleteMapa', () => {
     vi.mocked(api.delete).mockResolvedValue({})
     const { result } = renderHook(() => useDeleteMapa(), { wrapper: makeWrapper() })
 
-    await act(async () => { await result.current.mutateAsync(7) })
+    await act(async () => { await result.current.mutateAsync('7') })
     expect(api.delete).toHaveBeenCalledWith('/mapas/7')
   })
 })
@@ -270,11 +270,11 @@ describe('useUpdateDocumento', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls PUT /documentos/:id', async () => {
-    api.put.mockResolvedValue({ id: 2 })
+    vi.mocked(api.put).mockResolvedValue({ id: 2 })
     const { result } = renderHook(() => useUpdateDocumento(), { wrapper: makeWrapper() })
     const fd = new FormData()
 
-    await act(async () => { await result.current.mutateAsync({ id: 2, formData: fd }) })
+    await act(async () => { await result.current.mutateAsync({ id: '2', formData: fd }) })
     expect(api.put).toHaveBeenCalledWith('/documentos/2', fd, expect.any(Object))
   })
 })
@@ -286,7 +286,7 @@ describe('useDeleteDocumento', () => {
     vi.mocked(api.delete).mockResolvedValue({})
     const { result } = renderHook(() => useDeleteDocumento(), { wrapper: makeWrapper() })
 
-    await act(async () => { await result.current.mutateAsync(4) })
+    await act(async () => { await result.current.mutateAsync('4') })
     expect(api.delete).toHaveBeenCalledWith('/documentos/4')
   })
 })
@@ -326,11 +326,11 @@ describe('useUpdateNoticia', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('calls PUT /noticias/:id', async () => {
-    api.put.mockResolvedValue({ id: 3 })
+    vi.mocked(api.put).mockResolvedValue({ id: 3 })
     const { result } = renderHook(() => useUpdateNoticia(), { wrapper: makeWrapper() })
 
     await act(async () => {
-      await result.current.mutateAsync({ id: 3, data: { titulo: 'Nuevo título' } })
+      await result.current.mutateAsync({ id: '3', data: { titulo: 'Nuevo título' } as unknown as FormData })
     })
     expect(api.put).toHaveBeenCalledWith('/noticias/3', { titulo: 'Nuevo título' }, expect.any(Object))
   })
@@ -343,7 +343,7 @@ describe('useDeleteNoticia', () => {
     vi.mocked(api.delete).mockResolvedValue({})
     const { result } = renderHook(() => useDeleteNoticia(), { wrapper: makeWrapper() })
 
-    await act(async () => { await result.current.mutateAsync(8) })
+    await act(async () => { await result.current.mutateAsync('8') })
     expect(api.delete).toHaveBeenCalledWith('/noticias/8')
   })
 })
@@ -372,7 +372,7 @@ describe('useUpdateUsuarioRol', () => {
     const { result } = renderHook(() => useUpdateUsuarioRol(), { wrapper: makeWrapper() })
 
     await act(async () => {
-      await result.current.mutateAsync({ id: 1, rol: 'Investigador' })
+      await result.current.mutateAsync({ id: '1', rol: 'Investigador' })
     })
     expect(api.patch).toHaveBeenCalledWith(expect.stringContaining('usuarios/1'), expect.any(Object))
   })
@@ -386,7 +386,7 @@ describe('useToggleActivo', () => {
     const { result } = renderHook(() => useToggleActivo(), { wrapper: makeWrapper() })
 
     await act(async () => {
-      await result.current.mutateAsync({ id: 2, activo: false })
+      await result.current.mutateAsync({ id: '2', activo: false })
     })
     expect(api.patch).toHaveBeenCalledWith(expect.stringContaining('usuarios/2'), expect.any(Object))
   })
@@ -399,7 +399,7 @@ describe('useDeleteUsuario', () => {
     vi.mocked(api.delete).mockResolvedValue({})
     const { result } = renderHook(() => useDeleteUsuario(), { wrapper: makeWrapper() })
 
-    await act(async () => { await result.current.mutateAsync(5) })
+    await act(async () => { await result.current.mutateAsync('5') })
     expect(api.delete).toHaveBeenCalledWith(expect.stringContaining('usuarios/5'))
   })
 })

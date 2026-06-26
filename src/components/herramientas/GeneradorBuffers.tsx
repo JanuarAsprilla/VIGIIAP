@@ -7,7 +7,7 @@ export default function GeneradorBuffers() {
   const [tipoBorde, setTipoBorde] = useState('redondeado')
   const [distancia, setDistancia] = useState(500)
   const [loading,   setLoading]   = useState(false)
-  const [result,    setResult]    = useState(null)
+  const [result,    setResult]    = useState<{ distancia: number; area: number | string; entidades: number; tipo?: string } | null>(null)
 
   const generar = () => {
     setLoading(true)
@@ -36,7 +36,7 @@ export default function GeneradorBuffers() {
             type="number"
             value={distancia}
             min={1}
-            onChange={(e) => { setDistancia(e.target.value); setResult(null) }}
+            onChange={(e) => { setDistancia(Number(e.target.value)); setResult(null) }}
             className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
           />
         </div>

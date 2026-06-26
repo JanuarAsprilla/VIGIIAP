@@ -65,7 +65,7 @@ export function useNoticiaBySlug(slug: string | null | undefined) {
 
 export function useCreateNoticia() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { formData: FormData; onUploadProgress?: (e: ProgressEvent) => void }>({
+  return useMutation<unknown, Error, { formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ formData, onUploadProgress }) =>
       api.post('/noticias', formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: NOTICIAS_KEYS.all }),
@@ -74,7 +74,7 @@ export function useCreateNoticia() {
 
 export function useUpdateNoticia() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { id: string; data: FormData; onUploadProgress?: (e: ProgressEvent) => void }>({
+  return useMutation<unknown, Error, { id: string; data: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ id, data, onUploadProgress }) =>
       api.put(`/noticias/${id}`, data, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: NOTICIAS_KEYS.all }),

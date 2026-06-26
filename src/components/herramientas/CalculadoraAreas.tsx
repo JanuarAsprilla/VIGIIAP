@@ -17,7 +17,7 @@ export default function CalculadoraAreas() {
   const [capa,    setCapa]    = useState('')
   const [unidad,  setUnidad]  = useState('ha')
   const [loading, setLoading] = useState(false)
-  const [result,  setResult]  = useState(null)
+  const [result,  setResult]  = useState<{ area: number | string; perimetro: number | string; poligonos: number; crs: string } | null>(null)
 
   const calcular = () => {
     if (!capa) return

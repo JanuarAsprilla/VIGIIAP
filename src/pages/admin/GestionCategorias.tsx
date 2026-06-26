@@ -34,7 +34,7 @@ function Toast({ message, onDone }) {
 
 // ── ImageDropzone ─────────────────────────────────────────────────────────────
 function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }) {
-  const inputRef = useRef(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
 
   const accept = useCallback((file) => {
@@ -92,10 +92,10 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }) {
 
 // ── Tarjeta de categoría ──────────────────────────────────────────────────────
 function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbnail }) {
-  const [file, setFile]         = useState(null)
+  const [file, setFile]         = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress]   = useState(0)
-  const [error, setError]         = useState(null)
+  const [error, setError]         = useState<string | null>(null)
 
   const handleUpload = async () => {
     if (!file) return
@@ -124,7 +124,7 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
       initial={{ opacity: 0, y: 16, rotateX: 5, scale: 0.97 }}
       animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
       exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] as const }}
       glow="rgba(26,86,50,0.16)"
       intensity={5}
       className="bg-white border border-border/70 rounded-2xl overflow-hidden flex flex-col"
@@ -216,10 +216,10 @@ export default function GestionCategorias() {
 
   const [showNew, setShowNew]         = useState(false)
   const [newName, setNewName]         = useState('')
-  const [newFile, setNewFile]         = useState(null)
-  const [newError, setNewError]       = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [toast, setToast]             = useState(null)
+  const [newFile, setNewFile]         = useState<File | null>(null)
+  const [newError, setNewError]       = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{ nombre: string } | null>(null)
+  const [toast, setToast]             = useState<string | null>(null)
 
   const docCountByCategoria = docs.reduce((acc, d) => {
     const cat = d.categoria || d.tipo
@@ -239,7 +239,7 @@ export default function GestionCategorias() {
       setToast(`Categoría "${created.nombre}" creada`)
       setShowNew(false); setNewName(''); setNewFile(null)
     } catch (err) {
-      setNewError(err?.message ?? 'No se pudo crear la categoría')
+      setNewError((err as any)?.message ?? 'No se pudo crear la categoría')
     }
   }
 

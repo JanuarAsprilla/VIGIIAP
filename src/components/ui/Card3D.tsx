@@ -23,12 +23,12 @@ export default function Card3D({
   intensity  = 6,
   glare      = true,
   disabled   = false,
-  glow       = null,
+  glow       = null as string | null,
   whileHover = {},
   style      = {},
   ...rest
 }) {
-  const ref    = useRef(null)
+  const ref    = useRef<HTMLDivElement>(null)
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
 

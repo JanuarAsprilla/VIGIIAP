@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { validatePasswordStrength, validatePasswordMatch, passwordCriteria } from '@/lib/validators'
 import { motion, AnimatePresence } from 'framer-motion'
 import { EASE_OUT_EXPO } from '@/lib/animations'
@@ -27,7 +27,7 @@ function Section({ title, description, children }) {
 }
 
 // ── Field row ──
-function FieldRow({ label, value, editable, onEdit, children }) {
+function FieldRow({ label, value, editable, onEdit, children }: { label: string; value?: string; editable?: boolean; onEdit?: () => void; children?: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-3 border-b border-border last:border-0">
       <div className="min-w-0 flex-1">
@@ -111,7 +111,7 @@ function PasswordInput({ id, placeholder, value, visible, error, onChange, onTog
 function CambiarPassword() {
   const [form, setForm] = useState({ actual: '', nueva: '', confirmar: '' })
   const [show, setShow] = useState({ actual: false, nueva: false, confirmar: false })
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [success, setSuccess] = useState(false)
   const [serverError, setServerError] = useState('')
   const updatePassword = useUpdatePassword()
@@ -119,7 +119,7 @@ function CambiarPassword() {
   const set = (k, v) => { setForm((p) => ({ ...p, [k]: v })); setErrors((p) => ({ ...p, [k]: undefined })); setServerError('') }
 
   const validate = () => {
-    const e = {}
+    const e: Record<string, string> = {}
     if (!form.actual)         e.actual    = 'Ingrese su contraseña actual'
     const nuevaErr            = validatePasswordStrength(form.nueva)
     if (nuevaErr)             e.nueva     = nuevaErr
@@ -138,7 +138,7 @@ function CambiarPassword() {
       setForm({ actual: '', nueva: '', confirmar: '' })
       setTimeout(() => setSuccess(false), 4000)
     } catch (err) {
-      setServerError(err.message ?? 'No se pudo actualizar la contraseña.')
+      setServerError((err as Error)?.message ?? 'No se pudo actualizar la contraseña.')
     }
   }
 
@@ -205,7 +205,7 @@ function CambiarPassword() {
 function Notificaciones() {
   const { notifPrefs: prefs, setNotifPrefs: setPrefs } = useUI()
 
-  const toggle = (k) => setPrefs((p) => ({ ...p, [k]: !p[k] }))
+  const toggle = (k: string) => setPrefs({ ...prefs, [k]: !prefs[k as keyof typeof prefs] })
 
   const items = [
     { key: 'noticias',   label: 'Nuevas noticias',           desc: 'Alertas cuando se publique contenido nuevo' },
@@ -255,7 +255,7 @@ function Apariencia() {
           {densityOptions.map(({ value, label, Icon, desc }) => (
             <button
               key={value}
-              onClick={() => setDensity(value)}
+              onClick={() => setDensity(value as Parameters<typeof setDensity>[0])}
               className={`flex flex-col items-center gap-2 px-3 py-4 rounded-xl border-2 text-center transition-all ${
                 density === value
                   ? 'bg-primary-50 border-primary-800 text-primary-800'
@@ -319,7 +319,7 @@ export default function Perfil() {
   const navigate = useNavigate()
   const updatePerfil = useUpdatePerfil()
 
-  const [editField, setEditField]   = useState(null)  // 'nombre' | 'institucion' | null
+  const [editField, setEditField] = useState<'nombre' | 'institucion' | null>(null)
   const [editError, setEditError]   = useState('')
 
   const startEdit = (field) => {
@@ -336,7 +336,7 @@ export default function Perfil() {
       await refreshProfile()
       setEditField(null)
     } catch (err) {
-      setEditError(err.message ?? 'Error al guardar')
+      setEditError((err as Error)?.message ?? 'Error al guardar')
     }
   }
 
@@ -349,7 +349,7 @@ export default function Perfil() {
     'Administrador SIG': 'bg-red-100 text-red-700',
     'Investigador':      'bg-gold-100 text-gold-700',
     'Público':           'bg-primary-100 text-primary-700',
-  }[user?.role] ?? 'bg-bg-alt text-text-muted'
+  }[user?.role ?? ''] ?? 'bg-bg-alt text-text-muted'
 
   return (
     <div className="p-4 lg:p-8 max-w-3xl mx-auto space-y-6">

@@ -30,7 +30,7 @@ const BENTO_SPANS = {
 
 // ── Module Card 3D ─────────────────────────────────────────────────────────────
 function ModuleCard({ mod, index, isVisitante, isPublico }) {
-  const ref    = useRef()
+  const ref    = useRef<HTMLDivElement>(null)
   const blocked = !mod.publicAccess && (isVisitante || isPublico)
   const prefersReduced = useFMReducedMotion()
 
@@ -47,6 +47,7 @@ function ModuleCard({ mod, index, isVisitante, isPublico }) {
 
   const onMove = (e) => {
     if (blocked) return
+    if (!ref.current) return
     const r = ref.current.getBoundingClientRect()
     mouseX.set((e.clientX - r.left) / r.width - 0.5)
     mouseY.set((e.clientY - r.top) / r.height - 0.5)
@@ -172,7 +173,7 @@ function StatsSection() {
 }
 
 // ── Section heading ────────────────────────────────────────────────────────────
-function SectionHeading({ id, eyebrow, title, action, actionTo, note }) {
+function SectionHeading({ id, eyebrow, title, action, actionTo, note }: { id?: string; eyebrow?: string; title?: string; action?: string; actionTo?: string; note?: string }) {
   return (
     <div className="mb-7 flex items-start gap-4">
       {/* Acento vertical verde */}
@@ -199,7 +200,7 @@ function SectionHeading({ id, eyebrow, title, action, actionTo, note }) {
               </span>
             )}
             {action && (
-              <Link to={actionTo}
+              <Link to={actionTo ?? '/'}
                 className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-primary-800 no-underline transition-colors">
                 {action} <ArrowRight className="w-3 h-3" />
               </Link>
@@ -396,7 +397,7 @@ export default function Home() {
   const apiNews     = noticiasData?.data ?? []
   // Si hay error de API, no mostrar datos estáticos falsos como si fueran reales
   const displayNews = noticiasError ? [] : (apiNews.length > 0 ? apiNews : NEWS)
-  const filteredNews = displayNews.filter((a) =>
+  const filteredNews = displayNews.filter((a: any) =>
     matches([a.title || a.titulo, a.excerpt || a.resumen, a.tag || a.categoria], query)
   )
 

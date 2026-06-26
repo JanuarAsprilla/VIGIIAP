@@ -5,7 +5,7 @@ import { fadeUp } from './documentos.constants'
 export function SupportCTA({ onContactar }) {
   return (
     <motion.div
-      {...fadeUp(0.5)}
+      {...(fadeUp(0.5) as any)}
       className="grid grid-cols-1 md:grid-cols-2 rounded-2xl overflow-hidden"
     >
       <div className="bg-primary-100 p-8 flex flex-col justify-center">

@@ -12,7 +12,7 @@ function fmtFromUrl(url) {
 }
 
 function deriveFormats(m) {
-  const fmts = []
+  const fmts: string[] = []
   if (m.archivo_img_url) fmts.push('IMG')
   if (m.archivo_pdf_url) {
     const ext = fmtFromUrl(m.archivo_pdf_url)
@@ -107,7 +107,7 @@ export function useMapaBySlug(slug: string | null | undefined) {
 // ─── Mutations ────────────────────────────────────────────────────────────────
 export function useCreateMapa() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { formData: FormData; onUploadProgress?: (e: ProgressEvent) => void }>({
+  return useMutation<unknown, Error, { formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ formData, onUploadProgress }) =>
       api.post('/mapas', formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
@@ -116,7 +116,7 @@ export function useCreateMapa() {
 
 export function useUpdateMapa() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { id: string; formData: FormData; onUploadProgress?: (e: ProgressEvent) => void }>({
+  return useMutation<unknown, Error, { id: string; formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ id, formData, onUploadProgress }) =>
       api.put(`/mapas/${id}`, formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),

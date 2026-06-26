@@ -13,7 +13,7 @@ export const ESTADOS_FILTRO = [
 
 export function FiltroDropdown({ filtro, onChange }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
+  const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleClick = (e) => {

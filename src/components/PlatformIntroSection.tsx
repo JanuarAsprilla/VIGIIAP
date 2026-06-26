@@ -223,7 +223,7 @@ const PAL = {
 const GEO = buildGeometry(9000)   // precomputar al cargar el módulo
 
 function ChocoMapCloud({ isDark, prefersReduced }) {
-  const matRef = useRef()
+  const matRef = useRef<import("three").ShaderMaterial | null>(null)
 
   const mat = useMemo(() => {
     const p = isDark ? PAL.dark : PAL.light
@@ -247,10 +247,10 @@ function ChocoMapCloud({ isDark, prefersReduced }) {
   }, [])
 
   // A2: dispose ShaderMaterial cuando el componente se desmonte
-  useEffect(()=>{ return ()=>{ matRef.current?.dispose() } }, [])
+  useEffect(()=>{ return ()=>{ (matRef.current as any)?.dispose() } }, [])
 
   useEffect(()=>{
-    const m=matRef.current; if(!m) return
+    const m=matRef.current as any; if(!m) return
     const p=isDark?PAL.dark:PAL.light
     m.uniforms.uCA.value.set(p.a)
     m.uniforms.uCB.value.set(p.b)
@@ -263,7 +263,7 @@ function ChocoMapCloud({ isDark, prefersReduced }) {
 
   useFrame((state)=>{
     if(matRef.current){
-      matRef.current.uniforms.uTime.value = prefersReduced ? 0 : state.clock.getElapsedTime()
+      (matRef.current as any).uniforms.uTime.value = prefersReduced ? 0 : state.clock.getElapsedTime()
       state.invalidate()
     }
   })
@@ -273,7 +273,7 @@ function ChocoMapCloud({ isDark, prefersReduced }) {
 
 // ── Partículas ambientales — polvo cinematográfico (~180 puntos) ──────────────
 function AmbientDust({ isDark, prefersReduced }) {
-  const matRef = useRef()
+  const matRef = useRef<import("three").ShaderMaterial | null>(null)
   const geo = useMemo(()=>{
     const N=180, p=new Float32Array(N*3), o=new Float32Array(N), s=new Float32Array(N)
     for(let i=0;i<N;i++){
@@ -315,17 +315,17 @@ function AmbientDust({ isDark, prefersReduced }) {
   },[])
 
   // A2: dispose geometry + material al desmontar
-  useEffect(()=>{ return ()=>{ geo.dispose(); matRef.current?.dispose() } }, [geo])
+  useEffect(()=>{ return ()=>{ geo.dispose(); (matRef.current as any)?.dispose() } }, [geo])
 
   useEffect(()=>{
-    const m=matRef.current; if(!m) return
+    const m=matRef.current as any; if(!m) return
     m.uniforms.uC.value.set(isDark?'#00c060':'#007A5E')
     m.blending=isDark?THREE.AdditiveBlending:THREE.NormalBlending; m.needsUpdate=true
   },[isDark])
 
   useFrame((state)=>{
     if(matRef.current){
-      matRef.current.uniforms.uTime.value = prefersReduced ? 0 : state.clock.getElapsedTime()
+      (matRef.current as any).uniforms.uTime.value = prefersReduced ? 0 : state.clock.getElapsedTime()
       state.invalidate()
     }
   })
@@ -335,7 +335,7 @@ function AmbientDust({ isDark, prefersReduced }) {
 // ── Rejilla cartográfica SIG ──────────────────────────────────────────────────
 function CartographicGrid({ isDark }) {
   const geo = useMemo(()=>{
-    const l=[], w=2.4, h=6.4, C=8, R=16
+    const l: number[]=[], w=2.4, h=6.4, C=8, R=16
     for(let r=0;r<=R;r++){const y=-h/2+r*(h/R); l.push(-w/2,y,0,w/2,y,0)}
     for(let c=0;c<=C;c++){const x=-w/2+c*(w/C); l.push(x,-h/2,0,x,h/2,0)}
     const g=new THREE.BufferGeometry()
@@ -437,7 +437,7 @@ function IIAPBadge({ isDark }){
 
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function PlatformIntroSection(){
-  const containerRef = useRef()
+  const containerRef = useRef(null)
   const [phase, setPhase] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
   const { isDark } = useTheme()

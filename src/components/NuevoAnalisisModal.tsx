@@ -4,7 +4,7 @@ import { PlusCircle, X, ChevronRight, CheckCircle } from 'lucide-react'
 import { ANALYSIS_TYPES, ANALYSIS_DEPARTMENTS } from '@/lib/constants'
 
 export default function NuevoAnalisisModal({ onClose }) {
-  const modalRef = useRef(null)
+  const modalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const el = modalRef.current
@@ -12,13 +12,13 @@ export default function NuevoAnalisisModal({ onClose }) {
     const FOCUSABLE = 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'
     const getFocusable = () => [...el.querySelectorAll(FOCUSABLE)]
     const first = getFocusable()[0]
-    first?.focus()
+    ;(first as HTMLElement)?.focus()
     const trap = (e) => {
       if (e.key !== 'Tab') return
       const nodes = getFocusable()
       const last = nodes[nodes.length - 1]
-      if (e.shiftKey) { if (document.activeElement === nodes[0]) { e.preventDefault(); last?.focus() } }
-      else            { if (document.activeElement === last)      { e.preventDefault(); nodes[0]?.focus() } }
+      if (e.shiftKey) { if (document.activeElement === nodes[0]) { e.preventDefault(); (last as HTMLElement)?.focus() } }
+      else            { if (document.activeElement === last)      { e.preventDefault(); (nodes[0] as HTMLElement)?.focus() } }
     }
     const close = (e) => { if (e.key === 'Escape') onClose() }
     el.addEventListener('keydown', trap)
@@ -27,10 +27,10 @@ export default function NuevoAnalisisModal({ onClose }) {
   }, [onClose])
   const [step, setStep] = useState('form') // 'form' | 'success'
   const [form, setForm] = useState({ nombre: '', tipo: '', departamento: '', notas: '' })
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const validate = () => {
-    const e = {}
+    const e: Record<string, string> = {}
     if (!form.nombre.trim()) e.nombre = 'Requerido'
     if (!form.tipo) e.tipo = 'Requerido'
     return e

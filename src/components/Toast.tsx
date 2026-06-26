@@ -15,7 +15,7 @@ const STYLES = {
 
 // ── Hook ──
 export function useToast() {
-  const [toasts, setToasts] = useState([])
+  const [toasts, setToasts] = useState<{ id: number; message: string; type: string }[]>([])
 
   const toast = useCallback((message, type = 'success', duration = 3000) => {
     const id = Date.now() + Math.random()

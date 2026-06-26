@@ -16,7 +16,7 @@ const TOOL_TYPES = [
 export default function SolicitarHerramientaModal({ onClose }) {
   const [step,   setStep]   = useState('form') // 'form' | 'success'
   const [form,   setForm]   = useState({ nombre: '', tipo: '', descripcion: '', justificacion: '' })
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const fn = (e) => { if (e.key === 'Escape') onClose() }
@@ -30,7 +30,7 @@ export default function SolicitarHerramientaModal({ onClose }) {
   }
 
   const validate = () => {
-    const e = {}
+    const e: Record<string, string> = {}
     const nombreErr = validateRequired(form.nombre, 'El nombre')
     const tipoErr   = validateSelect(form.tipo, 'un tipo de herramienta')
     const descErr   = validateMinLength(form.descripcion, 20, 'La descripción')

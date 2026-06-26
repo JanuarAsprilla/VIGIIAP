@@ -25,7 +25,7 @@ export default function VerificarEmail() {
 
     api.get(`/auth/verificar-email/${token}`)
       .then((res) => {
-        setStatus(res.alreadyVerified ? 'already' : 'success')
+        setStatus((res as any)?.alreadyVerified ? 'already' : 'success')
       })
       .catch((err) => {
         if (err.status === 400 && err.message?.includes('expirado')) {

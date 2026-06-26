@@ -21,7 +21,7 @@ export default function Documentos() {
   const { query, setQuery } = useSearch()
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [showSoporte, setShowSoporte] = useState(false)
-  const [activeTypes, setActiveTypes] = useState([])
+  const [activeTypes, setActiveTypes] = useState<string[]>([])
   const [showFilter, setShowFilter] = useState(false)
   const [previewDoc, setPreviewDoc] = useState(null)
   const [previewCategory, setPreviewCategory] = useState('')
@@ -45,7 +45,7 @@ export default function Documentos() {
   const allDocs = data?.data ?? []
 
   const allCategories = (() => {
-    const map = {}
+    const map: Record<string, { id: string; title: string; icon: string; thumbnail: string | null; docs: { name: string; type: string; size: string; updated: string; dateISO: string; url: string }[] }> = {}
     allDocs.forEach((d) => {
       const catName = d.categoria || 'General'
       if (!map[catName]) {
@@ -85,7 +85,7 @@ export default function Documentos() {
 
   return (
     <div className="space-y-8">
-      <motion.div {...fadeUp(0)}>
+      <motion.div {...(fadeUp(0) as any)}>
         <span className="page-header-tag block mb-2">Repositorio Institucional</span>
         <h1 className="page-header-title mb-3">Centro de <em>Documentos</em></h1>
         <p className="page-header-description max-w-2xl">
@@ -94,7 +94,7 @@ export default function Documentos() {
         </p>
       </motion.div>
 
-      <motion.div {...fadeUp(0.1)} className="flex items-center gap-3">
+      <motion.div {...(fadeUp(0.1) as any)} className="flex items-center gap-3">
         <div className="flex items-center gap-2 bg-white border border-border rounded-lg px-4 py-2.5 flex-1">
           <Search className="w-4 h-4 text-text-muted shrink-0" />
           <input
@@ -182,7 +182,7 @@ export default function Documentos() {
           <Loader2 className="w-8 h-8 text-primary-800 animate-spin" />
         </div>
       ) : isError ? (
-        <motion.div {...fadeUp(0.1)} role="alert" className="py-16 text-center text-text-muted">
+        <motion.div {...(fadeUp(0.1) as any)} role="alert" className="py-16 text-center text-text-muted">
           <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" aria-hidden="true" />
           <p className="text-sm font-semibold text-text">Error al cargar los documentos</p>
           <p className="text-xs mt-1">No se pudo cargar los documentos. Verifique su conexión.</p>
@@ -200,7 +200,7 @@ export default function Documentos() {
           ))}
         </div>
       ) : (
-        <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
+        <motion.div {...(fadeUp(0.1) as any)} className="py-16 text-center text-text-muted">
           <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm">
             No se encontraron documentos

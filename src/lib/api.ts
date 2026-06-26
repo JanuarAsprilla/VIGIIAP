@@ -39,7 +39,7 @@ api.interceptors.response.use(
       window.dispatchEvent(new Event('vigiiap:logout'))
     }
 
-    const error    = new Error(message)
+    const error    = new Error(message) as Error & { status?: number; code?: string; fields?: unknown }
     error.status   = status
     error.code     = err.response?.data?.code   ?? null
     error.fields   = err.response?.data?.fields ?? null

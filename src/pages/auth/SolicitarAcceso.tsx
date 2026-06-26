@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { EASE_OUT_EXPO } from '@/lib/animations'
@@ -33,7 +33,7 @@ const CRITERIA_LABELS = [
 
 // ── Sub-componentes ───────────────────────────────────────────────────────────
 
-function Field({ id, label, icon: Icon, error, hint, children }) {
+function Field({ id, label, icon: Icon, error, hint, children }: { id?: string; label?: string; icon?: React.ComponentType<{ className?: string }>; error?: string; hint?: string; children?: React.ReactNode }) {
   return (
     <div>
       <label htmlFor={id} className="block text-[0.8rem] font-semibold text-text mb-1.5">{label}</label>
@@ -139,7 +139,7 @@ export default function SolicitarAcceso() {
     nombre: '', email: '', password: '', confirmPassword: '',
     institucion: '', perfil: '', motivo: '', terminos: false,
   })
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const set = (k, v) => {
     setForm((p) => ({ ...p, [k]: v }))
@@ -148,7 +148,7 @@ export default function SolicitarAcceso() {
   }
 
   const validate = () => {
-    const e = {}
+    const e: Record<string, string> = {}
     const req = validateRequired(form.nombre, 'El nombre completo')
     if (req)                                                              e.nombre          = req
     const emailErr = validateEmail(form.email)
@@ -183,7 +183,7 @@ export default function SolicitarAcceso() {
       })
       setSent(true)
     } catch (err) {
-      setServerError(err.message ?? 'No se pudo enviar la solicitud. Intente de nuevo.')
+      setServerError((err as Error)?.message ?? 'No se pudo enviar la solicitud. Intente de nuevo.')
     } finally {
       setLoading(false)
     }

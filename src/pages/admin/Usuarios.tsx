@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import type { UsuarioData } from '@/hooks/useUsuarios'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, X, Send, Trash2, Edit2,
   CheckCircle, XCircle, UserPlus,
-  User, Clock, Loader2, AlertCircle,
+  User, Clock, Loader2, AlertCircle, Mail,
 } from 'lucide-react'
 import { ROLES } from '@/contexts/AuthContext'
 import { fadeUpSm, panelAnim, drawerAnim, EASE_OUT_EXPO } from '@/lib/animations'
@@ -156,7 +157,7 @@ function InviteModal({ onClose }) {
       await createUsuario.mutateAsync({ nombre, email, rol, institucion })
       setStep('sent')
     } catch (err) {
-      setError(err.message ?? 'Error al crear el usuario')
+      setError((err as Error)?.message ?? 'Error al crear el usuario')
     }
   }
 
@@ -262,11 +263,11 @@ export default function Usuarios() {
   const [filtroEstado, setFiltroEstado] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
-  const [editingUser, setEditingUser] = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [detailUser, setDetailUser] = useState(null)
+  const [editingUser, setEditingUser] = useState<UsuarioData | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<UsuarioData | null>(null)
+  const [detailUser, setDetailUser] = useState<UsuarioData | null>(null)
   const [form, setForm] = useState({ rol: 'Público' })
-  const [formErrors, setFormErrors] = useState({})
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase()
@@ -284,7 +285,7 @@ export default function Usuarios() {
   }
 
   const validate = () => {
-    const e = {}
+    const e: Record<string, string> = {}
     if (!form.rol) e.rol = 'Selecciona un rol'
     return e
   }

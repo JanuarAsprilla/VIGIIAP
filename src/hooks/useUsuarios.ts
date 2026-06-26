@@ -104,20 +104,20 @@ export function useToggleActivo() {
 
 export function useDeleteUsuario() {
   const qc = useQueryClient()
-  return useMutation({
+  return useMutation<unknown, Error, string>({
     mutationFn: (id) => api.delete(`/admin/usuarios/${id}`),
     onSuccess:  () => qc.invalidateQueries({ queryKey: USUARIOS_KEYS.all }),
   })
 }
 
 export function useUpdatePerfil() {
-  return useMutation({
+  return useMutation<unknown, Error, Record<string, unknown>>({
     mutationFn: (data) => api.patch('/usuarios/me', data),
   })
 }
 
 export function useUpdatePassword() {
-  return useMutation({
+  return useMutation<unknown, Error, { currentPassword: string; newPassword: string }>({
     mutationFn: ({ currentPassword, newPassword }) =>
       api.patch('/usuarios/me/password', { currentPassword, newPassword }),
   })

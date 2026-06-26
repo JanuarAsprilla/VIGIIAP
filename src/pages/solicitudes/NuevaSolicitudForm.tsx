@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, User, Mail, CheckCircle, AlertCircle, Paperclip, X, FileText, Image } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -27,23 +27,23 @@ export function NuevaSolicitudForm({ formRef }) {
   const { user, isAuthenticated } = useAuth()
   const [showSuccess, setShowSuccess]     = useState(false)
   const [submittedCorreo, setSubmittedCorreo] = useState('')
-  const [archivos, setArchivos]           = useState([])
+  const [archivos, setArchivos]           = useState<File[]>([])
   const [archivoError, setArchivoError]   = useState('')
-  const fileInputRef                      = useRef(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState({
-    nombre:      isAuthenticated ? user?.name : '',
-    correo:      isAuthenticated ? user?.email : '',
+    nombre:      isAuthenticated ? (user?.name ?? '') : '',
+    correo:      isAuthenticated ? (user?.email ?? '') : '',
     tipo:        '',
     descripcion: '',
   })
-  const [errors, setErrors]           = useState({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState('')
   const createSolicitud   = useCreateSolicitud()
   const uploadArchivo     = useUploadSolicitudArchivo()
 
-  const handleFileChange = (e) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setArchivoError('')
-    const selected = Array.from(e.target.files ?? [])
+    const selected = Array.from(e.target.files ?? []) as File[]
     if (!selected.length) return
 
     const combined = [...archivos, ...selected]
@@ -72,7 +72,7 @@ export function NuevaSolicitudForm({ formRef }) {
   }
 
   const validate = () => {
-    const e = {}
+    const e: Record<string, string> = {}
     if (!form.nombre.trim()) e.nombre = 'Requerido'
     if (!form.correo.trim()) e.correo = 'Requerido'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) e.correo = 'Correo no válido'
@@ -94,15 +94,16 @@ export function NuevaSolicitudForm({ formRef }) {
         descripcion: form.descripcion.trim(),
       })
       // Subir archivos adjuntos si hay, de forma secuencial
-      if (archivos.length && solicitud?.id) {
+      const sol = solicitud as any
+      if (archivos.length && sol?.id) {
         for (const file of archivos) {
-          await uploadArchivo.mutateAsync({ solicitudId: solicitud.id, file }).catch(() => {})
+          await uploadArchivo.mutateAsync({ solicitudId: sol.id, file }).catch(() => {})
         }
       }
-      setSubmittedCorreo(form.correo)
+      setSubmittedCorreo(form.correo ?? '')
       setForm({
-        nombre:      isAuthenticated ? user?.name : '',
-        correo:      isAuthenticated ? user?.email : '',
+        nombre:      isAuthenticated ? (user?.name ?? '') : '',
+        correo:      isAuthenticated ? (user?.email ?? '') : '',
         tipo:        '',
         descripcion: '',
       })
@@ -112,10 +113,10 @@ export function NuevaSolicitudForm({ formRef }) {
       setArchivoError('')
       setShowSuccess(true)
     } catch (err) {
-      if (err?.response?.status === 429) {
+      if ((err as any)?.response?.status === 429) {
         setServerError('Has alcanzado el límite de solicitudes por día. Intenta mañana.')
       } else {
-        setServerError(err.message ?? 'No se pudo enviar la solicitud. Intente de nuevo.')
+        setServerError((err as Error)?.message ?? 'No se pudo enviar la solicitud. Intente de nuevo.')
       }
     }
   }

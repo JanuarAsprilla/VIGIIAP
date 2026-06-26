@@ -8,7 +8,7 @@ export function CategoryCard({ category, filteredCount, onOpen, index }) {
   const colors = CATEGORY_COLORS[category.title] || CATEGORY_COLORS.default
   const hasFilter = filteredCount !== null
 
-  const ref    = useRef(null)
+  const ref    = useRef<HTMLButtonElement>(null)
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
   const rawRX  = useTransform(mouseY, [-0.5, 0.5], [5, -5])

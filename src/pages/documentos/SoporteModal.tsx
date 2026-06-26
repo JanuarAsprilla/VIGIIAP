@@ -8,12 +8,12 @@ export function SoporteDocumentalModal({ onClose }) {
   const { user, isAuthenticated } = useAuth()
   const [step, setStep] = useState('form')
   const [form, setForm] = useState({
-    nombre:     isAuthenticated ? user.name : '',
-    correo:     isAuthenticated ? user.email : '',
+    nombre:     isAuthenticated ? (user?.name ?? '') : '',
+    correo:     isAuthenticated ? (user?.email ?? '') : '',
     tipo:       '',
     descripcion: '',
   })
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({})
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose() }
@@ -27,7 +27,7 @@ export function SoporteDocumentalModal({ onClose }) {
   }
 
   const validate = () => {
-    const e = {}
+    const e: Record<string, string> = {}
     if (!form.nombre.trim()) e.nombre = 'Requerido'
     if (!form.correo.trim()) e.correo = 'Requerido'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) e.correo = 'Correo no válido'

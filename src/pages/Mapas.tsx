@@ -19,7 +19,7 @@ import Card3D from '@/components/ui/Card3D'
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] },
+  transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] as const },
 })
 
 // ── Preview Modal para mapas ──────────────────────────────────────────────────
@@ -40,7 +40,7 @@ function MapPreviewModal({ map, format, onClose }) {
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] as const }}
         className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
@@ -156,7 +156,7 @@ const CATEGORY_COLORS = {
   'Riesgo':           { pill: 'bg-red-100 text-red-600',      accent: '#ef4444' },
 }
 
-function MapCard({ map, index }) {
+function MapCard({ map, index, onPreview }: { map: any; index: number; onPreview?: (map: any, format: string) => void }) {
   const colors = CATEGORY_COLORS[map.category] ?? { pill: 'bg-primary-100 text-primary-700', accent: '#1B4332' }
   const hasPdf     = map.formats.includes('PDF')
   const hasImg     = map.formats.includes('IMG')
@@ -169,13 +169,13 @@ function MapCard({ map, index }) {
       intensity={5}
       className="group bg-white border border-border/70 rounded-2xl overflow-hidden flex flex-col"
       whileHover={{ y: -4 }}
-      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
     >
 
       {/* Visual header */}
       <div className="relative h-44 overflow-hidden bg-bg-alt shrink-0">
         {map.thumbnail_url ? (
-          <img src={map.thumbnail_url} alt={map.title} loading="lazy"
+          <img src={map.thumbnail_url} alt={map.title}
             width={320} height={176}
             className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
             loading="lazy" />
@@ -303,7 +303,7 @@ export default function Mapas() {
     return true
   })
 
-  const activeChips = []
+  const activeChips: { key: string; label: string }[] = []
   if (filters.category) {
     const cat = MAP_CATEGORIES.find((c) => c.value === filters.category)
     if (cat) activeChips.push({ key: 'category', label: cat.label })

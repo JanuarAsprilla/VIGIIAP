@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PlusCircle, SearchX } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
@@ -66,7 +66,7 @@ export default function Herramientas() {
         >
           {filteredTools.map(({ id, Component }) => (
             <motion.div key={id} variants={staggerItem3D}>
-              <Component onToast={toast} />
+              {React.createElement(Component as React.ComponentType<{ onToast?: typeof toast }>, { onToast: toast })}
             </motion.div>
           ))}
         </motion.div>
