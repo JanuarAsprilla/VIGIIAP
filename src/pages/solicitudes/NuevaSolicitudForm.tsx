@@ -96,7 +96,7 @@ export function NuevaSolicitudForm({ formRef }) {
         descripcion: form.descripcion.trim(),
       })
       // Subir archivos adjuntos si hay, de forma secuencial
-      const sol = solicitud as any
+      const sol = solicitud as { id?: string }
       if (archivos.length && sol?.id) {
         for (const file of archivos) {
           await uploadArchivo.mutateAsync({ solicitudId: sol.id, file }).catch(() => {})

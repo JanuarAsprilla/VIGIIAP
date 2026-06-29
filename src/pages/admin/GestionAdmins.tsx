@@ -1,4 +1,13 @@
 import { useState } from 'react'
+
+interface AdminSigUser {
+  id: string
+  nombre: string
+  email: string
+  institucion?: string | null
+  activo: boolean
+}
+type AdminUsersApiRes = { data?: { usuarios?: AdminSigUser[] }; usuarios?: AdminSigUser[] }
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ShieldCheck, UserPlus, Users, Activity, RefreshCw, X, Eye, EyeOff } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -224,7 +233,7 @@ export default function GestionAdmins() {
   const { data: usuariosData, isLoading: loadingUsuarios } = useQuery({
     queryKey: ['admin-usuarios', 'admin_sig'],
     queryFn: fetchAdminUsers,
-    select: (d: any) => d?.data?.usuarios ?? d?.usuarios ?? [],
+    select: (d: AdminUsersApiRes) => d?.data?.usuarios ?? d?.usuarios ?? [],
   })
 
   const handleSuccess = () => {

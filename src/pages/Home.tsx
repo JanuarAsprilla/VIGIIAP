@@ -397,7 +397,9 @@ export default function Home() {
   const apiNews     = noticiasData?.data ?? []
   // Si hay error de API, no mostrar datos estáticos falsos como si fueran reales
   const displayNews = noticiasError ? [] : (apiNews.length > 0 ? apiNews : NEWS)
-  const filteredNews = displayNews.filter((a: any) =>
+  // displayNews mezcla NoticiaData (API) y NEWS estático — ambos filtrables pero con campos distintos
+  type NewsFilterable = { title?: string; titulo?: string; excerpt?: string; resumen?: string; tag?: string; categoria?: string }
+  const filteredNews = (displayNews as NewsFilterable[]).filter((a) =>
     matches([a.title || a.titulo, a.excerpt || a.resumen, a.tag || a.categoria], query)
   )
 
