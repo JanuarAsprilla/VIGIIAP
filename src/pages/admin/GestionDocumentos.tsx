@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import type { DocumentoData } from '@/hooks/useDocumentos'
+import { getApiErrorMessage } from '@/lib/apiError'
+import type { FormErrors } from '@/types/forms'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, X, Edit2, Trash2,
@@ -320,7 +322,7 @@ export default function GestionDocumentos() {
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<DocumentoData | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [formErrors, setFormErrors] = useState<FormErrors>({})
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -359,7 +361,7 @@ export default function GestionDocumentos() {
   }
 
   const validate = () => {
-    const e: Record<string, string> = {}
+    const e: FormErrors = {}
     if (!form.nombre.trim()) e.nombre = 'El nombre del documento es obligatorio'
     if (!form.categoria.trim()) e.categoria = 'Selecciona o escribe una categoría'
     if (!editing && !uploadedFile)
@@ -396,7 +398,7 @@ export default function GestionDocumentos() {
         : `Documento "${form.nombre}" registrado correctamente`)
       setShowModal(false)
     } catch (err) {
-      setSubmitError((err as any)?.response?.data?.error ?? (err as any)?.message ?? 'No se pudo guardar. Verifica la conexión e intenta de nuevo.')
+      setSubmitError(getApiErrorMessage(err, 'No se pudo guardar. Verifica la conexión e intenta de nuevo.'))
     } finally {
       setUploadProgress(null)
     }

@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import type { NoticiaData } from '@/hooks/useNoticias'
+import { getApiErrorMessage } from '@/lib/apiError'
+import type { FormErrors } from '@/types/forms'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, X, Edit2, Trash2, Eye, EyeOff,
@@ -200,7 +202,14 @@ function UploadProgress({ progress }) {
 }
 
 // ── Thumbnail Dropzone ────────────────────────────────────────────────────────
-function ThumbnailDropzone({ previewUrl, onChange, onRemove, onError, file: _file }: { previewUrl?: string; onChange?: (f: any, url: any) => void; onRemove?: () => void; onError?: any; file?: File | null }) {
+interface ThumbnailDropzoneProps {
+  previewUrl?: string
+  onChange?: (f: File, url: string) => void
+  onRemove?: () => void
+  onError?: (msg: string | null) => void
+  file?: File | null
+}
+function ThumbnailDropzone({ previewUrl, onChange, onRemove, onError, file: _file }: ThumbnailDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
 
@@ -278,7 +287,7 @@ export default function GestionNoticias() {
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<NoticiaData | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [formErrors, setFormErrors] = useState<FormErrors>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<NoticiaData | null>(null)
@@ -332,7 +341,7 @@ export default function GestionNoticias() {
   }
 
   const validate = () => {
-    const e: Record<string, string> = {}
+    const e: FormErrors = {}
     if (!form.titulo.trim()) e.titulo = 'Requerido'
     if (!form.resumen.trim()) e.resumen = 'Requerido'
     if (!form.categoria.trim()) e.categoria = 'Selecciona o escribe una categoría'
@@ -368,7 +377,7 @@ export default function GestionNoticias() {
       }
       setShowModal(false)
     } catch (err) {
-      setSubmitError((err as any)?.response?.data?.error ?? (err as any)?.message ?? 'Error al guardar')
+      setSubmitError(getApiErrorMessage(err, 'Error al guardar'))
       setUploadProgress(null)
     }
   }

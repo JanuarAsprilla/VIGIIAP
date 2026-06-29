@@ -32,11 +32,7 @@ export const CATEGORY_COLORS = {
   default:                  { from: '#1B4332', to: '#52B788' },
 }
 
-export const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] },
-})
+export { fadeUp } from '@/lib/animations'
 
 export const categoryIcons = {
   MapIcon, Leaf, Scale, ClipboardList, ClipboardCheck,

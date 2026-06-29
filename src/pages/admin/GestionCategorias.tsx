@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { getApiErrorMessage } from '@/lib/apiError'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Trash2, Upload, X, CheckCircle,
@@ -239,7 +240,7 @@ export default function GestionCategorias() {
       setToast(`Categoría "${created.nombre}" creada`)
       setShowNew(false); setNewName(''); setNewFile(null)
     } catch (err) {
-      setNewError((err as any)?.message ?? 'No se pudo crear la categoría')
+      setNewError(getApiErrorMessage(err, 'No se pudo crear la categoría'))
     }
   }
 

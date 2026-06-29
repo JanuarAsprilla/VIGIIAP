@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { ApiMeta } from '@/types'
 import { motion } from 'framer-motion'
 import {
   Search, Download, Filter, ChevronLeft, ChevronRight, Loader2,
@@ -67,9 +68,9 @@ function useAuditLog(params = {}) {
   return useQuery({
     queryKey: ['admin', 'audit', params],
     queryFn:  () => api.get('/admin/audit', { params }),
-    select:   (res: any) => ({
-      data: (res?.data ?? res ?? []).map(normalizeLog),
-      meta: res?.meta,
+    select:   (res: unknown[] | { data?: unknown[]; meta?: ApiMeta }) => ({
+      data: (Array.isArray(res) ? res : (res.data ?? [])).map(normalizeLog),
+      meta: Array.isArray(res) ? undefined : res.meta,
     }),
     staleTime: 30_000,
   })

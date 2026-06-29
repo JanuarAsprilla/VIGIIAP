@@ -11,7 +11,8 @@ export function useCategoriasList() {
   return useQuery<Categoria[]>({
     queryKey: KEYS.list(),
     queryFn:  () => api.get('/categorias'),
-    select:   (res: any) => (Array.isArray(res) ? res : res?.data ?? []),
+    select:   (res: Categoria[] | { data?: Categoria[] }) =>
+      Array.isArray(res) ? res : (res.data ?? []),
     staleTime: 5 * 60 * 1000,
   })
 }

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { MAP_CATEGORIES, MAP_FORMATS, MAP_YEARS } from '@/lib/constants'
 import { useMapasList } from '@/hooks/useMapas'
+import type { MapaData } from '@/hooks/useMapas'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { useToast, ToastContainer } from '@/components/Toast'
@@ -156,7 +157,8 @@ const CATEGORY_COLORS = {
   'Riesgo':           { pill: 'bg-red-100 text-red-600',      accent: '#ef4444' },
 }
 
-function MapCard({ map, index, onPreview }: { map: any; index: number; onPreview?: (map: any, format: string) => void }) {
+interface MapCardProps { map: MapaData; index: number; onPreview?: (map: MapaData, format: string) => void }
+function MapCard({ map, index, onPreview }: MapCardProps) {
   const colors = CATEGORY_COLORS[map.category] ?? { pill: 'bg-primary-100 text-primary-700', accent: '#1B4332' }
   const hasPdf     = map.formats.includes('PDF')
   const hasImg     = map.formats.includes('IMG')

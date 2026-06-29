@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import type { FormErrors } from '@/types/forms'
 import { validatePasswordStrength, validatePasswordMatch, passwordCriteria } from '@/lib/validators'
 import { motion, AnimatePresence } from 'framer-motion'
 import { EASE_OUT_EXPO } from '@/lib/animations'
@@ -111,7 +112,7 @@ function PasswordInput({ id, placeholder, value, visible, error, onChange, onTog
 function CambiarPassword() {
   const [form, setForm] = useState({ actual: '', nueva: '', confirmar: '' })
   const [show, setShow] = useState({ actual: false, nueva: false, confirmar: false })
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<FormErrors>({})
   const [success, setSuccess] = useState(false)
   const [serverError, setServerError] = useState('')
   const updatePassword = useUpdatePassword()
@@ -119,7 +120,7 @@ function CambiarPassword() {
   const set = (k, v) => { setForm((p) => ({ ...p, [k]: v })); setErrors((p) => ({ ...p, [k]: undefined })); setServerError('') }
 
   const validate = () => {
-    const e: Record<string, string> = {}
+    const e: FormErrors = {}
     if (!form.actual)         e.actual    = 'Ingrese su contraseña actual'
     const nuevaErr            = validatePasswordStrength(form.nueva)
     if (nuevaErr)             e.nueva     = nuevaErr

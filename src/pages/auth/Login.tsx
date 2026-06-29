@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { asApiError } from '@/lib/apiError'
+import type { FormErrors } from '@/types/forms'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -85,7 +87,7 @@ export default function Login() {
   const [resendSent, setResendSent]   = useState(false)
 
   const validate = () => {
-    const e: Record<string, string> = {}
+    const e: FormErrors = {}
     if (modo === 'institucional') {
       const emailErr    = validateEmail(email)
       const passwordErr = validatePassword(password, 6)
@@ -116,7 +118,7 @@ export default function Login() {
         navigate(isAdmin ? '/admin' : safeTo, { replace: true })
       }
     } catch (err) {
-      setErrorCode((err as any)?.code ?? null)
+      setErrorCode(asApiError(err)?.code ?? null)
       setServerError((err as Error)?.message || 'No se pudo acceder. Intente de nuevo.')
     }
   }

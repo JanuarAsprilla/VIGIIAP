@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, Newspaper, Search, X, Loader2, ChevronLeft, ChevronRight, ArrowUpRight } from 'lucide-react'
 import { useNoticiasList } from '@/hooks/useNoticias'
+import type { NoticiaData } from '@/hooks/useNoticias'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { fadeUp, staggerContainer, staggerItem3D } from '@/lib/animations'
@@ -43,7 +44,8 @@ const TAG_COLORS = {
 const defaultTag = { pill: 'bg-primary-50 text-primary-700', glow: 'rgba(26,86,50,0.18)' }
 
 // ── 3D News Card ──────────────────────────────────────────────────────────────
-function NewsCard({ article, featured = false, index: _index }: { article: any; featured?: boolean; index?: number }) {
+interface NewsCardProps { article: NoticiaData; featured?: boolean; index?: number }
+function NewsCard({ article, featured = false, index: _index }: NewsCardProps) {
   const tc = TAG_COLORS[article.tag] ?? defaultTag
 
   return (
@@ -117,7 +119,8 @@ function NewsCard({ article, featured = false, index: _index }: { article: any; 
 }
 
 // ── Compact list card (non-featured) ─────────────────────────────────────────
-function NewsListItem({ article, index: _index }: { article: any; index?: number }) {
+interface NewsListItemProps { article: NoticiaData; index?: number }
+function NewsListItem({ article, index: _index }: NewsListItemProps) {
   const tc = TAG_COLORS[article.tag] ?? defaultTag
 
   return (

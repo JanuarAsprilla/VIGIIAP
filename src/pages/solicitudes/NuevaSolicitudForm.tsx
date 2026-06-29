@@ -1,4 +1,6 @@
 import React, { useState, useRef } from 'react'
+import { asApiError } from '@/lib/apiError'
+import type { FormErrors } from '@/types/forms'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, User, Mail, CheckCircle, AlertCircle, Paperclip, X, FileText, Image } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -36,7 +38,7 @@ export function NuevaSolicitudForm({ formRef }) {
     tipo:        '',
     descripcion: '',
   })
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<FormErrors>({})
   const [serverError, setServerError] = useState('')
   const createSolicitud   = useCreateSolicitud()
   const uploadArchivo     = useUploadSolicitudArchivo()
@@ -72,7 +74,7 @@ export function NuevaSolicitudForm({ formRef }) {
   }
 
   const validate = () => {
-    const e: Record<string, string> = {}
+    const e: FormErrors = {}
     if (!form.nombre.trim()) e.nombre = 'Requerido'
     if (!form.correo.trim()) e.correo = 'Requerido'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) e.correo = 'Correo no válido'
@@ -113,7 +115,7 @@ export function NuevaSolicitudForm({ formRef }) {
       setArchivoError('')
       setShowSuccess(true)
     } catch (err) {
-      if ((err as any)?.response?.status === 429) {
+      if (asApiError(err)?.status === 429) {
         setServerError('Has alcanzado el límite de solicitudes por día. Intenta mañana.')
       } else {
         setServerError((err as Error)?.message ?? 'No se pudo enviar la solicitud. Intente de nuevo.')

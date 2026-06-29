@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import type { FormErrors } from '@/types/forms'
 import { motion } from 'framer-motion'
 import { Headphones, X, CheckCircle, Send } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -27,7 +28,7 @@ export function SoporteDocumentalModal({ onClose }) {
   }
 
   const validate = () => {
-    const e: Record<string, string> = {}
+    const e: FormErrors = {}
     if (!form.nombre.trim()) e.nombre = 'Requerido'
     if (!form.correo.trim()) e.correo = 'Requerido'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo)) e.correo = 'Correo no válido'

@@ -3,6 +3,8 @@
  */
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type { MapaData } from '@/hooks/useMapas'
+import { getApiErrorMessage } from '@/lib/apiError'
+import type { FormErrors } from '@/types/forms'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Search, X, Edit2, Trash2, Eye, EyeOff,
@@ -333,7 +335,7 @@ export default function GestionMapas() {
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<MapaData | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [formErrors, setFormErrors] = useState<FormErrors>({})
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadedThumb, setUploadedThumb] = useState<File | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -404,7 +406,7 @@ export default function GestionMapas() {
   }
 
   const validate = () => {
-    const e: Record<string, string> = {}
+    const e: FormErrors = {}
     if (!form.nombre.trim()) e.nombre = 'El nombre del mapa es obligatorio'
     if (!form.tematica.trim()) e.tematica = 'Selecciona o escribe una temática'
     if (form.formato !== 'Geovisor' && !editing && !uploadedFile)
@@ -459,7 +461,7 @@ export default function GestionMapas() {
       }
       setShowModal(false)
     } catch (err) {
-      setSubmitError((err as any)?.response?.data?.error ?? (err as any)?.message ?? 'No se pudo guardar. Verifica la conexión e intenta de nuevo.')
+      setSubmitError(getApiErrorMessage(err, 'No se pudo guardar. Verifica la conexión e intenta de nuevo.'))
       setUploadProgress(null)
     }
   }

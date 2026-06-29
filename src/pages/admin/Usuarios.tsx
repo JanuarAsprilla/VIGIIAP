@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { FormErrors } from '@/types/forms'
 import type { UsuarioData } from '@/hooks/useUsuarios'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -267,7 +268,7 @@ export default function Usuarios() {
   const [deleteTarget, setDeleteTarget] = useState<UsuarioData | null>(null)
   const [detailUser, setDetailUser] = useState<UsuarioData | null>(null)
   const [form, setForm] = useState({ rol: 'Público' })
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [formErrors, setFormErrors] = useState<FormErrors>({})
 
   const filtered = users.filter((u) => {
     const q = search.toLowerCase()
@@ -285,7 +286,7 @@ export default function Usuarios() {
   }
 
   const validate = () => {
-    const e: Record<string, string> = {}
+    const e: FormErrors = {}
     if (!form.rol) e.rol = 'Selecciona un rol'
     return e
   }

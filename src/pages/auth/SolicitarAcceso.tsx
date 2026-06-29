@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import type { FormErrors } from '@/types/forms'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { EASE_OUT_EXPO } from '@/lib/animations'
@@ -139,7 +140,7 @@ export default function SolicitarAcceso() {
     nombre: '', email: '', password: '', confirmPassword: '',
     institucion: '', perfil: '', motivo: '', terminos: false,
   })
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<FormErrors>({})
 
   const set = (k, v) => {
     setForm((p) => ({ ...p, [k]: v }))
@@ -148,7 +149,7 @@ export default function SolicitarAcceso() {
   }
 
   const validate = () => {
-    const e: Record<string, string> = {}
+    const e: FormErrors = {}
     const req = validateRequired(form.nombre, 'El nombre completo')
     if (req)                                                              e.nombre          = req
     const emailErr = validateEmail(form.email)
