@@ -18,6 +18,12 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov'],
       exclude: ['node_modules/', 'dist/', 'src/test/'],
+      thresholds: {
+        statements: 95,
+        branches: 90,
+        functions: 100,
+        lines: 95,
+      },
     },
     globals: true,
   },
