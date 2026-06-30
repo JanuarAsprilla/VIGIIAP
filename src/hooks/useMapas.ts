@@ -1,0 +1,140 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import api from '@/lib/api'
+import { formatDate } from '@/lib/dateUtils'
+import type { ApiMeta } from '@/types'
+
+// ─── Normalizar respuesta de backend → shape que usan las pages ───────────────
+// Detecta el formato real del archivo a partir de la URL cuando no hay campo explícito
+function fmtFromUrl(url) {
+  if (!url) return null
+  const ext = url.split('?')[0].split('.').pop().toLowerCase()
+  return ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'].includes(ext) ? 'IMG' : 'PDF'
+}
+
+function deriveFormats(m) {
+  const fmts: string[] = []
+  if (m.archivo_img_url) fmts.push('IMG')
+  if (m.archivo_pdf_url) {
+    const ext = fmtFromUrl(m.archivo_pdf_url)
+    if (ext === 'IMG' && !m.archivo_img_url) fmts.push('IMG')
+    else if (ext !== 'IMG') fmts.push('PDF')
+  }
+  if (m.geovisor_url) fmts.push('GEOVISOR')
+  return fmts.length ? fmts : ['PDF']
+}
+
+function normalizeMap(m) {
+  const formats = deriveFormats(m)
+  const primaryFmt = formats[0]
+  // La URL efectiva del archivo principal
+  const fileUrl = m.archivo_img_url ?? m.archivo_pdf_url ?? null
+  const detectedFmt = fileUrl ? fmtFromUrl(fileUrl) : (m.geovisor_url ? 'Geovisor' : 'PDF')
+  return {
+    // ── campos compartidos ──
+    id:              m.id,
+    slug:            m.slug,
+    titulo:          m.titulo,
+    categoria:       m.categoria,
+    anio:            m.anio,
+    descripcion:     m.descripcion ?? '',
+    thumbnail_url:   m.thumbnail_url ?? null,
+    archivo_pdf_url: m.archivo_pdf_url ?? null,
+    archivo_img_url: m.archivo_img_url ?? null,
+    geovisor_url:    m.geovisor_url ?? null,
+    activo:          m.activo,
+    visibilidad:     m.visibilidad ?? 'publico',
+    creado_en:       m.creado_en,
+    // ── campos para página pública (Mapas.jsx) ──
+    title:        m.titulo,
+    category:     m.categoria,
+    categoryKey:  m.categoria?.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '-') ?? '',
+    excerpt:      m.descripcion ?? '',
+    year:         m.anio?.toString() ?? '',
+    formats,
+    badge:        primaryFmt === 'GEOVISOR' ? 'Geovisor' : primaryFmt,
+    badgeColor:   'primary',
+    geovisorLink: m.geovisor_url ?? '/geovisor',
+    department:   '',
+    // ── campos para panel admin (GestionMapas.jsx) ──
+    nombre:    m.titulo,
+    tematica:  m.categoria,
+    escala:    '1:100.000',
+    autor:     m.autor ?? '',
+    fecha:     formatDate(m.creado_en),
+    visible:   m.activo,
+    formato:   m.geovisor_url && !m.archivo_pdf_url && !m.archivo_img_url
+                 ? 'Geovisor'
+                 : detectedFmt,
+    url:       m.geovisor_url ?? '',
+    consultas: 0,
+  }
+}
+
+// ─── Tipos derivados ──────────────────────────────────────────────────────────
+export type MapaData = ReturnType<typeof normalizeMap>
+export type MapaListResult = { data: MapaData[]; meta: ApiMeta }
+
+// ─── Keys ─────────────────────────────────────────────────────────────────────
+export const MAPAS_KEYS = {
+  all:    ['mapas'],
+  list:   (params) => ['mapas', 'list', params],
+  detail: (slug)   => ['mapas', 'detail', slug],
+}
+
+// ─── Queries ──────────────────────────────────────────────────────────────────
+export function useMapasList(params: Record<string, unknown> = {}) {
+  return useQuery<MapaListResult>({
+    queryKey:  MAPAS_KEYS.list(params),
+    queryFn:   () => api.get('/mapas', { params }),
+    select:    (res) => ({
+      data: res.data.map(normalizeMap),
+      meta: res.meta,
+    }),
+  })
+}
+
+export function useMapaBySlug(slug: string | null | undefined) {
+  return useQuery<MapaData>({
+    queryKey: MAPAS_KEYS.detail(slug),
+    queryFn:  () => api.get(`/mapas/${slug}`),
+    select:   normalizeMap,
+    enabled:  !!slug,
+  })
+}
+
+// ─── Mutations ────────────────────────────────────────────────────────────────
+export function useCreateMapa() {
+  const qc = useQueryClient()
+  return useMutation<unknown, Error, { formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
+    mutationFn: ({ formData, onUploadProgress }) =>
+      api.post('/mapas', formData, { onUploadProgress }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
+  })
+}
+
+export function useUpdateMapa() {
+  const qc = useQueryClient()
+  return useMutation<unknown, Error, { id: string; formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
+    mutationFn: ({ id, formData, onUploadProgress }) =>
+      api.put(`/mapas/${id}`, formData, { onUploadProgress }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
+  })
+}
+
+export function useToggleMapaActivo() {
+  const qc = useQueryClient()
+  return useMutation<unknown, Error, { id: string; activo: boolean }>({
+    mutationFn: ({ id, activo }) => api.patch(`/mapas/${id}/activo`, { activo }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
+  })
+}
+
+export function useDeleteMapa() {
+  const qc = useQueryClient()
+  return useMutation<unknown, Error, string>({
+    mutationFn: (id) => api.delete(`/mapas/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
+  })
+}
