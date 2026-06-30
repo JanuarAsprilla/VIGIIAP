@@ -437,7 +437,7 @@ function IIAPBadge({ isDark }){
 
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function PlatformIntroSection(){
-  const containerRef = useRef(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [phase, setPhase] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
   const { isDark } = useTheme()
