@@ -15,7 +15,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useUpdatePassword, useUpdatePerfil } from '@/hooks/useUsuarios'
 
 // ── Section wrapper ──
-function Section({ title, description, children }) {
+interface SectionProps { title: string; description?: string; children: React.ReactNode }
+function Section({ title, description, children }: SectionProps) {
   return (
     <div className="bg-white border border-border rounded-2xl overflow-hidden">
       <div className="px-6 py-4 border-b border-border">
@@ -49,7 +50,7 @@ function FieldRow({ label, value, editable, onEdit, children }: { label: string;
 }
 
 // ── Password strength meter ──
-function PasswordStrengthMeter({ value }) {
+function PasswordStrengthMeter({ value }: { value: string }) {
   const criteria = passwordCriteria(value)
   const met      = Object.values(criteria).filter(Boolean).length
   if (!value) return null
@@ -77,7 +78,11 @@ function PasswordStrengthMeter({ value }) {
 }
 
 // ── Password section ──
-function PasswordInput({ id, placeholder, value, visible, error, onChange, onToggle }) {
+interface PasswordInputProps {
+  id: string; placeholder: string; value: string; visible: boolean
+  error?: string; onChange: (value: string) => void; onToggle: () => void
+}
+function PasswordInput({ id, placeholder, value, visible, error, onChange, onToggle }: PasswordInputProps) {
   const cls = `w-full pl-10 pr-10 py-2.5 border rounded-xl text-sm text-text placeholder:text-text-muted bg-white focus:outline-none focus:ring-2 transition ${
     error ? 'border-red-400 focus:border-red-400 focus:ring-red-400/10'
           : 'border-border focus:border-primary-800 focus:ring-primary-800/10'
@@ -275,7 +280,11 @@ function Apariencia() {
 }
 
 // ── Inline field editor ──
-function InlineEditor({ value, onSave, onCancel, isSaving, error, placeholder }) {
+interface InlineEditorProps {
+  value: string; onSave: (val: string) => void; onCancel: () => void
+  isSaving: boolean; error?: string; placeholder?: string
+}
+function InlineEditor({ value, onSave, onCancel, isSaving, error, placeholder }: InlineEditorProps) {
   const [val, setVal] = useState(value)
   return (
     <div className="space-y-2 mt-1">

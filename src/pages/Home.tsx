@@ -1,7 +1,7 @@
 /* Hallmark · macrostructure: Bento Grid · genre: institutional-editorial
  * tokens: design.md · stamp: 2026-05-25
  */
-import { useState, useRef } from 'react'
+import { useState, useRef, lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useMotionTemplate, useReducedMotion as useFMReducedMotion } from 'framer-motion'
 import {
@@ -14,7 +14,7 @@ import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
 import { useNoticiasList } from '@/hooks/useNoticias'
-import PlatformIntroSection from '@/components/PlatformIntroSection'
+const PlatformIntroSection = lazy(() => import('@/components/PlatformIntroSection'))
 
 // ── Bento order para desktop ──────────────────────────────────────────────────
 // [Mapas - wide] [Geovisor] [Herramientas]
@@ -412,7 +412,7 @@ export default function Home() {
       <div className="space-y-10">
 
         {/* Presentación 3D scroll-driven */}
-        {!query.trim() && <PlatformIntroSection />}
+        {!query.trim() && <Suspense fallback={null}><PlatformIntroSection /></Suspense>}
 
 
         {/* Welcome strip — usuario autenticado */}

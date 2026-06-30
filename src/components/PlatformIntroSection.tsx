@@ -247,10 +247,10 @@ function ChocoMapCloud({ isDark, prefersReduced }) {
   }, [])
 
   // A2: dispose ShaderMaterial cuando el componente se desmonte
-  useEffect(()=>{ return ()=>{ (matRef.current as any)?.dispose() } }, [])
+  useEffect(()=>{ return ()=>{ matRef.current?.dispose() } }, [])
 
   useEffect(()=>{
-    const m=matRef.current as any; if(!m) return
+    const m=matRef.current; if(!m) return
     const p=isDark?PAL.dark:PAL.light
     m.uniforms.uCA.value.set(p.a)
     m.uniforms.uCB.value.set(p.b)
@@ -263,7 +263,7 @@ function ChocoMapCloud({ isDark, prefersReduced }) {
 
   useFrame((state)=>{
     if(matRef.current){
-      (matRef.current as any).uniforms.uTime.value = prefersReduced ? 0 : state.clock.getElapsedTime()
+      matRef.current.uniforms.uTime.value = prefersReduced ? 0 : state.clock.getElapsedTime()
       state.invalidate()
     }
   })
@@ -315,17 +315,17 @@ function AmbientDust({ isDark, prefersReduced }) {
   },[])
 
   // A2: dispose geometry + material al desmontar
-  useEffect(()=>{ return ()=>{ geo.dispose(); (matRef.current as any)?.dispose() } }, [geo])
+  useEffect(()=>{ return ()=>{ geo.dispose(); matRef.current?.dispose() } }, [geo])
 
   useEffect(()=>{
-    const m=matRef.current as any; if(!m) return
+    const m=matRef.current; if(!m) return
     m.uniforms.uC.value.set(isDark?'#00c060':'#007A5E')
     m.blending=isDark?THREE.AdditiveBlending:THREE.NormalBlending; m.needsUpdate=true
   },[isDark])
 
   useFrame((state)=>{
     if(matRef.current){
-      (matRef.current as any).uniforms.uTime.value = prefersReduced ? 0 : state.clock.getElapsedTime()
+      matRef.current.uniforms.uTime.value = prefersReduced ? 0 : state.clock.getElapsedTime()
       state.invalidate()
     }
   })

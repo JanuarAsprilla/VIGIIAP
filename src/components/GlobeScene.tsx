@@ -6,6 +6,7 @@ import { useRef, useMemo, useEffect } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Points, PointMaterial, Line } from '@react-three/drei'
 import * as THREE from 'three'
+import type { Line2 } from 'three-stdlib'
 
 const R = 1.8
 
@@ -119,7 +120,7 @@ function LongitudeLines() {
 
 // ── Puntos Fibonacci en toda la superficie ──
 function SurfacePoints() {
-  const ref = useRef(null)
+  const ref = useRef<THREE.Points>(null)
   const pos = useMemo(() => {
     const arr = new Float32Array(900 * 3)
     for (let i = 0; i < 900; i++) {
@@ -132,7 +133,7 @@ function SurfacePoints() {
     return arr
   }, [])
   useFrame(({ clock, invalidate }) => {
-    if (ref.current) (ref.current as any).rotation.y = clock.elapsedTime * 0.05
+    if (ref.current) ref.current.rotation.y = clock.elapsedTime * 0.05
     invalidate()
   })
   return (
@@ -144,9 +145,9 @@ function SurfacePoints() {
 
 // ── Región del Chocó Biogeográfico ──
 function ChocoRegion() {
-  const fillRef  = useRef(null)
-  const glowRef  = useRef(null)
-  const fill2Ref = useRef(null)
+  const fillRef  = useRef<THREE.Mesh>(null)
+  const glowRef  = useRef<Line2>(null)
+  const fill2Ref = useRef<THREE.Mesh>(null)
 
   // Puntos del contorno a distintas alturas para efecto de capas
   const outlineOuter = useMemo(() => CHOCO.map(([lat, lon]) => ll(lat, lon, R * 1.007)), [])
@@ -176,9 +177,9 @@ function ChocoRegion() {
   useFrame(({ clock, invalidate }) => {
     const t = clock.elapsedTime
     const pulse = 0.5 + 0.5 * Math.sin(t * 0.9)
-    if (fillRef.current)  (fillRef.current as any).material.opacity  = 0.22 + 0.10 * pulse
-    if (fill2Ref.current) (fill2Ref.current as any).material.opacity = 0.08 + 0.04 * pulse
-    if (glowRef.current)  (glowRef.current as any).material.opacity  = 0.35 + 0.20 * pulse
+    if (fillRef.current)  (fillRef.current.material as THREE.Material).opacity  = 0.22 + 0.10 * pulse
+    if (fill2Ref.current) (fill2Ref.current.material as THREE.Material).opacity = 0.08 + 0.04 * pulse
+    if (glowRef.current)  glowRef.current.material.opacity  = 0.35 + 0.20 * pulse
     invalidate()
   })
 
@@ -220,7 +221,7 @@ function ChocoRegion() {
 
 // ── Partículas de biodiversidad dentro del Chocó ──
 function ChocoParticles() {
-  const ref = useRef(null)
+  const ref = useRef<THREE.Points>(null)
   const pos = useMemo(() => {
     const zones = [
       { lat: [6.5, 8.5], lon: [-77.6, -76.5], n: 25 },  // Darién / Chocó norte
@@ -245,7 +246,7 @@ function ChocoParticles() {
 
   useFrame(({ clock, invalidate }) => {
     if (ref.current)
-      (ref.current as any).material.opacity = 0.6 + 0.4 * Math.abs(Math.sin(clock.elapsedTime * 1.4))
+      (ref.current.material as THREE.Material).opacity = 0.6 + 0.4 * Math.abs(Math.sin(clock.elapsedTime * 1.4))
     invalidate()
   })
 
@@ -258,8 +259,8 @@ function ChocoParticles() {
 
 // ── Marcador IIAP — Quibdó (5.69°N, 76.66°W) ──
 function IIAPMarker() {
-  const ref  = useRef(null)
-  const ref2 = useRef(null)
+  const ref  = useRef<THREE.Points>(null)
+  const ref2 = useRef<Line2>(null)
 
   const center = useMemo(() => ll(5.69, -76.66, R * 1.008), [])
   const pos    = useMemo(() => new Float32Array([center.x, center.y, center.z]), [center])
@@ -278,8 +279,8 @@ function IIAPMarker() {
 
   useFrame(({ clock, invalidate }) => {
     const t = clock.elapsedTime
-    if (ref.current)  (ref.current as any).material.opacity = 0.7 + 0.3 * Math.abs(Math.sin(t * 2.5))
-    if (ref2.current) (ref2.current as any).material.opacity = 0.3 + 0.3 * Math.abs(Math.sin(t * 2.5 + 1))
+    if (ref.current)  (ref.current.material as THREE.Material).opacity = 0.7 + 0.3 * Math.abs(Math.sin(t * 2.5))
+    if (ref2.current) ref2.current.material.opacity = 0.3 + 0.3 * Math.abs(Math.sin(t * 2.5 + 1))
     invalidate()
   })
 
@@ -298,7 +299,7 @@ function IIAPMarker() {
 
 // ── Polvo de fondo ──
 function BackgroundDust() {
-  const ref = useRef(null)
+  const ref = useRef<THREE.Points>(null)
   const pos = useMemo(() => {
     const arr = new Float32Array(1200 * 3)
     for (let i = 0; i < 1200; i++) {
@@ -312,7 +313,7 @@ function BackgroundDust() {
     return arr
   }, [])
   useFrame(({ clock, invalidate }) => {
-    if (ref.current) (ref.current as any).rotation.y = clock.elapsedTime * 0.012
+    if (ref.current) ref.current.rotation.y = clock.elapsedTime * 0.012
     invalidate()
   })
   return (
@@ -324,7 +325,7 @@ function BackgroundDust() {
 
 // ── Globo principal ──
 function Globe() {
-  const groupRef = useRef(null)
+  const groupRef = useRef<THREE.Group>(null)
 
   // Inicia rotado para que Colombia quede de frente
   const initialized = useRef(false)
@@ -332,10 +333,10 @@ function Globe() {
   useFrame(({ invalidate }, delta) => {
     if (!groupRef.current) return
     if (!initialized.current) {
-      (groupRef.current as any).rotation.y = INITIAL_Y
+      groupRef.current.rotation.y = INITIAL_Y
       initialized.current = true
     }
-    (groupRef.current as any).rotation.y += delta * 0.09
+    groupRef.current.rotation.y += delta * 0.09
     invalidate()
   })
 
