@@ -9,7 +9,7 @@ import { matches } from '@/lib/search'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { useDocumentosList } from '@/hooks/useDocumentos'
 import { CATEGORY_META, fadeUp } from './documentos/documentos.constants'
-import { forceDownload, useClickOutside } from './documentos/documentos.utils'
+import { forceDownload, useClickOutside, descargarUrl } from './documentos/documentos.utils'
 import { CategoryCard } from './documentos/CategoryCard'
 import { CategoryModal } from './documentos/CategoryModal'
 import { PreviewModal } from './documentos/PreviewModal'
@@ -31,7 +31,7 @@ export default function Documentos() {
 
   const { toasts, toast, dismiss } = useToast()
   const handleDownload = async (doc) => {
-    await forceDownload(doc.url, `${doc.name}.${doc.type}`)
+    await forceDownload(descargarUrl('documento', doc.id), `${doc.name}.${doc.type}`)
     toast(`Descargando "${doc.name}"`, 'success')
   }
 

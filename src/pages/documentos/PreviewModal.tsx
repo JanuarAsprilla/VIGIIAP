@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { FileText, FileSpreadsheet, Eye, Download, X } from 'lucide-react'
 import { typeStyles } from './documentos.constants'
-import { forceDownload } from './documentos.utils'
+import { forceDownload, descargarUrl } from './documentos.utils'
 
 export function PreviewModal({ doc, categoryTitle, onClose }) {
   const s = typeStyles[doc.type] || typeStyles.pdf
@@ -95,7 +95,7 @@ export function PreviewModal({ doc, categoryTitle, onClose }) {
                     <Eye className="w-4 h-4" />
                     Visualizar PDF
                   </a>
-                  <button onClick={() => forceDownload(doc.url, `${doc.name}.${doc.type}`)}
+                  <button onClick={() => forceDownload(descargarUrl('documento', doc.id), `${doc.name}.${doc.type}`)}
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-50 border border-primary-200 text-primary-800 rounded-lg text-sm font-semibold hover:bg-primary-100 transition-colors">
                     <Download className="w-4 h-4" />
                     Descargar
@@ -112,7 +112,7 @@ export function PreviewModal({ doc, categoryTitle, onClose }) {
                   <p className="text-xs text-text-muted mb-1">{categoryTitle}</p>
                   <p className="text-xs text-text-muted">Los archivos {s.label} no se pueden previsualizar en el navegador.</p>
                 </div>
-                <button onClick={() => forceDownload(doc.url, `${doc.name}.${doc.type}`)}
+                <button onClick={() => forceDownload(descargarUrl('documento', doc.id), `${doc.name}.${doc.type}`)}
                   className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
                   <Download className="w-4 h-4" />
                   Descargar {s.label}

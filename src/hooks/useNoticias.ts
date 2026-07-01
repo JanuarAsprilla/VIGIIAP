@@ -88,3 +88,11 @@ export function useDeleteNoticia() {
     onSuccess: () => qc.invalidateQueries({ queryKey: NOTICIAS_KEYS.all }),
   })
 }
+
+export function useTogglePublicadoNoticia() {
+  const qc = useQueryClient()
+  return useMutation<unknown, Error, { id: string; publicado: boolean }>({
+    mutationFn: ({ id, publicado }) => api.patch(`/noticias/${id}/publicado`, { publicado }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: NOTICIAS_KEYS.all }),
+  })
+}
