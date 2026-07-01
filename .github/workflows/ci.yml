@@ -47,7 +47,7 @@ jobs:
       - run: npm ci
       - run: npm run test:coverage
       - name: Subir reporte de cobertura
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-report
@@ -67,7 +67,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Subir artefacto de build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: success()
         with:
           name: dist
@@ -91,7 +91,7 @@ jobs:
         run: npx playwright test e2e/public.spec.ts e2e/auth.spec.ts
         env:
           CI: true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
