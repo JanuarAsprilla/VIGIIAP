@@ -99,6 +99,7 @@ function PasswordInput({ id, placeholder, value, visible, error, onChange, onTog
         className={cls}
       />
       <button type="button" onClick={onToggle}
+        aria-label={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
         className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors">
         {visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
       </button>

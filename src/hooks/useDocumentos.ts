@@ -94,3 +94,11 @@ export function useDeleteDocumento() {
     onSuccess: () => qc.invalidateQueries({ queryKey: DOCS_KEYS.all }),
   })
 }
+
+export function useToggleActivoDocumento() {
+  const qc = useQueryClient()
+  return useMutation<unknown, Error, { id: string; activo: boolean }>({
+    mutationFn: ({ id, activo }) => api.patch(`/documentos/${id}/activo`, { activo }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: DOCS_KEYS.all }),
+  })
+}
