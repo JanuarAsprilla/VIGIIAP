@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { lazy, Suspense, useState, useEffect } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
 import { SearchProvider } from './contexts/SearchContext'
@@ -66,7 +66,7 @@ function GeovisorLoader() {
   )
 }
 
-export default function App() {
+function AppLoader() {
   const [appReady, setAppReady] = useState(false)
   useEffect(() => {
     // A3: detectar carga real en vez de timeout mínimo hardcodeado (era 2200ms fijo)
@@ -84,20 +84,36 @@ export default function App() {
     }
   }, [])
   if (!appReady) return <Preloader />
+  return <AppRoutes />
+}
+
+// Spinner mínimo para Suspense en páginas de auth/404
+function PageSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-7 h-7 border-2 border-primary-300 border-t-primary-800 rounded-full animate-spin" aria-hidden="true" />
+    </div>
+  )
+}
+
+function AppRoutes() {
+  const location = useLocation()
 
   return (
     <ThemeProvider>
     <AuthProvider>
     <UIProvider>
     <SearchProvider>
-      <ErrorBoundary>
+      {/* key={location.key} — resetea el ErrorBoundary en cada navegación,
+          evitando que un error en una ruta deje la app pegada al navegar de vuelta */}
+      <ErrorBoundary key={location.key}>
         <Routes>
-          {/* ── Auth (sin layout, sin skeleton específico) ── */}
-          <Route path="/login"                       element={<Suspense fallback={null}><Login /></Suspense>} />
-          <Route path="/solicitar-acceso"            element={<Suspense fallback={null}><SolicitarAcceso /></Suspense>} />
-          <Route path="/recuperar-password"          element={<Suspense fallback={null}><RecuperarPassword /></Suspense>} />
-          <Route path="/verificar-email/:token"      element={<Suspense fallback={null}><VerificarEmail /></Suspense>} />
-          <Route path="/reset-password/:token"       element={<Suspense fallback={null}><ResetPassword /></Suspense>} />
+          {/* ── Auth (sin layout) ── */}
+          <Route path="/login"                       element={<Suspense fallback={<PageSpinner />}><Login /></Suspense>} />
+          <Route path="/solicitar-acceso"            element={<Suspense fallback={<PageSpinner />}><SolicitarAcceso /></Suspense>} />
+          <Route path="/recuperar-password"          element={<Suspense fallback={<PageSpinner />}><RecuperarPassword /></Suspense>} />
+          <Route path="/verificar-email/:token"      element={<Suspense fallback={<PageSpinner />}><VerificarEmail /></Suspense>} />
+          <Route path="/reset-password/:token"       element={<Suspense fallback={<PageSpinner />}><ResetPassword /></Suspense>} />
 
           {/* ── Sitio público (MainLayout) — skeletons por ruta ── */}
           <Route element={<MainLayout />}>
@@ -147,11 +163,6 @@ export default function App() {
             </Route>
           </Route>
 
-          {/* ── 404 ── */}
-          <Route path="*" element={
-            <Suspense fallback={null}><NotFound /></Suspense>
-          } />
-
           {/* ── Panel Admin (AdminLayout) — Administrador SIG y Super Admin ── */}
           <Route element={<RequireAdmin />}>
             <Route element={<AdminLayout />}>
@@ -171,6 +182,9 @@ export default function App() {
               </Route>
             </Route>
           </Route>
+
+          {/* ── 404 — siempre al final para no capturar rutas válidas ── */}
+          <Route path="*" element={<Suspense fallback={<PageSpinner />}><NotFound /></Suspense>} />
         </Routes>
       </ErrorBoundary>
     </SearchProvider>
@@ -179,3 +193,5 @@ export default function App() {
     </ThemeProvider>
   )
 }
+
+export default AppLoader
