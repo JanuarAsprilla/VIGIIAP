@@ -183,9 +183,11 @@ export default function Documentos() {
         </div>
       ) : isError ? (
         <motion.div {...fadeUp(0.1)} role="alert" className="py-16 text-center text-text-muted">
-          <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" aria-hidden="true" />
-          <p className="text-sm font-semibold text-text">Error al cargar los documentos</p>
-          <p className="text-xs mt-1">No se pudo cargar los documentos. Verifique su conexión.</p>
+          <div className="w-16 h-16 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center mx-auto mb-4">
+            <FileText className="w-7 h-7 text-red-400 opacity-60" aria-hidden="true" />
+          </div>
+          <p className="text-sm font-semibold text-text-muted">Error al cargar documentos</p>
+          <p className="text-xs mt-1 text-text-muted/60">Verifique su conexión e intente de nuevo</p>
         </motion.div>
       ) : displayCategories.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -200,17 +202,25 @@ export default function Documentos() {
           ))}
         </div>
       ) : (
-        <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
-          <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">
-            No se encontraron documentos
-            {query && <> para <strong className="text-text">&quot;{query}&quot;</strong></>}
-            {activeTypes.length > 0 && <> con los filtros seleccionados</>}
-          </p>
+        <motion.div {...fadeUp(0.1)} className="py-20 flex flex-col items-center gap-4">
+          <div className="w-20 h-20 rounded-2xl flex items-center justify-center relative overflow-hidden"
+            style={{ background: 'var(--color-bg-alt)', border: '1px solid var(--color-border)' }}>
+            <div className="absolute inset-0 opacity-[0.04]"
+              style={{ backgroundImage: 'radial-gradient(circle, #1A5632 1px, transparent 1px)', backgroundSize: '12px 12px' }} />
+            <FileText className="w-9 h-9 text-text-muted opacity-30 relative" />
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-sm font-semibold text-text-muted">
+              {query ? `Sin resultados para "${query}"` : 'No hay documentos disponibles'}
+            </p>
+            <p className="text-xs text-text-muted/60">
+              {isFiltering ? 'Prueba eliminando algunos filtros' : 'Los documentos aparecerán aquí cuando estén publicados'}
+            </p>
+          </div>
           {isFiltering && (
             <button
               onClick={() => { setQuery(''); setActiveTypes([]) }}
-              className="mt-3 text-sm font-medium text-primary-800 hover:underline"
+              className="text-xs font-semibold text-primary-800 hover:text-primary-600 transition-colors"
             >
               Limpiar filtros
             </button>

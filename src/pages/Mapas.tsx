@@ -384,9 +384,14 @@ export default function Mapas() {
           <Loader2 className="w-8 h-8 text-primary-800 animate-spin" />
         </div>
       ) : isError ? (
-        <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
-          <Map className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No se pudo cargar los mapas. Verifique su conexión.</p>
+        <motion.div {...fadeUp(0.1)} className="py-20 flex flex-col items-center gap-3">
+          <div className="w-16 h-16 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center">
+            <Map className="w-7 h-7 text-red-400 opacity-60" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-semibold text-text-muted">Error al cargar mapas</p>
+            <p className="text-xs text-text-muted/60 mt-0.5">Verifique su conexión e intente de nuevo</p>
+          </div>
         </motion.div>
       ) : pagedMaps.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -395,9 +400,29 @@ export default function Mapas() {
           ))}
         </div>
       ) : (
-        <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
-          <Map className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No se encontraron mapas{query && <> para <strong className="text-text">"{query}"</strong></>}</p>
+        <motion.div {...fadeUp(0.1)} className="py-20 flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center"
+              style={{ background: 'var(--color-bg-alt)', border: '1px solid var(--color-border)' }}>
+              <div className="absolute inset-0 rounded-2xl opacity-[0.04]"
+                style={{ backgroundImage: 'radial-gradient(circle, #1A5632 1px, transparent 1px)', backgroundSize: '12px 12px' }} />
+              <Map className="w-9 h-9 text-text-muted opacity-30 relative" />
+            </div>
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-sm font-semibold text-text-muted">
+              {query ? `Sin resultados para "${query}"` : 'No hay mapas disponibles'}
+            </p>
+            <p className="text-xs text-text-muted/60">
+              {query ? 'Prueba con otros filtros o términos de búsqueda' : 'Los mapas aparecerán aquí cuando estén publicados'}
+            </p>
+          </div>
+          {(query || Object.values({}).some(Boolean)) && (
+            <button onClick={clearAll}
+              className="text-xs font-semibold text-primary-800 hover:text-primary-600 transition-colors">
+              Limpiar filtros
+            </button>
+          )}
         </motion.div>
       )}
 

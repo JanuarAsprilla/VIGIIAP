@@ -52,15 +52,26 @@ export default function BottomTabs() {
               key={tab.path}
               to={tab.path}
               end={tab.path === '/'}
-              className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[60px] no-underline transition-all duration-200"
+              className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[60px] no-underline transition-all duration-200 relative"
               style={({ isActive }) => isActive
                 ? { background: 'var(--tabs-active-bg)', color: 'var(--tabs-active-text)' }
                 : { color: 'var(--tabs-text)' }
               }
             >
-              {() => (
+              {({ isActive }) => (
                 <>
-                  <tab.icon className="w-5 h-5" aria-hidden="true" />
+                  {/* Pip indicator */}
+                  {isActive && (
+                    <span
+                      className="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-[2px] rounded-full"
+                      style={{ background: 'var(--tabs-active-text)', opacity: 0.7 }}
+                    />
+                  )}
+                  <tab.icon
+                    className="w-5 h-5 transition-transform duration-200"
+                    style={isActive ? { transform: 'scale(1.15)' } : {}}
+                    aria-hidden="true"
+                  />
                   <span className="text-[0.6rem] font-bold uppercase tracking-wider">
                     {tab.label}
                   </span>

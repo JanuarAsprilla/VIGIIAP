@@ -5,6 +5,16 @@ import { StatusBadge } from './StatusBadge'
 import { FiltroDropdown } from './FiltroDropdown'
 import { PAGE_SIZE } from './solicitudes.utils'
 
+
+const ROW_LEFT_BORDER = {
+  green:  'border-l-green-400',
+  yellow: 'border-l-yellow-400',
+  orange: 'border-l-orange-400',
+  blue:   'border-l-blue-400',
+  red:    'border-l-red-400',
+  teal:   'border-l-teal-400',
+}
+
 export function SolicitudesTable({ rows, onVerDetalle, filtro, onFiltroChange, totalAll, page, totalPages, onPrev, onNext }) {
   const desde = (page - 1) * PAGE_SIZE + 1
   const hasta = Math.min(page * PAGE_SIZE, rows.length + (page - 1) * PAGE_SIZE)
@@ -29,7 +39,7 @@ export function SolicitudesTable({ rows, onVerDetalle, filtro, onFiltroChange, t
           </thead>
           <tbody>
             {rows.length > 0 ? rows.map((sol) => (
-              <tr key={sol.id} className="border-b border-border last:border-b-0 hover:bg-bg-alt/30 transition-colors">
+              <tr key={sol.id} className={`border-b border-border border-l-4 last:border-b-0 hover:bg-bg-alt/30 transition-colors ${ROW_LEFT_BORDER[sol.estadoColor] ?? 'border-l-border'}`}>
                 <td className="px-6 py-4">
                   <span className="text-sm font-bold text-primary-800">{sol.id}</span>
                 </td>
@@ -58,8 +68,23 @@ export function SolicitudesTable({ rows, onVerDetalle, filtro, onFiltroChange, t
               </tr>
             )) : (
               <tr>
-                <td colSpan={5} className="px-6 py-10 text-center text-sm text-text-muted">
-                  No se encontraron solicitudes para la búsqueda actual.
+                <td colSpan={5} className="px-6 py-16 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-bg-alt flex items-center justify-center">
+                      <ChevronLeft className="w-0 h-0" style={{ display: 'none' }} />
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-text-muted opacity-40">
+                        <rect x="3" y="6" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                        <path d="M3 10h18" stroke="currentColor" strokeWidth="1.5"/>
+                        <path d="M8 14h4M8 17h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-text-muted">Sin solicitudes</p>
+                      <p className="text-xs text-text-muted/60 mt-0.5">
+                        {filtro ? `No hay solicitudes con estado "${filtro}"` : 'Aún no hay trámites registrados'}
+                      </p>
+                    </div>
+                  </div>
                 </td>
               </tr>
             )}
