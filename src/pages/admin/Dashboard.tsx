@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Users, ClipboardList, FileText, Newspaper, Eye,
+  Users, ClipboardList, FileText, Eye,
   TrendingUp, TrendingDown, CheckCircle, XCircle,
   ArrowRight, Zap, AlertTriangle,
 } from 'lucide-react'

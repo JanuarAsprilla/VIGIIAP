@@ -13,7 +13,7 @@ export const ADMIN_MOCK_USERS = [
 
 export const ADMIN_ACTIVITY_LOG = [
   { id: 1,  usuario: 'Admin IIAP',          initials: 'AI', accion: 'Aprobó solicitud',      detalle: '#VIG-2024-085 — Consulta de Linderos',        modulo: 'Solicitudes', fecha: '08 Abr 2026', hora: '10:32', tipo: 'success' },
-  { id: 2,  usuario: 'Admin IIAP',          initials: 'AI', accion: 'Publicó noticia',        detalle: 'Expansión del SINAP en el Chocó',              modulo: 'Noticias',    fecha: '08 Abr 2026', hora: '09:15', tipo: 'info'    },
+  { id: 2,  usuario: 'Admin IIAP',          initials: 'AI', accion: 'Subió documento',         detalle: 'Expansión del SINAP en el Chocó — Informe',    modulo: 'Documentos',  fecha: '08 Abr 2026', hora: '09:15', tipo: 'info'    },
   { id: 3,  usuario: 'María Valencia',      initials: 'MV', accion: 'Creó solicitud',         detalle: '#VIG-2024-090 — Validación Cartográfica',      modulo: 'Solicitudes', fecha: '07 Abr 2026', hora: '16:48', tipo: 'info'    },
   { id: 4,  usuario: 'Admin IIAP',          initials: 'AI', accion: 'Rechazó solicitud',      detalle: '#VIG-2024-082 — Estudio Técnico Ambiental',    modulo: 'Solicitudes', fecha: '07 Abr 2026', hora: '14:20', tipo: 'error'   },
   { id: 5,  usuario: 'Carlos Rentería',     initials: 'CR', accion: 'Actualizó rol',          detalle: 'Jorge Mena → Investigador',                    modulo: 'Usuarios',    fecha: '06 Abr 2026', hora: '11:05', tipo: 'warning' },
@@ -30,5 +30,4 @@ export const ADMIN_DASHBOARD_KPIS = [
   { label: 'Usuarios Registrados',   value: 9,  trend: '+2 este mes',    trendUp: true  },
   { label: 'Solicitudes Pendientes', value: 3,  trend: '-1 vs ayer',     trendUp: false },
   { label: 'Documentos Activos',     value: 24, trend: '+3 esta semana', trendUp: true  },
-  { label: 'Noticias Publicadas',    value: 5,  trend: '+1 hoy',         trendUp: true  },
 ]

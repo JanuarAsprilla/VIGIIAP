@@ -85,48 +85,6 @@ export interface Mapa {
   geovisorLink: string
 }
 
-// ─── Noticias ─────────────────────────────────────────────────────────────────
-
-export interface NoticiaRaw {
-  id: string
-  slug: string
-  titulo: string
-  resumen?: string | null
-  contenido?: string | null
-  categoria?: string | null
-  autor?: string | null
-  publicado_en?: string | null
-  creado_en: string
-  publicado: boolean
-  visibilidad?: string | null
-  imagen_url?: string | null
-}
-
-export interface Noticia {
-  id: string
-  slug: string
-  title: string
-  titulo: string
-  excerpt: string
-  content: string
-  tag: string
-  tagColor: string
-  category: string
-  author: string
-  date: string
-  time: string
-  link: string
-  type: 'noticia'
-  published: boolean
-  visibilidad: string
-  thumbUrl: string
-  resumen: string
-  contenido: string
-  categoria: string
-  imagen_url: string
-  publicado: boolean
-}
-
 // ─── Documentos ───────────────────────────────────────────────────────────────
 
 export type DocumentoFormato = 'PDF' | 'IMG' | 'ENLACE'
@@ -250,7 +208,6 @@ export interface Notificacion {
 export interface AdminStats {
   totalMapas: number
   totalDocumentos: number
-  totalNoticias: number
   totalUsuarios: number
   solicitudesPendientes: number
   solicitudesHoy: number

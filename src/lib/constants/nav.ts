@@ -1,5 +1,5 @@
 import {
-  Home, Map, FileText, Globe, Wrench, ClipboardList, Newspaper,
+  Home, Map, FileText, Globe, Wrench, ClipboardList,
   LayoutGrid, Users, Building2, Shield,
 } from 'lucide-react'
 

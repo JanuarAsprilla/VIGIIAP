@@ -1,4 +1,4 @@
-import { Map, FileText, Newspaper, Globe, Wrench, ClipboardList } from 'lucide-react'
+import { Map, FileText, Globe, Wrench, ClipboardList } from 'lucide-react'
 
 export const ALL_MODULES = [
   {
