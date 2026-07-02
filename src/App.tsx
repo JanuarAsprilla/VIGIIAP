@@ -40,7 +40,8 @@ const Login             = lazy(() => import('./pages/auth/Login'))
 const SolicitarAcceso   = lazy(() => import('./pages/auth/SolicitarAcceso'))
 const RecuperarPassword = lazy(() => import('./pages/auth/RecuperarPassword'))
 const VerificarEmail    = lazy(() => import('./pages/auth/VerificarEmail'))
-const ResetPassword     = lazy(() => import('./pages/auth/ResetPassword'))
+const ResetPassword           = lazy(() => import('./pages/auth/ResetPassword'))
+const CambiarPasswordExpirada = lazy(() => import('./pages/auth/CambiarPasswordExpirada'))
 
 // ── Admin panel ──
 const AdminDashboard   = lazy(() => import('./pages/admin/Dashboard'))
@@ -97,7 +98,8 @@ export default function App() {
           <Route path="/solicitar-acceso"            element={<Suspense fallback={null}><SolicitarAcceso /></Suspense>} />
           <Route path="/recuperar-password"          element={<Suspense fallback={null}><RecuperarPassword /></Suspense>} />
           <Route path="/verificar-email/:token"      element={<Suspense fallback={null}><VerificarEmail /></Suspense>} />
-          <Route path="/reset-password/:token"       element={<Suspense fallback={null}><ResetPassword /></Suspense>} />
+          <Route path="/reset-password/:token"        element={<Suspense fallback={null}><ResetPassword /></Suspense>} />
+          <Route path="/cambiar-password-expirada"   element={<Suspense fallback={null}><CambiarPasswordExpirada /></Suspense>} />
 
           {/* ── Sitio público (MainLayout) — skeletons por ruta ── */}
           <Route element={<MainLayout />}>

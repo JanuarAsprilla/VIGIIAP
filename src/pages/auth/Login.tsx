@@ -111,7 +111,16 @@ export default function Login() {
         await loginVisitante(nombreVisitante.trim())
         navigate(from === '/admin' ? '/' : from, { replace: true })
       } else {
-        const user = await login(email, password)
+        const result = await login(email, password)
+        if (result && 'passwordExpired' in result) {
+          navigate('/cambiar-password-expirada', { replace: true })
+          return
+        }
+        if (result && 'requiresTwoFactor' in result) {
+          navigate('/verificar-2fa', { replace: true })
+          return
+        }
+        const user = result
         // C-02: comparar contra constante ROLES (evita hardcoding y cubre super_admin).
         const isAdmin = user.role === ROLES.ADMIN || user.role === ROLES.SUPER_ADMIN
         const safeTo  = from === '/admin' && !isAdmin ? '/' : from

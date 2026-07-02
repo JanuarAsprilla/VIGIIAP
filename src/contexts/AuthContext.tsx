@@ -25,7 +25,7 @@ export interface AuthContextValue {
   isAdmin: boolean
   loading: boolean
   initializing: boolean
-  login: (email: string, password: string) => Promise<AuthUser>
+  login: (email: string, password: string) => Promise<AuthUser | { passwordExpired: true } | { requiresTwoFactor: true }>
   loginVisitante: (nombre?: string) => Promise<AuthUser>
   logout: () => Promise<void>
   register: (data: Record<string, unknown>) => Promise<unknown>
@@ -134,9 +134,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email, password) => {
     setLoading(true)
     try {
-      const { token, user: raw } = (await api.post('/auth/login', { email, password })) as { token: string; user: Record<string, unknown> }
-      // C-01: token no se escribe en localStorage; el backend lo envía
-      // como cookie HttpOnly (Set-Cookie) y api.js usa withCredentials=true.
+      const res = (await api.post('/auth/login', { email, password })) as
+        | { token: string; user: Record<string, unknown> }
+        | { passwordExpired: true }
+        | { requiresTwoFactor: true }
+
+      if ('passwordExpired' in res && res.passwordExpired) {
+        return { passwordExpired: true as const }
+      }
+      if ('requiresTwoFactor' in res && res.requiresTwoFactor) {
+        return { requiresTwoFactor: true as const }
+      }
+
+      const { token, user: raw } = res as { token: string; user: Record<string, unknown> }
+      // C-01: token no se escribe en localStorage; cookie HttpOnly.
       void token
       const normalized = normalizeUser(raw)
       persistUser(normalized)
