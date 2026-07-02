@@ -86,7 +86,8 @@ export default function TopBar({ onMenuToggle }) {
 
   const { readIds, markRead, markAllRead } = useReadNotifications()
 
-  const isAdmin = user?.rol === 'admin_sig'
+  const isAdmin      = user?.rol === 'admin_sig' || user?.rol === 'super_admin'
+  const isUnverified = user?.isVisitante || user?.role === 'Público' || user?.role === 'Visitante'
 
   const { data: adminNotifs } = useAdminNotificaciones(isAdmin && isAuthenticated)
 
@@ -266,7 +267,7 @@ export default function TopBar({ onMenuToggle }) {
             </AnimatePresence>
           </motion.button>
 
-          {isAuthenticated && (
+          {isAuthenticated && !isUnverified && (
             <>
               {/* Soporte + Ayuda — solo desktop */}
               <div className="hidden md:flex items-center gap-1">
