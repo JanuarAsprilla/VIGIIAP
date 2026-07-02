@@ -8,11 +8,14 @@ import {
   User, Mail, Building2, Shield, Bell, Palette,
   Lock, Eye, EyeOff, CheckCircle, AlertCircle,
   Camera, LogOut, ChevronRight, Layers, Monitor, Sun,
+  Smartphone, Laptop, Trash2, QrCode, KeyRound, RefreshCw,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUI } from '@/contexts/UIContext'
 import { useNavigate, Link } from 'react-router-dom'
 import { useUpdatePassword, useUpdatePerfil } from '@/hooks/useUsuarios'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import api from '@/lib/api'
 
 // ── Section wrapper ──
 interface SectionProps { title: string; description?: string; children: React.ReactNode }
@@ -205,6 +208,176 @@ function CambiarPassword() {
         Actualizar contraseña
       </button>
     </form>
+  )
+}
+
+// ── 2FA section ──
+function TwoFactor() {
+  const [step, setStep]     = useState<'idle' | 'setup' | 'done'>('idle')
+  const [qr, setQr]         = useState<string | null>(null)
+  const [secret, setSecret] = useState<string | null>(null)
+  const [code, setCode]     = useState('')
+  const [error, setError]   = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const { user } = useAuth()
+  const has2fa = (user as any)?.twoFactorEnabled
+
+  const startSetup = async () => {
+    setError(null)
+    setLoading(true)
+    try {
+      const res = await api.post('/auth/2fa/setup') as any
+      setQr(res.qrCodeUrl)
+      setSecret(res.secret)
+      setStep('setup')
+    } catch (e) { setError((e as Error).message) }
+    finally { setLoading(false) }
+  }
+
+  const verify = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+    try {
+      await api.post('/auth/2fa/enable', { token: code })
+      setStep('done')
+      setCode('')
+    } catch (e) { setError((e as Error).message) }
+    finally { setLoading(false) }
+  }
+
+  const disable = async () => {
+    if (!confirm('¿Desactivar la autenticación en dos pasos?')) return
+    setError(null)
+    setLoading(true)
+    try {
+      await api.delete('/auth/2fa/disable')
+      setStep('idle')
+    } catch (e) { setError((e as Error).message) }
+    finally { setLoading(false) }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${has2fa || step === 'done' ? 'bg-green-50' : 'bg-surface'}`}>
+            <Smartphone className={`w-4 h-4 ${has2fa || step === 'done' ? 'text-green-600' : 'text-text-muted'}`} />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-text-primary">Autenticación en dos pasos</p>
+            <p className="text-xs text-text-muted">{has2fa || step === 'done' ? 'Activa — su cuenta tiene protección adicional' : 'Inactiva — active para mayor seguridad'}</p>
+          </div>
+        </div>
+        {(has2fa || step === 'done') ? (
+          <button onClick={disable} disabled={loading}
+            className="text-xs text-red-600 hover:text-red-700 font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
+            Desactivar
+          </button>
+        ) : (
+          <button onClick={startSetup} disabled={loading || step === 'setup'}
+            className="text-xs text-primary-800 font-medium px-3 py-1.5 rounded-lg hover:bg-primary-50 transition-colors">
+            {loading ? 'Cargando…' : 'Activar'}
+          </button>
+        )}
+      </div>
+
+      {step === 'setup' && qr && (
+        <div className="border border-border rounded-xl p-4 space-y-3 bg-surface">
+          <p className="text-xs text-text-muted">Escanee este código con su app de autenticación (Google Authenticator, Authy, etc.)</p>
+          <img src={qr} alt="QR 2FA" className="w-40 h-40 mx-auto rounded-lg border border-border" />
+          {secret && <p className="text-xs text-center font-mono text-text-muted break-all">Clave manual: {secret}</p>}
+          <form onSubmit={verify} className="flex gap-2">
+            <input value={code} onChange={e => setCode(e.target.value)} placeholder="Código de 6 dígitos"
+              maxLength={6} className="flex-1 px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400" />
+            <button type="submit" disabled={code.length < 6 || loading}
+              className="px-4 py-2 bg-primary-800 text-white text-sm font-semibold rounded-lg hover:bg-primary-900 disabled:opacity-50 transition-colors">
+              {loading ? '…' : 'Verificar'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {step === 'done' && (
+        <div className="flex items-center gap-2 text-green-700 bg-green-50 px-4 py-3 rounded-xl text-sm">
+          <CheckCircle className="w-4 h-4 flex-shrink-0" />
+          ¡2FA activado exitosamente! Su cuenta está protegida.
+        </div>
+      )}
+      {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">{error}</p>}
+    </div>
+  )
+}
+
+// ── Sesiones activas section ──
+interface SessionItem { id: string; ip: string; userAgent: string; createdAt: string; current?: boolean }
+function SesionesActivas() {
+  const qc = useQueryClient()
+  const { data, isLoading, refetch } = useQuery<SessionItem[]>({
+    queryKey: ['auth', 'sessions'],
+    queryFn: () => api.get('/auth/sessions') as Promise<SessionItem[]>,
+  })
+
+  const revoke = useMutation({
+    mutationFn: (id: string) => api.delete(`/auth/sessions/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['auth', 'sessions'] }),
+  })
+
+  const revokeAll = useMutation({
+    mutationFn: () => api.delete('/auth/sessions'),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['auth', 'sessions'] }),
+  })
+
+  const sessions = data ?? []
+
+  const deviceIcon = (ua: string) =>
+    /mobile|android|iphone/i.test(ua) ? <Smartphone className="w-4 h-4" /> : <Laptop className="w-4 h-4" />
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-text-muted">{sessions.length} sesión{sessions.length !== 1 ? 'es' : ''} activa{sessions.length !== 1 ? 's' : ''}</p>
+        <div className="flex gap-2">
+          <button onClick={() => refetch()} className="text-xs text-text-muted hover:text-text-primary flex items-center gap-1">
+            <RefreshCw className="w-3 h-3" /> Actualizar
+          </button>
+          {sessions.length > 1 && (
+            <button onClick={() => revokeAll.mutate()} disabled={revokeAll.isPending}
+              className="text-xs text-red-600 hover:text-red-700 font-medium">
+              Cerrar todas
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface animate-pulse" />)}</div>
+      ) : sessions.length === 0 ? (
+        <p className="text-sm text-text-muted text-center py-4">No hay sesiones activas</p>
+      ) : (
+        <div className="space-y-2">
+          {sessions.map((s) => (
+            <div key={s.id} className={`flex items-center justify-between px-4 py-3 rounded-xl border ${s.current ? 'border-primary-200 bg-primary-50/40' : 'border-border bg-surface'}`}>
+              <div className="flex items-center gap-3">
+                <div className="text-text-muted">{deviceIcon(s.userAgent)}</div>
+                <div>
+                  <p className="text-xs font-medium text-text-primary truncate max-w-[180px]">
+                    {s.current ? 'Esta sesión' : (s.userAgent.split('(')[0].trim() || 'Dispositivo')}
+                  </p>
+                  <p className="text-[10px] text-text-muted">{s.ip} · {new Date(s.createdAt).toLocaleDateString('es-CO')}</p>
+                </div>
+              </div>
+              {!s.current && (
+                <button onClick={() => revoke.mutate(s.id)} disabled={revoke.isPending}
+                  className="p-1.5 text-text-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -498,6 +671,38 @@ export default function Perfil() {
           description="Actualice su contraseña periódicamente para proteger su cuenta"
         >
           <CambiarPassword />
+        </Section>
+      </motion.div>
+
+      {/* 2FA */}
+      <motion.div
+        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+        transition={{ delay: 0.17, duration: 0.5, ease: EASE_OUT_EXPO }}
+        style={{ transformPerspective: 900 }}
+        whileHover={{ y: -3 }}
+      >
+        <Section
+          title="Autenticación en dos pasos (2FA)"
+          description="Añada una capa extra de seguridad con una app de autenticación"
+        >
+          <TwoFactor />
+        </Section>
+      </motion.div>
+
+      {/* Sesiones activas */}
+      <motion.div
+        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
+        transition={{ delay: 0.19, duration: 0.5, ease: EASE_OUT_EXPO }}
+        style={{ transformPerspective: 900 }}
+        whileHover={{ y: -3 }}
+      >
+        <Section
+          title="Sesiones activas"
+          description="Dispositivos con sesión abierta en su cuenta"
+        >
+          <SesionesActivas />
         </Section>
       </motion.div>
 
