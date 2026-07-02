@@ -71,7 +71,7 @@ function useReadNotifications() {
 export default function TopBar({ onMenuToggle }) {
   const location  = useLocation()
   const navigate  = useNavigate()
-  const { isAuthenticated, user, logout } = useAuth()
+  const { isAuthenticated, user, logout, isAdmin } = useAuth()
   const { openPalette, notifications }     = useUI()
   const { query, setQuery }               = useSearch()
   const { isDark, toggleTheme }           = useTheme()
@@ -87,7 +87,6 @@ export default function TopBar({ onMenuToggle }) {
 
   const { readIds, markRead, markAllRead } = useReadNotifications()
 
-  const isAdmin      = user?.rol === 'admin_sig' || user?.rol === 'super_admin'
   const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE
 
   const { data: adminNotifs } = useAdminNotificaciones(isAdmin && isAuthenticated)

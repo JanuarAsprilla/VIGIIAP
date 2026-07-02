@@ -42,7 +42,7 @@ export interface ApiListResponse<T> {
 // ─── Mapas ────────────────────────────────────────────────────────────────────
 
 export type MapaFormato = 'PDF' | 'IMG' | 'GEOVISOR' | 'Geovisor'
-export type MapaVisibilidad = 'publico' | 'investigadores' | 'admin'
+export type MapaVisibilidad = 'publico' | 'usuarios' | 'acreditados'
 
 export interface MapaRaw {
   id: string

@@ -61,9 +61,8 @@ export function RequireVerified() {
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
-  const isUnverified = user?.isVisitante
-    || user?.rol === 'visitante'
-    || user?.rol === 'publico'
+  // user.rol es la clave backend raw ('visitante', 'publico', 'investigador', etc.)
+  const isUnverified = user?.isVisitante || user?.rol === 'visitante' || user?.rol === 'publico'
   if (isUnverified) {
     return <Navigate to="/solicitar-acceso" replace />
   }
