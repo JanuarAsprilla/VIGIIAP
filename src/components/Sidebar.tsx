@@ -37,10 +37,12 @@ function SidebarLink({ link, onClose, userRole, isAuthenticated }) {
     return (
       <motion.div variants={navItemVariant}>
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm select-none cursor-not-allowed"
-          style={{ color: 'var(--nav-text-locked)' }}>
-          <link.icon className="w-[16px] h-[16px] shrink-0 opacity-40" aria-hidden="true" />
-          <span className="truncate">{link.label}</span>
-          <Lock className="w-3 h-3 ml-auto shrink-0 opacity-40" aria-hidden="true" />
+          style={{ color: 'var(--nav-text-locked)', background: 'var(--nav-locked-bg, rgba(0,0,0,0.03))' }}>
+          <link.icon className="w-[16px] h-[16px] shrink-0 opacity-35" aria-hidden="true" />
+          <span className="truncate opacity-50">{link.label}</span>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <Lock className="w-2.5 h-2.5 opacity-35" aria-hidden="true" />
+          </span>
         </div>
       </motion.div>
     )
@@ -228,10 +230,13 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
         </div>
       </div>
 
+      {/* ── User mini card — solo cuando hay sesión ── */}
+      {isAuthenticated && user && <UserMiniCard user={user} />}
+
       {/* ── Navegación ── */}
       <nav aria-label="Navegación principal" className="flex-1 py-3 px-3 overflow-y-auto">
         <p
-          className="px-3 pb-2 text-[0.55rem] font-bold uppercase tracking-[0.18em]"
+          className="px-3 pb-2 text-[0.6rem] font-bold uppercase tracking-[0.22em]"
           style={{ color: 'var(--nav-section-label)' }}
         >
           Módulos
@@ -270,12 +275,11 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
             <Link
               to="/login"
               onClick={onClose}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold no-underline transition-all"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold no-underline transition-all hover:opacity-90 active:scale-[0.98]"
               style={{
-                background: 'linear-gradient(135deg, rgba(0,152,70,0.2), rgba(26,86,50,0.3))',
-                border: '1px solid rgba(0,152,70,0.3)',
-                color: '#d1fae5',
-                boxShadow: '0 0 12px rgba(0,152,70,0.1)',
+                background: 'linear-gradient(135deg, #009846, #1A5632)',
+                color: '#ffffff',
+                boxShadow: '0 4px 14px rgba(0,152,70,0.30)',
               }}
             >
               <Shield className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
@@ -323,11 +327,11 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
                 <Link
                   to="/solicitar-acceso"
                   onClick={onClose}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold no-underline transition-all"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold no-underline transition-all hover:opacity-90 active:scale-[0.98]"
                   style={{
-                    background: 'rgba(251,191,36,0.1)',
-                    border: '1px solid rgba(251,191,36,0.22)',
-                    color: '#fde68a',
+                    background: 'linear-gradient(135deg, #F7AC42, #E07030)',
+                    color: '#ffffff',
+                    boxShadow: '0 4px 14px rgba(247,172,66,0.30)',
                   }}
                 >
                   <Lock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />

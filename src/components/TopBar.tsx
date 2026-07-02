@@ -163,11 +163,17 @@ export default function TopBar({ onMenuToggle }) {
           <span className="lg:hidden text-sm font-bold tracking-wide" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
 
           <div className="hidden lg:flex items-center gap-3 flex-1">
-            <span className="text-sm font-bold tracking-wide shrink-0" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                style={{ background: 'linear-gradient(135deg, #009846, #1A5632)', boxShadow: '0 0 10px rgba(0,152,70,0.25)' }}>
+                <span className="text-white font-black text-xs font-display">V</span>
+              </div>
+              <span className="text-sm font-bold tracking-wide" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
+            </div>
 
             {/* Búsqueda contextual por página */}
             <div className="flex items-center gap-2 rounded-lg px-3 py-2 flex-1 max-w-sm" style={{background:"var(--topbar-search-bg)",border:"1px solid var(--topbar-search-border)"}}>
-              <Search className="w-4 h-4 shrink-0" style={{color:"var(--topbar-icon-off)"}} aria-hidden="true" />
+              <Search className="w-[18px] h-[18px] shrink-0" style={{color:"var(--topbar-icon-off)"}} aria-hidden="true" />
               <input
                 type="text"
                 placeholder={placeholder}
@@ -176,7 +182,7 @@ export default function TopBar({ onMenuToggle }) {
                 aria-label={placeholder}
                 className="topbar-search bg-transparent border-none outline-none text-sm w-full" style={{color:"var(--topbar-text)"}}
               />
-              {query && (
+              {query ? (
                 <button
                   onClick={() => setQuery('')}
                   aria-label="Limpiar búsqueda"
@@ -184,19 +190,19 @@ export default function TopBar({ onMenuToggle }) {
                 >
                   <X className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
+              ) : (
+                <button
+                  onClick={openPalette}
+                  aria-label="Abrir búsqueda global (Cmd+K)"
+                  title="Búsqueda global"
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded-md transition-colors shrink-0"
+                  style={{background:"var(--topbar-search-border)",color:"var(--topbar-icon-off)"}}
+                >
+                  <Command className="w-3 h-3" aria-hidden="true" />
+                  <kbd className="text-[0.55rem] font-mono font-bold">K</kbd>
+                </button>
               )}
             </div>
-
-            {/* Acceso rápido al Command Palette */}
-            <button
-              onClick={openPalette}
-              aria-label="Abrir búsqueda global (Cmd+K)"
-              title="Búsqueda global"
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg transition-colors shrink-0" style={{background:"var(--topbar-search-bg)",border:"1px solid var(--topbar-search-border)",color:"var(--topbar-icon-off)"}}
-            >
-              <Command className="w-3.5 h-3.5" aria-hidden="true" />
-              <kbd className="text-[0.6rem] font-mono font-bold">K</kbd>
-            </button>
           </div>
         </div>
 
@@ -269,8 +275,9 @@ export default function TopBar({ onMenuToggle }) {
                     onClick={() => togglePanel('soporte')}
                     aria-expanded={activePanel === 'soporte'}
                     aria-haspopup="true"
-                    className="px-3 py-1.5 rounded-lg text-sm transition-all font-medium" style={{color: activePanel === 'soporte' ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)', background: activePanel === 'soporte' ? 'var(--topbar-icon-on-bg2)' : 'transparent'}}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all font-medium" style={{color: activePanel === 'soporte' ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)', background: activePanel === 'soporte' ? 'var(--topbar-icon-on-bg2)' : 'transparent'}}
                   >
+                    <HelpCircle className="w-3.5 h-3.5" aria-hidden="true" />
                     Soporte
                   </button>
                   <AnimatePresence>
@@ -298,7 +305,7 @@ export default function TopBar({ onMenuToggle }) {
                   aria-haspopup="true"
                   className="relative p-2 rounded-lg transition-colors" style={{color: activePanel === 'notificaciones' ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)', background: activePanel === 'notificaciones' ? 'var(--topbar-icon-on-bg)' : 'transparent'}}
                 >
-                  <Bell className="w-5 h-5" aria-hidden="true" />
+                  <Bell className="w-[18px] h-[18px]" aria-hidden="true" />
                   {hasUnread && (
                     <span
                       aria-hidden="true"
@@ -330,7 +337,7 @@ export default function TopBar({ onMenuToggle }) {
                   aria-haspopup="true"
                   className="p-2 rounded-lg transition-colors" style={{color: activePanel === 'ajustes' ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)', background: activePanel === 'ajustes' ? 'var(--topbar-icon-on-bg)' : 'transparent'}}
                 >
-                  <Settings className="w-5 h-5" aria-hidden="true" />
+                  <Settings className="w-[18px] h-[18px]" aria-hidden="true" />
                 </button>
                 <AnimatePresence>
                   {activePanel === 'ajustes' && (
@@ -376,12 +383,16 @@ export default function TopBar({ onMenuToggle }) {
           ) : (
             <Link
               to="/login"
-              className="flex items-center gap-2 pl-3 lg:pl-4 no-underline transition-colors" style={{borderLeft:"1px solid var(--topbar-sep)",color:"var(--topbar-icon-on)"}}
+              className="flex items-center gap-2 pl-3 lg:pl-4 no-underline"
+              style={{borderLeft:"1px solid var(--topbar-sep)"}}
             >
-              <span className="hidden sm:block text-sm font-semibold">Ingresar</span>
-              <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{background:"var(--topbar-icon-on-bg2)",border:"1px solid var(--topbar-search-border)"}}>
-                <LogIn className="w-4.5 h-4.5" aria-hidden="true" />
-              </div>
+              <span
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.97]"
+                style={{ background: 'linear-gradient(135deg, #009846, #1A5632)', color: '#fff', boxShadow: '0 2px 10px rgba(0,152,70,0.25)' }}
+              >
+                <LogIn className="w-4 h-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Ingresar</span>
+              </span>
             </Link>
           )}
         </div>
