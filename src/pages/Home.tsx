@@ -120,7 +120,7 @@ function HeroSection() {
         <motion.div
           initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: EASE }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 text-xs font-bold uppercase tracking-[0.25em]"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-5 text-xs font-bold uppercase tracking-[0.25em]"
           style={{ background: 'rgba(0,152,70,0.15)', border: '1px solid rgba(0,152,70,0.3)', color: '#74C69D' }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-[#74C69D] animate-pulse" />
@@ -130,8 +130,8 @@ function HeroSection() {
         <motion.h1
           initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
-          className="font-display font-bold text-white mb-6 leading-[1.05]"
-          style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}
+          className="font-display font-bold text-white mb-4 leading-[1.08]"
+          style={{ fontSize: 'clamp(1.8rem, 3.2vw, 3rem)' }}
         >
           El conocimiento ambiental
           <span className="block" style={{ color: '#74C69D' }}>del Chocó Biogeográfico,</span>
@@ -141,9 +141,9 @@ function HeroSection() {
         <motion.p
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-base text-white/60 max-w-xl mx-auto mb-10 leading-relaxed"
+          className="text-sm text-white/60 max-w-xl mx-auto mb-7 leading-relaxed"
         >
-          VIGIA-IIAP es la plataforma digital del Instituto de Investigaciones Ambientales del Pacífico.
+          VIGIA-IIAP es la plataforma digital del Instituto de Investigaciones Ambientales del Pacífico (IIAP) para la gestión de información ambiental del Chocó Biogeográfico.
           Mapas, documentos técnicos, herramientas SIG y trámites — todo en un solo lugar.
         </motion.p>
 
@@ -172,7 +172,7 @@ function HeroSection() {
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 0.6 }}
-          className="mt-14 inline-flex items-center gap-6 px-6 py-3 rounded-2xl"
+          className="mt-8 inline-flex items-center gap-6 px-6 py-3 rounded-2xl"
           style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
         >
           {HERO_STATS.map((s, i) => (
@@ -224,7 +224,7 @@ const DATA_PILLARS = [
 
 function DataPlatformSection() {
   return (
-    <section className="py-28 px-6" style={{ background: 'var(--color-bg)' }}>
+    <section className="py-20 px-6" style={{ background: 'var(--color-bg)' }}>
       <div className="max-w-6xl mx-auto">
         <motion.div
           whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 20 }}
@@ -317,7 +317,7 @@ function ModuleVisual({ mod }: { mod: ModuleItem }) {
 function ModuleShowcaseSection() {
   return (
     <section style={{ background: 'var(--color-bg)' }}>
-      <div className="max-w-6xl mx-auto px-6 pt-24 pb-16 text-center">
+      <div className="max-w-6xl mx-auto px-6 pt-16 pb-10 text-center">
         <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] text-primary-700 block mb-3">
           Módulos de la plataforma
         </span>
@@ -336,7 +336,7 @@ function ModuleShowcaseSection() {
               whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 40 }}
               viewport={{ once: true, margin: '-80px' }}
               transition={{ duration: 0.6, ease: EASE }}
-              className={`max-w-6xl mx-auto px-6 py-20 flex flex-col ${isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-16`}
+              className={`max-w-6xl mx-auto px-6 py-14 flex flex-col ${isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-16`}
             >
               <div className="w-full lg:w-1/2 shrink-0">
                 <ModuleVisual mod={mod} />
@@ -390,7 +390,7 @@ const PROFILES = [
 
 function ForWhomSection() {
   return (
-    <section className="py-28 px-6" style={{ background: '#050e09' }}>
+    <section className="py-20 px-6" style={{ background: '#050e09' }}>
       <div className="max-w-6xl mx-auto">
         <motion.div
           whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 20 }} viewport={{ once: true }}
@@ -430,7 +430,7 @@ function ForWhomSection() {
 // ── Sección 5: Institutional CTA ────────────────────────────────────────────────
 function InstitutionalCTASection({ onVisitante }: { onVisitante: () => void }) {
   return (
-    <section className="py-28 px-6" style={{ background: 'var(--color-bg)' }}>
+    <section className="py-20 px-6" style={{ background: 'var(--color-bg)' }}>
       <div className="max-w-3xl mx-auto text-center">
         <motion.div
           whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 24 }} viewport={{ once: true }}
