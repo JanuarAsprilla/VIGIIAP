@@ -77,16 +77,43 @@ function HeroSection() {
       className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
       style={{ background: 'linear-gradient(160deg, #050e09 0%, #0a1f10 50%, #050e09 100%)' }}
     >
-      {/* 3D intro */}
-      <div className="absolute inset-0 opacity-70 pointer-events-none">
-        <Suspense fallback={null}><PlatformIntroSection /></Suspense>
+      {/* ── Fondo atmosférico CSS ── */}
+      {/* Grid perspectiva suelo */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ perspective: '500px' }}>
+        <div className="absolute bottom-0 left-0 right-0 h-[40%]" style={{
+          transform: 'rotateX(60deg)',
+          transformOrigin: 'bottom center',
+          backgroundImage: 'linear-gradient(rgba(0,152,70,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(0,152,70,0.07) 1px,transparent 1px)',
+          backgroundSize: '60px 60px',
+          maskImage: 'linear-gradient(to top,rgba(0,0,0,0.4) 0%,transparent 100%)',
+        }} />
       </div>
 
+      {/* HUD corners */}
+      {(['top-5 left-5 border-t border-l','top-5 right-5 border-t border-r',
+         'bottom-5 left-5 border-b border-l','bottom-5 right-5 border-b border-r'] as const).map((cls) => (
+        <div key={cls} className={`absolute w-8 h-8 border-primary-700/30 pointer-events-none ${cls}`} />
+      ))}
+
+      {/* Scanline */}
+      <motion.div className="absolute inset-x-0 h-px pointer-events-none"
+        style={{ background: 'linear-gradient(90deg,transparent,rgba(116,198,157,0.3),transparent)' }}
+        animate={{ top: ['0%', '100%'] }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'linear' }} />
+
+      {/* Orbs ambientales */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full pointer-events-none"
+        style={{ background: 'radial-gradient(circle,rgba(0,152,70,0.12) 0%,transparent 70%)', filter: 'blur(40px)' }} />
+      <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full pointer-events-none"
+        style={{ background: 'radial-gradient(circle,rgba(26,86,50,0.10) 0%,transparent 70%)', filter: 'blur(50px)' }} />
+
+      {/* Dot grid */}
+      <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(circle,rgba(116,198,157,0.8) 1px,transparent 1px)', backgroundSize: '32px 32px' }} />
+
       {/* Overlay gradient bottom */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, transparent, #050e09)' }}
-      />
+      <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, #050e09)' }} />
 
       {/* Content */}
       <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
@@ -490,6 +517,8 @@ export default function Home() {
       ) : (
         <>
           <HeroSection />
+          {/* PlatformIntroSection: scrollytelling del territorio Chocó */}
+          <Suspense fallback={null}><PlatformIntroSection /></Suspense>
           <DataPlatformSection />
           <ModuleShowcaseSection />
           <ForWhomSection />
