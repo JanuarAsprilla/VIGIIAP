@@ -50,3 +50,22 @@ export function RequireSuperAdmin() {
   }
   return <Outlet />
 }
+
+/** Protege rutas que requieren usuario verificado (no visitante, no público).
+ *  Permite: investigador, tecnico, institucional, admin_sig, super_admin.
+ *  Redirige a /solicitar-acceso si es visitante/público, a /login si no autenticado.
+ */
+export function RequireVerified() {
+  const { isAuthenticated, user } = useAuth()
+  const location = useLocation()
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+  const isUnverified = user?.isVisitante
+    || user?.rol === 'visitante'
+    || user?.rol === 'publico'
+  if (isUnverified) {
+    return <Navigate to="/solicitar-acceso" replace />
+  }
+  return <Outlet />
+}

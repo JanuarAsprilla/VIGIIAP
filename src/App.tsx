@@ -6,7 +6,7 @@ import { UIProvider } from './contexts/UIContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import MainLayout from './layouts/MainLayout'
 import AdminLayout from './layouts/AdminLayout'
-import RequireAuth, { RequireInvestigador, RequireAdmin, RequireSuperAdmin } from './components/RequireAuth'
+import RequireAuth, { RequireInvestigador, RequireVerified, RequireAdmin, RequireSuperAdmin } from './components/RequireAuth'
 import ErrorBoundary from './components/ErrorBoundary'
 import Preloader from './components/Preloader'
 import {
@@ -128,7 +128,7 @@ function AppRoutes() {
               <Suspense fallback={<GenericPageSkeleton />}><Terminos /></Suspense>
             } />
 
-            {/* Requiere sesión (cualquier rol incluyendo Público) */}
+            {/* Requiere sesión (cualquier rol incluyendo Público y Visitante) */}
             <Route element={<RequireAuth />}>
               <Route path="/perfil" element={
                 <Suspense fallback={<PerfilSkeleton />}><Perfil /></Suspense>
@@ -139,6 +139,10 @@ function AppRoutes() {
               <Route path="/documentos" element={
                 <Suspense fallback={<DocumentosSkeleton />}><Documentos /></Suspense>
               } />
+            </Route>
+
+            {/* Requiere usuario verificado — bloquea visitante y público */}
+            <Route element={<RequireVerified />}>
               <Route path="/solicitudes" element={
                 <Suspense fallback={<SolicitudesSkeleton />}><Solicitudes /></Suspense>
               } />

@@ -14,6 +14,7 @@ import {
   ChevronDown, X, HelpCircle, Command, Sun, Moon,
 } from 'lucide-react'
 import { useAuth }   from '@/contexts/AuthContext'
+import { ROLES }     from '@/contexts/AuthContext'
 import { useTheme }  from '@/contexts/ThemeContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { useUI }     from '@/contexts/UIContext'
@@ -87,7 +88,7 @@ export default function TopBar({ onMenuToggle }) {
   const { readIds, markRead, markAllRead } = useReadNotifications()
 
   const isAdmin      = user?.rol === 'admin_sig' || user?.rol === 'super_admin'
-  const isUnverified = user?.isVisitante || user?.role === 'Público' || user?.role === 'Visitante'
+  const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE
 
   const { data: adminNotifs } = useAdminNotificaciones(isAdmin && isAuthenticated)
 
