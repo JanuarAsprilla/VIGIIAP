@@ -19,7 +19,6 @@ const NAV_SECTIONS = [
     links: [
       { label: 'Usuarios',     path: '/admin/usuarios',    icon: Users },
       { label: 'Solicitudes',  path: '/admin/solicitudes', icon: ClipboardList },
-      { label: 'Noticias',     path: '/admin/noticias',    icon: Newspaper },
       { label: 'Documentos',   path: '/admin/documentos',  icon: FileText },
       { label: 'Mapas',        path: '/admin/mapas',       icon: Map },
       { label: 'Categorías',   path: '/admin/categorias',  icon: Tag },

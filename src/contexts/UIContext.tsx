@@ -3,7 +3,6 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 type Density = 'compact' | 'normal' | 'comfortable'
 
 interface NotifPrefs {
-  noticias: boolean
   solicitudes: boolean
   mapas: boolean
   email: boolean
@@ -28,7 +27,7 @@ const VALID_DENSITIES = ['compact', 'normal', 'comfortable']
 
 function isValidNotifPrefs(v) {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return false
-  const validKeys = ['noticias', 'solicitudes', 'mapas', 'email']
+  const validKeys = ['solicitudes', 'mapas', 'email']
   return validKeys.every((k) => typeof v[k] === 'boolean')
 }
 
@@ -56,10 +55,10 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
   const [notifications, setNotifications]   = useLocalStorage('vigiiap_notif_enabled', true)
   const [notifPrefsRaw, setNotifPrefs]       = useLocalStorage('vigiiap_notif_prefs', {
-    noticias: true, solicitudes: true, mapas: false, email: true,
+    solicitudes: true, mapas: false, email: true,
   })
   // M-04: validar shape de notifPrefs; usar defaults si es inválido.
-  const DEFAULT_NOTIF_PREFS = { noticias: true, solicitudes: true, mapas: false, email: true }
+  const DEFAULT_NOTIF_PREFS = { solicitudes: true, mapas: false, email: true }
   const notifPrefs = isValidNotifPrefs(notifPrefsRaw) ? notifPrefsRaw : DEFAULT_NOTIF_PREFS
 
   const [paletteOpen, setPaletteOpen]   = useState(false)

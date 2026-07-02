@@ -12,7 +12,6 @@ export default function ResumenActividad() {
   const items = isAdmin && stats
     ? [
         { value: stats.documentos,            label: 'Documentos'          },
-        { value: stats.noticias,              label: 'Noticias publicadas' },
         { value: stats.solicitudesPendientes, label: 'Solicitudes activas' },
       ]
     : null

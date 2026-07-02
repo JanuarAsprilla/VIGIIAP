@@ -12,12 +12,11 @@
 import { useMemo } from 'react'
 import {
   Home, Map as MapIcon, FileText, Globe, Wrench,
-  ClipboardList, Newspaper, UserCircle, BookOpen,
+  ClipboardList, UserCircle, BookOpen,
   HelpCircle, FileCheck,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { NAV_LINKS } from '@/lib/constants'
-import { useNoticiasList } from '@/hooks/useNoticias'
 
 // Mapa estático icono por path — evita acoplamiento a la estructura de NAV_LINKS
 const ROUTE_ICONS = {
@@ -27,7 +26,6 @@ const ROUTE_ICONS = {
   '/geovisor':    Globe,
   '/herramientas': Wrench,
   '/solicitudes': ClipboardList,
-  '/noticias':    Newspaper,
 }
 
 function buildModuleEntries() {
@@ -95,32 +93,16 @@ function buildActionEntries(isAuthenticated) {
 
 /**
  * Devuelve el catálogo completo de entradas buscables.
- * Las noticias provienen de la API real.
  */
 export function useCatalogue() {
   const { isAuthenticated } = useAuth()
-  const { data: noticiasData } = useNoticiasList({ limit: 5 })
-  const noticias = noticiasData?.data
 
-  const newsEntries = useMemo(
-    () => (noticias ?? []).map((n) => ({
-      id:       `new-${n.id}`,
-      group:    'Noticias',
-      label:    n.titulo ?? n.title ?? '—',
-      meta:     n.categoria ?? n.tag,
-      keywords: `${n.titulo ?? ''} ${n.categoria ?? ''} ${n.resumen ?? ''}`.toLowerCase(),
-      icon:     Newspaper,
-      to:       `/noticias/${n.slug}`,
-    })),
-    [noticias],
-  )
 
   return useMemo(
     () => [
       ...buildModuleEntries(),
       ...buildActionEntries(isAuthenticated),
-      ...newsEntries,
     ],
-    [isAuthenticated, newsEntries],
+    [isAuthenticated],
   )
 }

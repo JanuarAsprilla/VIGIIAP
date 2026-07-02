@@ -167,30 +167,6 @@ export function HerramientasSkeleton() {
 }
 
 // ─────────────────────────────────────────────
-// Noticias skeleton
-// ─────────────────────────────────────────────
-export function NoticiasSkeleton() {
-  return (
-    <div className="p-4 lg:p-8" role="status" aria-label="Cargando noticias...">
-      <SkeletonPageHeader />
-      <Skeleton className="h-10 w-full rounded-xl mb-6" />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="bg-white border border-border rounded-2xl overflow-hidden">
-            <Skeleton className="h-44 rounded-none" />
-            <div className="p-5 space-y-3">
-              <Skeleton className="h-3 w-20" />
-              <SkeletonText lines={2} />
-              <Skeleton className="h-3 w-28" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────
 // Solicitudes skeleton
 // ─────────────────────────────────────────────
 export function SolicitudesSkeleton() {

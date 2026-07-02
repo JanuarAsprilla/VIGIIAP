@@ -119,7 +119,6 @@ function UserDrawer({ user, onClose }) {
               {user.rol === 'Público' && (
                 <>
                   <div className="flex items-center gap-2 text-xs text-text">
-                    <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />Noticias
                   </div>
                   {['Mapas', 'Documentos', 'Herramientas', 'Geovisor', 'Solicitudes'].map((p) => (
                     <div key={p} className="flex items-center gap-2 text-xs text-text-muted">

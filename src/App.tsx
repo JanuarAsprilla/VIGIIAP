@@ -14,7 +14,6 @@ import {
   MapasSkeleton,
   DocumentosSkeleton,
   HerramientasSkeleton,
-  NoticiasSkeleton,
   SolicitudesSkeleton,
   PerfilSkeleton,
   GenericPageSkeleton,
@@ -27,8 +26,6 @@ const Documentos      = lazy(() => import('./pages/Documentos'))
 const Geovisor        = lazy(() => import('./pages/Geovisor'))
 const Herramientas    = lazy(() => import('./pages/Herramientas'))
 const Solicitudes     = lazy(() => import('./pages/Solicitudes'))
-const Noticias        = lazy(() => import('./pages/Noticias'))
-const NoticiaDetalle  = lazy(() => import('./pages/NoticiaDetalle'))
 const GuiaUsuario     = lazy(() => import('./pages/recursos/GuiaUsuario'))
 const FAQ             = lazy(() => import('./pages/recursos/FAQ'))
 const Terminos        = lazy(() => import('./pages/recursos/Terminos'))
@@ -47,7 +44,6 @@ const CambiarPasswordExpirada = lazy(() => import('./pages/auth/CambiarPasswordE
 const AdminDashboard   = lazy(() => import('./pages/admin/Dashboard'))
 const AdminUsuarios    = lazy(() => import('./pages/admin/Usuarios'))
 const AdminSolicitudes = lazy(() => import('./pages/admin/GestionSolicitudes'))
-const AdminNoticias    = lazy(() => import('./pages/admin/GestionNoticias'))
 const AdminDocumentos  = lazy(() => import('./pages/admin/GestionDocumentos'))
 const AdminMapas       = lazy(() => import('./pages/admin/GestionMapas'))
 const AdminConfig      = lazy(() => import('./pages/admin/Configuracion'))
@@ -122,12 +118,6 @@ function AppRoutes() {
             <Route path="/" element={
               <Suspense fallback={<HomeSkeleton />}><Home /></Suspense>
             } />
-            <Route path="/noticias" element={
-              <Suspense fallback={<NoticiasSkeleton />}><Noticias /></Suspense>
-            } />
-            <Route path="/noticias/:slug" element={
-              <Suspense fallback={<GenericPageSkeleton />}><NoticiaDetalle /></Suspense>
-            } />
             <Route path="/guia-usuario" element={
               <Suspense fallback={<GenericPageSkeleton />}><GuiaUsuario /></Suspense>
             } />
@@ -171,7 +161,6 @@ function AppRoutes() {
               <Route path="/admin"               element={<Suspense fallback={<GenericPageSkeleton />}><AdminDashboard /></Suspense>} />
               <Route path="/admin/usuarios"      element={<Suspense fallback={<GenericPageSkeleton />}><AdminUsuarios /></Suspense>} />
               <Route path="/admin/solicitudes"   element={<Suspense fallback={<GenericPageSkeleton />}><AdminSolicitudes /></Suspense>} />
-              <Route path="/admin/noticias"      element={<Suspense fallback={<GenericPageSkeleton />}><AdminNoticias /></Suspense>} />
               <Route path="/admin/documentos"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminDocumentos /></Suspense>} />
               <Route path="/admin/mapas"         element={<Suspense fallback={<GenericPageSkeleton />}><AdminMapas /></Suspense>} />
               <Route path="/admin/configuracion" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConfig /></Suspense>} />

@@ -19,7 +19,6 @@ const MODULO_STYLES = {
   solicitudes:'bg-yellow-100 text-yellow-700',
   mapas:      'bg-green-100 text-green-700',
   documentos: 'bg-orange-100 text-orange-700',
-  noticias:   'bg-pink-100 text-pink-700',
 }
 
 const ACCION_LABEL = {
@@ -76,7 +75,7 @@ function useAuditLog(params = {}) {
   })
 }
 
-const MODULOS_OPCIONES = ['auth', 'usuarios', 'admin', 'solicitudes', 'mapas', 'documentos', 'noticias']
+const MODULOS_OPCIONES = ['auth', 'usuarios', 'admin', 'solicitudes', 'mapas', 'documentos']
 
 export default function Actividad() {
   const [search, setSearch] = useState('')

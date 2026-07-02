@@ -37,7 +37,6 @@ function KPICards({ stats, isLoading }) {
     { label: 'Usuarios Registrados',   value: stats?.usuarios ?? '—',             trendUp: true  },
     { label: 'Solicitudes Pendientes', value: stats?.solicitudesPendientes ?? '—', trendUp: false },
     { label: 'Documentos Activos',     value: stats?.documentos ?? '—',            trendUp: true  },
-    { label: 'Noticias Publicadas',    value: stats?.noticias ?? '—',              trendUp: true  },
     { label: 'Visitantes (30 días)',   value: stats?.visitantesUltimos30d ?? '—',  trendUp: true  },
   ]
   return (
@@ -365,9 +364,7 @@ const QA_GLOW = [
   'rgba(249,115,22,0.32)',
 ]
 
-function QuickActions() {
-  const actions = [
-    { label: 'Nueva Noticia',    to: '/admin/noticias',    icon: Newspaper,    color: 'from-primary-700 to-primary-900' },
+function QuickActions()
     { label: 'Nuevo Usuario',    to: '/admin/usuarios',    icon: Users,        color: 'from-[#D4A373] to-[#B8860B]'    },
     { label: 'Ver Solicitudes',  to: '/admin/solicitudes', icon: ClipboardList,color: 'from-primary-500 to-primary-700' },
     { label: 'Ver Actividad',    to: '/admin/actividad',   icon: Zap,          color: 'from-orange-400 to-orange-600'   },

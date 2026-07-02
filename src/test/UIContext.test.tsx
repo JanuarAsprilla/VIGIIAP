@@ -37,7 +37,6 @@ describe('UIContext', () => {
 
   test('notifPrefs defaults have correct boolean shape', () => {
     render(<UIProvider><UIConsumer /></UIProvider>)
-    expect(screen.getByTestId('notif-noticias').textContent).toBe('true')
     expect(screen.getByTestId('notif-solicitudes').textContent).toBe('true')
     expect(screen.getByTestId('notif-mapas').textContent).toBe('false')
     expect(screen.getByTestId('notif-email').textContent).toBe('true')
@@ -78,14 +77,12 @@ describe('UIContext', () => {
     // Store an object with wrong keys
     localStorage.setItem('vigiiap_notif_prefs', JSON.stringify({ foo: true }))
     render(<UIProvider><UIConsumer /></UIProvider>)
-    expect(screen.getByTestId('notif-noticias').textContent).toBe('true')
     expect(screen.getByTestId('notif-mapas').textContent).toBe('false')
   })
 
   test('rejects array notifPrefs and falls back to defaults', () => {
     localStorage.setItem('vigiiap_notif_prefs', JSON.stringify([true, false]))
     render(<UIProvider><UIConsumer /></UIProvider>)
-    expect(screen.getByTestId('notif-noticias').textContent).toBe('true')
   })
 
   test('rejects string notifPrefs and falls back to defaults', () => {

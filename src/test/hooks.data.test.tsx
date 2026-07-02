@@ -35,7 +35,6 @@ vi.mock('@/contexts/AuthContext', () => ({
 
 import api from '@/lib/api'
 import { useAdminStats } from '@/hooks/useStats'
-import { useNoticiasList, useNoticiaBySlug } from '@/hooks/useNoticias'
 import { useMapasList } from '@/hooks/useMapas'
 import { useDocumentosList } from '@/hooks/useDocumentos'
 import { useSolicitudesAdmin, useMisSolicitudes } from '@/hooks/useSolicitudes'
@@ -85,69 +84,6 @@ describe('useAdminStats', () => {
   })
 })
 
-// ─── useNoticiasList ──────────────────────────────────────────────────────────
-describe('useNoticiasList', () => {
-  beforeEach(() => { vi.clearAllMocks() })
-
-  const rawNoticia = {
-    id: 1, slug: 'prueba', titulo: 'Test noticia', resumen: 'resumen',
-    contenido: 'contenido', categoria: 'biodiversidad', autor: 'IIAP',
-    publicado_en: '2025-01-01', publicado: true, imagen_url: null, visibilidad: 'publico',
-  }
-
-  test('fetches noticias and normalizes the shape', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [rawNoticia], total: 1 })
-
-    const { result } = renderHook(() => useNoticiasList(), { wrapper: makeWrapper() })
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-
-    const items = result.current.data?.data
-    expect(Array.isArray(items)).toBe(true)
-    expect(items![0]).toMatchObject({
-      id: 1,
-      slug: 'prueba',
-      title: 'Test noticia',
-      tag: 'BIODIVERSIDAD',
-      author: 'IIAP',
-    })
-  })
-
-  test('calls the noticias API endpoint', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [], total: 0 })
-
-    renderHook(() => useNoticiasList({ limit: 5 }), { wrapper: makeWrapper() })
-    await waitFor(() => expect(api.get).toHaveBeenCalled())
-
-    expect(api.get).toHaveBeenCalledWith(expect.stringContaining('noticias'), expect.any(Object))
-  })
-})
-
-// ─── useNoticiaBySlug ─────────────────────────────────────────────────────────
-describe('useNoticiaBySlug', () => {
-  beforeEach(() => { vi.clearAllMocks() })
-
-  test('fetches noticia by slug', async () => {
-    const raw = {
-      id: 2, slug: 'mi-slug', titulo: 'Artículo', resumen: '', contenido: 'texto',
-      categoria: 'mapas', autor: 'Autor', publicado_en: '2025-06-01',
-      publicado: true, imagen_url: null, visibilidad: 'publico',
-    }
-    vi.mocked(api.get).mockResolvedValue(raw)
-
-    const { result } = renderHook(() => useNoticiaBySlug('mi-slug'), { wrapper: makeWrapper() })
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-
-    expect(api.get).toHaveBeenCalledWith(expect.stringContaining('mi-slug'))
-    expect(result.current.data?.slug).toBe('mi-slug')
-  })
-
-  test('does not fetch when slug is falsy', () => {
-    vi.mocked(api.get).mockResolvedValue({})
-
-    renderHook(() => useNoticiaBySlug(null), { wrapper: makeWrapper() })
-    expect(api.get).not.toHaveBeenCalled()
-  })
-})
 
 // ─── useMapasList ─────────────────────────────────────────────────────────────
 describe('useMapasList', () => {
@@ -341,28 +277,6 @@ describe('useCatalogue', () => {
       expect(entry).toHaveProperty('group')
       expect(entry).toHaveProperty('label')
       expect(entry).toHaveProperty('to')
-    })
-  })
-
-  test('includes news entries when noticias are returned by API', async () => {
-    vi.mocked(api.get).mockResolvedValue({
-      data: [{
-        id: 1, slug: 'noticia-1', titulo: 'Noticia X', categoria: 'Mapas',
-        resumen: 'resumen', publicado_en: '2025-01-01', publicado: true,
-        autor: 'IIAP', imagen_url: null, visibilidad: 'publico', contenido: '',
-      }],
-      total: 1,
-    })
-
-    const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
-    await waitFor(() => {
-      expect(result.current.filter((e) => e.group === 'Noticias').length).toBeGreaterThan(0)
-    })
-
-    const news = result.current.filter((e) => e.group === 'Noticias')
-    expect(news[0]).toMatchObject({
-      group: 'Noticias',
-      to: '/noticias/noticia-1',
     })
   })
 

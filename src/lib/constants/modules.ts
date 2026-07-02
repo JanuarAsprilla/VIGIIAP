@@ -16,13 +16,6 @@ export const ALL_MODULES = [
     glow: 'rgba(247,172,66,0.28)', ctaColor: '#C45A1A', publicAccess: true,
   },
   {
-    id: 'noticias', title: 'Noticias y Eventos',
-    description: 'Últimas publicaciones, investigaciones destacadas, eventos y comunicados del Instituto de Investigaciones Ambientales del Pacífico.',
-    icon: Newspaper, path: '/noticias', action: 'Ver noticias', tag: 'Actualidad',
-    gradient: 'from-[#218842] to-[#009846]', chip: 'bg-emerald-50 text-emerald-800',
-    glow: 'rgba(0,152,70,0.22)', ctaColor: '#1A7038', publicAccess: true,
-  },
-  {
     id: 'geovisor', title: 'Geovisor Interactivo',
     description: 'Herramienta SIG en línea para la visualización y análisis de capas geoespaciales sobre el territorio del Pacífico colombiano.',
     icon: Globe, path: '/geovisor', action: 'Abrir geovisor', tag: 'SIG',

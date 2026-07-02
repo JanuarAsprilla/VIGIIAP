@@ -20,7 +20,6 @@ export const NAV_LINKS = [
   { label: 'Geovisor',     path: ROUTES.GEOVISOR,     icon: Globe },
   { label: 'Herramientas', path: ROUTES.HERRAMIENTAS, icon: Wrench },
   { label: 'Solicitudes',  path: ROUTES.SOLICITUDES,  icon: ClipboardList },
-  { label: 'Noticias',     path: '/noticias',          icon: Newspaper },
 ]
 
 export const MODULES = [

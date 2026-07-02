@@ -240,7 +240,7 @@ export default function CommandPalette() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Buscar módulos, noticias, documentos..."
+              placeholder="Buscar módulos, documentos..."
               className="flex-1 bg-transparent border-none outline-none text-sm text-text placeholder:text-text-muted"
             />
             {query && (

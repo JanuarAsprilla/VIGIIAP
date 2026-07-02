@@ -33,7 +33,6 @@ import {
 } from '@/hooks/useSolicitudes'
 import { useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa, useMapaBySlug } from '@/hooks/useMapas'
 import { useCreateDocumento, useUpdateDocumento, useDeleteDocumento, useDocumentoBySlug } from '@/hooks/useDocumentos'
-import { useCreateNoticia, useUpdateNoticia, useDeleteNoticia } from '@/hooks/useNoticias'
 import {
   useCreateUsuario, useUpdateUsuarioRol, useToggleActivo,
   useDeleteUsuario, useUpdatePerfil, useUpdatePassword,
@@ -309,44 +308,8 @@ describe('useDocumentoBySlug', () => {
 
 // ─── useNoticias mutations ────────────────────────────────────────────────────
 
-describe('useCreateNoticia', () => {
-  beforeEach(() => { vi.clearAllMocks() })
 
-  test('calls POST /noticias', async () => {
-    vi.mocked(api.post).mockResolvedValue({ id: 1 })
-    const { result } = renderHook(() => useCreateNoticia(), { wrapper: makeWrapper() })
-    const fd = new FormData()
 
-    await act(async () => { await result.current.mutateAsync({ formData: fd }) })
-    expect(api.post).toHaveBeenCalledWith('/noticias', fd, expect.any(Object))
-  })
-})
-
-describe('useUpdateNoticia', () => {
-  beforeEach(() => { vi.clearAllMocks() })
-
-  test('calls PUT /noticias/:id', async () => {
-    vi.mocked(api.put).mockResolvedValue({ id: 3 })
-    const { result } = renderHook(() => useUpdateNoticia(), { wrapper: makeWrapper() })
-
-    await act(async () => {
-      await result.current.mutateAsync({ id: '3', data: { titulo: 'Nuevo título' } as unknown as FormData })
-    })
-    expect(api.put).toHaveBeenCalledWith('/noticias/3', { titulo: 'Nuevo título' }, expect.any(Object))
-  })
-})
-
-describe('useDeleteNoticia', () => {
-  beforeEach(() => { vi.clearAllMocks() })
-
-  test('calls DELETE /noticias/:id', async () => {
-    vi.mocked(api.delete).mockResolvedValue({})
-    const { result } = renderHook(() => useDeleteNoticia(), { wrapper: makeWrapper() })
-
-    await act(async () => { await result.current.mutateAsync('8') })
-    expect(api.delete).toHaveBeenCalledWith('/noticias/8')
-  })
-})
 
 // ─── useUsuarios mutations ────────────────────────────────────────────────────
 

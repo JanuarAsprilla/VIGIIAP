@@ -8,21 +8,18 @@ import {
   ArrowRight, Plus, SearchX, ArrowUpRight,
   ChevronRight, Lock,
 } from 'lucide-react'
-import { STATS, NEWS, ALL_MODULES } from '@/lib/constants'
+import { STATS, ALL_MODULES } from '@/lib/constants'
 import { useAuth, ROLES } from '@/contexts/AuthContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
-import { useNoticiasList } from '@/hooks/useNoticias'
 const PlatformIntroSection = lazy(() => import('@/components/PlatformIntroSection'))
 
 // ── Bento order para desktop ──────────────────────────────────────────────────
 // [Mapas - wide] [Geovisor] [Herramientas]
-// [Docs] [Noticias] [Solicitudes - wide]
 const BENTO_SPANS = {
   mapas:       'lg:col-span-2',
   documentos:  'lg:col-span-1',
-  noticias:    'lg:col-span-1',
   geovisor:    'lg:col-span-1',
   herramientas:'lg:col-span-1',
   solicitudes: 'lg:col-span-2',
@@ -222,7 +219,7 @@ function ModulesSection({ isVisitante, isPublico }) {
   const showNote = (isVisitante || isPublico) && restricted > 0
 
   // Bento layout: ordered for visual balance
-  const bentoOrder = ['mapas', 'geovisor', 'herramientas', 'documentos', 'noticias', 'solicitudes']
+  const bentoOrder = ['mapas', 'geovisor', 'herramientas', 'documentos', 'solicitudes']
   const sortedModules = query.trim()
     ? filtered
     : bentoOrder.map((id) => ALL_MODULES.find((m) => m.id === id)).filter((m): m is typeof ALL_MODULES[number] => Boolean(m))
@@ -256,97 +253,7 @@ function ModulesSection({ isVisitante, isPublico }) {
 }
 
 // ── News card ──────────────────────────────────────────────────────────────────
-function NewsCard({ article, variant = 'default' }) {
-  const isFeature = variant === 'feature'
-  const isTall    = variant === 'tall'
-
-  return (
-    <motion.div
-      whileHover={{ y: -3, boxShadow: '0 16px 40px rgba(26,86,50,0.10), 0 2px 12px rgba(0,0,0,0.05)' }}
-      transition={{ duration: 0.25 }}
-      className="rounded-2xl overflow-hidden h-full group cursor-pointer"
-      style={{
-        background: 'var(--news-bg)',
-        border: '1px solid var(--news-border)',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-      }}
-      whileInView={{ opacity: 1 }}
-      initial={{ opacity: 0 }}
-      viewport={{ once: true }}
-    >
-      <Link to={`/noticias/${article.slug || article.id}`}
-        className="flex flex-col p-5 no-underline h-full">
-
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[0.62rem] font-bold uppercase tracking-wider text-primary-700 bg-primary-50 px-2.5 py-1 rounded-full">
-            {article.tag || article.categoria || 'IIAP'}
-          </span>
-          {isFeature && (
-            <span className="text-[0.6rem] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
-              style={{ color: '#B7791F', background: '#FFFBEB' }}>Destacada</span>
-          )}
-        </div>
-
-        <h3 className={`font-bold text-text leading-snug mb-2 group-hover:text-primary-800 transition-colors flex-1 ${isFeature ? 'text-base' : 'text-sm'}`}>
-          {article.title || article.titulo}
-        </h3>
-
-        {(isFeature || isTall) && (
-          <p className="text-sm text-text-muted leading-relaxed mb-4 line-clamp-3">
-            {article.excerpt || article.resumen}
-          </p>
-        )}
-
-        <div
-          className="flex items-center justify-between mt-auto pt-3"
-          style={{ borderTop: '1px solid rgba(26,86,50,0.10)' }}
-        >
-          <span className="text-xs text-text-muted">{article.time || article.date}</span>
-          <ArrowUpRight aria-hidden="true" className="w-3.5 h-3.5 text-primary-700 opacity-0 group-hover:opacity-100 transition-opacity" />
-        </div>
-      </Link>
-    </motion.div>
-  )
-}
-
 // ── News section — editorial ───────────────────────────────────────────────────
-function NewsSection({ articles, query }) {
-  if (!articles.length) return null
-  const [featured, ...rest] = articles.slice(0, 4)
-
-  return (
-    <section aria-labelledby="news-section-title">
-      <SectionHeading
-        id="news-section-title"
-        eyebrow="Actualidad"
-        title={query.trim() ? `Noticias — "${query}"` : 'Noticias del IIAP'}
-        action={!query.trim() ? 'Ver todas' : undefined}
-        actionTo="/noticias"
-      />
-
-      {query.trim() ? (
-        /* Search result: uniform grid */
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {articles.slice(0, 4).map((a) => <NewsCard key={a.id} article={a} />)}
-        </div>
-      ) : (
-        /* Editorial: featured + grid */
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
-          {/* Featured — left */}
-          <NewsCard article={featured} variant="feature" />
-
-          {/* Side stack — right */}
-          {rest.length > 0 && (
-            <div className="flex flex-col gap-4">
-              {rest.map((a) => <NewsCard key={a.id} article={a} />)}
-            </div>
-          )}
-        </div>
-      )}
-    </section>
-  )
-}
-
 // ── Welcome strip ──────────────────────────────────────────────────────────────
 function WelcomeStrip({ user }) {
   const hour = new Date().getHours()
@@ -393,19 +300,12 @@ export default function Home() {
   const { query } = useSearch()
   const [showModal, setShowModal] = useState(false)
 
-  const { data: noticiasData, isError: noticiasError } = useNoticiasList({ limit: 4 })
-  const apiNews     = noticiasData?.data ?? []
   // Si hay error de API, no mostrar datos estáticos falsos como si fueran reales
-  const displayNews = noticiasError ? [] : (apiNews.length > 0 ? apiNews : NEWS)
-  // displayNews mezcla NoticiaData (API) y NEWS estático — ambos filtrables pero con campos distintos
-  type NewsFilterable = { title?: string; titulo?: string; excerpt?: string; resumen?: string; tag?: string; categoria?: string }
-  const filteredNews = (displayNews as NewsFilterable[]).filter((a) =>
     matches([a.title || a.titulo, a.excerpt || a.resumen, a.tag || a.categoria], query)
   )
 
   const noResults = query.trim()
     && !ALL_MODULES.some((m) => matches([m.title, m.description], query))
-    && filteredNews.length === 0
 
   return (
     <>
@@ -433,8 +333,6 @@ export default function Home() {
         {!query.trim() && <StatsSection />}
 
 
-        {/* Noticias */}
-        <NewsSection articles={filteredNews} query={query} />
 
       </div>
 

@@ -8,7 +8,6 @@ const QUICK_LINKS = [
   { to: '/',           icon: Home,     label: 'Inicio'       },
   { to: '/mapas',      icon: Map,      label: 'Mapas'        },
   { to: '/documentos', icon: FileText, label: 'Documentos'   },
-  { to: '/noticias',   icon: Search,   label: 'Noticias'     },
 ]
 
 export default function NotFound() {

@@ -283,7 +283,7 @@ export default function Login() {
             <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-4">
               <p className="text-sm text-amber-800 leading-relaxed">
                 Accede como <strong>visitante</strong> para consultar mapas, documentos,
-                noticias y demás información pública del IIAP sin necesidad de registrarte.
+                información pública del IIAP sin necesidad de registrarte.
               </p>
             </div>
 

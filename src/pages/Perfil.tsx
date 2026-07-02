@@ -388,7 +388,6 @@ function Notificaciones() {
   const toggle = (k: string) => setPrefs({ ...prefs, [k]: !prefs[k as keyof typeof prefs] })
 
   const items = [
-    { key: 'noticias',   label: 'Nuevas noticias',           desc: 'Alertas cuando se publique contenido nuevo' },
     { key: 'solicitudes', label: 'Estado de solicitudes',    desc: 'Cambios en el estado de tus trámites' },
     { key: 'mapas',      label: 'Actualizaciones de mapas',  desc: 'Nuevas capas o versiones de mapas' },
     { key: 'email',      label: 'Resumen por correo',        desc: 'Recibir resumen semanal de actividad' },

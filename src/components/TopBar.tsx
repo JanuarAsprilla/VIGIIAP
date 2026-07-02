@@ -17,7 +17,6 @@ import { useAuth }   from '@/contexts/AuthContext'
 import { useTheme }  from '@/contexts/ThemeContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { useUI }     from '@/contexts/UIContext'
-import { useNoticiasList } from '@/hooks/useNoticias'
 import { useAdminNotificaciones } from '@/hooks/useNotificaciones'
 
 import SoportePanel        from './topbar/SoportePanel'
@@ -30,13 +29,12 @@ import ProfileDropdown     from './topbar/ProfileDropdown'
 const STORAGE_KEY  = 'vigiiap_notif_read'
 
 const SEARCH_PLACEHOLDERS = {
-  '/':            'Buscar módulos, noticias o documentos...',
+  '/':            'Buscar módulos, documentos...',
   '/mapas':       'Buscar mapas, capas o territorios...',
   '/documentos':  'Buscar por nombre, tipo o fecha...',
   '/geovisor':    'Buscar coordenadas, lugar o capa...',
   '/herramientas':'Buscar herramienta o análisis...',
   '/solicitudes': 'Buscar trámites o expedientes...',
-  '/noticias':    'Buscar noticias, eventos o autores...',
 }
 
 const PAGE_LABELS = {
@@ -90,14 +88,9 @@ export default function TopBar({ onMenuToggle }) {
 
   const isAdmin = user?.rol === 'admin_sig'
 
-  // Admins: notificaciones enriquecidas (usuarios + solicitudes + noticias)
-  // Resto: solo últimas noticias
   const { data: adminNotifs } = useAdminNotificaciones(isAdmin && isAuthenticated)
-  const { data: noticiaData } = useNoticiasList({ limit: 3 })
 
-  const notifItems = isAdmin
-    ? (adminNotifs ?? [])
-    : (noticiaData?.data ?? [])
+  const notifItems = isAdmin ? (adminNotifs ?? []) : []
   const unreadCount = notifItems.filter((n) => !readIds.includes(n.id)).length
   const hasUnread   = notifications && unreadCount > 0
 

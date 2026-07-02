@@ -259,7 +259,7 @@ export default function Configuracion() {
           {[
             { rol: 'Administrador SIG', desc: 'Acceso completo al panel de administración y todos los módulos' },
             { rol: 'Investigador', desc: 'Acceso a mapas, documentos, geovisor, herramientas y solicitudes' },
-            { rol: 'Público', desc: 'Solo acceso a noticias e inicio de sesión. Módulos técnicos bloqueados' },
+            { rol: 'Público', desc: 'Solo acceso al inicio de sesión y módulos públicos. Módulos técnicos bloqueados' },
           ].map(({ rol, desc }) => (
             <div key={rol} className="flex items-start gap-2 py-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-primary-700 mt-1.5 shrink-0" />

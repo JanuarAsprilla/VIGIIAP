@@ -32,7 +32,6 @@ vi.mock('@/contexts/AuthContext', () => ({
 let mockAuth = { isAuthenticated: true }
 
 import api from '@/lib/api'
-import { useNoticiasList } from '@/hooks/useNoticias'
 import { useUsuariosList } from '@/hooks/useUsuarios'
 import { useAdminNotificaciones } from '@/hooks/useNotificaciones'
 import { useCategoriasList } from '@/hooks/useCategorias'
@@ -51,64 +50,6 @@ function makeWrapper() {
 
 // ─── useNoticias — normalizeNoticia null-field branches (lines 11-24, 28-30) ──
 
-describe('useNoticias normalizeNoticia — null field branches', () => {
-  beforeEach(() => { vi.clearAllMocks() })
-
-  test('null categoria → tag falls back to NOTICIAS', async () => {
-    vi.mocked(api.get).mockResolvedValue({
-      data: [{
-        id: 'n1', slug: 'nota-1', titulo: 'Nota uno',
-        resumen: null, contenido: null, categoria: null,
-        autor: null, publicado_en: null, creado_en: '2024-01-01T00:00:00Z',
-        publicado: true, visibilidad: null, imagen_url: null,
-      }],
-      meta: {},
-    })
-    const { result } = renderHook(() => useNoticiasList(), { wrapper: makeWrapper() })
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    const n = result.current.data!.data[0]
-    expect(n.tag).toBe('NOTICIAS')         // ?? 'NOTICIAS' branch
-    expect(n.excerpt).toBe('')             // null resumen → ''
-    expect(n.content).toBe('')             // null contenido → ''
-    expect(n.author).toBe('IIAP')          // null autor → 'IIAP'
-    expect(n.category).toBe('')            // null categoria → ''
-    expect(n.visibilidad).toBe('publico')  // null visibilidad → 'publico'
-    expect(n.thumbUrl).toBe('')            // null imagen_url → ''
-    expect(n.resumen).toBe('')             // null resumen → ''
-    expect(n.contenido).toBe('')           // null contenido → ''
-    expect(n.imagen_url).toBe('')          // null imagen_url → ''
-  })
-
-  test('publicado_en null → date falls back to creado_en', async () => {
-    vi.mocked(api.get).mockResolvedValue({
-      data: [{
-        id: 'n2', slug: 'nota-2', titulo: 'Nota dos',
-        publicado_en: null, creado_en: '2024-06-01T00:00:00Z',
-        publicado: false, categoria: 'ambiental',
-      }],
-      meta: {},
-    })
-    const { result } = renderHook(() => useNoticiasList(), { wrapper: makeWrapper() })
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    const n = result.current.data!.data[0]
-    // Both date and time use publicado_en ?? creado_en
-    expect(typeof n.date).toBe('string')
-    expect(typeof n.time).toBe('string')
-  })
-
-  test('categoria toUpperCase applied when present', async () => {
-    vi.mocked(api.get).mockResolvedValue({
-      data: [{
-        id: 'n3', slug: 'nota-3', titulo: 'T', categoria: 'biodiversidad',
-        creado_en: '2024-01-01T00:00:00Z', publicado: true,
-      }],
-      meta: {},
-    })
-    const { result } = renderHook(() => useNoticiasList(), { wrapper: makeWrapper() })
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data!.data[0].tag).toBe('BIODIVERSIDAD')
-  })
-})
 
 // ─── useUsuarios — normalizeUser branches (lines 22-39, 71, 84) ──────────────
 
@@ -245,75 +186,6 @@ describe('useCategoriasList — select branches', () => {
 
 // ─── useCatalogue — unauthenticated + null-noticias branches (lines 39-72, 109) ─
 
-describe('useCatalogue — auth and news branches', () => {
-  beforeEach(() => { vi.clearAllMocks() })
-
-  test('unauthenticated → no account entries in catalogue', async () => {
-    mockAuth = { isAuthenticated: false }
-    vi.mocked(api.get).mockResolvedValue({ data: [], meta: {} }) // empty noticias
-    const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
-    await waitFor(() => expect(result.current).toBeDefined())
-    const ids = result.current.map((e) => e.id)
-    expect(ids).not.toContain('act-perfil')
-    expect(ids).not.toContain('act-solicitudes')
-  })
-
-  test('authenticated → account entries present', async () => {
-    mockAuth = { isAuthenticated: true }
-    vi.mocked(api.get).mockResolvedValue({ data: [], meta: {} })
-    const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
-    await waitFor(() => expect(result.current).toBeDefined())
-    const ids = result.current.map((e) => e.id)
-    expect(ids).toContain('act-perfil')
-    expect(ids).toContain('act-solicitudes')
-  })
-
-  test('noticias with null titulo → falls back to title then —', async () => {
-    mockAuth = { isAuthenticated: true }
-    vi.mocked(api.get).mockResolvedValue({
-      data: [{
-        id: 'n1', slug: 'slug-1',
-        titulo: null, title: null,
-        categoria: null, tag: null,
-        resumen: null, publicado_en: null, creado_en: '2024-01-01T00:00:00Z',
-        publicado: true,
-      }],
-      meta: {},
-    })
-    const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
-    await waitFor(() => expect(result.current.some((e) => e.group === 'Noticias')).toBe(true))
-    const newsEntry = result.current.find((e) => e.id === 'new-n1')
-    expect(newsEntry?.label).toBe('—')  // titulo ?? title ?? '—' fallback
-  })
-
-  test('noticias with titulo → uses titulo', async () => {
-    mockAuth = { isAuthenticated: true }
-    vi.mocked(api.get).mockResolvedValue({
-      data: [{
-        id: 'n2', slug: 'slug-2', titulo: 'Avance investigativo',
-        categoria: 'ciencia', resumen: 'Breve resumen',
-        creado_en: '2024-01-01T00:00:00Z', publicado: true,
-      }],
-      meta: {},
-    })
-    const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
-    await waitFor(() => expect(result.current.some((e) => e.group === 'Noticias')).toBe(true))
-    const entry = result.current.find((e) => e.id === 'new-n2')
-    expect(entry?.label).toBe('Avance investigativo')
-    expect((entry as any)?.meta).toBe('ciencia')
-  })
-
-  test('resource entries always present (Guía, FAQ, Términos)', async () => {
-    mockAuth = { isAuthenticated: false }
-    vi.mocked(api.get).mockResolvedValue({ data: [], meta: {} })
-    const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
-    await waitFor(() => expect(result.current).toBeDefined())
-    const ids = result.current.map((e) => e.id)
-    expect(ids).toContain('res-guia')
-    expect(ids).toContain('res-faq')
-    expect(ids).toContain('res-terminos')
-  })
-})
 
 // ─── useMapas — deriveFormats / fmtFromUrl branches (lines 18-21, 30, 55, 66) ─
 
