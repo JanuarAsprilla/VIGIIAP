@@ -77,7 +77,7 @@ describe('useCreateSolicitud', () => {
     await act(async () => {
       try { await result.current.mutateAsync({}) } catch { /* expected */ }
     })
-    expect(result.current.isError).toBe(true)
+    await waitFor(() => expect(result.current.isError).toBe(true))
   })
 })
 

@@ -17,7 +17,7 @@ export const ALL_MODULES = [
   },
   {
     id: 'geovisor', title: 'Geovisor Interactivo',
-    description: 'Herramienta SIG en línea para la visualización y análisis de capas geoespaciales sobre el territorio del Pacífico colombiano.',
+    description: 'Herramienta SIG en línea para la visualización y análisis de capas geoespaciales sobre el territorio del Chocó Biogeográfico.',
     icon: Globe, path: '/geovisor', action: 'Abrir geovisor', tag: 'SIG',
     gradient: 'from-[#1A5632] to-[#218842]', chip: 'bg-primary-50 text-primary-800',
     glow: 'rgba(26,86,50,0.22)', ctaColor: '#1A5632', publicAccess: false,

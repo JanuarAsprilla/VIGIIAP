@@ -1,85 +1,44 @@
-/* Hallmark · macrostructure: Bento Grid · genre: institutional-editorial
- * tokens: design.md · stamp: 2026-05-25
+/* Hallmark · macrostructure: Scrollytelling Landing · genre: institutional-cinematic
+ * tokens: index.css · stamp: 2026-07-02
+ * VIGIA-IIAP landing — Chocó Biogeográfico
  */
-import { useState, useRef, lazy, Suspense } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
-import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useMotionTemplate, useReducedMotion as useFMReducedMotion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ArrowRight, Plus, SearchX, ArrowUpRight,
-  ChevronRight, Lock,
+  Map, FileText, Globe, Shield, Lock,
+  ArrowRight, ChevronDown, Users, Building2, Plus,
 } from 'lucide-react'
-import { STATS, ALL_MODULES } from '@/lib/constants'
+import { ALL_MODULES } from '@/lib/constants'
 import { useAuth, ROLES } from '@/contexts/AuthContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
+
 const PlatformIntroSection = lazy(() => import('@/components/PlatformIntroSection'))
 
-// ── Bento order para desktop ──────────────────────────────────────────────────
-// [Mapas - wide] [Geovisor] [Herramientas]
-const BENTO_SPANS = {
-  mapas:       'lg:col-span-2',
-  documentos:  'lg:col-span-2',
-  geovisor:    'lg:col-span-1',
-  herramientas:'lg:col-span-1',
-  solicitudes: 'lg:col-span-2',
-}
+const EASE = [0.22, 1, 0.36, 1] as const
 
-// ── Module Card 3D ─────────────────────────────────────────────────────────────
-function ModuleCard({ mod, index, isVisitante, isPublico }) {
-  const ref    = useRef<HTMLDivElement>(null)
+type ModuleItem = typeof ALL_MODULES[number]
+
+// ── Module Card (modo búsqueda) ──────────────────────────────────────────────────
+function ModuleCard({ mod, index, isVisitante, isPublico }: { mod: ModuleItem; index: number; isVisitante: boolean; isPublico: boolean }) {
   const blocked = !mod.publicAccess && (isVisitante || isPublico)
-  const prefersReduced = useFMReducedMotion()
-
-  const mouseX  = useMotionValue(0)
-  const mouseY  = useMotionValue(0)
-  const rawRX   = useTransform(mouseY, [-0.5, 0.5], prefersReduced ? [0, 0] : [6, -6])
-  const rawRY   = useTransform(mouseX, [-0.5, 0.5], prefersReduced ? [0, 0] : [-6, 6])
-  const rotateX = useSpring(rawRX, { stiffness: 300, damping: 30 })
-  const rotateY = useSpring(rawRY, { stiffness: 300, damping: 30 })
-  const glareX  = useTransform(mouseX, [-0.5, 0.5], ['0%', '100%'])
-  const glareY  = useTransform(mouseY, [-0.5, 0.5], ['0%', '100%'])
-  const glareOp = useMotionValue(0)
-  const glareBg = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(255,255,255,0.18), transparent 65%)`
-
-  const onMove = (e) => {
-    if (blocked) return
-    if (!ref.current) return
-    const r = ref.current.getBoundingClientRect()
-    mouseX.set((e.clientX - r.left) / r.width - 0.5)
-    mouseY.set((e.clientY - r.top) / r.height - 0.5)
-    glareOp.set(1)
-  }
-  const onLeave = () => { mouseX.set(0); mouseY.set(0); glareOp.set(0) }
-
   return (
     <motion.div
-      ref={ref}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 900, background: 'var(--card-bg)' }}
-      className={`relative rounded-2xl border h-full overflow-hidden transition-shadow ${blocked ? 'border-border/30 opacity-55 cursor-not-allowed' : 'border-border/60 cursor-pointer group'}`}
-      initial={{ opacity: 0, y: 32 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: index * 0.06 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.5, ease: EASE, delay: index * 0.05 }}
       whileHover={!blocked ? { y: -4, boxShadow: `0 24px 64px ${mod.glow}, 0 4px 20px rgba(0,0,0,0.07)` } : {}}
+      className={`relative rounded-2xl border h-full overflow-hidden ${blocked ? 'border-border/30 opacity-55' : 'border-border/60 group'}`}
+      style={{ background: 'var(--card-bg)' }}
     >
-      {/* Top accent */}
       <div className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r ${mod.gradient} ${blocked ? 'opacity-25' : ''}`} />
-      {!blocked && (
-        <motion.div style={{ background: glareBg, opacity: glareOp }}
-          className="absolute inset-0 rounded-[inherit] pointer-events-none z-20" />
-      )}
-      {!blocked && (
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"
-          style={{ background: `radial-gradient(ellipse at 30% 0%, ${mod.glow} 0%, transparent 65%)` }} />
-      )}
       <div className="relative p-6 flex flex-col h-full min-h-[200px]">
         <div className="flex items-start justify-between mb-5">
-          <div
-            className={`w-12 h-12 bg-gradient-to-br ${mod.gradient} rounded-xl flex items-center justify-center shadow transition-transform ${!blocked ? 'group-hover:scale-110 group-hover:-rotate-6' : 'grayscale opacity-50'}`}>
-            <mod.icon className="w-5.5 h-5.5 text-white" style={{ width: '1.375rem', height: '1.375rem' }} />
+          <div className={`w-12 h-12 bg-gradient-to-br ${mod.gradient} rounded-xl flex items-center justify-center shadow ${blocked ? 'grayscale opacity-50' : 'group-hover:scale-110 group-hover:-rotate-6 transition-transform'}`}>
+            <mod.icon className="w-5 h-5 text-white" />
           </div>
           {blocked ? (
             <span className="inline-flex items-center gap-1 text-[0.6rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-gray-100 text-gray-400">
@@ -92,14 +51,11 @@ function ModuleCard({ mod, index, isVisitante, isPublico }) {
         <h3 className="text-[0.95rem] font-bold text-text mb-2 leading-snug">{mod.title}</h3>
         <p className="text-sm text-text-muted leading-relaxed mb-5 flex-1">{mod.description}</p>
         {blocked ? (
-          <Link to="/solicitar-acceso"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-700 no-underline hover:text-primary-900 transition-colors pointer-events-auto">
+          <Link to="/solicitar-acceso" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-700 no-underline hover:text-primary-900 transition-colors">
             <Lock className="w-3 h-3" />Solicitar acceso
           </Link>
         ) : (
-          <Link to={mod.path}
-            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider no-underline transition-colors"
-            style={{ color: mod.ctaColor }}>
+          <Link to={mod.path} className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider no-underline transition-colors" style={{ color: mod.ctaColor }}>
             {mod.action}<ArrowRight className="w-3.5 h-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         )}
@@ -108,230 +64,438 @@ function ModuleCard({ mod, index, isVisitante, isPublico }) {
   )
 }
 
+// ── Sección 1: Hero ─────────────────────────────────────────────────────────────
+const HERO_STATS = [
+  { value: '+1,248', label: 'Mapas' },
+  { value: '+3,400', label: 'Documentos' },
+  { value: '+320', label: 'Investigadores' },
+]
 
-// ── Stats — editorial ──────────────────────────────────────────────────────────
-function StatsSection() {
+function HeroSection() {
   return (
-    <div>
-      {/* Heading editorial */}
-      <div className="mb-7 flex items-end gap-4">
-        <div>
-          <span className="text-[0.65rem] font-bold uppercase tracking-[0.22em] text-text-muted block mb-1.5">
-            Territorio de cobertura
-          </span>
-          <h2 className="font-display text-2xl font-bold text-text">Chocó Biogeográfico en cifras</h2>
-        </div>
-        <div className="flex-1 h-px bg-border mb-1.5 hidden sm:block" />
+    <section
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
+      style={{ background: 'linear-gradient(160deg, #050e09 0%, #0a1f10 50%, #050e09 100%)' }}
+    >
+      {/* 3D intro */}
+      <div className="absolute inset-0 opacity-70 pointer-events-none">
+        <Suspense fallback={null}><PlatformIntroSection /></Suspense>
       </div>
 
-      {/* Stats grid — glass sutil con acento verde */}
+      {/* Overlay gradient bottom */}
       <div
-        className="grid grid-cols-2 md:grid-cols-4 rounded-2xl overflow-hidden"
-        style={{
-          background: 'var(--stats-bg)',
-          border: '1px solid var(--stats-border)',
-        }}
-      >
-        {STATS.map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-30px' }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: i * 0.08 }}
-            className="px-7 py-9 cursor-default group relative"
-            style={{
-              borderRight: i < 3 ? '1px solid var(--stats-divider)' : 'none',
-              borderBottom: i < 2 ? '1px solid var(--stats-divider)' : 'none',
-            }}
+        className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, #050e09)' }}
+      />
+
+      {/* Content */}
+      <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: EASE }}
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 text-xs font-bold uppercase tracking-[0.25em]"
+          style={{ background: 'rgba(0,152,70,0.15)', border: '1px solid rgba(0,152,70,0.3)', color: '#74C69D' }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[#74C69D] animate-pulse" />
+          IIAP · Información Ambiental
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
+          className="font-display font-bold text-white mb-6 leading-[1.05]"
+          style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)' }}
+        >
+          El conocimiento ambiental
+          <span className="block" style={{ color: '#74C69D' }}>del Chocó Biogeográfico,</span>
+          custodiado y disponible.
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-base text-white/60 max-w-xl mx-auto mb-10 leading-relaxed"
+        >
+          VIGIA-IIAP es la plataforma digital del Instituto de Investigaciones Ambientales del Pacífico.
+          Mapas, documentos técnicos, herramientas SIG y trámites — todo en un solo lugar.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-3"
+        >
+          <Link
+            to="/mapas"
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm no-underline transition-all hover:scale-[1.03]"
+            style={{ background: '#009846', color: '#fff' }}
           >
-            {/* Hover glow */}
-            <div
-              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-              style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(0,152,70,0.07) 0%, transparent 70%)' }}
-            />
-            <div
-              className="tabular font-display font-bold leading-none mb-3 transition-colors duration-300 relative"
-              style={{
-                fontSize: 'clamp(2.2rem, 4vw, 3rem)',
-                color: 'var(--stats-value)',
-              }}
+            Explorar la plataforma
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link
+            to="/solicitar-acceso"
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm no-underline border transition-all hover:bg-white/10"
+            style={{ border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.85)' }}
+          >
+            Solicitar acceso
+          </Link>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ delay: 0.8, duration: 0.6 }}
+          className="mt-14 inline-flex items-center gap-6 px-6 py-3 rounded-2xl"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          {HERO_STATS.map((s, i) => (
+            <div key={s.label} className="flex items-center gap-4">
+              {i > 0 && <div className="w-px h-6 bg-white/10" />}
+              <div className="text-center">
+                <p className="text-white font-bold text-lg leading-none">{s.value}</p>
+                <p className="text-white/40 text-[0.6rem] uppercase tracking-wider mt-0.5">{s.label}</p>
+              </div>
+            </div>
+          ))}
+        </motion.div>
+      </div>
+
+      {/* Scroll indicator */}
+      <motion.div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 2 }}
+      >
+        <ChevronDown className="w-5 h-5 text-white/30" aria-hidden="true" />
+      </motion.div>
+    </section>
+  )
+}
+
+// ── Sección 2: Data Platform ────────────────────────────────────────────────────
+const DATA_PILLARS = [
+  {
+    icon: Map, number: '+1,248', unit: 'mapas temáticos',
+    desc: 'Cartografía de biodiversidad, hidrología, suelos, cobertura vegetal y zonificación del territorio.',
+    accent: '#1A5632', bg: 'rgba(26,86,50,0.06)',
+  },
+  {
+    icon: FileText, number: '+3,400', unit: 'documentos técnicos',
+    desc: 'Informes científicos, protocolos ambientales, estudios de impacto y publicaciones institucionales del IIAP.',
+    accent: '#C45A1A', bg: 'rgba(247,172,66,0.06)',
+  },
+  {
+    icon: Globe, number: 'Capas SIG', unit: 'interactivas',
+    desc: 'Geovisor con capas temáticas superpuestas para análisis espacial sin instalación de software.',
+    accent: '#1A5632', bg: 'rgba(26,86,50,0.06)',
+  },
+  {
+    icon: Shield, number: 'Alta', unit: 'disponibilidad',
+    desc: 'Plataforma activa 24/7 con acceso diferenciado por rol: público, investigador y administrador SIG.',
+    accent: '#284E39', bg: 'rgba(40,78,57,0.06)',
+  },
+]
+
+function DataPlatformSection() {
+  return (
+    <section className="py-28 px-6" style={{ background: 'var(--color-bg)' }}>
+      <div className="max-w-6xl mx-auto">
+        <motion.div
+          whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 20 }}
+          viewport={{ once: true }} transition={{ duration: 0.5 }}
+          className="mb-16 text-center"
+        >
+          <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] text-primary-700 block mb-3">
+            Repositorio digital
+          </span>
+          <h2 className="font-display text-4xl font-bold text-text">Lo que VIGIA-IIAP custodia</h2>
+          <p className="mt-4 text-text-muted max-w-lg mx-auto text-sm leading-relaxed">
+            Décadas de investigación ambiental del Chocó Biogeográfico, indexadas,
+            verificadas y disponibles con alta disponibilidad.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {DATA_PILLARS.map((item, i) => (
+            <motion.div
+              key={item.unit}
+              whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 32 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.55, delay: i * 0.08, ease: EASE }}
+              className="rounded-2xl p-8 border border-border/60 relative overflow-hidden group cursor-default"
+              style={{ background: item.bg }}
             >
-              {stat.value}
-            </div>
-            <div className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-text-muted leading-relaxed relative">
-              {stat.label}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ── Section heading ────────────────────────────────────────────────────────────
-function SectionHeading({ id, eyebrow, title, action, actionTo, note }: { id?: string; eyebrow?: string; title?: string; action?: string; actionTo?: string; note?: string }) {
-  return (
-    <div className="mb-7 flex items-start gap-4">
-      {/* Acento vertical verde */}
-      <div
-        className="shrink-0 mt-1 w-[3px] rounded-full"
-        style={{
-          height: '36px',
-          background: 'linear-gradient(180deg, #009846, rgba(0,152,70,0.15))',
-        }}
-      />
-      <div className="flex-1">
-        <span className="text-[0.65rem] font-bold uppercase tracking-[0.22em] text-text-muted block mb-1">
-          {eyebrow}
-        </span>
-        <div className="flex items-end justify-between gap-4 flex-wrap">
-          <h2 id={id} className="font-display text-2xl font-bold text-text">{title}</h2>
-          <div className="flex items-center gap-3 mb-0.5">
-            {note && (
-              <span
-                className="text-xs px-3 py-1 rounded-full"
-                style={{ background: 'var(--note-bg)', border: '1px solid var(--note-border)', color: 'var(--note-text)' }}
-              >
-                {note}
-              </span>
-            )}
-            {action && (
-              <Link to={actionTo ?? '/'}
-                className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-primary-800 no-underline transition-colors">
-                {action} <ArrowRight className="w-3 h-3" />
-              </Link>
-            )}
-          </div>
+              <div
+                className="absolute inset-0 opacity-[0.04] pointer-events-none"
+                style={{ backgroundImage: `radial-gradient(circle, ${item.accent} 1px, transparent 1px)`, backgroundSize: '20px 20px' }}
+              />
+              <item.icon className="w-6 h-6 mb-5 relative" style={{ color: item.accent }} />
+              <div className="font-display text-5xl font-bold mb-1 relative" style={{ color: item.accent }}>
+                {item.number}
+              </div>
+              <div className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">{item.unit}</div>
+              <p className="text-sm text-text-muted leading-relaxed relative">{item.desc}</p>
+            </motion.div>
+          ))}
         </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Modules — bento ────────────────────────────────────────────────────────────
-function ModulesSection({ isVisitante, isPublico }) {
-  const { query } = useSearch()
-  const filtered  = ALL_MODULES.filter((m) => matches([m.title, m.description, m.action], query))
-  const restricted = filtered.filter((m) => !m.publicAccess).length
-  if (!filtered.length) return null
-
-  const showNote = (isVisitante || isPublico) && restricted > 0
-
-  // Bento layout: ordered for visual balance
-  const bentoOrder = ['mapas', 'documentos', 'geovisor', 'herramientas', 'solicitudes']
-  const sortedModules = query.trim()
-    ? filtered
-    : bentoOrder.map((id) => ALL_MODULES.find((m) => m.id === id)).filter((m): m is typeof ALL_MODULES[number] => Boolean(m))
-
-  return (
-    <section aria-labelledby="modules-section-title">
-      <SectionHeading
-        id="modules-section-title"
-        eyebrow="Plataforma"
-        title="Módulos de VIGIA-IIAP"
-        note={showNote ? `${restricted} módulos requieren cuenta de investigador` : undefined}
-      />
-
-      {/* Bento grid — desktop */}
-      <div className={`hidden lg:grid grid-cols-4 gap-4 ${query.trim() ? '' : 'auto-rows-[260px]'}`}>
-        {sortedModules.map((mod, i) => (
-          <div key={mod.id} className={query.trim() ? '' : (BENTO_SPANS[mod.id] ?? '')}>
-            <ModuleCard mod={mod} index={i} isVisitante={isVisitante} isPublico={isPublico} />
-          </div>
-        ))}
-      </div>
-
-      {/* Standard grid — mobile/tablet */}
-      <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {filtered.map((mod, i) => (
-          <ModuleCard key={mod.id} mod={mod} index={i} isVisitante={isVisitante} isPublico={isPublico} />
-        ))}
       </div>
     </section>
   )
 }
 
-// ── News card ──────────────────────────────────────────────────────────────────
-// ── News section — editorial ───────────────────────────────────────────────────
-// ── Welcome strip ──────────────────────────────────────────────────────────────
-function WelcomeStrip({ user }) {
-  const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Buenos días' : hour < 18 ? 'Buenas tardes' : 'Buenas noches'
-  const firstName = user?.name?.split(' ')[0] || 'Usuario'
+// ── Sección 3: Module Showcase ──────────────────────────────────────────────────
+function parseGradient(gradient: string): [string, string] {
+  // "from-[#1A5632] to-[#284E39]" -> ['#1A5632', '#284E39']
+  const from = gradient.match(/from-\[([^\]]+)\]/)?.[1] ?? '#1A5632'
+  const to = gradient.match(/to-\[([^\]]+)\]/)?.[1] ?? from
+  return [from, to]
+}
+
+function ModuleVisual({ mod }: { mod: ModuleItem }) {
+  const [from, to] = parseGradient(mod.gradient)
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, delay: 0.12 }}
-      className="flex items-center gap-4 rounded-2xl px-5 py-3.5"
+    <div
+      className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden"
       style={{
-        background: 'var(--welcome-bg)',
-        border: '1px solid var(--welcome-border)',
+        background: `linear-gradient(135deg, ${from}18 0%, ${to}08 100%)`,
+        border: `1px solid ${mod.glow}`,
       }}
     >
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${user?.isVisitante ? 'bg-gradient-to-br from-amber-400 to-amber-600' : 'bg-gradient-to-br from-primary-700 to-primary-950'}`}>
-        <span className="text-white font-bold text-xs">{(firstName[0] || 'V').toUpperCase()}</span>
+      {/* Pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.05]"
+        style={{ backgroundImage: `radial-gradient(circle, ${mod.ctaColor} 1px, transparent 1px)`, backgroundSize: '24px 24px' }}
+      />
+      {/* Centered icon */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${mod.gradient} flex items-center justify-center shadow-2xl`}>
+          <mod.icon className="w-12 h-12 text-white" />
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-text">{greeting}, {firstName}</p>
-        <p className="text-xs text-text-muted truncate">
-          {user?.isVisitante ? 'Modo visitante — acceso a información pública' : `${user?.role || 'Sesión activa'} · VIGIA-IIAP`}
-        </p>
+      {/* Floating decorative pills */}
+      <div className="absolute top-4 left-4 right-4 flex gap-2">
+        {[mod.tag, 'IIAP', 'Chocó'].map((t) => (
+          <span
+            key={t}
+            className="px-2.5 py-1 rounded-full text-[0.6rem] font-bold uppercase tracking-wider"
+            style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)' }}
+          >
+            {t}
+          </span>
+        ))}
       </div>
-      {!user?.isVisitante ? (
-        <Link to="/herramientas"
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-800 text-white rounded-lg text-xs font-semibold hover:bg-primary-700 active:scale-[0.97] no-underline transition-all duration-150">
-          <Plus className="w-3.5 h-3.5" />Nuevo análisis
-        </Link>
-      ) : (
-        <Link to="/solicitar-acceso"
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-semibold hover:bg-amber-700 active:scale-[0.97] no-underline transition-all duration-150">
-          <ChevronRight className="w-3.5 h-3.5" />Solicitar acceso
-        </Link>
-      )}
-    </motion.div>
+    </div>
   )
 }
 
-// ── Home ───────────────────────────────────────────────────────────────────────
+function ModuleShowcaseSection() {
+  return (
+    <section style={{ background: 'var(--color-bg)' }}>
+      <div className="max-w-6xl mx-auto px-6 pt-24 pb-16 text-center">
+        <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] text-primary-700 block mb-3">
+          Módulos de la plataforma
+        </span>
+        <h2 className="font-display text-4xl font-bold text-text">Cinco herramientas. Un territorio.</h2>
+      </div>
+
+      {ALL_MODULES.map((mod, i) => {
+        const isEven = i % 2 === 0
+        const isDark = i % 3 === 2
+        const [, to] = parseGradient(mod.gradient)
+        const rowBg = isDark ? '#050e09' : i % 2 === 1 ? 'var(--color-bg-alt)' : 'var(--color-bg)'
+        const ctaFrom = mod.gradient.includes('#1A5632') ? '#009846' : mod.ctaColor
+        return (
+          <div key={mod.id} style={{ background: rowBg }}>
+            <motion.div
+              whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 40 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.6, ease: EASE }}
+              className={`max-w-6xl mx-auto px-6 py-20 flex flex-col ${isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-16`}
+            >
+              <div className="w-full lg:w-1/2 shrink-0">
+                <ModuleVisual mod={mod} />
+              </div>
+
+              <div className="flex-1">
+                <span className={`text-[0.65rem] font-bold uppercase tracking-[0.25em] block mb-3 ${isDark ? 'text-primary-400' : 'text-primary-700'}`}>
+                  {mod.tag}
+                </span>
+                <h3 className={`font-display text-3xl font-bold mb-4 leading-tight ${isDark ? 'text-white' : 'text-text'}`}>
+                  {mod.title}
+                </h3>
+                <p className={`text-sm leading-relaxed mb-8 ${isDark ? 'text-white/60' : 'text-text-muted'}`}>
+                  {mod.description}
+                </p>
+                <Link
+                  to={mod.path}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold no-underline transition-all hover:scale-[1.03]"
+                  style={{ background: `linear-gradient(135deg, ${ctaFrom}, ${to})`, color: '#fff' }}
+                >
+                  {mod.action}
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </motion.div>
+          </div>
+        )
+      })}
+    </section>
+  )
+}
+
+// ── Sección 4: For Whom ─────────────────────────────────────────────────────────
+const PROFILES = [
+  {
+    title: 'Investigadores y científicos',
+    desc: 'Acceso a datos primarios, cartografía de alta precisión y documentos técnicos para estudios y publicaciones sobre el Chocó Biogeográfico.',
+    icon: Users, accent: '#74C69D',
+  },
+  {
+    title: 'Entidades públicas y privadas',
+    desc: 'Gestión de certificaciones ambientales, consultas territoriales y trámites con el IIAP de forma digital y con trazabilidad.',
+    icon: Building2, accent: '#F7AC42',
+  },
+  {
+    title: 'Ciudadanía y organizaciones',
+    desc: 'Acceso libre a información ambiental pública del territorio. Datos abiertos para comunidades, ONG y medios de comunicación.',
+    icon: Globe, accent: '#52B788',
+  },
+]
+
+function ForWhomSection() {
+  return (
+    <section className="py-28 px-6" style={{ background: '#050e09' }}>
+      <div className="max-w-6xl mx-auto">
+        <motion.div
+          whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 20 }} viewport={{ once: true }}
+          transition={{ duration: 0.5 }} className="text-center mb-16"
+        >
+          <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] block mb-3" style={{ color: '#74C69D' }}>
+            Para todos
+          </span>
+          <h2 className="font-display text-4xl font-bold text-white">¿Quién usa VIGIA-IIAP?</h2>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {PROFILES.map((p, i) => (
+            <motion.div
+              key={p.title}
+              whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 32 }} viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.55, delay: i * 0.1, ease: EASE }}
+              className="rounded-2xl p-8 border relative overflow-hidden"
+              style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center mb-6"
+                style={{ background: `${p.accent}20`, border: `1px solid ${p.accent}30` }}
+              >
+                <p.icon className="w-5 h-5" style={{ color: p.accent }} />
+              </div>
+              <h3 className="font-display text-lg font-bold text-white mb-3">{p.title}</h3>
+              <p className="text-sm text-white/50 leading-relaxed">{p.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── Sección 5: Institutional CTA ────────────────────────────────────────────────
+function InstitutionalCTASection({ onVisitante }: { onVisitante: () => void }) {
+  return (
+    <section className="py-28 px-6" style={{ background: 'var(--color-bg)' }}>
+      <div className="max-w-3xl mx-auto text-center">
+        <motion.div
+          whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 24 }} viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-8"
+            style={{ background: 'linear-gradient(135deg,#009846,#1A5632)' }}
+          >
+            <span className="text-white font-display font-bold text-xl">V</span>
+          </div>
+          <h2 className="font-display text-4xl font-bold text-text mb-5">
+            Información ambiental con estándares institucionales
+          </h2>
+          <p className="text-text-muted text-sm leading-relaxed mb-10 max-w-xl mx-auto">
+            Gestionada por el Instituto de Investigaciones Ambientales del Pacífico desde el Chocó Biogeográfico.
+            Disponible para investigadores, entidades y ciudadanía.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              to="/solicitar-acceso"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm no-underline transition-all hover:scale-[1.03]"
+              style={{ background: '#009846', color: '#fff' }}
+            >
+              Crear cuenta gratuita <ArrowRight className="w-4 h-4" />
+            </Link>
+            <button
+              type="button"
+              onClick={onVisitante}
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm no-underline border border-border hover:border-primary-800 hover:text-primary-800 transition-colors"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
+              Acceder como visitante
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
+// ── Modo búsqueda: bento filtrado ────────────────────────────────────────────────
+function SearchResults({ isVisitante, isPublico }: { isVisitante: boolean; isPublico: boolean }) {
+  const { query } = useSearch()
+  const filtered = ALL_MODULES.filter((m) => matches([m.title, m.description, m.action], query))
+
+  return (
+    <div className="space-y-8 px-4 py-8 max-w-6xl mx-auto">
+      <div>
+        <span className="text-[0.65rem] font-bold uppercase tracking-[0.22em] text-text-muted block mb-1.5">
+          Resultados de búsqueda
+        </span>
+        <h2 className="font-display text-2xl font-bold text-text">
+          {filtered.length ? `Módulos para "${query}"` : `Sin resultados para "${query}"`}
+        </h2>
+      </div>
+
+      {filtered.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-[260px]">
+          {filtered.map((mod, i) => (
+            <ModuleCard key={mod.id} mod={mod} index={i} isVisitante={isVisitante} isPublico={isPublico} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Home ─────────────────────────────────────────────────────────────────────────
 export default function Home() {
-  const { isAuthenticated, user, isVisitante } = useAuth()
+  const { isAuthenticated, user, isVisitante, loginVisitante } = useAuth()
   const isPublico = user?.role === ROLES.PUBLICO
   const { query } = useSearch()
   const [showModal, setShowModal] = useState(false)
 
+  const isSearching = Boolean(query.trim())
 
-  const noResults = query.trim()
-    && !ALL_MODULES.some((m) => matches([m.title, m.description], query))
+  const handleVisitante = () => { void loginVisitante() }
 
   return (
     <>
-      <div className="space-y-10">
-
-        {/* Presentación 3D scroll-driven */}
-        {!query.trim() && <Suspense fallback={null}><PlatformIntroSection /></Suspense>}
-
-
-        {/* Welcome strip — usuario autenticado */}
-        {isAuthenticated && !query.trim() && <WelcomeStrip user={user} />}
-
-        {/* Módulos */}
-        <ModulesSection isVisitante={isVisitante} isPublico={isPublico} />
-
-        {/* Sin resultados */}
-        {noResults && (
-          <div className="py-20 text-center text-text-muted">
-            <SearchX aria-hidden="true" className="w-10 h-10 mx-auto mb-3 opacity-25" />
-            <p className="text-sm">Sin resultados para <strong className="text-text">"{query}"</strong></p>
-          </div>
-        )}
-
-        {/* Stats */}
-        {!query.trim() && <StatsSection />}
-
-
-
-      </div>
+      {isSearching ? (
+        <SearchResults isVisitante={isVisitante} isPublico={isPublico} />
+      ) : (
+        <>
+          <HeroSection />
+          <DataPlatformSection />
+          <ModuleShowcaseSection />
+          <ForWhomSection />
+          {!isAuthenticated && <InstitutionalCTASection onVisitante={handleVisitante} />}
+        </>
+      )}
 
       {/* FAB nuevo análisis */}
       {isAuthenticated && !user?.isVisitante && (
@@ -341,7 +505,8 @@ export default function Home() {
           whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.93 }}
           transition={{ type: 'spring', stiffness: 400, damping: 20 }}
           className="fixed bottom-20 lg:bottom-6 right-6 z-30 flex items-center justify-center rounded-full text-white"
-          style={{ width: '3.25rem', height: '3.25rem', background: 'linear-gradient(135deg, #F7AC42, #F08143)', boxShadow: '0 8px 32px rgba(247,172,66,0.45)', color: '#284E39' }}>
+          style={{ width: '3.25rem', height: '3.25rem', background: 'linear-gradient(135deg, #F7AC42, #F08143)', boxShadow: '0 8px 32px rgba(247,172,66,0.45)', color: '#284E39' }}
+        >
           <Plus className="w-5 h-5" aria-hidden="true" />
         </motion.button>
       )}
