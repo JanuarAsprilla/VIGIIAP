@@ -1,12 +1,11 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { BellOff, ExternalLink, User, FileText, Newspaper, ClipboardList } from 'lucide-react'
+import { BellOff, ExternalLink, User, FileText, ClipboardList } from 'lucide-react'
 import { panelAnim } from './panelAnim'
 
 const TYPE_META = {
   usuario:   { Icon: User,          color: 'text-blue-600',   bg: 'bg-blue-50'   },
   solicitud: { Icon: ClipboardList, color: 'text-orange-600', bg: 'bg-orange-50' },
-  noticia:   { Icon: Newspaper,     color: 'text-primary-700',bg: 'bg-primary-50'},
   default:   { Icon: FileText,      color: 'text-text-muted', bg: 'bg-bg-alt'    },
 }
 

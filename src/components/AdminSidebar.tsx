@@ -1,7 +1,7 @@
 import { NavLink, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  LayoutDashboard, Users, ClipboardList, Newspaper,
+  LayoutDashboard, Users, ClipboardList,
   FileText, Map, Settings, Activity, X,
   LogOut, Globe, Shield, Tag, ShieldCheck,
 } from 'lucide-react'

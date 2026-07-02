@@ -21,7 +21,7 @@ import { formatDate } from '@/lib/dateUtils'
 
 const fadeUp = fadeUpSm
 
-const KPI_ICONS = [Users, ClipboardList, FileText, Newspaper, Eye]
+const KPI_ICONS = [Users, ClipboardList, FileText, Eye]
 
 // ── KPI Cards — 3D tilt ──
 const KPI_GLOW = [
@@ -44,7 +44,7 @@ function KPICards({ stats, isLoading }) {
       variants={staggerContainer(0.07, 0.05)}
       initial="initial"
       animate="animate"
-      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"
+      className="grid grid-cols-2 sm:grid-cols-4 gap-4"
     >
       {kpis.map((kpi, i) => {
         const Icon = KPI_ICONS[i]
@@ -364,9 +364,11 @@ const QA_GLOW = [
   'rgba(249,115,22,0.32)',
 ]
 
-function QuickActions()
+function QuickActions() {
+  const actions = [
     { label: 'Nuevo Usuario',    to: '/admin/usuarios',    icon: Users,        color: 'from-[#D4A373] to-[#B8860B]'    },
     { label: 'Ver Solicitudes',  to: '/admin/solicitudes', icon: ClipboardList,color: 'from-primary-500 to-primary-700' },
+    { label: 'Gestionar Docs',   to: '/admin/documentos',  icon: FileText,     color: 'from-teal-500 to-teal-700'       },
     { label: 'Ver Actividad',    to: '/admin/actividad',   icon: Zap,          color: 'from-orange-400 to-orange-600'   },
   ]
   return (

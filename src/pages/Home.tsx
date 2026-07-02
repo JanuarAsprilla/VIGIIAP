@@ -19,7 +19,7 @@ const PlatformIntroSection = lazy(() => import('@/components/PlatformIntroSectio
 // [Mapas - wide] [Geovisor] [Herramientas]
 const BENTO_SPANS = {
   mapas:       'lg:col-span-2',
-  documentos:  'lg:col-span-1',
+  documentos:  'lg:col-span-2',
   geovisor:    'lg:col-span-1',
   herramientas:'lg:col-span-1',
   solicitudes: 'lg:col-span-2',
@@ -219,7 +219,7 @@ function ModulesSection({ isVisitante, isPublico }) {
   const showNote = (isVisitante || isPublico) && restricted > 0
 
   // Bento layout: ordered for visual balance
-  const bentoOrder = ['mapas', 'geovisor', 'herramientas', 'documentos', 'solicitudes']
+  const bentoOrder = ['mapas', 'documentos', 'geovisor', 'herramientas', 'solicitudes']
   const sortedModules = query.trim()
     ? filtered
     : bentoOrder.map((id) => ALL_MODULES.find((m) => m.id === id)).filter((m): m is typeof ALL_MODULES[number] => Boolean(m))
@@ -300,9 +300,6 @@ export default function Home() {
   const { query } = useSearch()
   const [showModal, setShowModal] = useState(false)
 
-  // Si hay error de API, no mostrar datos estáticos falsos como si fueran reales
-    matches([a.title || a.titulo, a.excerpt || a.resumen, a.tag || a.categoria], query)
-  )
 
   const noResults = query.trim()
     && !ALL_MODULES.some((m) => matches([m.title, m.description], query))
