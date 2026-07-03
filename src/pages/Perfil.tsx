@@ -502,6 +502,10 @@ export default function Perfil() {
   const navigate = useNavigate()
   const updatePerfil = useUpdatePerfil()
 
+  // Cuentas no verificadas (publico/visitante) no pueden editar perfil ni cambiar
+  // contraseña — el backend responde 403. Se muestran los datos en solo lectura.
+  const isVerified = !!user?.rol && !['publico', 'visitante'].includes(user.rol)
+
   const [editField, setEditField] = useState<'nombre' | 'institucion' | null>(null)
   const [editError, setEditError]   = useState('')
 
@@ -600,7 +604,7 @@ export default function Perfil() {
           <div className="divide-y divide-border">
             <FieldRow
               label="Nombre completo"
-              editable={editField !== 'nombre'}
+              editable={isVerified && editField !== 'nombre'}
               onEdit={() => startEdit('nombre')}
             >
               {editField === 'nombre' ? (
@@ -627,7 +631,7 @@ export default function Perfil() {
             </FieldRow>
             <FieldRow
               label="Institución"
-              editable={editField !== 'institucion'}
+              editable={isVerified && editField !== 'institucion'}
               onEdit={() => startEdit('institucion')}
             >
               {editField === 'institucion' ? (
@@ -669,7 +673,13 @@ export default function Perfil() {
           title="Seguridad"
           description="Actualice su contraseña periódicamente para proteger su cuenta"
         >
-          <CambiarPassword />
+          {isVerified ? (
+            <CambiarPassword />
+          ) : (
+            <p className="text-sm text-text-muted bg-bg-alt/60 border border-border/50 rounded-xl px-4 py-3">
+              La gestión de contraseña está disponible para cuentas verificadas. Solicita acceso para habilitar esta opción.
+            </p>
+          )}
         </Section>
       </motion.div>
 

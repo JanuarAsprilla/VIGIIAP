@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, X, Send, Trash2, Edit2,
   CheckCircle, XCircle, UserPlus,
-  User, Clock, Loader2, AlertCircle, Mail,
+  User, Clock, Loader2, AlertCircle, Mail, ShieldCheck,
 } from 'lucide-react'
-import { ROLES } from '@/contexts/AuthContext'
+import { ROLES, useAuth } from '@/contexts/AuthContext'
 import { fadeUpSm, panelAnim, drawerAnim, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import { useUsuariosList, useCreateUsuario, useUpdateUsuarioRol, useToggleActivo, useDeleteUsuario } from '@/hooks/useUsuarios'
@@ -118,9 +118,8 @@ function UserDrawer({ user, onClose }) {
               )}
               {user.rol === 'Público' && (
                 <>
-                  <div className="flex items-center gap-2 text-xs text-text">
-                  </div>
-                  {['Mapas', 'Documentos', 'Herramientas', 'Geovisor', 'Solicitudes'].map((p) => (
+                  <p className="text-xs text-text-muted mb-1.5">Cuenta no verificada — solo consulta contenido público.</p>
+                  {['Mapas', 'Documentos', 'Herramientas', 'Geovisor', 'Solicitudes', 'Panel de Administración'].map((p) => (
                     <div key={p} className="flex items-center gap-2 text-xs text-text-muted">
                       <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />{p}
                     </div>
@@ -137,7 +136,7 @@ function UserDrawer({ user, onClose }) {
 }
 
 // ── Invite modal — crea usuario directamente vía API admin ──
-function InviteModal({ onClose }) {
+function InviteModal({ onClose, assignableRoles }) {
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [rol, setRol] = useState('Investigador')
@@ -211,7 +210,7 @@ function InviteModal({ onClose }) {
             <div>
               <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Rol a asignar</label>
               <select value={rol} onChange={(e) => setRol(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
-                {ROLES_LIST.map((r) => <option key={r}>{r}</option>)}
+                {assignableRoles.map((r) => <option key={r}>{r}</option>)}
               </select>
             </div>
             {error && <p className="text-xs text-red-500">{error}</p>}
@@ -250,6 +249,15 @@ function InviteModal({ onClose }) {
 }
 
 export default function Usuarios() {
+  const { user: currentUser } = useAuth()
+  // Solo el super_admin gestiona (edita/elimina/desactiva) cuentas admin_sig y
+  // puede asignar el rol de Administrador. admin_sig solo gestiona roles inferiores.
+  const isSuperAdmin = currentUser?.role === ROLES.SUPER_ADMIN
+  const assignableRoles = isSuperAdmin ? ROLES_LIST : ROLES_LIST.filter((r) => r !== ROLES.ADMIN)
+  // Determina si el viewer puede accionar sobre una fila concreta.
+  const canManageRow = (u: UsuarioData) =>
+    u.id !== currentUser?.id && (isSuperAdmin || u.rolBackend !== 'admin_sig')
+
   const { data } = useUsuariosList({ limit: 200 })
   const users = data?.data ?? []
   const updateRol   = useUpdateUsuarioRol()
@@ -395,7 +403,7 @@ export default function Usuarios() {
               {filtered.length === 0 && (
                 <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-text-muted">Sin resultados</td></tr>
               )}
-              {filtered.map((u) => (
+              {filtered.map((u) => { const manageable = canManageRow(u); return (
                 <tr key={u.id} className="border-b border-border last:border-b-0 hover:bg-bg-alt/30 transition-colors">
                   <td className="px-5 py-3.5">
                     <button
@@ -427,43 +435,60 @@ export default function Usuarios() {
                     )}
                   </td>
                   <td className="px-5 py-3.5">
-                    <button
-                      onClick={() => toggleEstado(u.id)}
-                      disabled={toggleActivo.isPending}
-                      title={u.activo ? 'Clic para desactivar' : 'Clic para activar'}
-                      className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
-                        u.activo
-                          ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600'
-                          : 'bg-red-100 text-red-600 hover:bg-green-100 hover:text-green-700'
-                      }`}
-                    >
-                      {toggleActivo.isPending
-                        ? <Loader2 className="w-3 h-3 animate-spin" />
-                        : u.activo ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />
-                      }
-                      {u.estado}
-                    </button>
+                    {manageable ? (
+                      <button
+                        onClick={() => toggleEstado(u.id)}
+                        disabled={toggleActivo.isPending}
+                        title={u.activo ? 'Clic para desactivar' : 'Clic para activar'}
+                        className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
+                          u.activo
+                            ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600'
+                            : 'bg-red-100 text-red-600 hover:bg-green-100 hover:text-green-700'
+                        }`}
+                      >
+                        {toggleActivo.isPending
+                          ? <Loader2 className="w-3 h-3 animate-spin" />
+                          : u.activo ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />
+                        }
+                        {u.estado}
+                      </button>
+                    ) : (
+                      <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${u.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                        {u.activo ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                        {u.estado}
+                      </span>
+                    )}
                   </td>
                   <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-1.5">
-                      <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors" title="Cambiar rol" aria-label={`Editar rol de ${u.nombre}`}>
-                        <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget(u)}
-                        disabled={deleteUser.isPending && deleteTarget?.id === u.id}
-                        className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
-                        aria-label={`Eliminar usuario ${u.nombre}`}
+                    {manageable ? (
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors" title="Cambiar rol" aria-label={`Editar rol de ${u.nombre}`}>
+                          <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget(u)}
+                          disabled={deleteUser.isPending && deleteTarget?.id === u.id}
+                          className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                          aria-label={`Eliminar usuario ${u.nombre}`}
+                        >
+                          {deleteUser.isPending && deleteTarget?.id === u.id
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                            : <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                          }
+                        </button>
+                      </div>
+                    ) : (
+                      <span
+                        className="inline-flex items-center gap-1 text-[0.65rem] font-semibold text-text-muted"
+                        title={u.id === currentUser?.id ? 'No puedes gestionar tu propia cuenta' : 'Solo el Super Administrador gestiona cuentas de administrador'}
                       >
-                        {deleteUser.isPending && deleteTarget?.id === u.id
-                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
-                          : <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                        }
-                      </button>
-                    </div>
+                        <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                        Protegido
+                      </span>
+                    )}
                   </td>
                 </tr>
-              ))}
+              ) })}
             </tbody>
           </table>
         </div>
@@ -479,7 +504,7 @@ export default function Usuarios() {
 
       {/* Invite modal */}
       <AnimatePresence>
-        {showInvite && <InviteModal onClose={() => setShowInvite(false)} />}
+        {showInvite && <InviteModal onClose={() => setShowInvite(false)} assignableRoles={assignableRoles} />}
       </AnimatePresence>
 
       {/* Create/Edit Modal */}
@@ -513,7 +538,7 @@ export default function Usuarios() {
                     aria-describedby={formErrors.rol ? 'error-rol' : undefined}
                     className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.rol ? 'border-red-400' : 'border-border'}`}
                   >
-                    {ROLES_LIST.map((r) => <option key={r} value={r}>{r}</option>)}
+                    {assignableRoles.map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
                   {formErrors.rol && (
                     <p id="error-rol" role="alert" className="text-xs text-red-500 mt-1 flex items-center gap-1">

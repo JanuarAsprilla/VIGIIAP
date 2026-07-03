@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   UserCircle, ClipboardList, BookOpen, LogOut,
   ShieldCheck, Lock, LayoutDashboard, CheckCircle2,
+  type LucideIcon,
 } from 'lucide-react'
 import { panelAnim } from './panelAnim'
 import { ROLES } from '@/contexts/AuthContext'
@@ -39,7 +40,7 @@ function RoleBadge({ user }) {
 }
 
 function MenuItem({ to = '', icon: Icon, label, onClick = undefined, danger = false }: {
-  to?: string; icon: React.ComponentType<{className?: string; 'aria-hidden'?: string}>
+  to?: string; icon: LucideIcon
   label: string; onClick?: () => void; danger?: boolean
 }) {
   const base = `flex items-center gap-3 px-4 py-2.5 text-sm no-underline transition-colors w-full text-left ${danger ? 'text-orange-600 hover:bg-orange-50' : 'text-text hover:bg-bg-alt'}`
