@@ -57,4 +57,8 @@ dist-ssr
 test-results/
 playwright-report/
 coverage/
-.claude/worktrees/
+.claude/
+
+# Internal planning docs (keep local, not in repo)
+DESIGN.md
+PRODUCT.md

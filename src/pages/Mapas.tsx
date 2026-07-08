@@ -182,9 +182,20 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
             className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
             loading="lazy" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${colors.accent}18 0%, ${colors.accent}08 100%)` }}>
-            <Map className="w-16 h-16 opacity-10" style={{ color: colors.accent }} />
+          <div className="w-full h-full flex items-center justify-center relative overflow-hidden"
+            style={{ background: `linear-gradient(135deg, ${colors.accent}14 0%, ${colors.accent}06 100%)` }}>
+            <div className="absolute inset-0 opacity-[0.06]"
+              style={{
+                backgroundImage: `radial-gradient(circle, ${colors.accent} 1px, transparent 1px)`,
+                backgroundSize: '18px 18px',
+              }} />
+            <div className="relative flex flex-col items-center gap-2">
+              <Map className="w-14 h-14" style={{ color: colors.accent, opacity: 0.22 }} />
+              <span className="text-[0.6rem] font-bold uppercase tracking-widest"
+                style={{ color: colors.accent, opacity: 0.35 }}>
+                {map.category}
+              </span>
+            </div>
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
