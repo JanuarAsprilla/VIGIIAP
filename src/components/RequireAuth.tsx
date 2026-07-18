@@ -2,10 +2,25 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/contexts/AuthContext'
 
+// Mostrado mientras AuthContext rehidrata la sesión desde GET /auth/me.
+// Evita redirección prematura a /login antes de confirmar si hay sesión activa.
+function AuthSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div
+        className="w-7 h-7 border-2 border-primary-300 border-t-primary-800 rounded-full animate-spin"
+        aria-label="Verificando sesión..."
+        role="status"
+      />
+    </div>
+  )
+}
+
 /** Protege rutas que requieren sesión activa. */
 export default function RequireAuth() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, initializing } = useAuth()
   const location = useLocation()
+  if (initializing) return <AuthSpinner />
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
@@ -14,8 +29,9 @@ export default function RequireAuth() {
 
 /** Protege rutas que requieren rol Investigador o Administrador SIG. Bloquea Público y Visitante. */
 export function RequireInvestigador() {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, initializing, user } = useAuth()
   const location = useLocation()
+  if (initializing) return <AuthSpinner />
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
@@ -27,8 +43,9 @@ export function RequireInvestigador() {
 
 /** Protege rutas exclusivas para Administrador SIG (también permite super_admin). */
 export function RequireAdmin() {
-  const { isAuthenticated, isAdmin } = useAuth()
+  const { isAuthenticated, initializing, isAdmin } = useAuth()
   const location = useLocation()
+  if (initializing) return <AuthSpinner />
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
@@ -40,8 +57,9 @@ export function RequireAdmin() {
 
 /** Protege rutas exclusivas para Super Administrador. */
 export function RequireSuperAdmin() {
-  const { isAuthenticated, isSuperAdmin } = useAuth()
+  const { isAuthenticated, initializing, isSuperAdmin } = useAuth()
   const location = useLocation()
+  if (initializing) return <AuthSpinner />
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
@@ -56,8 +74,9 @@ export function RequireSuperAdmin() {
  *  Redirige a /solicitar-acceso si es visitante/público, a /login si no autenticado.
  */
 export function RequireVerified() {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, initializing, user } = useAuth()
   const location = useLocation()
+  if (initializing) return <AuthSpinner />
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }

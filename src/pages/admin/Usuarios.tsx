@@ -249,10 +249,9 @@ function InviteModal({ onClose, assignableRoles }) {
 }
 
 export default function Usuarios() {
-  const { user: currentUser } = useAuth()
+  const { user: currentUser, isSuperAdmin } = useAuth()
   // Solo el super_admin gestiona (edita/elimina/desactiva) cuentas admin_sig y
   // puede asignar el rol de Administrador. admin_sig solo gestiona roles inferiores.
-  const isSuperAdmin = currentUser?.role === ROLES.SUPER_ADMIN
   const assignableRoles = isSuperAdmin ? ROLES_LIST : ROLES_LIST.filter((r) => r !== ROLES.ADMIN)
   // Determina si el viewer puede accionar sobre una fila concreta.
   const canManageRow = (u: UsuarioData) =>

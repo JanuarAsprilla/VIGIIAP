@@ -16,7 +16,11 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0,
   integrations: [
     Sentry.browserTracingIntegration(),
-    Sentry.replayIntegration(),
+    Sentry.replayIntegration({
+      maskAllInputs: true,   // enmascara todos los inputs en replays (passwords, emails, etc.)
+      maskAllText: false,    // conserva texto de UI; solo inputs sensibles se enmascaran
+      blockAllMedia: false,
+    }),
   ],
 })
 

@@ -130,9 +130,6 @@ function AppRoutes() {
 
             {/* Requiere sesión (cualquier rol incluyendo Público y Visitante) */}
             <Route element={<RequireAuth />}>
-              <Route path="/perfil" element={
-                <Suspense fallback={<PerfilSkeleton />}><Perfil /></Suspense>
-              } />
               <Route path="/mapas" element={
                 <Suspense fallback={<MapasSkeleton />}><Mapas /></Suspense>
               } />
@@ -143,6 +140,9 @@ function AppRoutes() {
 
             {/* Requiere usuario verificado — bloquea visitante y público */}
             <Route element={<RequireVerified />}>
+              <Route path="/perfil" element={
+                <Suspense fallback={<PerfilSkeleton />}><Perfil /></Suspense>
+              } />
               <Route path="/solicitudes" element={
                 <Suspense fallback={<SolicitudesSkeleton />}><Solicitudes /></Suspense>
               } />

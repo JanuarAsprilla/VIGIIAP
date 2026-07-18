@@ -213,20 +213,21 @@ function CambiarPassword() {
 
 // ── 2FA section ──
 function TwoFactor() {
-  const [step, setStep]     = useState<'idle' | 'setup' | 'done'>('idle')
-  const [qr, setQr]         = useState<string | null>(null)
-  const [secret, setSecret] = useState<string | null>(null)
-  const [code, setCode]     = useState('')
-  const [error, setError]   = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [step, setStep]                   = useState<'idle' | 'setup' | 'done'>('idle')
+  const [qr, setQr]                       = useState<string | null>(null)
+  const [secret, setSecret]               = useState<string | null>(null)
+  const [code, setCode]                   = useState('')
+  const [error, setError]                 = useState<string | null>(null)
+  const [loading, setLoading]             = useState(false)
+  const [showDisableConfirm, setShowDisableConfirm] = useState(false)
   const { user } = useAuth()
-  const has2fa = (user as any)?.twoFactorEnabled
+  const has2fa = user?.twoFactorEnabled
 
   const startSetup = async () => {
     setError(null)
     setLoading(true)
     try {
-      const res = await api.post('/auth/2fa/setup') as any
+      const res = await api.post('/auth/2fa/setup') as { qrCodeUrl: string; secret: string }
       setQr(res.qrCodeUrl)
       setSecret(res.secret)
       setStep('setup')
@@ -247,7 +248,7 @@ function TwoFactor() {
   }
 
   const disable = async () => {
-    if (!confirm('¿Desactivar la autenticación en dos pasos?')) return
+    setShowDisableConfirm(false)
     setError(null)
     setLoading(true)
     try {
@@ -270,7 +271,7 @@ function TwoFactor() {
           </div>
         </div>
         {(has2fa || step === 'done') ? (
-          <button onClick={disable} disabled={loading}
+          <button onClick={() => setShowDisableConfirm(true)} disabled={loading}
             className="text-xs text-red-600 hover:text-red-700 font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
             Desactivar
           </button>
@@ -305,6 +306,40 @@ function TwoFactor() {
         </div>
       )}
       {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">{error}</p>}
+
+      <AnimatePresence>
+        {showDisableConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center"
+            >
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-5 h-5 text-red-600" aria-hidden="true" />
+              </div>
+              <h3 className="text-base font-bold text-text mb-2">Desactivar 2FA</h3>
+              <p className="text-sm text-text-muted mb-6 leading-relaxed">
+                ¿Desea desactivar la autenticación en dos pasos? Su cuenta tendrá menor protección.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDisableConfirm(false)}
+                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={disable}
+                  disabled={loading}
+                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors"
+                >
+                  {loading ? 'Desactivando…' : 'Desactivar'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

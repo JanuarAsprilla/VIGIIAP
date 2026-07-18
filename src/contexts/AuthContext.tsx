@@ -15,6 +15,18 @@ export interface AuthUser {
   isVisitante: boolean
   initials: string
   institucion: string | null
+  twoFactorEnabled?: boolean
+}
+
+interface RawAuthUser {
+  id: string
+  nombre?: string
+  email?: string | null
+  rol: string
+  tipo?: string | null
+  institucion?: string | null
+  twoFactorEnabled?: boolean
+  [key: string]: unknown
 }
 
 export interface AuthContextValue {
@@ -53,7 +65,7 @@ const ROLE_MAP = {
   visitante:    ROLES.VISITANTE,
 }
 
-function normalizeUser(raw) {
+function normalizeUser(raw: RawAuthUser): AuthUser {
   const isVisitante = raw.rol === 'visitante' || raw.tipo === 'visitante'
   return {
     id:          raw.id,
@@ -61,15 +73,17 @@ function normalizeUser(raw) {
     email:       raw.email ?? null,
     role:        ROLE_MAP[raw.rol] ?? ROLES.VISITANTE,
     rol:         raw.rol,
-    tipo:        raw.tipo ?? null,       // 'visitante' | null
+    tipo:        raw.tipo ?? null,
     isVisitante,
     initials:    (raw.nombre ?? 'V')
       .split(' ')
-      .map((w) => w[0])
+      .map((w) => w[0] ?? '')
+      .filter(Boolean)
       .slice(0, 2)
       .join('')
       .toUpperCase(),
-    institucion: raw.institucion ?? null,
+    institucion:       raw.institucion ?? null,
+    twoFactorEnabled:  raw.twoFactorEnabled ?? false,
   }
 }
 

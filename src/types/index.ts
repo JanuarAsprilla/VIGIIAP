@@ -1,29 +1,4 @@
-// ─── Auth ─────────────────────────────────────────────────────────────────────
-
-export type UserRole =
-  | 'Administrador SIG'
-  | 'Investigador'
-  | 'Técnico'
-  | 'Institucional'
-  | 'Público'
-
-export interface AuthUser {
-  id: string
-  nombre: string
-  email: string
-  rol: UserRole
-  activo: boolean
-  emailVerified: boolean
-}
-
-export interface AuthContextValue {
-  user: AuthUser | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
-  logout: () => void
-  updateUser: (data: Partial<AuthUser>) => void
-}
+// Tipos de autenticación → ver src/contexts/AuthContext.tsx (AuthUser, AuthContextValue)
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 

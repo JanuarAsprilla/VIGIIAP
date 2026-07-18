@@ -21,7 +21,7 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type']
-    config.timeout = 0
+    config.timeout = 300_000  // 5 min — uploads grandes de mapas/documentos
   }
   return config
 })

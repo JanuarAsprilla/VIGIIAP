@@ -19,24 +19,39 @@ const ROLE_MAP_REVERSE = {
   [ROLES.PUBLICO]:       'publico',
 }
 
-function normalizeUser(u) {
+interface RawUsuario {
+  id: string
+  nombre: string
+  email?: string | null
+  rol: string
+  activo: boolean
+  email_verified?: boolean
+  motivo_acceso?: string | null
+  institucion?: string | null
+  actualizado_en?: string | null
+  creado_en: string
+  [key: string]: unknown
+}
+
+function normalizeUser(u: RawUsuario) {
   const rolLabel = ROLE_MAP[u.rol] ?? ROLES.PUBLICO
   return {
     id:              u.id,
     nombre:          u.nombre,
-    correo:          u.email,
+    correo:          u.email ?? '',
     rol:             rolLabel,
     rolBackend:      u.rol,
     estado:          u.activo ? 'Activo' : 'Inactivo',
     activo:          u.activo,
     emailVerified:   u.email_verified ?? false,
     motivoAcceso:    u.motivo_acceso ?? '',
-    initials:        u.nombre
-      ?.split(' ')
-      .map((w) => w[0])
+    initials:        (u.nombre ?? '')
+      .split(' ')
+      .map((w) => w[0] ?? '')
+      .filter(Boolean)
       .slice(0, 2)
       .join('')
-      .toUpperCase() ?? '?',
+      .toUpperCase() || '?',
     institucion:     u.institucion ?? '',
     ultimoAcceso:    formatDate(u.actualizado_en ?? u.creado_en),
     creado_en:       u.creado_en,
