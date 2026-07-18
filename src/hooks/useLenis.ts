@@ -26,15 +26,15 @@ export function useLenis() {
     // Integración con GSAP ScrollTrigger
     lenis.on('scroll', ScrollTrigger.update)
 
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000)
-    })
+    // Referencia nombrada para poder remover el mismo listener en cleanup
+    const tickerFn = (time: number) => lenis.raf(time * 1000)
+    gsap.ticker.add(tickerFn)
     gsap.ticker.lagSmoothing(0)
 
     return () => {
       lenis.destroy()
       lenisInstance = null
-      gsap.ticker.remove(() => {})
+      gsap.ticker.remove(tickerFn)
     }
   }, [])
 }
