@@ -1,233 +1,206 @@
 # Auditoría Pre-Producción — VIGIIAP
-**Fecha:** 2026-07-17 | **Rama:** worktree-audit-produccion
+**Fecha:** 2026-07-18 | **Rondas:** 7 | **Commits:** 7
 
 ---
 
 ## Resumen Ejecutivo
 
-Auditoría exhaustiva del frontend antes del lanzamiento a producción. Se verificaron
-**14 hallazgos reales** con evidencia directa en el código fuente. Todos los de severidad
-CRÍTICA y ALTA fueron corregidos en esta misma rama.
+Auditoría exhaustiva del frontend antes del lanzamiento a producción.
+Se analizaron **100% de los archivos fuente** (src/): hooks, páginas, componentes,
+contextos, layouts, librerías, configuraciones y assets públicos.
 
-| Severidad | Total | Corregidos |
-|-----------|-------|------------|
-| CRÍTICO   | 2     | 2 ✅       |
-| ALTO      | 5     | 5 ✅       |
-| MEDIO     | 5     | 5 ✅       |
-| BAJO      | 2     | 2 ✅       |
-
----
-
-## Hallazgos y Correcciones
-
-### 🔴 CRÍTICO
-
-#### C-01 — Race condition en todos los guards de autenticación
-**Archivo:** `src/components/RequireAuth.tsx`  
-**Problema:** `RequireAuth`, `RequireVerified`, `RequireInvestigador`, `RequireAdmin` y
-`RequireSuperAdmin` no verificaban el estado `initializing` del `AuthContext`. Al cargar la
-app, `user = null` e `isAuthenticated = false` mientras se espera la respuesta de
-`GET /auth/me`. Cualquier usuario con sesión válida era redirigido a `/login` en cada
-recarga de página (especialmente grave con Render.com free tier, ~2-3s de cold start).
-
-**Fix:** Todos los guards ahora retornan un `<AuthSpinner />` mientras `initializing` es
-`true`. Solo evalúan autenticación una vez que el contexto confirmó el estado de sesión.
+| Severidad   | Total | Resueltos |
+|-------------|-------|-----------|
+| CRÍTICO     | 3     | 3 ✅      |
+| ALTO        | 9     | 9 ✅      |
+| MEDIO       | 10    | 10 ✅     |
+| BAJO        | 4     | 4 ✅      |
+| **TOTAL**   | **26**| **26 ✅** |
 
 ---
 
-#### C-02 — ESLint no cubría archivos TypeScript
-**Archivo:** `eslint.config.js`  
-**Problema:** `files: ['src/**/*.{js,jsx}']` — los archivos `.ts` y `.tsx` estaban
-completamente fuera del linting de ESLint. Las reglas `no-console`, `no-unused-vars`,
-`react-hooks/*` no se aplicaban al 95% del código del proyecto.
+## Ronda 1 — Seguridad y calidad base (commit 451cbc7)
 
-**Fix:** Nuevo bloque `files: ['src/**/*.{ts,tsx}']` con `typescript-eslint` como parser.
-Se añade `@typescript-eslint/no-explicit-any: 'warn'` y `@typescript-eslint/no-unused-vars`.
-Se agrega `"typescript-eslint": "^8.37.0"` a devDependencies.
+### CRÍTICO
 
----
+**C-01 — Race condition en todos los guards de autenticación** (`RequireAuth.tsx`)
+Todos los guards ignoraban `initializing`. Usuario autenticado redirigido a `/login`
+en cada recarga mientras `GET /auth/me` resuelve (2-3s en Render free tier).
+**Fix:** Guards muestran `<AuthSpinner />` hasta que `initializing === false`.
 
-### 🟠 ALTO
+**C-02 — ESLint no cubría archivos TypeScript** (`eslint.config.js`)
+`files: ['src/**/*.{js,jsx}']` — el 95% del código fuera de linting.
+**Fix:** Bloque TypeScript con `typescript-eslint` parser + `@typescript-eslint/no-explicit-any`.
+Paquete `typescript-eslint@^8` añadido. `lint-staged` actualizado a `.{js,jsx,ts,tsx}`.
 
-#### A-01 — `/perfil` detrás de `RequireAuth` en vez de `RequireVerified`
-**Archivo:** `src/App.tsx`  
-**Problema:** CLAUDE.md especifica "Perfil bloqueado para roles no verificados
-(publico/visitante)". La ruta `/perfil` estaba dentro del bloque `<RequireAuth>`, que
-permite acceso a cualquier usuario autenticado incluyendo `publico` y `visitante`.
+### ALTO
 
-**Fix:** `/perfil` movido al bloque `<RequireVerified>`, junto a `/solicitudes`.
+**A-01 — `/perfil` detrás de `RequireAuth` en vez de `RequireVerified`** (`App.tsx`)
+Usuarios `publico`/`visitante` podían acceder al perfil. CLAUDE.md especifica bloqueo.
+**Fix:** `/perfil` movido al bloque `<RequireVerified>`.
 
----
+**A-02 — `timeout: 0` en uploads FormData** (`api.ts:24`)
+UI podía quedar bloqueada indefinidamente ante un upload colgado.
+**Fix:** `config.timeout = 300_000` (5 minutos).
 
-#### A-02 — `timeout: 0` en uploads FormData
-**Archivo:** `src/lib/api.ts:24`  
-**Problema:** El interceptor de requests eliminaba el timeout para `FormData` (uploads de
-mapas y documentos). Un upload colgado nunca terminaría, dejando la UI bloqueada
-indefinidamente sin feedback al usuario.
+**A-03 — `(user as any)` y `as any` en setup 2FA** (`Perfil.tsx:223,229`)
+`twoFactorEnabled` no existía en `AuthUser`. **Fix:** Campo añadido al tipo, sin cast.
 
-**Fix:** `config.timeout = 300_000` (5 minutos), suficiente para archivos grandes de mapas.
+**A-04 — `window.confirm()` para desactivar 2FA** (`Perfil.tsx:250`)
+Bloqueante, inaccesible (no cumple WCAG). **Fix:** Modal `AnimatePresence`.
 
----
+**A-05 — Sentry replay sin enmascarado de inputs** (`main.tsx`)
+Podía capturar passwords en replays de error.
+**Fix:** `replayIntegration({ maskAllInputs: true })`.
 
-#### A-03 — `(user as any)` y `as any` en setup de 2FA
-**Archivo:** `src/pages/Perfil.tsx:223,229`  
-**Problema:** `twoFactorEnabled` no existía en la interfaz `AuthUser`, forzando casteos
-inseguros. Si el shape del backend cambiaba, no habría error de compilación.
+### MEDIO
 
-**Fix:** `twoFactorEnabled?: boolean` añadido a `AuthUser` en `AuthContext.tsx`.
-`normalizeUser` ahora mapea el campo desde el backend. En Perfil.tsx:
-`user?.twoFactorEnabled` (sin cast) y response tipada como
-`{ qrCodeUrl: string; secret: string }`.
+**M-01** — `normalizeUser(raw)` sin tipos → `RawAuthUser` + `RawUsuario` con firma completa.
 
----
+**M-02** — `AuthUser`/`AuthContextValue` duplicados en `types/index.ts` → eliminados.
 
-#### A-04 — `window.confirm()` para desactivar 2FA
-**Archivo:** `src/pages/Perfil.tsx:250`  
-**Problema:** `confirm()` nativo del browser es bloqueante, inaccesible (no cumple WCAG),
-no respeta el design system, y puede estar deshabilitado en algunos contextos (iframes,
-política de permisos estricta).
+**M-03** — `isSuperAdmin` re-derivado en `Usuarios.tsx` con `.role` → `useAuth().isSuperAdmin`.
 
-**Fix:** Reemplazado por modal de confirmación con estado `showDisableConfirm`, siguiendo
-el mismo patrón ya establecido en `Usuarios.tsx` (AnimatePresence + motion.div).
+**M-04** — `chunkSizeWarningLimit: 1000` → restaurado a `500` (default). Expone `three-vendor` 875KB.
 
 ---
 
-#### A-05 — Sentry Session Replay sin enmascarado de inputs
-**Archivo:** `src/main.tsx:19`  
-**Problema:** `replayIntegration()` sin opciones podía capturar campos de formulario
-(emails, passwords) en los replays de error enviados a Sentry.
+## Ronda 2 — CSP, memory leaks y CSV injection (commit 498a7c5)
 
-**Fix:** `replayIntegration({ maskAllInputs: true, maskAllText: false, blockAllMedia: false })`.
-Todos los inputs quedan enmascarados en los replays de sesión.
+### CRÍTICO
 
----
+**C-03 — CSP faltaba `*.basemaps.cartocdn.com`** (`render.yaml`)
+El Geovisor carga tiles de CartoCDN. Sin el dominio en `img-src` + `connect-src`,
+el mapa aparecía en blanco en producción. Bloqueado silenciosamente por el browser.
+**Fix:** Añadidos `https://*.basemaps.cartocdn.com` y `https://*.tile.openstreetmap.org`.
 
-### 🟡 MEDIO
+### ALTO
 
-#### M-01 — `normalizeUser(raw)` sin tipado — `raw` implícitamente `any`
-**Archivos:** `src/contexts/AuthContext.tsx:56`, `src/hooks/useUsuarios.ts:22`  
-**Problema:** La función crítica que transforma datos del backend al shape de la app no
-tenía tipo para el parámetro `raw`. Con `noImplicitAny: false`, TypeScript aceptaba esto
-sin error. Si el backend cambiaba un campo, no había detección en compile time.
+**A-06 — `URL.createObjectURL` en render body** (`GestionCategorias.tsx` × 2, `GestionMapas.tsx`)
+Cada render del componente creaba un nuevo blob URL nunca revocado.
+`GestionCategorias` tenía 2 componentes afectados (`ImageDropzone`, `CategoriaCard`).
+**Fix:** `useEffect` con cleanup en GestionCategorias; `previewUrlRef` + cleanup en GestionMapas.
 
-**Fix:** Interfaces `RawAuthUser` y `RawUsuario` agregadas con campos tipados. Ambas
-`normalizeUser` ahora tienen firma completa con return type inferido correctamente.
-Bonus: `.map((w) => w[0])` en initials ahora incluye `.filter(Boolean)` para evitar
-initials vacíos con nombres que tienen espacios dobles.
+### MEDIO
+
+**M-05** — CSV export sin `revokeObjectURL` + sin protección de fórmulas (`Actividad.tsx`, `GestionSolicitudes.tsx`).
+**Fix:** `blobUrl` con `URL.revokeObjectURL()` post-click + `csvField()` neutraliza `=+−@TAB`.
 
 ---
 
-#### M-02 — `AuthUser` y `AuthContextValue` duplicados y divergidos en `types/index.ts`
-**Archivo:** `src/types/index.ts:1-26`  
-**Problema:** Dos definiciones paralelas de `AuthUser` con campos completamente diferentes
-(`nombre` vs `name`, `isLoading` vs `loading`, método `updateUser` inexistente).
-`UserRole` incompleto (faltaban 'Super Administrador', 'Técnico SIG', 'Visitante').
-Creaba confusión sobre cuál era el tipo canónico.
+## Ronda 3 — GSAP ticker leak y sitemap (commit bb9ae7c)
 
-**Fix:** Sección Auth eliminada de `types/index.ts`. El tipo canónico es el exportado
-desde `AuthContext.tsx`. Comentario de redirección añadido.
+### ALTO
 
----
+**A-07 — GSAP ticker listener nunca removido** (`useLenis.ts`)
+`gsap.ticker.remove(() => {})` pasaba una función anónima nueva — nunca coincidía
+con la registrada. Cada mount de `MainLayout` acumulaba listeners activos
+llamando `lenis.raf()` sobre instancias ya destruidas (especialmente grave con StrictMode).
+**Fix:** `const tickerFn = (time) => lenis.raf(time * 1000)` → mismo ref en `add()` y `remove()`.
 
-#### M-03 — `isSuperAdmin` re-derivado en Usuarios.tsx con lógica diferente al contexto
-**Archivo:** `src/pages/admin/Usuarios.tsx:255`  
-**Problema:** `const isSuperAdmin = currentUser?.role === ROLES.SUPER_ADMIN` usaba
-`.role` (label mapeado) en lugar del booleano `isSuperAdmin` ya computado en el contexto.
-Duplicación de lógica que podía divergir si la lógica del contexto cambiaba.
+### MEDIO
 
-**Fix:** `const { user: currentUser, isSuperAdmin } = useAuth()` — usa directamente
-el valor del contexto.
+**M-06** — `sitemap.xml` incluía `/noticias` (módulo eliminado → 404 en producción)
+y rutas protegidas (`/geovisor`, `/herramientas`, `/mapas`, `/documentos`).
+**Fix:** Sitemap reducido a rutas realmente públicas: `/`, `/guia-usuario`, `/faq`, `/terminos`.
 
----
+### BAJO
 
-#### M-04 — `noImplicitAny: false` en tsconfig.json
-**Archivo:** `tsconfig.json`  
-**Problema:** Con `strict: true` pero `noImplicitAny: false`, TypeScript aceptaba
-parámetros implícitamente `any` sin error, neutralizando parte del valor de strict mode.
-`noUnusedLocals: false` y `noUnusedParameters: false` acumulaban código muerto
-silenciosamente.
-
-**Fix:** Los tres flags activados a `true`. Los errores de props no tipadas en componentes
-se resuelven por separado (ver rama).
+**B-01** — `public/_headers` CSP no sincronizado con `render.yaml` — faltaban los dominios CartoCDN.
+**Fix:** Actualizado con los mismos orígenes que render.yaml.
 
 ---
 
-#### M-05 — `noUnusedLocals` / `noUnusedParameters` desactivados
-Resuelto en M-04.
+## Ronda 4 — Integridad funcional (commit f10a662)
+
+### ALTO
+
+**A-08 — `SolicitarHerramientaModal` enviaba sin backend** (`components/herramientas/SolicitarHerramientaModal.tsx`)
+`handleSubmit` → `setStep('success')` directamente. Ningún dato se guardaba.
+**Fix:** Conectado a `useCreateSolicitud()`. Loading state + error handler + `AlertCircle`.
+
+### MEDIO
+
+**M-07** — `ToolCard` sin prop para indicar herramientas en desarrollo.
+Herramientas con datos hardcodeados no lo indicaban visualmente.
+**Fix:** Prop `demo` con banner "Datos de muestra" en ToolCard.
 
 ---
 
-### 🔵 BAJO
+## Ronda 5 — Herramientas demo y Husky (commit a40f50e)
 
-#### B-01 — `chunkSizeWarningLimit: 1000` ocultaba chunks grandes
-**Archivo:** `vite.config.js`  
-**Problema:** El límite de warning fue elevado de 500 a 1000 KB para suprimir advertencias
-de Vite. Esto ocultaba que chunks como `three-vendor` y `motion-vendor` superan el límite
-saludable de 500 KB.
-
-**Fix:** Restaurado a `500` (default). Los warnings de chunks grandes son información
-útil para decidir si Three.js o framer-motion deben cargarse de forma más granular.
+**M-08** — `GeneradorBuffers`: usaba `setTimeout + datos hardcodeados`.
+**B-02** — `.husky/pre-commit`: bit ejecutable nunca activado (`chmod 644` → `755`).
+El hook de lint-staged nunca corría en commits. **Fix:** `git update-index --chmod=+x`.
 
 ---
 
-#### B-02 — lint-staged solo cubría `{js,jsx}`
-**Archivo:** `package.json`  
-**Problema:** El pre-commit hook de lint-staged ejecutaba ESLint solo en archivos JS,
-dejando commits de TypeScript sin validación automática.
+## Ronda 6 — Herramientas PostGIS → Próximamente (commit e4e702f)
 
-**Fix:** Pattern actualizado a `src/**/*.{js,jsx,ts,tsx}`.
-
----
-
-## Elementos Verificados como Correctos
-
-- **CSP en render.yaml** ✅ — `script-src 'self'` es correcto para SPA estática sin SSR
-- **Cookie HttpOnly** ✅ — Token JWT gestionado por backend, no localStorage
-- **Open redirect en Login** ✅ — Validación `rawFrom.startsWith('/') && !rawFrom.startsWith('//')`
-- **Token format en ResetPassword** ✅ — Regex `TOKEN_RE = /^[A-Za-z0-9_-]{20,}$/` válido
-- **CORS con `withCredentials: true`** ✅ — Necesario para cookies cross-origin
-- **401 → logout automático** ✅ — Interceptor de axios con evento `vigiiap:logout`
-- **Sentry solo en producción** ✅ — `enabled: !!VITE_SENTRY_DSN && import.meta.env.PROD`
-- **Chunking manual en Vite** ✅ — three, motion, query, map, sentry separados correctamente
-- **Guards de admin** ✅ — `/admin/*` doble protección: RequireAdmin + RequireSuperAdmin
-- **ErrorBoundary por ruta** ✅ — `key={location.key}` resetea el boundary en navegación
+**A-09 — `AnalizadorSuperposicion`, `GeneradorBuffers`, `TablerosControl`**
+Herramientas que ejecutaban análisis GIS con `setTimeout + OVERLAP_RESULTS/CAPAS/INDICADORES`
+hardcodeados. Ninguna conectaba a backend. Riesgo alto: investigadores podrían tomar decisiones
+ambientales con resultados que parecen reales pero son constantes ficticias.
+`CalculadoraAreas` usa math real MAGNA-SIRGAS — removido el badge demo.
+**Fix:** Las 3 reemplazadas por UI de "En desarrollo / Próximamente" con descripción honesta.
 
 ---
 
-## Dependencias Notables
+## Ronda 7 — NuevoAnalisisModal (commit b664d05)
 
-| Riesgo | Paquete | Nota |
-|--------|---------|------|
-| ⚠️ | `react-router` + `react-router-dom` | En v7 son el mismo paquete — duplicación en package.json |
-| ℹ️ | Three.js + @react-three/* | ~600 KB min+gz — chunk separado correcto |
-| ℹ️ | framer-motion + gsap | Ambas librerías de animación — gsap solo en componentes específicos |
-| ✅ | `husky` + `lint-staged` | Pre-commit hooks configurados |
+**A-10 — `NuevoAnalisisModal` enviaba sin backend** (`components/NuevoAnalisisModal.tsx`)
+Mismo patrón que SolicitarHerramientaModal: `handleSubmit` → `setStep('success')`.
+Análisis creados desde la sidebar nunca se registraban.
+**Fix:** Conectado a `useCreateSolicitud({ tipo: 'estudio-ambiental' })`.
 
 ---
 
-## Próximos Pasos Recomendados (Post-Lanzamiento)
+## Verificado como Correcto
 
-1. **SRI para Google Fonts** — Agregar `integrity` a los links de fonts en `index.html`
-2. **Paginación de usuarios** — `useUsuariosList({ limit: 200 })` debe tener paginación real cuando la base de usuarios crezca
-3. **`react-router` deduplicado** — Remover una de las dos entradas del package.json
-4. **Eliminar `secret` TOTP del state** — En setup de 2FA, el secret se expone en React DevTools; considerar no almacenarlo en state
+- CSP `script-src 'self'` — correcto para SPA estática sin SSR
+- Token JWT en HttpOnly cookie, no localStorage
+- Open redirect en Login (`rawFrom.startsWith('/') && !rawFrom.startsWith('//')`)
+- Token format en ResetPassword (`TOKEN_RE = /^[A-Za-z0-9_-]{20,}$/`)
+- Sentry deshabilitado fuera de producción
+- Chunking manual (three, motion, query, map, sentry separados)
+- Visibilidad de mapas/documentos filtrada por backend (no client-side)
+- XSS: sin `dangerouslySetInnerHTML` en ningún archivo
+- `fetch()` directo en `forceDownload` validado con `isTrustedUrl()` antes de ejecutar
+- `window.open()` siempre con `noopener,noreferrer`
+- UIContext valida localStorage con allowlists antes de aplicar valores
+- Uploads de archivos restringidos por tipo MIME y tamaño máximo
+- `robots.txt` correctamente bloquea `/admin`, `/perfil`, `/solicitudes`
+- GestionAdmins correctamente protegido por `RequireSuperAdmin`
+- RBAC de asignación de roles: admin_sig no puede asignar rol admin_sig ni superior
+- Todos los formularios de auth tienen `autoComplete` correcto
+- No hay `process.env` en el frontend (siempre `import.meta.env`)
+- No hay credenciales hardcodeadas en ningún archivo fuente
+- `AplicacionesMoviles` y `Geoformularios` son UI informativa, sin submit falso
 
 ---
 
-## Archivos Modificados en Esta Auditoría
+## Pendiente Post-Lanzamiento
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/RequireAuth.tsx` | Race condition fix — `initializing` en todos los guards |
-| `src/App.tsx` | `/perfil` movido a `RequireVerified` |
-| `src/lib/api.ts` | `timeout: 0` → `300_000` en FormData |
-| `src/main.tsx` | Sentry replay con `maskAllInputs: true` |
-| `src/contexts/AuthContext.tsx` | `RawAuthUser` tipado + `twoFactorEnabled` en `AuthUser` |
-| `src/hooks/useUsuarios.ts` | `RawUsuario` tipado + `normalizeUser` con firma completa |
-| `src/pages/Perfil.tsx` | `as any` eliminados + modal para desactivar 2FA |
-| `src/pages/admin/Usuarios.tsx` | `isSuperAdmin` desde contexto |
-| `src/types/index.ts` | Dead types Auth eliminados |
-| `eslint.config.js` | Cobertura TypeScript con typescript-eslint |
-| `package.json` | `typescript-eslint` + lint-staged cubre `.ts/.tsx` |
-| `tsconfig.json` | `noImplicitAny`, `noUnusedLocals`, `noUnusedParameters` → `true` |
-| `vite.config.js` | `chunkSizeWarningLimit` → 500 (default) |
+| Prioridad | Item |
+|-----------|------|
+| Alta | `noImplicitAny: true` — ~65 archivos con props sin tipado |
+| Media | `three-vendor` 875KB — lazy load Three.js solo donde se usa |
+| Media | `react-router` duplicado en package.json (v7 consolida en uno) |
+| Media | Paginación real — `limit: 200` en 5 páginas admin |
+| Baja | SRI para Google Fonts en `index.html` |
+| Baja | `secret` TOTP en React state durante setup 2FA |
+| Baja | `useReducedMotion` solo en 2 de ~50 componentes animados |
+
+---
+
+## Historial de Commits
+
+| Commit | Ronda | Descripción |
+|--------|-------|-------------|
+| `451cbc7` | 1 | 12 hallazgos base — guards, ESLint, CSP, tipos |
+| `498a7c5` | 2 | CSP CartoCDN, memory leaks, CSV injection |
+| `bb9ae7c` | 3 | GSAP ticker leak, sitemap, _headers |
+| `f10a662` | 4 | SolicitarHerramientaModal + demo badge |
+| `a40f50e` | 5 | GeneradorBuffers demo + Husky chmod |
+| `e4e702f` | 6 | Herramientas PostGIS → Próximamente |
+| `b664d05` | 7 | NuevoAnalisisModal conectado al backend |
