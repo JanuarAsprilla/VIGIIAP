@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -37,6 +37,14 @@ function Toast({ message, onDone }) {
 function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
+  const [objectUrl, setObjectUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!currentFile) { setObjectUrl(null); return }
+    const url = URL.createObjectURL(currentFile)
+    setObjectUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [currentFile])
 
   const accept = useCallback((file) => {
     if (!file || !file.type.startsWith('image/')) return
@@ -44,7 +52,7 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }) {
     onFile(file)
   }, [onFile])
 
-  const preview = currentFile ? URL.createObjectURL(currentFile) : existingUrl
+  const preview = objectUrl ?? existingUrl ?? null
 
   if (preview) {
     return (
@@ -97,6 +105,14 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress]   = useState(0)
   const [error, setError]         = useState<string | null>(null)
+  const [fileObjectUrl, setFileObjectUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!file) { setFileObjectUrl(null); return }
+    const url = URL.createObjectURL(file)
+    setFileObjectUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [file])
 
   const handleUpload = async () => {
     if (!file) return
@@ -117,7 +133,7 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
     }
   }
 
-  const currentPreview = file ? URL.createObjectURL(file) : cat.thumbnail_url
+  const currentPreview = fileObjectUrl ?? cat.thumbnail_url ?? null
 
   return (
     <Card3D

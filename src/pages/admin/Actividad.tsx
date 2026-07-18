@@ -103,13 +103,22 @@ export default function Actividad() {
     : logs
 
   const exportCSV = () => {
+    const csvField = (val: unknown) => {
+      const s = String(val ?? '').replace(/\r\n|\n|\r/g, ' ')
+      const safe = /^[=+\-@\t]/.test(s) ? `'${s}` : s
+      return `"${safe.replace(/"/g, '""')}"`
+    }
     const rows = [['Acción', 'Módulo', 'Descripción', 'Usuario', 'IP', 'Fecha']]
     logs.forEach((l) => rows.push([l.accion, l.modulo, l.descripcion, l.email, l.ip, l.fecha]))
-    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(',')).join('\n')
+    const csv = rows.map((r) => r.map(csvField).join(',')).join('\n')
+    const blobUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
     const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    a.href = blobUrl
     a.download = `actividad-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
     a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(blobUrl)
   }
 
   return (

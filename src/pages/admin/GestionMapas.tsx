@@ -181,12 +181,21 @@ function ThumbnailDropzone({ onFile, existing }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
+  const previewUrlRef = useRef<string | null>(null)
+
+  // Revoca el Object URL al desmontar para evitar memory leaks
+  useEffect(() => () => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
+  }, [])
 
   const accept = useCallback((f) => {
     if (!f || !f.type.startsWith('image/')) return
     if (f.size > 50 * 1024 * 1024) return
     onFile(f)
-    setPreview(URL.createObjectURL(f))
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
+    const url = URL.createObjectURL(f)
+    previewUrlRef.current = url
+    setPreview(url)
   }, [onFile])
 
   const handleDrop = (e) => { e.preventDefault(); setDragging(false); accept(e.dataTransfer.files[0]) }
@@ -206,7 +215,11 @@ function ThumbnailDropzone({ onFile, existing }) {
               className="px-3 py-1.5 bg-white text-text text-xs font-semibold rounded-lg hover:bg-bg-alt transition-colors">
               Cambiar
             </button>
-            <button type="button" onClick={() => { onFile(null); setPreview(null) }}
+            <button type="button" onClick={() => {
+              onFile(null)
+              if (previewUrlRef.current) { URL.revokeObjectURL(previewUrlRef.current); previewUrlRef.current = null }
+              setPreview(null)
+            }}
               className="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors">
               Quitar
             </button>
