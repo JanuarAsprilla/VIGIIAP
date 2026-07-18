@@ -21,7 +21,7 @@ export default function GeneradorBuffers() {
   }
 
   return (
-    <ToolCard tag="Procesamiento" title="Generador de Buffers" icon={Target} color="orange" index={1}>
+    <ToolCard tag="Procesamiento" title="Generador de Buffers" icon={Target} color="orange" index={1} demo>
       <p className="text-sm text-text-muted leading-relaxed mb-4">
         Crea áreas de influencia alrededor de entidades geográficas lineales o puntuales.
       </p>
