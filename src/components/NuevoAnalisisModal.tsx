@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PlusCircle, X, ChevronRight, CheckCircle } from 'lucide-react'
+import { PlusCircle, X, ChevronRight, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
+import { useCreateSolicitud } from '@/hooks/useSolicitudes'
 import { ANALYSIS_TYPES, ANALYSIS_DEPARTMENTS } from '@/lib/constants'
 
 export default function NuevoAnalisisModal({ onClose }) {
@@ -25,9 +26,11 @@ export default function NuevoAnalisisModal({ onClose }) {
     el.addEventListener('keydown', close)
     return () => { el.removeEventListener('keydown', trap); el.removeEventListener('keydown', close) }
   }, [onClose])
-  const [step, setStep] = useState('form') // 'form' | 'success'
-  const [form, setForm] = useState({ nombre: '', tipo: '', departamento: '', notas: '' })
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [step,        setStep]        = useState('form') // 'form' | 'success'
+  const [form,        setForm]        = useState({ nombre: '', tipo: '', departamento: '', notas: '' })
+  const [errors,      setErrors]      = useState<Record<string, string>>({})
+  const [serverError, setServerError] = useState<string | null>(null)
+  const createSolicitud = useCreateSolicitud()
 
   const validate = () => {
     const e: Record<string, string> = {}
@@ -36,11 +39,20 @@ export default function NuevoAnalisisModal({ onClose }) {
     return e
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const e2 = validate()
     if (Object.keys(e2).length) { setErrors(e2); return }
-    setStep('success')
+    setServerError(null)
+    try {
+      await createSolicitud.mutateAsync({
+        tipo: 'estudio-ambiental',
+        descripcion: `[Análisis: ${form.nombre}] Tipo: ${form.tipo}${form.departamento ? `. Departamento: ${form.departamento}` : ''}${form.notas ? `. Notas: ${form.notas}` : ''}`.slice(0, 1000),
+      })
+      setStep('success')
+    } catch (err) {
+      setServerError((err as Error)?.message ?? 'No se pudo registrar el análisis. Intente de nuevo.')
+    }
   }
 
   const set = (key, val) => {
@@ -204,20 +216,33 @@ export default function NuevoAnalisisModal({ onClose }) {
                   </motion.div>
                 )}
 
+                {/* Error servidor */}
+                {serverError && (
+                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-xs text-red-700">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+                    <span>{serverError}</span>
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
                     onClick={onClose}
-                    className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors"
+                    disabled={createSolicitud.isPending}
+                    className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 disabled:opacity-50 transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors"
+                    disabled={createSolicitud.isPending}
+                    className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors"
                   >
-                    Iniciar Análisis
+                    {createSolicitud.isPending
+                      ? <><Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />Registrando...</>
+                      : 'Iniciar Análisis'
+                    }
                   </button>
                 </div>
               </form>
