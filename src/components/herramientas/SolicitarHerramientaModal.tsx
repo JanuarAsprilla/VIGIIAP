@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
+import { useCreateSolicitud } from '@/hooks/useSolicitudes'
 import { motion } from 'framer-motion'
-import { PlusCircle, Send, X, CheckCircle } from 'lucide-react'
+import { PlusCircle, Send, X, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { validateRequired, validateMinLength, validateSelect } from '@/lib/validators'
 
 const TOOL_TYPES = [
@@ -14,9 +15,11 @@ const TOOL_TYPES = [
 ]
 
 export default function SolicitarHerramientaModal({ onClose }) {
-  const [step,   setStep]   = useState('form') // 'form' | 'success'
-  const [form,   setForm]   = useState({ nombre: '', tipo: '', descripcion: '', justificacion: '' })
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [step,        setStep]        = useState('form') // 'form' | 'success'
+  const [form,        setForm]        = useState({ nombre: '', tipo: '', descripcion: '', justificacion: '' })
+  const [errors,      setErrors]      = useState<Record<string, string>>({})
+  const [serverError, setServerError] = useState<string | null>(null)
+  const createSolicitud = useCreateSolicitud()
 
   useEffect(() => {
     const fn = (e) => { if (e.key === 'Escape') onClose() }
@@ -27,6 +30,7 @@ export default function SolicitarHerramientaModal({ onClose }) {
   const set = (k, v) => {
     setForm((p) => ({ ...p, [k]: v }))
     setErrors((p) => ({ ...p, [k]: undefined }))
+    setServerError(null)
   }
 
   const validate = () => {
@@ -40,11 +44,20 @@ export default function SolicitarHerramientaModal({ onClose }) {
     return e
   }
 
-  const handleSubmit = (ev) => {
+  const handleSubmit = async (ev) => {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }
-    setStep('success')
+    setServerError(null)
+    try {
+      await createSolicitud.mutateAsync({
+        tipo: 'otro',
+        descripcion: `[Solicitud de herramienta: ${form.nombre}] Tipo: ${form.tipo}. ${form.descripcion}${form.justificacion ? ` Justificación: ${form.justificacion}` : ''}`.slice(0, 1000),
+      })
+      setStep('success')
+    } catch (err) {
+      setServerError((err as Error)?.message ?? 'No se pudo enviar la solicitud. Intente de nuevo.')
+    }
   }
 
   return (
@@ -176,20 +189,31 @@ export default function SolicitarHerramientaModal({ onClose }) {
                 />
               </div>
 
+              {serverError && (
+                <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-xs text-red-700">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{serverError}</span>
+                </div>
+              )}
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 transition-colors"
+                  disabled={createSolicitud.isPending}
+                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 disabled:opacity-50 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors"
+                  disabled={createSolicitud.isPending}
+                  className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors"
                 >
-                  <Send className="w-4 h-4" />
-                  Enviar Solicitud
+                  {createSolicitud.isPending
+                    ? <><Loader2 className="w-4 h-4 animate-spin" />Enviando...</>
+                    : <><Send className="w-4 h-4" />Enviar Solicitud</>
+                  }
                 </button>
               </div>
             </form>

@@ -13,7 +13,7 @@ const accentStyles = {
  * Tarjeta contenedora para cada herramienta SIG — 3D tilt.
  * Responsabilidad única: layout visual + animación de entrada.
  */
-export default function ToolCard({ tag, title, icon: Icon, color, children, index }) {
+export default function ToolCard({ tag, title, icon: Icon, color, children, index, demo = false }) {
   const styles = accentStyles[color] || accentStyles.primary
 
   return (
@@ -41,6 +41,11 @@ export default function ToolCard({ tag, title, icon: Icon, color, children, inde
             <Icon className="w-5 h-5 text-primary-800" aria-hidden="true" />
           </motion.div>
         </div>
+        {demo && (
+          <p className="text-[0.65rem] text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 mb-3">
+            Datos de muestra — visualización demostrativa, no refleja datos reales
+          </p>
+        )}
         {children}
       </div>
     </Card3D>

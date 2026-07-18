@@ -10,7 +10,7 @@ const INDICADORES = [
 
 export default function TablerosControl() {
   return (
-    <ToolCard tag="Reportes" title="Tableros de Control" icon={BarChart3} color="gold" index={6}>
+    <ToolCard tag="Reportes" title="Tableros de Control" icon={BarChart3} color="gold" index={6} demo>
       <p className="text-sm text-text-muted leading-relaxed mb-4">
         Indicadores ambientales consolidados del Chocó Biogeográfico.
         Los reportes personalizados se configuran desde el Módulo de Administración.

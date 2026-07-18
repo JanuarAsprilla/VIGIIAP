@@ -38,7 +38,7 @@ export default function AnalizadorSuperposicion() {
   }
 
   return (
-    <ToolCard tag="Análisis Espacial" title="Analizador de Superposición" icon={Layers} color="green" index={3}>
+    <ToolCard tag="Análisis Espacial" title="Analizador de Superposición" icon={Layers} color="green" index={3} demo>
       <p className="text-sm text-text-muted leading-relaxed mb-4">
         Ejecuta procesos de intersección, unión y diferencia entre múltiples capas territoriales
         para detectar conflictos de uso del suelo o áreas de traslape legal.
