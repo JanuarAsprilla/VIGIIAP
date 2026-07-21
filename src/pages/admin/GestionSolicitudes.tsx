@@ -6,10 +6,11 @@ import type { SolicitudData } from '@/hooks/useSolicitudes'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, X, CheckCircle, XCircle, Clock, Eye,
-  Download, ChevronLeft, ChevronRight, Loader2,
+  Download, Loader2,
   Mail, User, FileText, Send, MessageSquare, AlertCircle,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, drawerAnim, EASE_OUT_EXPO } from '@/lib/animations'
+import PaginationBar from '@/components/ui/PaginationBar'
 import Card3D from '@/components/ui/Card3D'
 import { useSolicitudesAdmin, useUpdateEstadoSolicitud, useResponderSolicitud,
          useSolicitudArchivos, useDeleteSolicitudArchivo, useDownloadSolicitudArchivo } from '@/hooks/useSolicitudes'
@@ -36,7 +37,7 @@ function SectionLabel({ children }) {
 }
 
 export default function GestionSolicitudes() {
-  const { data } = useSolicitudesAdmin({ limit: 200 })
+  const { data } = useSolicitudesAdmin({ limit: 500 })
   const solicitudes = data?.data ?? []
   const updateEstado      = useUpdateEstadoSolicitud()
   const responderMutation = useResponderSolicitud()
@@ -323,26 +324,13 @@ export default function GestionSolicitudes() {
             </tbody>
           </table>
         </div>
-        <div className="px-5 py-3 border-t border-border bg-bg-alt/30 flex items-center justify-between">
-          <span className="text-xs text-text-muted">Mostrando {pageItems.length} de {filtered.length}</span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="p-1 rounded-lg text-text-muted hover:text-primary-800 disabled:opacity-40 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-xs font-semibold text-text px-2">{page}/{totalPages}</span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="p-1 rounded-lg text-text-muted hover:text-primary-800 disabled:opacity-40 transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          total={filtered.length}
+          pageSize={PAGE_SIZE}
+          onPage={setPage}
+        />
       </Card3D>
 
       {/* ── Detail Drawer ── */}

@@ -1,7 +1,8 @@
 /* Hallmark · macrostructure: Workbench · genre: data-catalog
  * tokens: design.md · stamp: 2026-05-25
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import PaginationBar from '@/components/ui/PaginationBar'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, Search, SlidersHorizontal, X, Loader2, Check } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
@@ -41,7 +42,8 @@ export default function Documentos() {
     )
   }
 
-  const { data, isLoading, isError } = useDocumentosList({ limit: 200 })
+  const CAT_PAGE_SIZE = 12
+  const { data, isLoading, isError } = useDocumentosList({ limit: 500 })
   const allDocs = data?.data ?? []
 
   const allCategories = (() => {
@@ -72,12 +74,18 @@ export default function Documentos() {
     return Object.values(map)
   })()
 
+  const [catPage, setCatPage] = useState(1)
   const isFiltering = query.trim() !== '' || activeTypes.length > 0
   const displayCategories = allCategories.map((cat) => {
     let filtered = cat.docs.filter((d) => matches([d.name, cat.title], query))
     if (activeTypes.length > 0) filtered = filtered.filter((d) => activeTypes.includes(d.type))
     return { ...cat, filteredDocs: filtered }
   }).filter((cat) => !isFiltering || cat.filteredDocs.length > 0)
+
+  useEffect(() => { setCatPage(1) }, [query, activeTypes])
+
+  const catTotalPages  = Math.ceil(displayCategories.length / CAT_PAGE_SIZE) || 1
+  const pagedCategories = displayCategories.slice((catPage - 1) * CAT_PAGE_SIZE, catPage * CAT_PAGE_SIZE)
 
   const openCategory = (cat) => {
     setSelectedCategory(allCategories.find((c) => c.id === cat.id) || cat)
@@ -190,17 +198,26 @@ export default function Documentos() {
           <p className="text-xs mt-1 text-text-muted/60">Verifique su conexión e intente de nuevo</p>
         </motion.div>
       ) : displayCategories.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {displayCategories.map((cat, i) => (
-            <CategoryCard
-              key={cat.id}
-              category={cat}
-              filteredCount={isFiltering ? cat.filteredDocs.length : null}
-              onOpen={() => openCategory(cat)}
-              index={i}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {pagedCategories.map((cat, i) => (
+              <CategoryCard
+                key={cat.id}
+                category={cat}
+                filteredCount={isFiltering ? cat.filteredDocs.length : null}
+                onOpen={() => openCategory(cat)}
+                index={i}
+              />
+            ))}
+          </div>
+          <PaginationBar
+            page={catPage}
+            totalPages={catTotalPages}
+            total={displayCategories.length}
+            pageSize={CAT_PAGE_SIZE}
+            onPage={setCatPage}
+          />
+        </>
       ) : (
         <motion.div {...fadeUp(0.1)} className="py-20 flex flex-col items-center gap-4">
           <div className="w-20 h-20 rounded-2xl flex items-center justify-center relative overflow-hidden"

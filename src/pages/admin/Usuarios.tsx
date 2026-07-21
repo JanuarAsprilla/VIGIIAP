@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import PaginationBar from '@/components/ui/PaginationBar'
 import type { FormErrors } from '@/types/forms'
 import type { UsuarioData } from '@/hooks/useUsuarios'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -257,7 +258,8 @@ export default function Usuarios() {
   const canManageRow = (u: UsuarioData) =>
     u.id !== currentUser?.id && (isSuperAdmin || u.rolBackend !== 'admin_sig')
 
-  const { data } = useUsuariosList({ limit: 200 })
+  const PAGE_SIZE = 25
+  const { data } = useUsuariosList({ limit: 500 })
   const users = data?.data ?? []
   const updateRol   = useUpdateUsuarioRol()
   const toggleActivo = useToggleActivo()
@@ -268,6 +270,10 @@ export default function Usuarios() {
   const [search, setSearch] = useState('')
   const [filtroRol, setFiltroRol] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
+  const [page, setPage] = useState(1)
+
+  // Resetea página cuando cambian los filtros
+  useEffect(() => { setPage(1) }, [search, filtroRol, filtroEstado])
   const [showModal, setShowModal] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
   const [editingUser, setEditingUser] = useState<UsuarioData | null>(null)
@@ -283,6 +289,9 @@ export default function Usuarios() {
     const matchEst = !filtroEstado || u.estado === filtroEstado
     return matchQ && matchRol && matchEst
   })
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const openEdit = (u) => {
     setEditingUser(u)
@@ -399,10 +408,10 @@ export default function Usuarios() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 && (
+              {paginated.length === 0 && (
                 <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-text-muted">Sin resultados</td></tr>
               )}
-              {filtered.map((u) => { const manageable = canManageRow(u); return (
+              {paginated.map((u) => { const manageable = canManageRow(u); return (
                 <tr key={u.id} className="border-b border-border last:border-b-0 hover:bg-bg-alt/30 transition-colors">
                   <td className="px-5 py-3.5">
                     <button
@@ -491,9 +500,13 @@ export default function Usuarios() {
             </tbody>
           </table>
         </div>
-        <div className="px-5 py-3 border-t border-border bg-bg-alt/30">
-          <span className="text-xs text-text-muted">Mostrando {filtered.length} de {users.length} usuarios</span>
-        </div>
+        <PaginationBar
+          page={page}
+          totalPages={totalPages}
+          total={filtered.length}
+          pageSize={PAGE_SIZE}
+          onPage={setPage}
+        />
       </Card3D>
 
       {/* User detail drawer */}

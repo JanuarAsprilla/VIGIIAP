@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import PaginationBar from '@/components/ui/PaginationBar'
 import type { DocumentoData } from '@/hooks/useDocumentos'
 import { getApiErrorMessage } from '@/lib/apiError'
 import type { FormErrors } from '@/types/forms'
@@ -62,7 +63,7 @@ function typeToTipo(type) {
 
 const visMap = Object.fromEntries(VISIBILIDAD.map((v) => [v.value, v]))
 
-const TipoIcon = ({ tipo }) => {
+const TipoIcon = ({ tipo }: { tipo: string }) => {
   const t = tipo?.toLowerCase()
   if (t === 'pdf')  return <FileText className="w-4 h-4 text-red-500" />
   if (t === 'docx' || t === 'doc' || t === 'word')  return <FileText className="w-4 h-4 text-blue-500" />
@@ -81,7 +82,7 @@ function useClickOutside(ref, handler) {
 
 // ── CategoryCombobox ─────────────────────────────────────────────────────────
 // Permite seleccionar una categoría existente o escribir/crear una nueva al vuelo.
-function CategoryCombobox({ value, onChange, allCategories }) {
+function CategoryCombobox({ value, onChange, allCategories }: { value: string; onChange: (v: string) => void; allCategories: string[] }) {
   const [input, setInput] = useState(value || '')
   const [open, setOpen]   = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -178,7 +179,7 @@ function formatBytes(bytes) {
 }
 
 // ── Toast de éxito ────────────────────────────────────────────────────────────
-function SavedToast({ message, onDone }) {
+function SavedToast({ message, onDone }: { message: string; onDone: () => void }) {
   useEffect(() => {
     const t = setTimeout(onDone, 3500)
     return () => clearTimeout(t)
@@ -197,7 +198,7 @@ function SavedToast({ message, onDone }) {
 }
 
 // ── Barra de progreso de subida ───────────────────────────────────────────────
-function UploadProgress({ progress }) {
+function UploadProgress({ progress }: { progress: number }) {
   if (progress === null || progress === 0) return null
   return (
     <div className="space-y-1.5">
@@ -219,7 +220,7 @@ function UploadProgress({ progress }) {
 }
 
 // ── Selector de visibilidad ───────────────────────────────────────────────────
-function VisibilidadSelector({ value, onChange }) {
+function VisibilidadSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div>
       <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2">
@@ -242,7 +243,7 @@ function VisibilidadSelector({ value, onChange }) {
 }
 
 // ── Dropzone ──────────────────────────────────────────────────────────────────
-function FileDropzone({ tipo, onFile, currentFile, editing, onError }) {
+function FileDropzone({ tipo, onFile, currentFile, editing, onError }: { tipo: string; onFile: (f: File | null) => void; currentFile: File | null; editing: DocumentoData | null; onError: (msg: string) => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const accept = ACCEPT[tipo]
@@ -310,7 +311,8 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }) {
 
 
 export default function GestionDocumentos() {
-  const { data, isLoading, isError, refetch } = useDocumentosList({ limit: 200, admin: 'true' })
+  const PAGE_SIZE = 25
+  const { data, isLoading, isError, refetch } = useDocumentosList({ limit: 500, admin: 'true' })
   const docs = data?.data ?? []
   const { data: categorias = [] } = useCategoriasList()
   const createDocumento = useCreateDocumento()
@@ -318,6 +320,7 @@ export default function GestionDocumentos() {
   const deleteDocumento = useDeleteDocumento()
   const [search, setSearch] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
+  const [page, setPage] = useState(1)
   const [filtroTipo, setFiltroTipo] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<DocumentoData | null>(null)
@@ -339,6 +342,12 @@ export default function GestionDocumentos() {
     const matchT = !filtroTipo || typeToTipo(d.type) === filtroTipo
     return matchQ && matchC && matchT
   })
+
+  // Resetea página al cambiar filtros
+  useEffect(() => { setPage(1) }, [search, filtroCategoria, filtroTipo])
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const openCreate = () => {
     setEditing(null); setForm(EMPTY_FORM); setFormErrors({})
@@ -527,10 +536,10 @@ export default function GestionDocumentos() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 && (
+                {paginated.length === 0 && (
                   <tr><td colSpan={7} className="px-5 py-10 text-center text-sm text-text-muted">No hay documentos que coincidan con la búsqueda</td></tr>
                 )}
-                {filtered.map((d) => {
+                {paginated.map((d) => {
                   const vis = visMap[d.visibilidad] ?? visMap.publico
                   const VisIcon = vis.icon
                   return (
@@ -572,8 +581,14 @@ export default function GestionDocumentos() {
               </tbody>
             </table>
           </div>
-          <div className="px-5 py-3 border-t border-border bg-bg-alt/30">
-            <span className="text-xs text-text-muted">Mostrando {filtered.length} de {docs.length} documentos</span>
+          <PaginationBar
+            page={page}
+            totalPages={totalPages}
+            total={filtered.length}
+            pageSize={PAGE_SIZE}
+            onPage={setPage}
+          />
+          <div className="sr-only">Mostrando {filtered.length} de {docs.length} documentos
           </div>
         </Card3D>
       )}
