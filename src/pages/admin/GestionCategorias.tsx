@@ -18,7 +18,7 @@ import { useDocumentosList } from '@/hooks/useDocumentos'
 const fadeUp = fadeUpSm
 
 // ── Toast ────────────────────────────────────────────────────────────────────
-function Toast({ message, onDone }) {
+function Toast({ message, onDone }: { message: string; onDone: () => void }) {
   useState(() => { const t = setTimeout(onDone, 3200); return () => clearTimeout(t) })
   return (
     <motion.div
@@ -34,7 +34,7 @@ function Toast({ message, onDone }) {
 }
 
 // ── ImageDropzone ─────────────────────────────────────────────────────────────
-function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }) {
+function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { onFile: (f: File | null) => void; currentFile: File | null; existingUrl?: string | null; compact?: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [objectUrl, setObjectUrl] = useState<string | null>(null)
@@ -100,7 +100,7 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }) {
 }
 
 // ── Tarjeta de categoría ──────────────────────────────────────────────────────
-function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbnail }) {
+function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbnail }: { cat: { nombre: string; descripcion?: string | null; thumbnail_url?: string | null; activo?: boolean }; docCount: number; onDelete: (nombre: string) => void; onThumbnailSaved: (nombre: string) => void; uploadThumbnail: ReturnType<typeof import('@/hooks/useCategorias').useUploadCategoriaThumbnail> }) {
   const [file, setFile]         = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress]   = useState(0)
@@ -242,7 +242,7 @@ export default function GestionCategorias() {
     const cat = d.categoria || d.tipo
     if (cat) acc[cat] = (acc[cat] ?? 0) + 1
     return acc
-  }, {})
+  }, {} as Record<string, number>)
 
   const handleCreate = async (e) => {
     e.preventDefault()

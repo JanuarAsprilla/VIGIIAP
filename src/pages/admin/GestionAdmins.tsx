@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 
 interface AdminSigUser {
   id: string
@@ -21,7 +21,7 @@ const fetchAdminUsers  = () => api.get('/admin/usuarios?rol=admin_sig')
 const crearAdmin       = (data) => api.post('/admin/super/crear-admin', data)
 
 // ── Sub-components ────────────────────────────────────────────────────────────
-function StatCard({ icon: Icon, label, value, color = 'primary' }) {
+function StatCard({ icon: Icon, label, value, color = 'primary' }: { icon: React.ComponentType<{ className?: string }>; label: string; value?: number | string; color?: string }) {
   const colors = {
     primary: 'bg-primary-50 text-primary-700 border-primary-200',
     amber:   'bg-amber-50  text-amber-700  border-amber-200',
@@ -33,7 +33,7 @@ function StatCard({ icon: Icon, label, value, color = 'primary' }) {
       glow="rgba(26,86,50,0.12)"
       intensity={4}
       whileHover={{ y: -3 }}
-      className={`flex items-center gap-3 p-4 rounded-xl border ${colors[color]}`}
+      className={`flex items-center gap-3 p-4 rounded-xl border ${(colors as Record<string, string>)[color]}`}
     >
       <Icon className="w-5 h-5 shrink-0" />
       <div>
@@ -44,7 +44,7 @@ function StatCard({ icon: Icon, label, value, color = 'primary' }) {
   )
 }
 
-function CrearAdminModal({ onClose, onSuccess }) {
+function CrearAdminModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (data: unknown) => void }) {
   const [form, setForm] = useState({ nombre: '', email: '', institucion: '' })
   const [showConfirm, setShowConfirm] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -167,7 +167,7 @@ function CrearAdminModal({ onClose, onSuccess }) {
   )
 }
 
-function AdminTable({ usuarios, isLoading }) {
+function AdminTable({ usuarios, isLoading }: { usuarios: AdminSigUser[] | undefined; isLoading: boolean }) {
   if (isLoading) {
     return (
       <div className="space-y-2">

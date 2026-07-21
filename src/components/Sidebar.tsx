@@ -3,7 +3,8 @@
  * Light (default): editorial blanco con textura verde-sage
  * Dark: dark forest — mapa del Chocó como textura + orbe verde
  */
-import { useState } from 'react'
+import { useState, type ComponentType } from 'react'
+import type { AuthUser } from '@/contexts/AuthContext'
 import { NavLink, Link } from 'react-router-dom'
 import { PlusCircle, LogOut, X, Sparkles, Lock, Shield, ChevronRight } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
@@ -25,7 +26,12 @@ const navItemVariant = {
 }
 
 // ── Nav link ─────────────────────────────────────────────────────────────────
-function SidebarLink({ link, onClose, userRole, isAuthenticated }) {
+function SidebarLink({ link, onClose, userRole, isAuthenticated }: {
+  link: { path: string; label: string; icon: ComponentType<{ className?: string }> }
+  onClose: () => void
+  userRole: string
+  isAuthenticated: boolean
+}) {
   const needsInstitutional = RESTRICTED_PATHS.includes(link.path)
   const isLocked = needsInstitutional && (
     !isAuthenticated ||
@@ -114,7 +120,7 @@ function SidebarLink({ link, onClose, userRole, isAuthenticated }) {
 }
 
 // ── User card ─────────────────────────────────────────────────────────────────
-function UserMiniCard({ user }) {
+function UserMiniCard({ user }: { user: AuthUser | null }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -6 }}
@@ -163,7 +169,13 @@ function UserMiniCard({ user }) {
 }
 
 // ── Contenido del sidebar ─────────────────────────────────────────────────────
-function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }) {
+function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }: {
+  onClose: () => void
+  onOpenModal: () => void
+  onLogout: () => void
+  user: AuthUser | null
+  isAuthenticated: boolean
+}) {
   return (
     <div className="flex flex-col h-full relative z-10">
 
@@ -380,7 +392,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated })
 }
 
 // ── Export principal ──────────────────────────────────────────────────────────
-export default function Sidebar({ mobileOpen, onClose }) {
+export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   const { isAuthenticated, user, logout } = useAuth()
   const [showModal, setShowModal] = useState(false)
 

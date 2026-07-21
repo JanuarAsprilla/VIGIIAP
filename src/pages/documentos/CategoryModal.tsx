@@ -5,8 +5,8 @@ import { categoryIcons, CATEGORY_COLORS, typeStyles, SORT_OPTIONS } from './docu
 import { useClickOutside } from './documentos.utils'
 import { matches } from '@/lib/search'
 
-function FileIcon({ type }) {
-  const s = typeStyles[type] || typeStyles.pdf
+function FileIcon({ type }: { type: string }) {
+  const s = (typeStyles as Record<string, typeof typeStyles.pdf>)[type] || typeStyles.pdf
   return (
     <div className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 ${s.bg}`}>
       <FileText className={`w-4 h-4 ${s.text}`} />
@@ -14,7 +14,7 @@ function FileIcon({ type }) {
   )
 }
 
-function DocRow({ doc, onPreview, onDownload }) {
+function DocRow({ doc, onPreview, onDownload }: { doc: { id: string; name: string; date: string; size?: string; type: string; url?: string | null; [key: string]: unknown }; onPreview: (doc: unknown) => void; onDownload: (doc: unknown) => void }) {
   return (
     <tr className="border-b border-border last:border-b-0 hover:bg-bg-alt/50 transition-colors">
       <td className="py-3 pr-4">
@@ -56,9 +56,9 @@ function DocRow({ doc, onPreview, onDownload }) {
   )
 }
 
-export function CategoryModal({ category, onClose, onPreview, onDownload }) {
-  const Icon = categoryIcons[category.icon] || BookOpen
-  const colors = CATEGORY_COLORS[category.title] || CATEGORY_COLORS.default
+export function CategoryModal({ category, onClose, onPreview, onDownload }: { category: { id: string; title: string; icon?: string; docs: unknown[]; [key: string]: unknown }; onClose: () => void; onPreview: (doc: unknown) => void; onDownload: (doc: unknown) => void }) {
+  const Icon = (categoryIcons as Record<string, typeof BookOpen>)[category.icon ?? ''] || BookOpen
+  const colors = (CATEGORY_COLORS as Record<string, typeof CATEGORY_COLORS.default>)[category.title] || CATEGORY_COLORS.default
   const [localQuery, setLocalQuery] = useState('')
   const [sortBy, setSortBy] = useState('name-asc')
   const [showSort, setShowSort] = useState(false)

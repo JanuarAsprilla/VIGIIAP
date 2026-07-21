@@ -68,7 +68,7 @@ function useReadNotifications() {
 
 // ── Componente principal ──
 
-export default function TopBar({ onMenuToggle }) {
+export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
   const location  = useLocation()
   const navigate  = useNavigate()
   const { isAuthenticated, user, logout, isAdmin } = useAuth()
@@ -76,8 +76,8 @@ export default function TopBar({ onMenuToggle }) {
   const { query, setQuery }               = useSearch()
   const { isDark, toggleTheme }           = useTheme()
 
-  const placeholder = SEARCH_PLACEHOLDERS[location.pathname] ?? SEARCH_PLACEHOLDERS['/']
-  const activeLabel = PAGE_LABELS[location.pathname]
+  const placeholder = (SEARCH_PLACEHOLDERS as Record<string, string>)[location.pathname] ?? (SEARCH_PLACEHOLDERS as Record<string, string>)['/']
+  const activeLabel = (PAGE_LABELS as Record<string, string>)[location.pathname]
 
   const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [activePanel, setActivePanel]           = useState(null)

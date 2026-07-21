@@ -19,10 +19,9 @@
 
     /* Strictness — null safety completa */
     "strict": true,
-    "noImplicitAny": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    /* TODO post-lanzamiento: activar noImplicitAny:true — requiere tipar props en ~65 archivos */
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "exactOptionalPropertyTypes": false,
     /* Paths — en TS 6 con moduleResolution bundler, paths resuelve sin baseUrl */

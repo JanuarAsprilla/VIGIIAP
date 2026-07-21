@@ -24,12 +24,12 @@ const fadeUp = (delay = 0) => ({
 })
 
 // ── Preview Modal para mapas ──────────────────────────────────────────────────
-function MapPreviewModal({ map, format, onClose }) {
+function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: string; onClose: () => void }) {
   const fileUrl = format === 'IMG' ? map.archivo_img_url : map.archivo_pdf_url
   const isImage = format === 'IMG' || (fileUrl && /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(fileUrl))
 
   useEffect(() => {
-    const h = (e) => { if (e.key === 'Escape') onClose() }
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', h)
     return () => document.removeEventListener('keydown', h)
   }, [onClose])
@@ -115,7 +115,7 @@ const ALLOWED_ORIGINS = [
   import.meta.env.VITE_API_URL        || '',
 ].filter(Boolean)
 
-function isTrustedUrl(url) {
+function isTrustedUrl(url: string): boolean {
   try {
     const parsed = new URL(url)
     return ALLOWED_ORIGINS.some((o) => {
@@ -124,7 +124,7 @@ function isTrustedUrl(url) {
   } catch { return false }
 }
 
-async function forceDownload(url) {
+async function forceDownload(url: string): Promise<void> {
   if (!url) return
   // H-02: bloquear URLs de orígenes no confiables.
   if (!isTrustedUrl(url)) {
@@ -159,7 +159,7 @@ const CATEGORY_COLORS = {
 
 interface MapCardProps { map: MapaData; index: number; onPreview?: (map: MapaData, format: string) => void }
 function MapCard({ map, index, onPreview }: MapCardProps) {
-  const colors = CATEGORY_COLORS[map.category] ?? { pill: 'bg-primary-100 text-primary-700', accent: '#1B4332' }
+  const colors = CATEGORY_COLORS[map.category as keyof typeof CATEGORY_COLORS] ?? { pill: 'bg-primary-100 text-primary-700', accent: '#1B4332' }
   const hasPdf     = map.formats.includes('PDF')
   const hasImg     = map.formats.includes('IMG')
   const hasGeovisor = map.formats.includes('GEOVISOR')
@@ -269,19 +269,19 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
   )
 }
 
-function FilterSelect({ label, options, value, onChange }) {
+function FilterSelect({ label, options, value, onChange }: { label: string; options: { value: string; label: string }[]; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex-1 min-w-[180px]">
       <label className="table-header block text-text-muted mb-1.5">{label}</label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
         className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-[0.9rem] text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition">
-        {options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        {(options as { value: string; label: string }[]).map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
       </select>
     </div>
   )
 }
 
-function FilterChip({ label, onRemove }) {
+function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-800 text-white rounded-full text-xs font-semibold">
       {label}
@@ -298,7 +298,7 @@ export default function Mapas() {
   const [filters, setFilters] = useState({ category: '', format: '', year: '' })
   const [page, setPage]       = useState(1)
   const [previewMap, setPreviewMap]       = useState(null)
-  const [previewFormat, setPreviewFormat] = useState(null)
+  const [previewFormat, setPreviewFormat] = useState<string | null>(null)
   const PER_PAGE = 6
 
   // ── Datos reales ─────────────────────────────────────────────────────────────
@@ -331,11 +331,11 @@ export default function Mapas() {
   const safePage   = Math.min(page, totalPages)
   const pagedMaps  = filteredMaps.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
 
-  const updateFilter = (key, value) => { setFilters((p) => ({ ...p, [key]: value })); setPage(1) }
-  const removeChip   = (key)        => { setFilters((p) => ({ ...p, [key]: '' }));    setPage(1) }
-  const clearAll     = ()           => { setFilters({ category: '', format: '', year: '' }); setPage(1) }
+  const updateFilter = (key: string, value: string) => { setFilters((p) => ({ ...p, [key]: value })); setPage(1) }
+  const removeChip   = (key: string) => { setFilters((p) => ({ ...p, [key]: '' }));    setPage(1) }
+  const clearAll     = ()            => { setFilters({ category: '', format: '', year: '' }); setPage(1) }
 
-  const handlePreview = (map, format) => {
+  const handlePreview = (map: MapaData, format: string) => {
     setPreviewMap(map)
     setPreviewFormat(format)
   }
@@ -468,7 +468,7 @@ export default function Mapas() {
         {previewMap && (
           <MapPreviewModal
             map={previewMap}
-            format={previewFormat}
+            format={previewFormat ?? ''}
             onClose={() => { setPreviewMap(null); setPreviewFormat(null) }}
           />
         )}

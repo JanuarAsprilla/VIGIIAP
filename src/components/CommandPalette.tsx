@@ -12,7 +12,8 @@
  *   - ArrowUp/ArrowDown navegan, Enter activa
  */
 
-import { useEffect, useRef, useCallback, useState, useMemo, useId } from 'react'
+import { useEffect, useRef, useCallback, useState, useMemo, useId, type KeyboardEvent, type ReactNode } from 'react'
+import type { CatalogueEntry } from '@/types'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ArrowRight, Keyboard, X } from 'lucide-react'
@@ -23,7 +24,7 @@ import { useCatalogue } from '@/hooks/useCatalogue'
 // Highlight matched text
 // ─────────────────────────────────────────────
 
-function Highlight({ text, query }) {
+function Highlight({ text, query }: { text: string; query: string }): ReactNode {
   if (!query.trim()) return <>{text}</>
 
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -32,7 +33,7 @@ function Highlight({ text, query }) {
 
   return (
     <>
-      {parts.map((part, i) =>
+      {parts.map((part: string, i: number) =>
         regex.test(part)
           ? <mark key={i} className="bg-primary-100 text-primary-900 rounded-sm not-italic">{part}</mark>
           : part
@@ -45,7 +46,7 @@ function Highlight({ text, query }) {
 // Single result item
 // ─────────────────────────────────────────────
 
-function ResultItem({ item, isActive, query, onSelect, id }) {
+function ResultItem({ item, isActive, query, onSelect, id }: { item: CatalogueEntry; isActive: boolean; query: string; onSelect: () => void; id: string }) {
   const Icon = item.icon
   return (
     <li
@@ -113,7 +114,7 @@ export default function CommandPalette() {
   const baseId    = useId()
   const inputId   = `${baseId}-input`
   const listboxId = `${baseId}-listbox`
-  const itemId    = (i) => `${baseId}-item-${i}`
+  const itemId    = (i: number) => `${baseId}-item-${i}`
 
   // Catálogo provisto por el hook — desacoplado de la presentación
   const catalogue = useCatalogue()
@@ -159,12 +160,12 @@ export default function CommandPalette() {
   // itemId is a stable pure function (no closure), omitting it from deps is safe.
   }, [activeIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSelect = useCallback((to) => {
+  const handleSelect = useCallback((to: string) => {
     closePalette()
     navigate(to)
   }, [closePalette, navigate])
 
-  const handleKeyDown = useCallback((e) => {
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault()
@@ -187,7 +188,7 @@ export default function CommandPalette() {
   }, [activeIndex, flatResults, handleSelect, closePalette])
 
   // Focus trap — keep Tab/Shift+Tab inside the panel
-  const handleFocusTrap = useCallback((e) => {
+  const handleFocusTrap = useCallback((e: KeyboardEvent) => {
     if (e.key !== 'Tab' || !panelRef.current) return
     const focusable = panelRef.current.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -283,7 +284,7 @@ export default function CommandPalette() {
                         {groupName}
                       </p>
                       <ul role="presentation">
-                        {items.map((item) => {
+                        {items.map((item: CatalogueEntry) => {
                           const flatIdx = flatResults.indexOf(item)
                           return (
                             <ResultItem

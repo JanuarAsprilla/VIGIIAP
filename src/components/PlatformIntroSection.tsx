@@ -222,7 +222,7 @@ const PAL = {
 // ── ChocoMapCloud ─────────────────────────────────────────────────────────────
 const GEO = buildGeometry(9000)   // precomputar al cargar el módulo
 
-function ChocoMapCloud({ isDark, prefersReduced }) {
+function ChocoMapCloud({ isDark, prefersReduced }: { isDark: boolean; prefersReduced: boolean }) {
   const matRef = useRef<import("three").ShaderMaterial | null>(null)
 
   const mat = useMemo(() => {
@@ -272,7 +272,7 @@ function ChocoMapCloud({ isDark, prefersReduced }) {
 }
 
 // ── Partículas ambientales — polvo cinematográfico (~180 puntos) ──────────────
-function AmbientDust({ isDark, prefersReduced }) {
+function AmbientDust({ isDark, prefersReduced }: { isDark: boolean; prefersReduced: boolean }) {
   const matRef = useRef<import("three").ShaderMaterial | null>(null)
   const geo = useMemo(()=>{
     const N=180, p=new Float32Array(N*3), o=new Float32Array(N), s=new Float32Array(N)
@@ -333,7 +333,7 @@ function AmbientDust({ isDark, prefersReduced }) {
 }
 
 // ── Rejilla cartográfica SIG ──────────────────────────────────────────────────
-function CartographicGrid({ isDark }) {
+function CartographicGrid({ isDark }: { isDark: boolean }) {
   const geo = useMemo(()=>{
     const l: number[]=[], w=2.4, h=6.4, C=8, R=16
     for(let r=0;r<=R;r++){const y=-h/2+r*(h/R); l.push(-w/2,y,0,w/2,y,0)}
@@ -350,7 +350,7 @@ function CartographicGrid({ isDark }) {
 }
 
 // ── Escena ────────────────────────────────────────────────────────────────────
-function Scene({ isDark, prefersReduced }) {
+function Scene({ isDark, prefersReduced }: { isDark: boolean; prefersReduced: boolean }) {
   return(
     <>
       <fog attach="fog" args={[isDark?'#060f09':'#EEF5F1', 5, 24]}/>
@@ -379,7 +379,7 @@ const CHAPTERS=[
     stat:{value:'6',label:'módulos especializados integrados'}, accent:'#93c5fd'},
 ]
 
-function ChapterText({ chapter, isActive, isDark }){
+function ChapterText({ chapter, isActive, isDark }: { chapter: { num?: number; title?: string; body?: string; stat?: { value: string; label: string }; accent?: string; [key: string]: unknown }; isActive: boolean; isDark: boolean }){
   return(
     <AnimatePresence mode="wait">
       {isActive&&(
@@ -422,7 +422,7 @@ function ChapterText({ chapter, isActive, isDark }){
   )
 }
 
-function IIAPBadge({ isDark }){
+function IIAPBadge({ isDark }: { isDark: boolean }){
   return(
     <div className="absolute bottom-10 right-8 lg:right-16 hidden sm:flex items-center gap-2.5">
       <div className="w-2 h-2 rounded-full animate-pulse"

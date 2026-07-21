@@ -24,7 +24,7 @@ const TM = Object.freeze({
 })
 
 /** Longitud de arco meridiano (serie de Helmert) */
-function mArc(phi, e2) {
+function mArc(phi: number, e2: number): number {
   const e4 = e2 * e2
   const e6 = e2 * e4
   return TM.a * (
@@ -41,7 +41,7 @@ function mArc(phi, e2) {
  * @param {number} lonD  Longitud decimal (°W, valor negativo)
  * @returns {{ x: number, y: number }}  Coordenadas planas en metros
  */
-export function wgs84ToMagna(latD, lonD) {
+export function wgs84ToMagna(latD: number, lonD: number): { x: number; y: number } {
   const R   = Math.PI / 180
   const { a, f, k0, lon0, lat0, FE, FN } = TM
   const e2  = 2*f - f*f
@@ -68,7 +68,7 @@ export function wgs84ToMagna(latD, lonD) {
  * @param {number} Y  Coordenada Norte (m)
  * @returns {{ lat: number, lon: number }}  Coordenadas geográficas en grados decimales
  */
-export function magnaToWgs84(X, Y) {
+export function magnaToWgs84(X: number, Y: number): { lat: number; lon: number } {
   const D   = 180 / Math.PI
   const R   = Math.PI / 180
   const { a, f, k0, lon0, lat0, FE, FN } = TM

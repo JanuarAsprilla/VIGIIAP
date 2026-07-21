@@ -86,7 +86,7 @@ const TOOLS = [
 ]
 
 // ── Coordinate + zoom tracker ──
-function CoordTracker({ onMove, onZoom }) {
+function CoordTracker({ onMove, onZoom }: { onMove: (coord: string) => void; onZoom: (z: number) => void }) {
   useMapEvents({
     mousemove(e) {
       const { lat, lng } = e.latlng
@@ -109,10 +109,10 @@ const ZOOM_SCALES = {
   10: '25 km', 11: '10 km', 12: '5 km', 13: '2 km',
   14: '1 km', 15: '500 m', 16: '200 m', 17: '100 m',
 }
-function getScale(zoom) { return ZOOM_SCALES[zoom] || `1:${Math.round(591657550.5 / Math.pow(2, zoom)).toLocaleString()}` }
+function getScale(zoom: number): string { return ZOOM_SCALES[zoom as keyof typeof ZOOM_SCALES] || `1:${Math.round(591657550.5 / Math.pow(2, zoom)).toLocaleString()}` }
 
 // ── Toggle Switch ──
-function Toggle({ checked, onChange, color }) {
+function Toggle({ checked, onChange, color }: { checked: boolean; onChange: () => void; color: string }) {
   return (
     <button
       onClick={onChange}
@@ -134,7 +134,8 @@ function Toggle({ checked, onChange, color }) {
 }
 
 // ── Layers Panel ──
-function LayersPanel({ layers, onToggle, visible, onClose, activeTool, onToolChange }) {
+type LayerDef = { id: string; title: string; subtitle: string; icon: string; defaultOn: boolean; color: string }
+function LayersPanel({ layers, onToggle, visible, onClose, activeTool, onToolChange }: { layers: LayerDef[]; onToggle: (id: string) => void; visible: boolean; onClose: () => void; activeTool: string; onToolChange: (t: string) => void }) {
   return (
     <AnimatePresence>
       {visible && (
@@ -200,7 +201,7 @@ function LayersPanel({ layers, onToggle, visible, onClose, activeTool, onToolCha
 }
 
 // ── Legend Panel ──
-function LegendPanel({ layers, visible, onClose }) {
+function LegendPanel({ layers, visible, onClose }: { layers: LayerDef[]; visible: boolean; onClose: () => void }) {
   const active = LAYER_GROUPS.filter((l) => layers.includes(l.id))
   return (
     <AnimatePresence>
@@ -245,7 +246,7 @@ function LegendPanel({ layers, visible, onClose }) {
 }
 
 // ── Basemap Selector ──
-function BasemapSelector({ active, onChange }) {
+function BasemapSelector({ active, onChange }: { active: string; onChange: (id: string) => void }) {
   return (
     <div className="absolute bottom-4 right-4 z-[1000] flex gap-1.5">
       {TILE_LAYERS.map((tile) => (

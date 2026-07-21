@@ -1,3 +1,5 @@
+import type { ComponentType } from 'react'
+import type { AuthUser } from '@/contexts/AuthContext'
 import { NavLink, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -41,7 +43,7 @@ const navItem = {
   animate: { opacity: 1, x: 0, transition: { ease: [0.22, 1, 0.36, 1] as const, duration: 0.35 } },
 }
 
-function AdminNavLink({ link }) {
+function AdminNavLink({ link }: { link: { label: string; path: string; icon: ComponentType<{ className?: string }>; end?: boolean; badge?: number | null } }) {
   return (
     <NavLink to={link.path} end={link.end} className="block no-underline">
       {({ isActive }) => (
@@ -83,7 +85,7 @@ function AdminNavLink({ link }) {
   )
 }
 
-function SidebarContent({ onClose, onLogout, user }) {
+function SidebarContent({ onClose, onLogout, user }: { onClose: () => void; onLogout: () => void; user: AuthUser | null }) {
   return (
     <div className="flex flex-col h-full">
 
@@ -208,7 +210,7 @@ function SidebarContent({ onClose, onLogout, user }) {
   )
 }
 
-export default function AdminSidebar({ mobileOpen, onClose }) {
+export default function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   const { user, logout } = useAuth()
 
   const handleLogout = () => { logout(); onClose?.() }

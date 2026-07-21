@@ -2,6 +2,8 @@
  * tokens: design.md · stamp: 2026-05-25
  */
 import { useState } from 'react'
+import type { SolicitudData } from '@/hooks/useSolicitudes'
+import type { AdminStats } from '@/types'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
@@ -32,7 +34,7 @@ const KPI_GLOW = [
   'rgba(56,189,248,0.18)',
 ]
 
-function KPICards({ stats, isLoading }) {
+function KPICards({ stats, isLoading }: { stats: Partial<AdminStats> | undefined; isLoading: boolean }) {
   const kpis = [
     { label: 'Usuarios Registrados',   value: stats?.usuarios ?? '—',             trendUp: true  },
     { label: 'Solicitudes Pendientes', value: stats?.solicitudesPendientes ?? '—', trendUp: false },
@@ -83,7 +85,7 @@ function KPICards({ stats, isLoading }) {
 }
 
 // ── Gráfico de Solicitudes por Estado ──
-function SolicitudesChart({ solicitudes }) {
+function SolicitudesChart({ solicitudes }: { solicitudes: SolicitudData[] }) {
   const estados = [
     { label: 'Pendiente',   color: 'bg-orange-400', textColor: 'text-orange-600' },
     { label: 'En Revisión', color: 'bg-blue-400',   textColor: 'text-blue-600'   },
@@ -160,7 +162,7 @@ function SolicitudesChart({ solicitudes }) {
 }
 
 // ── Alertas — solicitudes sin atender ──
-function AlertasSolicitudes({ solicitudes }) {
+function AlertasSolicitudes({ solicitudes }: { solicitudes: SolicitudData[] }) {
   const pendientes = solicitudes.filter((s) => s.estado === 'Pendiente' || s.estado === 'En Revisión')
   if (pendientes.length === 0) return null
   return (
@@ -180,7 +182,7 @@ function AlertasSolicitudes({ solicitudes }) {
 }
 
 // ── Distribución de roles ──
-function RolesChart({ usuarios }) {
+function RolesChart({ usuarios }: { usuarios: { rol: string }[] }) {
   const counts = usuarios.reduce((acc, u) => {
     acc[u.rol] = (acc[u.rol] || 0) + 1
     return acc
@@ -219,7 +221,7 @@ function RolesChart({ usuarios }) {
 }
 
 // ── Solicitudes pendientes ──
-function SolicitudesPendientes({ solicitudes }) {
+function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }) {
   const pendientes   = solicitudes.filter((s) => s.estado === 'Pendiente' || s.estado === 'En Revisión')
   const updateEstado = useUpdateEstadoSolicitud()
   const [confirm, setConfirm] = useState<{ _id: string; accion: 'Aprobado' | 'Rechazado' } | null>(null)
@@ -317,7 +319,7 @@ function ActividadReciente() {
       mapas: 'bg-green-100 text-green-700',
       documentos: 'bg-orange-100 text-orange-700',
     }
-    return map[modulo] ?? 'bg-gray-100 text-gray-600'
+    return (map as Record<string, string>)[modulo] ?? 'bg-gray-100 text-gray-600'
   }
 
   return (

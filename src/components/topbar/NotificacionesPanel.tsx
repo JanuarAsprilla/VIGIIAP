@@ -21,8 +21,8 @@ function timeAgo(iso) {
   return `hace ${d} d`
 }
 
-function NotificationItem({ item, isRead, onSelect }) {
-  const { Icon, color, bg } = TYPE_META[item.type] ?? TYPE_META.default
+function NotificationItem({ item, isRead, onSelect }: { item: { id: string; mensaje: string; tipo?: string; leida?: boolean; creado_en?: string; link?: string }; isRead: boolean; onSelect: () => void }) {
+  const { Icon, color, bg } = (TYPE_META as Record<string, typeof TYPE_META.default>)[item.tipo ?? 'default'] ?? TYPE_META.default
 
   return (
     <Link
@@ -56,7 +56,7 @@ function NotificationItem({ item, isRead, onSelect }) {
   )
 }
 
-export default function NotificacionesPanel({ onClose, items, readIds, onMarkAllRead, onMarkRead }) {
+export default function NotificacionesPanel({ onClose, items, readIds, onMarkAllRead, onMarkRead }: { onClose: () => void; items: { id: string; mensaje: string; tipo?: string; leida?: boolean; creado_en?: string; link?: string }[]; readIds: string[]; onMarkAllRead: (ids: string[]) => void; onMarkRead: (id: string) => void }) {
   const unreadCount = items.filter((n) => !readIds.includes(n.id)).length
   const allRead     = unreadCount === 0
 

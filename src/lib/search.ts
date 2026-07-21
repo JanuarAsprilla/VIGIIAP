@@ -7,7 +7,7 @@
  */
 
 /** Quita acentos y pasa a minúsculas */
-export function normalize(str) {
+export function normalize(str: string | null | undefined): string {
   if (!str) return ''
   return str
     .normalize('NFD')
@@ -17,7 +17,7 @@ export function normalize(str) {
 }
 
 /** Distancia de Levenshtein entre dos strings cortos */
-function levenshtein(a, b) {
+function levenshtein(a: string, b: string): number {
   if (a === b) return 0
   if (a.length === 0) return b.length
   if (b.length === 0) return a.length
@@ -38,7 +38,7 @@ function levenshtein(a, b) {
  * - Substring: "hidro" → "hidrología" ✅
  * - Fuzzy (palabras completas, >= 5 chars, 1 error): "analisi" → "analisis" ✅
  */
-function tokenMatches(haystack, token) {
+function tokenMatches(haystack: string, token: string): boolean {
   if (haystack.includes(token)) return true
   // Comparar contra cada palabra del haystack con tolerancia de 1 error
   if (token.length >= 5) {
@@ -57,7 +57,7 @@ function tokenMatches(haystack, token) {
  * @param {string} query    - Texto buscado por el usuario
  * @returns {boolean}
  */
-export function matches(fields, query) {
+export function matches(fields: (string | null | undefined)[], query: string): boolean {
   if (!query || !query.trim()) return true
   const haystack = fields.filter(Boolean).map(normalize).join(' ')
   const tokens = normalize(query).split(/\s+/).filter(Boolean)

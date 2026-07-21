@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Map, FileText, Users } from 'lucide-react'
@@ -104,7 +105,7 @@ const PANEL_STATS = [
 ]
 
 // ── Shared Auth Layout ──
-export default function AuthLayout({ children }) {
+export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex">
 

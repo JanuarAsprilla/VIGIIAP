@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { SolicitudRaw } from '@/types'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
 import type { ApiMeta } from '@/types'
@@ -43,7 +44,7 @@ export const TRANSICIONES_VALIDAS = {
   resuelta:    [], // estado final
 }
 
-function buildTimeline(estadoRaw) {
+function buildTimeline(estadoRaw: string): string[] {
   if (estadoRaw === 'resuelta')    return ['Recibida', 'Pendiente', 'En Revisión', 'Resuelta']
   if (estadoRaw === 'aprobada')    return ['Recibida', 'Pendiente', 'En Revisión', 'Aprobado']
   if (estadoRaw === 'rechazada')   return ['Recibida', 'Pendiente', 'En Revisión', 'Rechazado']
@@ -51,7 +52,7 @@ function buildTimeline(estadoRaw) {
   return ['Recibida', 'Pendiente']
 }
 
-function normalizeSolicitud(s) {
+function normalizeSolicitud(s: SolicitudRaw) {
   const estadoLabel = ESTADO_LABEL[s.estado] ?? 'En Proceso'
   return {
     id:             `#${s.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`,
@@ -84,9 +85,9 @@ export type SolicitudListResult = { data: SolicitudData[]; meta: ApiMeta }
 
 export const SOL_KEYS = {
   all:    ['solicitudes'],
-  list:   (params) => ['solicitudes', 'list', params],
-  mine:   (params) => ['solicitudes', 'mine', params],
-  detail: (id)     => ['solicitudes', 'detail', id],
+  list:   (params: Record<string, unknown>) => ['solicitudes', 'list', params],
+  mine:   (params: Record<string, unknown>) => ['solicitudes', 'mine', params],
+  detail: (id: string | null | undefined)   => ['solicitudes', 'detail', id],
 }
 
 export function useSolicitudesAdmin(params: Record<string, unknown> = {}) {
@@ -133,7 +134,7 @@ export function useUpdateEstadoSolicitud() {
   return useMutation<unknown, Error, { id: string; estado: string; nota?: string }>({
     mutationFn: ({ id, estado, nota }) =>
       api.patch(`/solicitudes/${id}/estado`, {
-        estado: ESTADO_API[estado] ?? estado,
+        estado: ESTADO_API[estado as keyof typeof ESTADO_API] ?? estado,
         nota,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: SOL_KEYS.all }),

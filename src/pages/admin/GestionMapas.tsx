@@ -54,15 +54,15 @@ const TEMATICA_COLORS = {
   'Riesgo':           'bg-red-100 text-red-600',
 }
 
-function useClickOutside(ref, handler) {
+function useClickOutside(ref: React.RefObject<HTMLElement | null>, handler: () => void) {
   useEffect(() => {
-    const listener = (e) => { if (ref.current && !ref.current.contains(e.target)) handler() }
+    const listener = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) handler() }
     document.addEventListener('mousedown', listener)
     return () => document.removeEventListener('mousedown', listener)
   }, [ref, handler])
 }
 
-function CategoryCombobox({ value, onChange, allOptions, placeholder = 'Selecciona o escribe una temática nueva…' }) {
+function CategoryCombobox({ value, onChange, allOptions, placeholder = 'Selecciona o escribe una temática nueva…' }: { value: string; onChange: (v: string) => void; allOptions: string[]; placeholder?: string }) {
   const [input, setInput] = useState(value || '')
   const [open, setOpen]   = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -140,7 +140,7 @@ function formatBytes(bytes) {
 }
 
 // ── Toast de éxito ────────────────────────────────────────────────────────────
-function SavedToast({ message, onDone }) {
+function SavedToast({ message, onDone }: { message: string; onDone: () => void }) {
   useEffect(() => {
     const t = setTimeout(onDone, 3500)
     return () => clearTimeout(t)
@@ -159,7 +159,7 @@ function SavedToast({ message, onDone }) {
 }
 
 // ── Dropzone ──────────────────────────────────────────────────────────────────
-function VisibilidadSelector({ value, onChange }) {
+function VisibilidadSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="grid grid-cols-3 gap-2">
       {VISIBILIDAD.map(({ value: v, label, desc, Icon, border, bg, text }) => {
@@ -177,7 +177,7 @@ function VisibilidadSelector({ value, onChange }) {
   )
 }
 
-function ThumbnailDropzone({ onFile, existing }) {
+function ThumbnailDropzone({ onFile, existing }: { onFile: (f: File | null) => void; existing: string | null }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
@@ -251,10 +251,10 @@ function ThumbnailDropzone({ onFile, existing }) {
   )
 }
 
-function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, onError }) {
+function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, onError }: { formato: string; onFile: (f: File | null) => void; onFormatDetect: (fmt: string) => void; currentFile: File | null; editing: MapaData | null; onError: (msg: string) => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
-  const accept = ACCEPT[formato]
+  const accept = (ACCEPT as Record<string, string>)[formato]
 
   const validateAndAccept = useCallback((file) => {
     if (!file) return
@@ -336,7 +336,7 @@ function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, o
 }
 
 export default function GestionMapas() {
-  const { data, isLoading, isError, refetch } = useMapasList({ limit: 200, admin: 'true' })
+  const { data, isLoading, isError, refetch } = useMapasList({ limit: 500, admin: 'true' })
   const mapas = data?.data ?? []
   const createMapa = useCreateMapa()
   const updateMapa = useUpdateMapa()
@@ -608,7 +608,7 @@ export default function GestionMapas() {
                         <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${TEMATICA_COLORS[m.tematica] ?? 'bg-gray-100 text-gray-600'}`}>{m.tematica}</span>
+                              <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${(TEMATICA_COLORS as Record<string, string>)[m.tematica] ?? 'bg-gray-100 text-gray-600'}`}>{m.tematica}</span>
                               <span className={`text-[0.6rem] font-semibold px-1.5 py-0.5 rounded border ${
                                 m.formato === 'PDF' ? 'border-red-200 text-red-500' :
                                 m.formato === 'IMG' ? 'border-blue-200 text-blue-500' :
