@@ -71,7 +71,7 @@ export function useDocumentoBySlug(slug) {
 
 export function useCreateDocumento() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
+  return useMutation<void, Error, { formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ formData, onUploadProgress }) =>
       api.post('/documentos', formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: DOCS_KEYS.all }),
@@ -80,7 +80,7 @@ export function useCreateDocumento() {
 
 export function useUpdateDocumento() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { id: string; formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
+  return useMutation<void, Error, { id: string; formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ id, formData, onUploadProgress }) =>
       api.put(`/documentos/${id}`, formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: DOCS_KEYS.all }),
@@ -89,7 +89,7 @@ export function useUpdateDocumento() {
 
 export function useDeleteDocumento() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, string>({
+  return useMutation<void, Error, string>({
     mutationFn: (id) => api.delete(`/documentos/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: DOCS_KEYS.all }),
   })
@@ -97,7 +97,7 @@ export function useDeleteDocumento() {
 
 export function useToggleActivoDocumento() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { id: string; activo: boolean }>({
+  return useMutation<void, Error, { id: string; activo: boolean }>({
     mutationFn: ({ id, activo }) => api.patch(`/documentos/${id}/activo`, { activo }),
     onSuccess: () => qc.invalidateQueries({ queryKey: DOCS_KEYS.all }),
   })

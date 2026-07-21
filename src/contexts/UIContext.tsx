@@ -49,12 +49,12 @@ function useLocalStorage(key, defaultValue) {
 }
 
 export function UIProvider({ children }: { children: ReactNode }) {
-  const [densityRaw, setDensity]            = useLocalStorage('vigiiap_density', 'normal')
+  const [densityRaw, setDensity]            = useLocalStorage('vigiiap_density_v1', 'normal')
   // M-04: validar que el valor leído sea uno de los permitidos.
   const density = VALID_DENSITIES.includes(densityRaw) ? densityRaw : 'normal'
 
-  const [notifications, setNotifications]   = useLocalStorage('vigiiap_notif_enabled', true)
-  const [notifPrefsRaw, setNotifPrefs]       = useLocalStorage('vigiiap_notif_prefs', {
+  const [notifications, setNotifications]   = useLocalStorage('vigiiap_notif_enabled_v1', true)
+  const [notifPrefsRaw, setNotifPrefs]       = useLocalStorage('vigiiap_notif_prefs_v1', {
     solicitudes: true, mapas: false, email: true,
   })
   // M-04: validar shape de notifPrefs; usar defaults si es inválido.

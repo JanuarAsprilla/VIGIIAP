@@ -123,7 +123,7 @@ export function useSolicitudById(id: string | null | undefined) {
 
 export function useCreateSolicitud() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, Record<string, unknown>>({
+  return useMutation<void, Error, Record<string, unknown>>({
     mutationFn: (data) => api.post('/solicitudes', data),
     onSuccess:  () => qc.invalidateQueries({ queryKey: SOL_KEYS.all }),
   })
@@ -131,7 +131,7 @@ export function useCreateSolicitud() {
 
 export function useUpdateEstadoSolicitud() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { id: string; estado: string; nota?: string }>({
+  return useMutation<void, Error, { id: string; estado: string; nota?: string }>({
     mutationFn: ({ id, estado, nota }) =>
       api.patch(`/solicitudes/${id}/estado`, {
         estado: ESTADO_API[estado as keyof typeof ESTADO_API] ?? estado,
@@ -143,7 +143,7 @@ export function useUpdateEstadoSolicitud() {
 
 export function useResponderSolicitud() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { id: string; respuesta: string }>({
+  return useMutation<void, Error, { id: string; respuesta: string }>({
     mutationFn: ({ id, respuesta }) =>
       api.post(`/solicitudes/${id}/responder`, { respuesta }),
     onSuccess: () => qc.invalidateQueries({ queryKey: SOL_KEYS.all }),
@@ -168,7 +168,7 @@ export function useSolicitudArchivos(solicitudId: string | null | undefined) {
 
 export function useUploadSolicitudArchivo() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { solicitudId: string; file: File }>({
+  return useMutation<void, Error, { solicitudId: string; file: File }>({
     mutationFn: ({ solicitudId, file }) => {
       const fd = new FormData()
       fd.append('archivo', file)
@@ -184,7 +184,7 @@ export function useUploadSolicitudArchivo() {
 
 export function useDeleteSolicitudArchivo() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { solicitudId: string; archivoId: string }>({
+  return useMutation<void, Error, { solicitudId: string; archivoId: string }>({
     mutationFn: ({ solicitudId, archivoId }) =>
       api.delete(`/solicitudes/${solicitudId}/archivos/${archivoId}`),
     onSuccess: (_data, { solicitudId }) => {

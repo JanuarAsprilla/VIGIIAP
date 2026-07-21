@@ -16,7 +16,7 @@ const VALID_THEMES = ['light', 'dark']
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     try {
-      const stored = localStorage.getItem('vigiiap_theme')
+      const stored = localStorage.getItem('vigiiap_theme_v1')
       return VALID_THEMES.includes(stored as string) ? (stored as Theme) : 'light'
     }
     catch { return 'light' }
@@ -24,7 +24,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
-    try { localStorage.setItem('vigiiap_theme', theme) } catch { /* noop */ }
+    try { localStorage.setItem('vigiiap_theme_v1', theme) } catch { /* noop */ }
   }, [theme])
 
   const toggleTheme = useCallback(

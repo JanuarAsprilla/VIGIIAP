@@ -3,7 +3,7 @@
  * Cada función retorna el mensaje de error o null si es válido.
  */
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/
 
 export function validateRequired(value: string | null | undefined, label: string): string | null {
   return value?.toString().trim() ? null : `${label} es requerido`

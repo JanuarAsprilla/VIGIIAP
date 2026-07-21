@@ -27,7 +27,7 @@ export function useCreateCategoria() {
 
 export function useUploadCategoriaThumbnail() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { nombre: string; file: File; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
+  return useMutation<void, Error, { nombre: string; file: File; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ nombre, file, onUploadProgress }) => {
       const fd = new FormData()
       fd.append('thumbnail', file)
@@ -46,7 +46,7 @@ export function useUploadCategoriaThumbnail() {
 
 export function useDeleteCategoria() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, string>({
+  return useMutation<void, Error, string>({
     mutationFn: (nombre) => api.delete(`/categorias/${encodeURIComponent(nombre)}`),
     onSuccess:  () => {
       qc.invalidateQueries({ queryKey: KEYS.all })

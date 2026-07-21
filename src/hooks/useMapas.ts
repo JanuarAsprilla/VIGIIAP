@@ -107,7 +107,7 @@ export function useMapaBySlug(slug: string | null | undefined) {
 // ─── Mutations ────────────────────────────────────────────────────────────────
 export function useCreateMapa() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
+  return useMutation<void, Error, { formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ formData, onUploadProgress }) =>
       api.post('/mapas', formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
@@ -116,7 +116,7 @@ export function useCreateMapa() {
 
 export function useUpdateMapa() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { id: string; formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
+  return useMutation<void, Error, { id: string; formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ id, formData, onUploadProgress }) =>
       api.put(`/mapas/${id}`, formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
@@ -125,7 +125,7 @@ export function useUpdateMapa() {
 
 export function useToggleMapaActivo() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, { id: string; activo: boolean }>({
+  return useMutation<void, Error, { id: string; activo: boolean }>({
     mutationFn: ({ id, activo }) => api.patch(`/mapas/${id}/activo`, { activo }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
   })
@@ -133,7 +133,7 @@ export function useToggleMapaActivo() {
 
 export function useDeleteMapa() {
   const qc = useQueryClient()
-  return useMutation<unknown, Error, string>({
+  return useMutation<void, Error, string>({
     mutationFn: (id) => api.delete(`/mapas/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
   })
