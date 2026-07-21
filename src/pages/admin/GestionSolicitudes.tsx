@@ -1,7 +1,7 @@
 /* Hallmark · macrostructure: Workbench · genre: admin-crud
  * tokens: design.md · stamp: 2026-05-25
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { SolicitudData } from '@/hooks/useSolicitudes'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -37,17 +37,28 @@ function SectionLabel({ children }) {
 }
 
 export default function GestionSolicitudes() {
-  const { data } = useSolicitudesAdmin({ limit: 500 })
-  const solicitudes = data?.data ?? []
+  const [search, setSearch] = useState('')
+  const [filtroEstado, setFiltroEstado] = useState('')
+  const [filtroTipo, setFiltroTipo] = useState('')
+  const [page, setPage] = useState(1)
+
+  useEffect(() => { setPage(1) }, [search, filtroEstado, filtroTipo])
+
+  const { data } = useSolicitudesAdmin({
+    limit: PAGE_SIZE,
+    page,
+    ...(search       && { q: search }),
+    ...(filtroEstado && { estado: ESTADO_API[filtroEstado as keyof typeof ESTADO_API] ?? filtroEstado }),
+    ...(filtroTipo   && { tipo: filtroTipo }),
+  })
+  const pageItems = data?.data ?? []
+
   const updateEstado      = useUpdateEstadoSolicitud()
   const responderMutation = useResponderSolicitud()
   const deleteArchivo     = useDeleteSolicitudArchivo()
   const downloadArchivo   = useDownloadSolicitudArchivo()
   const { toasts, toast, dismiss } = useToast()
 
-  const [search, setSearch] = useState('')
-  const [filtroEstado, setFiltroEstado] = useState('')
-  const [filtroTipo, setFiltroTipo] = useState('')
   const [selected, setSelected] = useState<SolicitudData | null>(null)
   const [accionModal, setAccionModal] = useState<{ type: 'approve' | 'reject'; sol: SolicitudData } | null>(null)
 
@@ -55,20 +66,8 @@ export default function GestionSolicitudes() {
   const archivos          = archivosQuery.data ?? []
   const [nota, setNota] = useState('')
   const [respuesta, setRespuesta] = useState('')
-  const [page, setPage] = useState(1)
 
-  const tipos = [...new Set(solicitudes.map((s) => s.tipo))]
-
-  const filtered = solicitudes.filter((s) => {
-    const q = search.toLowerCase()
-    const matchQ = !q || s.id.toLowerCase().includes(q) || s.tipo.toLowerCase().includes(q) || (s.solicitante ?? '').toLowerCase().includes(q)
-    const matchE = !filtroEstado || s.estado === filtroEstado
-    const matchT = !filtroTipo || s.tipo === filtroTipo
-    return matchQ && matchE && matchT
-  })
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const TIPOS_SOLICITUD = ['uso-suelo', 'linderos', 'estudio-ambiental', 'validacion', 'aprovechamiento', 'otro']
 
   const handleMarcarRevision = async (sol) => {
     try {
@@ -152,7 +151,7 @@ export default function GestionSolicitudes() {
       return `"${safe.replace(/"/g, '""')}"`
     }
     const rows = [['ID', 'Tipo', 'Solicitante', 'Email', 'Fecha', 'Estado']]
-    filtered.forEach((s) => rows.push([s.id, s.tipo, s.solicitante, s.email, s.fecha, s.estado]))
+    pageItems.forEach((s) => rows.push([s.id, s.tipo, s.solicitante, s.email, s.fecha, s.estado]))
     const csv = rows.map((r) => r.map(csvField).join(',')).join('\n')
     const blobUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
     const a = document.createElement('a')
@@ -220,7 +219,7 @@ export default function GestionSolicitudes() {
           className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
         >
           <option value="">Todos los tipos</option>
-          {tipos.map((t) => <option key={t}>{t}</option>)}
+          {TIPOS_SOLICITUD.map((t) => <option key={t}>{t}</option>)}
         </select>
       </motion.div>
 
@@ -326,8 +325,8 @@ export default function GestionSolicitudes() {
         </div>
         <PaginationBar
           page={page}
-          totalPages={totalPages}
-          total={filtered.length}
+          totalPages={data?.meta?.totalPages ?? 1}
+          total={data?.meta?.total ?? 0}
           pageSize={PAGE_SIZE}
           onPage={setPage}
         />

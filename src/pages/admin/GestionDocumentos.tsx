@@ -312,16 +312,22 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }: { tipo: s
 
 export default function GestionDocumentos() {
   const PAGE_SIZE = 25
-  const { data, isLoading, isError, refetch } = useDocumentosList({ limit: 500, admin: 'true' })
+  const [search, setSearch] = useState('')
+  const [filtroCategoria, setFiltroCategoria] = useState('')
+  const [filtroTipo, setFiltroTipo] = useState('')
+  const [page, setPage] = useState(1)
+  const { data, isLoading, isError, refetch } = useDocumentosList({
+    limit: PAGE_SIZE,
+    page,
+    admin: 'true',
+    ...(search          && { q: search }),
+    ...(filtroCategoria && { tipo: filtroCategoria }),
+  })
   const docs = data?.data ?? []
   const { data: categorias = [] } = useCategoriasList()
   const createDocumento = useCreateDocumento()
   const updateDocumento = useUpdateDocumento()
   const deleteDocumento = useDeleteDocumento()
-  const [search, setSearch] = useState('')
-  const [filtroCategoria, setFiltroCategoria] = useState('')
-  const [page, setPage] = useState(1)
-  const [filtroTipo, setFiltroTipo] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<DocumentoData | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -335,19 +341,12 @@ export default function GestionDocumentos() {
 
   const isSubmitting = createDocumento.isPending || updateDocumento.isPending
 
-  const filtered = docs.filter((d) => {
-    const q = search.toLowerCase()
-    const matchQ = !q || d.nombre?.toLowerCase().includes(q) || (d.autores ?? '').toLowerCase().includes(q)
-    const matchC = !filtroCategoria || d.categoria === filtroCategoria
-    const matchT = !filtroTipo || typeToTipo(d.type) === filtroTipo
-    return matchQ && matchC && matchT
-  })
+  // filtroTipo se aplica client-side (campo computado desde extensión de archivo)
+  const paginated = filtroTipo
+    ? docs.filter((d) => typeToTipo(d.type) === filtroTipo)
+    : docs
 
-  // Resetea página al cambiar filtros
   useEffect(() => { setPage(1) }, [search, filtroCategoria, filtroTipo])
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1
-  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const openCreate = () => {
     setEditing(null); setForm(EMPTY_FORM); setFormErrors({})
@@ -583,12 +582,12 @@ export default function GestionDocumentos() {
           </div>
           <PaginationBar
             page={page}
-            totalPages={totalPages}
-            total={filtered.length}
+            totalPages={data?.meta?.totalPages ?? 1}
+            total={data?.meta?.total ?? 0}
             pageSize={PAGE_SIZE}
             onPage={setPage}
           />
-          <div className="sr-only">Mostrando {filtered.length} de {docs.length} documentos
+          <div className="sr-only">Mostrando {paginated.length} de {data?.meta?.total ?? 0} documentos
           </div>
         </Card3D>
       )}

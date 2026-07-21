@@ -11,7 +11,7 @@ import {
 import { ROLES, useAuth } from '@/contexts/AuthContext'
 import { fadeUpSm, panelAnim, drawerAnim, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
-import { useUsuariosList, useCreateUsuario, useUpdateUsuarioRol, useToggleActivo, useDeleteUsuario } from '@/hooks/useUsuarios'
+import { useUsuariosList, useCreateUsuario, useUpdateUsuarioRol, useToggleActivo, useDeleteUsuario, ROLE_MAP_REVERSE } from '@/hooks/useUsuarios'
 import { useToast, ToastContainer } from '@/components/Toast'
 
 const fadeUp = fadeUpSm
@@ -259,21 +259,25 @@ export default function Usuarios() {
     u.id !== currentUser?.id && (isSuperAdmin || u.rolBackend !== 'admin_sig')
 
   const PAGE_SIZE = 25
-  const { data } = useUsuariosList({ limit: 500 })
-  const users = data?.data ?? []
-  const updateRol   = useUpdateUsuarioRol()
-  const toggleActivo = useToggleActivo()
-  const deleteUser  = useDeleteUsuario()
-
-  const { toasts, toast, dismiss } = useToast()
-
   const [search, setSearch] = useState('')
   const [filtroRol, setFiltroRol] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('')
   const [page, setPage] = useState(1)
 
-  // Resetea página cuando cambian los filtros
   useEffect(() => { setPage(1) }, [search, filtroRol, filtroEstado])
+
+  const { data } = useUsuariosList({
+    limit: PAGE_SIZE,
+    page,
+    ...(search       && { q: search }),
+    ...(filtroRol    && { rol: ROLE_MAP_REVERSE[filtroRol] ?? filtroRol }),
+    ...(filtroEstado && { activo: filtroEstado === 'Activo' ? 'true' : 'false' }),
+  })
+  const updateRol   = useUpdateUsuarioRol()
+  const toggleActivo = useToggleActivo()
+  const deleteUser  = useDeleteUsuario()
+
+  const { toasts, toast, dismiss } = useToast()
   const [showModal, setShowModal] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
   const [editingUser, setEditingUser] = useState<UsuarioData | null>(null)
@@ -282,16 +286,7 @@ export default function Usuarios() {
   const [form, setForm] = useState({ rol: 'Público' })
   const [formErrors, setFormErrors] = useState<FormErrors>({})
 
-  const filtered = users.filter((u) => {
-    const q = search.toLowerCase()
-    const matchQ = !q || u.nombre.toLowerCase().includes(q) || (u.correo ?? '').toLowerCase().includes(q)
-    const matchRol = !filtroRol || u.rol === filtroRol
-    const matchEst = !filtroEstado || u.estado === filtroEstado
-    return matchQ && matchRol && matchEst
-  })
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
-  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const paginated = data?.data ?? []
 
   const openEdit = (u) => {
     setEditingUser(u)
@@ -502,8 +497,8 @@ export default function Usuarios() {
         </div>
         <PaginationBar
           page={page}
-          totalPages={totalPages}
-          total={filtered.length}
+          totalPages={data?.meta?.totalPages ?? 1}
+          total={data?.meta?.total ?? 0}
           pageSize={PAGE_SIZE}
           onPage={setPage}
         />
