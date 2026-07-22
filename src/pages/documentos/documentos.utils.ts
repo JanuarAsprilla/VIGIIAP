@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api/v1'
 
 /** URL del endpoint de descarga con tracking de auditoría. */
 export function descargarUrl(tipo: 'mapa' | 'documento', id: string, campo?: string): string {
