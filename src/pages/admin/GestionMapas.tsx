@@ -336,7 +336,7 @@ function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, o
 }
 
 export default function GestionMapas() {
-  const { data, isLoading, isError, refetch } = useMapasList({ limit: 500, admin: 'true' })
+  const { data, isLoading, isError, refetch } = useMapasList({ limit: 100, admin: 'true' })
   const mapas = data?.data ?? []
   const createMapa = useCreateMapa()
   const updateMapa = useUpdateMapa()
