@@ -7,7 +7,8 @@ import {
   FileText, Map, Settings, Activity, X,
   LogOut, Globe, Shield, Tag, ShieldCheck,
 } from 'lucide-react'
-import { useAuth, ROLES } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { ROLES } from '@/lib/constants/roles'
 
 const NAV_SECTIONS = [
   {

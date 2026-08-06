@@ -1,17 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
-import type { ApiMeta } from '@/types'
+import type { ApiMeta, MapaRaw } from '@/types'
 
 // ─── Normalizar respuesta de backend → shape que usan las pages ───────────────
 // Detecta el formato real del archivo a partir de la URL cuando no hay campo explícito
-function fmtFromUrl(url) {
+function fmtFromUrl(url: string | null | undefined) {
   if (!url) return null
-  const ext = url.split('?')[0].split('.').pop().toLowerCase()
+  const ext = url.split('?')[0].split('.').pop()?.toLowerCase() ?? ''
   return ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'].includes(ext) ? 'IMG' : 'PDF'
 }
 
-function deriveFormats(m) {
+function deriveFormats(m: MapaRaw) {
   const fmts: string[] = []
   if (m.archivo_img_url) fmts.push('IMG')
   if (m.archivo_pdf_url) {
@@ -23,7 +23,7 @@ function deriveFormats(m) {
   return fmts.length ? fmts : ['PDF']
 }
 
-function normalizeMap(m) {
+function normalizeMap(m: MapaRaw) {
   const formats = deriveFormats(m)
   const primaryFmt = formats[0]
   // La URL efectiva del archivo principal
@@ -79,8 +79,8 @@ export type MapaListResult = { data: MapaData[]; meta: ApiMeta }
 // ─── Keys ─────────────────────────────────────────────────────────────────────
 export const MAPAS_KEYS = {
   all:    ['mapas'],
-  list:   (params) => ['mapas', 'list', params],
-  detail: (slug)   => ['mapas', 'detail', slug],
+  list:   (params: Record<string, unknown>)  => ['mapas', 'list', params],
+  detail: (slug: string | null | undefined)  => ['mapas', 'detail', slug],
 }
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -96,9 +96,9 @@ export function useMapasList(params: Record<string, unknown> = {}) {
 }
 
 export function useMapaBySlug(slug: string | null | undefined) {
-  return useQuery<MapaData>({
+  return useQuery<MapaRaw, Error, MapaData>({
     queryKey: MAPAS_KEYS.detail(slug),
-    queryFn:  () => api.get(`/mapas/${slug}`),
+    queryFn:  () => api.get(`/mapas/${slug}`) as Promise<MapaRaw>,
     select:   normalizeMap,
     enabled:  !!slug,
   })

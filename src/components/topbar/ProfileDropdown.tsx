@@ -6,7 +6,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { panelAnim } from './panelAnim'
-import { ROLES } from '@/contexts/AuthContext'
+import { ROLES } from '@/lib/constants/roles'
 
 function RoleBadge({ user }) {
   const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 
-type Density = 'compact' | 'normal' | 'comfortable'
+export type Density = 'compact' | 'normal' | 'comfortable'
 
 interface NotifPrefs {
   solicitudes: boolean
@@ -23,16 +23,21 @@ interface UIContextValue {
 const UIContext = createContext<UIContextValue | null>(null)
 
 // M-04: allowlists para valores leídos desde localStorage.
-const VALID_DENSITIES = ['compact', 'normal', 'comfortable']
+const VALID_DENSITIES: Density[] = ['compact', 'normal', 'comfortable']
 
-function isValidNotifPrefs(v) {
-  if (!v || typeof v !== 'object' || Array.isArray(v)) return false
-  const validKeys = ['solicitudes', 'mapas', 'email']
-  return validKeys.every((k) => typeof v[k] === 'boolean')
+function isValidDensity(v: string): v is Density {
+  return VALID_DENSITIES.includes(v as Density)
 }
 
-function useLocalStorage(key, defaultValue) {
-  const [value, setValue] = useState(() => {
+function isValidNotifPrefs(v: unknown): v is NotifPrefs {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return false
+  const validKeys: (keyof NotifPrefs)[] = ['solicitudes', 'mapas', 'email']
+  const record = v as Record<string, unknown>
+  return validKeys.every((k) => typeof record[k] === 'boolean')
+}
+
+function useLocalStorage<T>(key: string, defaultValue: T): [T, (v: T) => void] {
+  const [value, setValue] = useState<T>(() => {
     try {
       const stored = localStorage.getItem(key)
       return stored !== null ? JSON.parse(stored) : defaultValue
@@ -49,9 +54,9 @@ function useLocalStorage(key, defaultValue) {
 }
 
 export function UIProvider({ children }: { children: ReactNode }) {
-  const [densityRaw, setDensity]            = useLocalStorage('vigiiap_density_v1', 'normal')
+  const [densityRaw, setDensity]            = useLocalStorage<string>('vigiiap_density_v1', 'normal')
   // M-04: validar que el valor leído sea uno de los permitidos.
-  const density = VALID_DENSITIES.includes(densityRaw) ? densityRaw : 'normal'
+  const density = isValidDensity(densityRaw) ? densityRaw : 'normal'
 
   const [notifications, setNotifications]   = useLocalStorage('vigiiap_notif_enabled_v1', true)
   const [notifPrefsRaw, setNotifPrefs]       = useLocalStorage('vigiiap_notif_prefs_v1', {
@@ -73,6 +78,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// El hook vive junto a su Provider — patrón establecido en todo el proyecto.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useUI() {
   const context = useContext(UIContext)
   if (!context) throw new Error('useUI debe usarse dentro de UIProvider')

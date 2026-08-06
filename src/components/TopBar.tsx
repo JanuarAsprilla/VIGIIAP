@@ -14,7 +14,7 @@ import {
   ChevronDown, X, HelpCircle, Command, Sun, Moon,
 } from 'lucide-react'
 import { useAuth }   from '@/contexts/AuthContext'
-import { ROLES }     from '@/contexts/AuthContext'
+import { ROLES }     from '@/lib/constants/roles'
 import { useTheme }  from '@/contexts/ThemeContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { useUI }     from '@/contexts/UIContext'
@@ -95,9 +95,10 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
   const unreadCount = notifItems.filter((n) => !readIds.includes(n.id)).length
   const hasUnread   = notifications && unreadCount > 0
 
-  // Limpiar búsqueda y cerrar mobile search al navegar
+  // Limpiar búsqueda y cerrar mobile search al navegar — reset intencional al cambiar de ruta
   useEffect(() => {
     setQuery('')
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowMobileSearch(false)
     setActivePanel(null)
   }, [location.pathname, setQuery])

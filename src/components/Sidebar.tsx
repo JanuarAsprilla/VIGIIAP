@@ -9,7 +9,7 @@ import { NavLink, Link } from 'react-router-dom'
 import { PlusCircle, LogOut, X, Sparkles, Lock, Shield, ChevronRight } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
-import { ROLES } from '@/contexts/AuthContext'
+import { ROLES } from '@/lib/constants/roles'
 import { motion, AnimatePresence } from 'framer-motion'
 import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
 

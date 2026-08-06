@@ -8,7 +8,7 @@ export function useReducedMotion() {
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const handler = (e) => setPrefersReduced(e.matches)
+    const handler = (e: MediaQueryListEvent) => setPrefersReduced(e.matches)
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
   }, [])

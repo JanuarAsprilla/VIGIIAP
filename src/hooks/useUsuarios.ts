@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
-import { ROLES } from '@/contexts/AuthContext'
+import { ROLES } from '@/lib/constants/roles'
 import type { ApiMeta } from '@/types'
 
-const ROLE_MAP = {
+const ROLE_MAP: Record<string, string> = {
   admin_sig:    ROLES.ADMIN,
   investigador: ROLES.INVESTIGADOR,
   tecnico:      ROLES.TECNICO,
@@ -65,7 +65,7 @@ export type UsuarioListResult = { data: UsuarioData[]; meta: ApiMeta }
 // ─── Keys ─────────────────────────────────────────────────────────────────────
 export const USUARIOS_KEYS = {
   all:  ['usuarios'],
-  list: (params) => ['usuarios', 'list', params],
+  list: (params: Record<string, unknown>) => ['usuarios', 'list', params],
 }
 
 // ─── Queries ──────────────────────────────────────────────────────────────────

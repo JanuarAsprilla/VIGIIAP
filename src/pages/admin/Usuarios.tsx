@@ -8,7 +8,8 @@ import {
   CheckCircle, XCircle, UserPlus,
   User, Clock, Loader2, AlertCircle, Mail, ShieldCheck,
 } from 'lucide-react'
-import { ROLES, useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { ROLES } from '@/lib/constants/roles'
 import { fadeUpSm, panelAnim, drawerAnim, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import { useUsuariosList, useCreateUsuario, useUpdateUsuarioRol, useToggleActivo, useDeleteUsuario, ROLE_MAP_REVERSE } from '@/hooks/useUsuarios'
@@ -264,6 +265,7 @@ export default function Usuarios() {
   const [filtroEstado, setFiltroEstado] = useState('')
   const [page, setPage] = useState(1)
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- reset intencional de paginación al cambiar filtros
   useEffect(() => { setPage(1) }, [search, filtroRol, filtroEstado])
 
   const { data } = useUsuariosList({

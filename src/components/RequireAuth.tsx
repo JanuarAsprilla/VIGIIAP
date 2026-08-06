@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { ROLES } from '@/contexts/AuthContext'
+import { ROLES } from '@/lib/constants/roles'
 
 // Mostrado mientras AuthContext rehidrata la sesión desde GET /auth/me.
 // Evita redirección prematura a /login antes de confirmar si hay sesión activa.

@@ -49,44 +49,44 @@ describe('UIContext', () => {
 
   // ─── Stored valid values are used ────────────────────────────────────────────
   test('uses stored compact density from localStorage', () => {
-    localStorage.setItem('vigiiap_density', JSON.stringify('compact'))
+    localStorage.setItem('vigiiap_density_v1', JSON.stringify('compact'))
     render(<UIProvider><UIConsumer /></UIProvider>)
     expect(screen.getByTestId('density').textContent).toBe('compact')
   })
 
   test('uses stored comfortable density from localStorage', () => {
-    localStorage.setItem('vigiiap_density', JSON.stringify('comfortable'))
+    localStorage.setItem('vigiiap_density_v1', JSON.stringify('comfortable'))
     render(<UIProvider><UIConsumer /></UIProvider>)
     expect(screen.getByTestId('density').textContent).toBe('comfortable')
   })
 
   test('uses stored notifications=false from localStorage', () => {
-    localStorage.setItem('vigiiap_notif_enabled', JSON.stringify(false))
+    localStorage.setItem('vigiiap_notif_enabled_v1', JSON.stringify(false))
     render(<UIProvider><UIConsumer /></UIProvider>)
     expect(screen.getByTestId('notifications').textContent).toBe('false')
   })
 
   // ─── Invalid values fall back to defaults ────────────────────────────────────
   test('rejects invalid density and falls back to "normal"', () => {
-    localStorage.setItem('vigiiap_density', JSON.stringify('mega'))
+    localStorage.setItem('vigiiap_density_v1', JSON.stringify('mega'))
     render(<UIProvider><UIConsumer /></UIProvider>)
     expect(screen.getByTestId('density').textContent).toBe('normal')
   })
 
   test('rejects malformed notifPrefs and falls back to defaults', () => {
     // Store an object with wrong keys
-    localStorage.setItem('vigiiap_notif_prefs', JSON.stringify({ foo: true }))
+    localStorage.setItem('vigiiap_notif_prefs_v1', JSON.stringify({ foo: true }))
     render(<UIProvider><UIConsumer /></UIProvider>)
     expect(screen.getByTestId('notif-mapas').textContent).toBe('false')
   })
 
   test('rejects array notifPrefs and falls back to defaults', () => {
-    localStorage.setItem('vigiiap_notif_prefs', JSON.stringify([true, false]))
+    localStorage.setItem('vigiiap_notif_prefs_v1', JSON.stringify([true, false]))
     render(<UIProvider><UIConsumer /></UIProvider>)
   })
 
   test('rejects string notifPrefs and falls back to defaults', () => {
-    localStorage.setItem('vigiiap_notif_prefs', JSON.stringify('bad'))
+    localStorage.setItem('vigiiap_notif_prefs_v1', JSON.stringify('bad'))
     render(<UIProvider><UIConsumer /></UIProvider>)
     expect(screen.getByTestId('notif-email').textContent).toBe('true')
   })

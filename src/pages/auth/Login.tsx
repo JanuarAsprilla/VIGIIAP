@@ -7,7 +7,8 @@ import {
   LogIn, Mail, Lock, Eye, EyeOff, AlertCircle,
   ChevronRight, Building2, Globe, User, Send, Loader2,
 } from 'lucide-react'
-import { useAuth, ROLES } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { ROLES } from '@/lib/constants/roles'
 import AuthLayout from '@/components/AuthLayout'
 import { validateEmail, validatePassword } from '@/lib/validators'
 import api from '@/lib/api'

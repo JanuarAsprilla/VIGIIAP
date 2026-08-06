@@ -41,7 +41,7 @@ describe('ThemeContext', () => {
   })
 
   test('uses stored dark theme from localStorage', () => {
-    localStorage.setItem('vigiiap_theme', 'dark')
+    localStorage.setItem('vigiiap_theme_v1', 'dark')
     render(
       <ThemeProvider>
         <ThemeConsumer />
@@ -51,7 +51,7 @@ describe('ThemeContext', () => {
   })
 
   test('isDark is true when stored theme is dark', () => {
-    localStorage.setItem('vigiiap_theme', 'dark')
+    localStorage.setItem('vigiiap_theme_v1', 'dark')
     render(
       <ThemeProvider>
         <ThemeConsumer />
@@ -61,7 +61,7 @@ describe('ThemeContext', () => {
   })
 
   test('rejects invalid theme value and falls back to light', () => {
-    localStorage.setItem('vigiiap_theme', 'rainbow')
+    localStorage.setItem('vigiiap_theme_v1', 'rainbow')
     render(
       <ThemeProvider>
         <ThemeConsumer />
@@ -83,7 +83,7 @@ describe('ThemeContext', () => {
 
   test('toggleTheme switches from dark back to light', async () => {
     const user = userEvent.setup()
-    localStorage.setItem('vigiiap_theme', 'dark')
+    localStorage.setItem('vigiiap_theme_v1', 'dark')
     render(
       <ThemeProvider>
         <ThemeConsumer />
