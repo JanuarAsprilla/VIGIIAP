@@ -1,6 +1,29 @@
 import { useEffect } from 'react'
+import type { RefObject } from 'react'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api/v1'
+
+// ─── Tipos compartidos del módulo Documentos ───────────────────────────────
+
+/** Documento individual dentro de una categoría (vista de catálogo). */
+export interface DocItem {
+  id: string
+  name: string
+  type: string
+  size: string
+  updated: string
+  dateISO: string
+  url: string | null
+}
+
+/** Categoría de documentos agrupados por nombre. */
+export interface CategoryItem {
+  id: string
+  title: string
+  icon: string
+  thumbnail: string | null
+  docs: DocItem[]
+}
 
 /** URL del endpoint de descarga con tracking de auditoría. */
 export function descargarUrl(tipo: 'mapa' | 'documento', id: string, campo?: string): string {
@@ -14,7 +37,7 @@ export const ALLOWED_ORIGINS = [
   import.meta.env.VITE_API_URL        || '',
 ].filter(Boolean)
 
-export function isTrustedUrl(url) {
+export function isTrustedUrl(url: string): boolean {
   try {
     const parsed = new URL(url)
     return ALLOWED_ORIGINS.some((o) => {
@@ -23,7 +46,7 @@ export function isTrustedUrl(url) {
   } catch { return false }
 }
 
-export async function forceDownload(url, filename) {
+export async function forceDownload(url: string | null | undefined, filename?: string): Promise<void> {
   if (!url) return
   if (!isTrustedUrl(url)) {
     if (import.meta.env.DEV) console.error('[VIGIIAP] Descarga bloqueada — origen no permitido:', url)
@@ -46,10 +69,10 @@ export async function forceDownload(url, filename) {
   }
 }
 
-export function useClickOutside(ref, handler) {
+export function useClickOutside<T extends HTMLElement>(ref: RefObject<T | null>, handler: () => void): void {
   useEffect(() => {
-    const listener = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) handler()
+    const listener = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) handler()
     }
     document.addEventListener('mousedown', listener)
     return () => document.removeEventListener('mousedown', listener)

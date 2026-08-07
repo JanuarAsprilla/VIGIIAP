@@ -28,7 +28,7 @@ const ROLE_COLORS = {
 }
 
 // ── User detail drawer ──
-function UserDrawer({ user, onClose }) {
+function UserDrawer({ user, onClose }: { user: UsuarioData; onClose: () => void }) {
   return (
     <>
       <motion.div
@@ -138,7 +138,7 @@ function UserDrawer({ user, onClose }) {
 }
 
 // ── Invite modal — crea usuario directamente vía API admin ──
-function InviteModal({ onClose, assignableRoles }) {
+function InviteModal({ onClose, assignableRoles }: { onClose: () => void; assignableRoles: string[] }) {
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [rol, setRol] = useState('Investigador')
@@ -147,7 +147,7 @@ function InviteModal({ onClose, assignableRoles }) {
   const [error, setError] = useState('')
   const createUsuario = useCreateUsuario()
 
-  const handleSend = async (e) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!nombre.trim() || !email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('Nombre y correo válido son requeridos')
@@ -290,7 +290,7 @@ export default function Usuarios() {
 
   const paginated = data?.data ?? []
 
-  const openEdit = (u) => {
+  const openEdit = (u: UsuarioData) => {
     setEditingUser(u)
     setForm((f) => ({ ...f, rol: u.rol }))
     setFormErrors({})
@@ -303,7 +303,7 @@ export default function Usuarios() {
     return e
   }
 
-  const handleSave = async (ev) => {
+  const handleSave = async (ev: React.FormEvent) => {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setFormErrors(e); return }
@@ -318,8 +318,8 @@ export default function Usuarios() {
     }
   }
 
-  const toggleEstado = async (id) => {
-    const u = users.find((x) => x.id === id)
+  const toggleEstado = async (id: string) => {
+    const u = paginated.find((x) => x.id === id)
     if (!u) return
     try {
       await toggleActivo.mutateAsync({ id, activo: !u.activo })
@@ -348,7 +348,7 @@ export default function Usuarios() {
         <div>
           <span className="text-[0.7rem] font-bold uppercase tracking-widest text-primary-700">Administración</span>
           <h1 className="font-display text-2xl font-bold text-text mt-0.5">Gestión de Usuarios</h1>
-          <p className="text-sm text-text-muted mt-1">{users.length} usuarios registrados en el sistema</p>
+          <p className="text-sm text-text-muted mt-1">{data?.meta?.total ?? 0} usuarios registrados en el sistema</p>
         </div>
         <div className="flex gap-2 shrink-0">
           <button
@@ -499,7 +499,7 @@ export default function Usuarios() {
         </div>
         <PaginationBar
           page={page}
-          totalPages={data?.meta?.totalPages ?? 1}
+          totalPages={data?.meta?.pages ?? 1}
           total={data?.meta?.total ?? 0}
           pageSize={PAGE_SIZE}
           onPage={setPage}

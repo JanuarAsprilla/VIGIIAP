@@ -10,7 +10,6 @@ function UIConsumer() {
     <div>
       <div data-testid="density">{density}</div>
       <div data-testid="notifications">{String(notifications)}</div>
-      <div data-testid="notif-noticias">{String(notifPrefs.noticias)}</div>
       <div data-testid="notif-solicitudes">{String(notifPrefs.solicitudes)}</div>
       <div data-testid="notif-mapas">{String(notifPrefs.mapas)}</div>
       <div data-testid="notif-email">{String(notifPrefs.email)}</div>

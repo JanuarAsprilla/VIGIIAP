@@ -1,11 +1,20 @@
 import { useRef } from 'react'
+import type { MouseEvent } from 'react'
 import { motion, useMotionValue, useTransform, useSpring, useMotionTemplate } from 'framer-motion'
 import { ArrowRight, BookOpen } from 'lucide-react'
 import { categoryIcons, CATEGORY_COLORS } from './documentos.constants'
+import type { CategoryItem } from './documentos.utils'
 
-export function CategoryCard({ category, filteredCount, onOpen, index }) {
-  const Icon   = categoryIcons[category.icon] || BookOpen
-  const colors = CATEGORY_COLORS[category.title] || CATEGORY_COLORS.default
+interface CategoryCardProps {
+  category: CategoryItem
+  filteredCount: number | null
+  onOpen: () => void
+  index: number
+}
+
+export function CategoryCard({ category, filteredCount, onOpen, index }: CategoryCardProps) {
+  const Icon   = (categoryIcons as Record<string, typeof BookOpen>)[category.icon] || BookOpen
+  const colors = (CATEGORY_COLORS as Record<string, typeof CATEGORY_COLORS.default>)[category.title] || CATEGORY_COLORS.default
   const hasFilter = filteredCount !== null
 
   const ref    = useRef<HTMLButtonElement>(null)
@@ -20,7 +29,7 @@ export function CategoryCard({ category, filteredCount, onOpen, index }) {
   const glareOp = useMotionValue(0)
   const glareBg = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(255,255,255,0.18), transparent 65%)`
 
-  const onMove = (e) => {
+  const onMove = (e: MouseEvent<HTMLButtonElement>) => {
     const r = ref.current?.getBoundingClientRect()
     if (!r) return
     mouseX.set((e.clientX - r.left) / r.width - 0.5)

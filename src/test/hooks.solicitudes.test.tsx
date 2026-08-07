@@ -9,7 +9,7 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { createElement } from 'react'
+import { createElement, type ReactNode } from 'react'
 
 vi.mock('@/lib/api', () => ({
   default: {
@@ -55,7 +55,7 @@ function makeWrapper() {
       mutations: { retry: false },
     },
   })
-  return ({ children }) => createElement(QueryClientProvider, { client: qc }, children)
+  return ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: qc }, children)
 }
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────

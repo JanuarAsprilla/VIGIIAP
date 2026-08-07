@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, Search, ArrowUpDown, Eye, Download, X, BookOpen } from 'lucide-react'
 import { categoryIcons, CATEGORY_COLORS, typeStyles, SORT_OPTIONS } from './documentos.constants'
 import { useClickOutside } from './documentos.utils'
+import type { CategoryItem, DocItem } from './documentos.utils'
 import { matches } from '@/lib/search'
 
 function FileIcon({ type }: { type: string }) {
@@ -14,7 +16,13 @@ function FileIcon({ type }: { type: string }) {
   )
 }
 
-function DocRow({ doc, onPreview, onDownload }: { doc: { id: string; name: string; date: string; size?: string; type: string; url?: string | null; [key: string]: unknown }; onPreview: (doc: unknown) => void; onDownload: (doc: unknown) => void }) {
+interface DocRowProps {
+  doc: DocItem
+  onPreview: (doc: DocItem) => void
+  onDownload: (doc: DocItem) => void
+}
+
+function DocRow({ doc, onPreview, onDownload }: DocRowProps) {
   return (
     <tr className="border-b border-border last:border-b-0 hover:bg-bg-alt/50 transition-colors">
       <td className="py-3 pr-4">
@@ -56,7 +64,14 @@ function DocRow({ doc, onPreview, onDownload }: { doc: { id: string; name: strin
   )
 }
 
-export function CategoryModal({ category, onClose, onPreview, onDownload }: { category: { id: string; title: string; icon?: string; docs: unknown[]; [key: string]: unknown }; onClose: () => void; onPreview: (doc: unknown) => void; onDownload: (doc: unknown) => void }) {
+interface CategoryModalProps {
+  category: CategoryItem
+  onClose: () => void
+  onPreview: (doc: DocItem, catTitle: string) => void
+  onDownload: (doc: DocItem) => void
+}
+
+export function CategoryModal({ category, onClose, onPreview, onDownload }: CategoryModalProps) {
   const Icon = (categoryIcons as Record<string, typeof BookOpen>)[category.icon ?? ''] || BookOpen
   const colors = (CATEGORY_COLORS as Record<string, typeof CATEGORY_COLORS.default>)[category.title] || CATEGORY_COLORS.default
   const [localQuery, setLocalQuery] = useState('')
@@ -66,7 +81,7 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }: { ca
   const modalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handleKey = (e) => { if (e.key === 'Escape') onClose() }
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [onClose])
@@ -84,7 +99,7 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }: { ca
 
     ;(first as HTMLElement)?.focus()
 
-    const handleTab = (e) => {
+    const handleTab = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return
       if (e.shiftKey) {
         if (document.activeElement === first) { e.preventDefault(); (last as HTMLElement)?.focus() }

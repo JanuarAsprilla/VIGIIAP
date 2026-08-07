@@ -6,7 +6,7 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { createElement } from 'react'
+import { createElement, type ReactNode } from 'react'
 
 vi.mock('@/lib/api', () => ({
   default: {
@@ -29,13 +29,12 @@ vi.mock('@/contexts/AuthContext', () => ({
 }))
 
 // Default to authenticated; tests that need unauthenticated reassign this
-let mockAuth = { isAuthenticated: true }
+const mockAuth = { isAuthenticated: true }
 
 import api from '@/lib/api'
 import { useUsuariosList } from '@/hooks/useUsuarios'
 import { useAdminNotificaciones } from '@/hooks/useNotificaciones'
 import { useCategoriasList } from '@/hooks/useCategorias'
-import { useCatalogue } from '@/hooks/useCatalogue'
 import { useMapasList } from '@/hooks/useMapas'
 
 function makeWrapper() {
@@ -45,7 +44,7 @@ function makeWrapper() {
       mutations: { retry: false },
     },
   })
-  return ({ children }) => createElement(QueryClientProvider, { client: qc }, children)
+  return ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: qc }, children)
 }
 
 // ─── useNoticias — normalizeNoticia null-field branches (lines 11-24, 28-30) ──

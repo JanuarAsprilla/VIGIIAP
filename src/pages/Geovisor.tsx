@@ -2,10 +2,9 @@ import { useState, useRef, useCallback } from 'react'
 import { MapContainer, TileLayer, Polygon, useMapEvents } from 'react-leaflet'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Plus, Minus, Crosshair, RotateCw,
+  Plus, Minus, RotateCw,
   Ruler, Pencil, Layers, Download,
-  List, SlidersHorizontal, X, Navigation,
-  CheckCircle,
+  List, X, Navigation,
 } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import { useToast, ToastContainer } from '@/components/Toast'
@@ -42,7 +41,8 @@ const CHOCO_POLYGON: [number, number][] = [
 ]
 
 // ── Layer definitions ──
-const LAYER_GROUPS = [
+type LayerDef = { id: string; title: string; subtitle: string; icon: string; defaultOn: boolean; color: string }
+const LAYER_GROUPS: LayerDef[] = [
   {
     id: 'limites',
     title: 'Límites Políticos',
@@ -90,7 +90,7 @@ function CoordTracker({ onMove, onZoom }: { onMove: (coord: string) => void; onZ
   useMapEvents({
     mousemove(e) {
       const { lat, lng } = e.latlng
-      const fmt = (v, dirs) => {
+      const fmt = (v: number, dirs: [string, string]) => {
         const d = Math.floor(Math.abs(v))
         const m = Math.floor((Math.abs(v) - d) * 60)
         const s = Math.floor(((Math.abs(v) - d) * 60 - m) * 60)
@@ -134,8 +134,7 @@ function Toggle({ checked, onChange, color }: { checked: boolean; onChange: () =
 }
 
 // ── Layers Panel ──
-type LayerDef = { id: string; title: string; subtitle: string; icon: string; defaultOn: boolean; color: string }
-function LayersPanel({ layers, onToggle, visible, onClose, activeTool, onToolChange }: { layers: LayerDef[]; onToggle: (id: string) => void; visible: boolean; onClose: () => void; activeTool: string; onToolChange: (t: string) => void }) {
+function LayersPanel({ layers, onToggle, visible, onClose, activeTool, onToolChange }: { layers: string[]; onToggle: (id: string) => void; visible: boolean; onClose: () => void; activeTool: string | null; onToolChange: (t: string | null) => void }) {
   return (
     <AnimatePresence>
       {visible && (
@@ -201,7 +200,7 @@ function LayersPanel({ layers, onToggle, visible, onClose, activeTool, onToolCha
 }
 
 // ── Legend Panel ──
-function LegendPanel({ layers, visible, onClose }: { layers: LayerDef[]; visible: boolean; onClose: () => void }) {
+function LegendPanel({ layers, visible, onClose }: { layers: string[]; visible: boolean; onClose: () => void }) {
   const active = LAYER_GROUPS.filter((l) => layers.includes(l.id))
   return (
     <AnimatePresence>
@@ -274,15 +273,15 @@ export default function Geovisor() {
   const mapRef = useRef<import('leaflet').Map | null>(null)
   const [coords, setCoords] = useState("5°41'13\"N 76°39'31\"W")
   const [zoom, setZoom] = useState(MAP_ZOOM)
-  const [activeLayers, setActiveLayers] = useState(['limites', 'ecosistemas'])
+  const [activeLayers, setActiveLayers] = useState<string[]>(['limites', 'ecosistemas'])
   const [showPanel, setShowPanel] = useState(true)
   const [showLegend, setShowLegend] = useState(false)
   const [activeBasemap, setActiveBasemap] = useState('light')
-  const [activeTool, setActiveTool] = useState(null)
+  const [activeTool, setActiveTool] = useState<string | null>(null)
   const [locating, setLocating] = useState(false)
   const { toasts, toast, dismiss } = useToast()
 
-  const toggleLayer = (id) => setActiveLayers((prev) =>
+  const toggleLayer = (id: string) => setActiveLayers((prev) =>
     prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id]
   )
 
@@ -356,6 +355,8 @@ export default function Geovisor() {
 
       {/* ── Left Map Controls ── */}
       <div className="absolute top-4 left-4 flex flex-col gap-2 z-[1000]">
+        {/* mapRef.current solo se lee dentro de los onClick (handleZoomIn/Out/Reset), nunca en render */}
+        {/* eslint-disable-next-line react-hooks/refs */}
         {[
           { icon: Plus,       label: 'Acercar',       onClick: handleZoomIn },
           { icon: Minus,      label: 'Alejar',        onClick: handleZoomOut },

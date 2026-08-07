@@ -2,7 +2,7 @@
  * tokens: design.md · stamp: 2026-05-25
  */
 import { useState, useEffect } from 'react'
-import type { SolicitudData } from '@/hooks/useSolicitudes'
+import type { ArchivoSolicitud, SolicitudData } from '@/hooks/useSolicitudes'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, X, CheckCircle, XCircle, Clock, Eye,
@@ -12,13 +12,13 @@ import {
 import { fadeUpSm, panelAnim, drawerAnim, EASE_OUT_EXPO } from '@/lib/animations'
 import PaginationBar from '@/components/ui/PaginationBar'
 import Card3D from '@/components/ui/Card3D'
-import { useSolicitudesAdmin, useUpdateEstadoSolicitud, useResponderSolicitud,
+import { ESTADO_API, useSolicitudesAdmin, useUpdateEstadoSolicitud, useResponderSolicitud,
          useSolicitudArchivos, useDeleteSolicitudArchivo, useDownloadSolicitudArchivo } from '@/hooks/useSolicitudes'
 import { useToast, ToastContainer } from '@/components/Toast'
 
 const fadeUp = fadeUpSm
 
-const ESTADO_BADGE = {
+const ESTADO_BADGE: Record<string, string> = {
   'Pendiente':   'bg-orange-100 text-orange-700',
   'En Revisión': 'bg-blue-100 text-blue-700',
   'Aprobado':    'bg-green-100 text-green-700',
@@ -28,7 +28,7 @@ const ESTADO_BADGE = {
 
 const PAGE_SIZE = 10
 
-function SectionLabel({ children }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-[0.6rem] font-bold uppercase tracking-widest text-text-muted mb-2">
       {children}
@@ -42,6 +42,7 @@ export default function GestionSolicitudes() {
   const [filtroTipo, setFiltroTipo] = useState('')
   const [page, setPage] = useState(1)
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- reset intencional de paginación al cambiar filtros
   useEffect(() => { setPage(1) }, [search, filtroEstado, filtroTipo])
 
   const { data } = useSolicitudesAdmin({
@@ -69,7 +70,7 @@ export default function GestionSolicitudes() {
 
   const TIPOS_SOLICITUD = ['uso-suelo', 'linderos', 'estudio-ambiental', 'validacion', 'aprovechamiento', 'otro']
 
-  const handleMarcarRevision = async (sol) => {
+  const handleMarcarRevision = async (sol: SolicitudData) => {
     try {
       await updateEstado.mutateAsync({ id: sol._id, estado: 'En Revisión' })
       if (selected?._id === sol._id)
@@ -122,7 +123,7 @@ export default function GestionSolicitudes() {
     }
   }
 
-  const handleDownloadArchivo = async (archivo) => {
+  const handleDownloadArchivo = async (archivo: ArchivoSolicitud) => {
     if (!selected) return
     try {
       const result = await downloadArchivo.mutateAsync({
@@ -134,7 +135,7 @@ export default function GestionSolicitudes() {
     }
   }
 
-  const handleDeleteArchivo = async (archivo) => {
+  const handleDeleteArchivo = async (archivo: ArchivoSolicitud) => {
     if (!selected) return
     try {
       await deleteArchivo.mutateAsync({ solicitudId: selected._id, archivoId: archivo.id })
@@ -145,7 +146,7 @@ export default function GestionSolicitudes() {
   }
 
   const exportCSV = () => {
-    const csvField = (val) => {
+    const csvField = (val: unknown) => {
       const s = String(val ?? '').replace(/\r\n|\n|\r/g, ' ')
       const safe = /^[=+\-@\t]/.test(s) ? `'${s}` : s
       return `"${safe.replace(/"/g, '""')}"`
@@ -163,9 +164,9 @@ export default function GestionSolicitudes() {
     URL.revokeObjectURL(blobUrl)
   }
 
-  const isResolved = (s) => !s?.accionesValidas?.length
-  const canAct     = (s) => !!s?.accionesValidas?.length
-  const canDo      = (s, accion) => s?.accionesValidas?.includes(accion) ?? false
+  const isResolved = (s: SolicitudData | null | undefined) => !s?.accionesValidas?.length
+  const canAct     = (s: SolicitudData | null | undefined) => !!s?.accionesValidas?.length
+  const canDo      = (s: SolicitudData | null | undefined, accion: string) => s?.accionesValidas?.includes(accion) ?? false
 
   return (
     <div className="space-y-6">
@@ -174,7 +175,7 @@ export default function GestionSolicitudes() {
         <div>
           <span className="text-[0.7rem] font-bold uppercase tracking-widest text-primary-700">Administración</span>
           <h1 className="font-display text-2xl font-bold text-text mt-0.5">Gestión de Solicitudes</h1>
-          <p className="text-sm text-text-muted mt-1">{solicitudes.length} solicitudes en el sistema</p>
+          <p className="text-sm text-text-muted mt-1">{data?.meta?.total ?? pageItems.length} solicitudes en el sistema</p>
         </div>
         <button
           onClick={exportCSV}
@@ -325,7 +326,7 @@ export default function GestionSolicitudes() {
         </div>
         <PaginationBar
           page={page}
-          totalPages={data?.meta?.totalPages ?? 1}
+          totalPages={data?.meta?.pages ?? 1}
           total={data?.meta?.total ?? 0}
           pageSize={PAGE_SIZE}
           onPage={setPage}

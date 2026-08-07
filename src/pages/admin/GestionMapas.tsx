@@ -22,12 +22,12 @@ const fadeUp = fadeUpSm
 const BASE_TEMATICAS = ['Hidrología', 'Cartografía Base', 'Biodiversidad', 'Zonificación', 'Infraestructura', 'Riesgo']
 const FORMATOS  = ['PDF', 'IMG', 'Geovisor']
 
-const ACCEPT = {
+const ACCEPT: Record<string, string | null> = {
   PDF:      '.pdf,application/pdf',
   IMG:      '.jpg,.jpeg,.png,.webp,image/*',
   Geovisor: null,
 }
-const MAX_SIZE_BYTES = {
+const MAX_SIZE_BYTES: Record<string, number> = {
   PDF: 20 * 1024 * 1024,
   IMG: 25 * 1024 * 1024,
 }
@@ -67,6 +67,7 @@ function CategoryCombobox({ value, onChange, allOptions, placeholder = 'Seleccio
   const [open, setOpen]   = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useClickOutside(ref, () => setOpen(false))
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- resync intencional de input controlado
   useEffect(() => { setInput(value || '') }, [value])
 
   const filtered = allOptions.filter((c) =>
@@ -75,7 +76,7 @@ function CategoryCombobox({ value, onChange, allOptions, placeholder = 'Seleccio
   const isNew = input.trim() !== '' &&
     !allOptions.some((c) => c.toLowerCase() === input.trim().toLowerCase())
 
-  const select = (cat) => { onChange(cat); setInput(cat); setOpen(false) }
+  const select = (cat: string) => { onChange(cat); setInput(cat); setOpen(false) }
 
   return (
     <div className="relative" ref={ref}>
@@ -131,7 +132,7 @@ function CategoryCombobox({ value, onChange, allOptions, placeholder = 'Seleccio
   )
 }
 
-function formatBytes(bytes) {
+function formatBytes(bytes: number | null | undefined) {
   if (!bytes) return '0 B'
   const k = 1024
   const sizes = ['B', 'KB', 'MB', 'GB']
@@ -188,7 +189,7 @@ function ThumbnailDropzone({ onFile, existing }: { onFile: (f: File | null) => v
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
   }, [])
 
-  const accept = useCallback((f) => {
+  const accept = useCallback((f: File | null | undefined) => {
     if (!f || !f.type.startsWith('image/')) return
     if (f.size > 50 * 1024 * 1024) return
     onFile(f)
@@ -198,7 +199,7 @@ function ThumbnailDropzone({ onFile, existing }: { onFile: (f: File | null) => v
     setPreview(url)
   }, [onFile])
 
-  const handleDrop = (e) => { e.preventDefault(); setDragging(false); accept(e.dataTransfer.files[0]) }
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setDragging(false); accept(e.dataTransfer.files[0]) }
 
   const thumb = preview || existing || null
 
@@ -251,12 +252,12 @@ function ThumbnailDropzone({ onFile, existing }: { onFile: (f: File | null) => v
   )
 }
 
-function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, onError }: { formato: string; onFile: (f: File | null) => void; onFormatDetect: (fmt: string) => void; currentFile: File | null; editing: MapaData | null; onError: (msg: string) => void }) {
+function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, onError }: { formato: string; onFile: (f: File | null) => void; onFormatDetect: (fmt: string) => void; currentFile: File | null; editing: MapaData | null; onError: (msg: string | null) => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
-  const accept = (ACCEPT as Record<string, string>)[formato]
+  const accept = ACCEPT[formato]
 
-  const validateAndAccept = useCallback((file) => {
+  const validateAndAccept = useCallback((file: File | null | undefined) => {
     if (!file) return
     const detectedFmt = file.type.startsWith('image/') ? 'IMG' : 'PDF'
     if (onFormatDetect && detectedFmt !== formato) onFormatDetect(detectedFmt)
@@ -269,7 +270,7 @@ function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, o
     onFile(file)
   }, [formato, onFile, onFormatDetect, onError])
 
-  const handleDrop = useCallback((e) => {
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setDragging(false)
     validateAndAccept(e.dataTransfer.files[0])
@@ -376,7 +377,7 @@ export default function GestionMapas() {
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)')
-    const handler = (e) => setCols(e.matches ? 2 : 1)
+    const handler = (e: MediaQueryListEvent) => setCols(e.matches ? 2 : 1)
     mq.addEventListener('change', handler)
     return () => mq.removeEventListener('change', handler)
   }, [])
@@ -389,12 +390,15 @@ export default function GestionMapas() {
     return result
   }, [filtered, cols])
 
+  // Patrón documentado de @tanstack/react-virtual — lectura de ref para scroll math
+  /* eslint-disable react-hooks/refs */
   const virtualizer = useWindowVirtualizer({
     count: rows.length,
     estimateSize: () => 224,
     overscan: 4,
     scrollMargin: listRef.current?.offsetTop ?? 0,
   })
+  /* eslint-enable react-hooks/refs */
 
   const openCreate = () => {
     setEditing(null); setForm(EMPTY_FORM); setFormErrors({})
@@ -402,7 +406,7 @@ export default function GestionMapas() {
     setUploadProgress(null); setShowModal(true)
   }
 
-  const openEdit = (m) => {
+  const openEdit = (m: MapaData) => {
     setEditing(m)
     setForm({
       nombre:      m.nombre,
@@ -410,7 +414,7 @@ export default function GestionMapas() {
       descripcion: m.descripcion || '',
       anio:        String(m.anio || new Date().getFullYear()),
       visible:     m.visible,
-      formato:     m.formato,
+      formato:     m.formato ?? 'PDF',
       url:         m.url || '',
       visibilidad: m.visibilidad ?? 'publico',
     })
@@ -429,7 +433,7 @@ export default function GestionMapas() {
     return e
   }
 
-  const handleSave = async (ev) => {
+  const handleSave = async (ev: React.FormEvent<HTMLFormElement>) => {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setFormErrors(e); return }
@@ -461,7 +465,7 @@ export default function GestionMapas() {
     }
 
     const onUploadProgress = (uploadedFile || uploadedThumb)
-      ? (e) => setUploadProgress(Math.round((e.loaded * 100) / (e.total ?? e.loaded)))
+      ? (e: import('axios').AxiosProgressEvent) => setUploadProgress(Math.round((e.loaded * 100) / (e.total ?? e.loaded)))
       : undefined
 
     try {
@@ -479,7 +483,7 @@ export default function GestionMapas() {
     }
   }
 
-  const toggleVisible = async (id) => {
+  const toggleVisible = async (id: string) => {
     const m = mapas.find((x) => x.id === id)
     if (!m) return
     try { await toggleActivo.mutateAsync({ id, activo: !m.visible }) } catch { /* silencioso */ }
@@ -644,7 +648,7 @@ export default function GestionMapas() {
                           <div className="flex items-center gap-1">
                             {(m.archivo_pdf_url || m.archivo_img_url || m.geovisor_url) && (
                               <button
-                                onClick={() => window.open(m.archivo_img_url || m.archivo_pdf_url || m.geovisor_url, '_blank', 'noopener,noreferrer')}
+                                onClick={() => window.open(m.archivo_img_url || m.archivo_pdf_url || m.geovisor_url || undefined, '_blank', 'noopener,noreferrer')}
                                 className="p-1.5 rounded-lg text-text-muted hover:text-blue-600 hover:bg-blue-50 transition-colors"
                                 title="Ver archivo">
                                 <ExternalLink className="w-3.5 h-3.5" />
@@ -727,7 +731,7 @@ export default function GestionMapas() {
                 <FileDropzone
                   formato={form.formato} onFile={setUploadedFile}
                   onFormatDetect={(fmt) => setForm((fm) => ({ ...fm, formato: fmt }))}
-                  currentFile={uploadedFile} editing={!!editing} onError={setUploadError}
+                  currentFile={uploadedFile} editing={editing} onError={setUploadError}
                 />
                 {uploadError && (
                   <div className="flex items-center gap-2 text-red-500 text-xs">
@@ -756,7 +760,7 @@ export default function GestionMapas() {
                 )}
 
                 {/* Thumbnail opcional */}
-                <ThumbnailDropzone onFile={setUploadedThumb} existing={editing?.thumbnail_url} />
+                <ThumbnailDropzone onFile={setUploadedThumb} existing={editing?.thumbnail_url ?? null} />
 
                 {/* Nombre del mapa */}
                 <div>

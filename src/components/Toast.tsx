@@ -6,24 +6,33 @@ const ICONS = {
   success: CheckCircle,
   error:   AlertCircle,
   info:    Info,
-}
+} as const
 const STYLES = {
   success: 'bg-green-600',
   error:   'bg-red-600',
   info:    'bg-primary-800',
+} as const
+
+export type ToastType = keyof typeof ICONS
+
+interface ToastItem {
+  id: number
+  message: string
+  type: ToastType
 }
 
 // ── Hook ──
+// eslint-disable-next-line react-refresh/only-export-components -- hook vive junto a su componente, patrón del proyecto
 export function useToast() {
-  const [toasts, setToasts] = useState<{ id: number; message: string; type: string }[]>([])
+  const [toasts, setToasts] = useState<ToastItem[]>([])
 
-  const toast = useCallback((message, type = 'success', duration = 3000) => {
+  const toast = useCallback((message: string, type: ToastType = 'success', duration = 3000) => {
     const id = Date.now() + Math.random()
     setToasts((prev) => [...prev, { id, message, type }])
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), duration)
   }, [])
 
-  const dismiss = useCallback((id) => {
+  const dismiss = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
@@ -31,7 +40,7 @@ export function useToast() {
 }
 
 // ── Container ──
-export function ToastContainer({ toasts, dismiss }) {
+export function ToastContainer({ toasts, dismiss }: { toasts: ToastItem[]; dismiss: (id: number) => void }) {
   return (
     <div className="fixed bottom-6 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
       <AnimatePresence>

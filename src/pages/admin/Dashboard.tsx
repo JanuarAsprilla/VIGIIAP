@@ -3,7 +3,6 @@
  */
 import { useState } from 'react'
 import type { SolicitudData } from '@/hooks/useSolicitudes'
-import type { AdminStats } from '@/types'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
@@ -13,7 +12,7 @@ import {
   ArrowRight, Zap, AlertTriangle,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { fadeUpSm, staggerContainer, staggerItem3D, SPRING_SNAPPY } from '@/lib/animations'
+import { fadeUpSm, staggerContainer, staggerItem3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import { useAdminStats } from '@/hooks/useStats'
 import { useSolicitudesAdmin, useUpdateEstadoSolicitud } from '@/hooks/useSolicitudes'
@@ -34,12 +33,18 @@ const KPI_GLOW = [
   'rgba(56,189,248,0.18)',
 ]
 
-function KPICards({ stats, isLoading }: { stats: Partial<AdminStats> | undefined; isLoading: boolean }) {
+interface DashboardStats {
+  documentos: number
+  solicitudesPendientes: number
+  [key: string]: unknown
+}
+
+function KPICards({ stats, isLoading }: { stats: DashboardStats | undefined; isLoading: boolean }) {
   const kpis = [
-    { label: 'Usuarios Registrados',   value: stats?.usuarios ?? '—',             trendUp: true  },
+    { label: 'Usuarios Registrados',   value: (stats?.usuarios as number | undefined) ?? '—',            trendUp: true  },
     { label: 'Solicitudes Pendientes', value: stats?.solicitudesPendientes ?? '—', trendUp: false },
     { label: 'Documentos Activos',     value: stats?.documentos ?? '—',            trendUp: true  },
-    { label: 'Visitantes (30 días)',   value: stats?.visitantesUltimos30d ?? '—',  trendUp: true  },
+    { label: 'Visitantes (30 días)',   value: (stats?.visitantesUltimos30d as number | undefined) ?? '—', trendUp: true  },
   ]
   return (
     <motion.div
@@ -102,6 +107,9 @@ function SolicitudesChart({ solicitudes }: { solicitudes: SolicitudData[] }) {
   // Tendencia semanal real — últimas 6 semanas
   const weeklyData = Array(6).fill(0)
   const msPerWeek  = 7 * 24 * 60 * 60 * 1000
+  // Bucketing aproximado por semana — la impureza de Date.now() aquí es intencional
+  // y de bajo riesgo (a lo sumo desplaza un registro de bucket en un doble-render de StrictMode).
+  // eslint-disable-next-line react-hooks/purity
   const now        = Date.now()
   solicitudes.forEach((s) => {
     if (!s.creadoEn) return
@@ -183,7 +191,7 @@ function AlertasSolicitudes({ solicitudes }: { solicitudes: SolicitudData[] }) {
 
 // ── Distribución de roles ──
 function RolesChart({ usuarios }: { usuarios: { rol: string }[] }) {
-  const counts = usuarios.reduce((acc, u) => {
+  const counts = usuarios.reduce<Record<string, number>>((acc, u) => {
     acc[u.rol] = (acc[u.rol] || 0) + 1
     return acc
   }, {})
@@ -226,7 +234,7 @@ function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }
   const updateEstado = useUpdateEstadoSolicitud()
   const [confirm, setConfirm] = useState<{ _id: string; accion: 'Aprobado' | 'Rechazado' } | null>(null)
 
-  const doAction = async (_id, accion) => {
+  const doAction = async (_id: string, accion: 'Aprobado' | 'Rechazado') => {
     await updateEstado.mutateAsync({ id: _id, estado: accion })
     setConfirm(null)
   }
@@ -302,16 +310,26 @@ function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }
 }
 
 // ── Actividad reciente ──
+interface AuditLogRaw {
+  id: string
+  usuario_email?: string | null
+  descripcion?: string | null
+  accion?: string | null
+  modulo: string
+  creado_en: string
+}
+type AuditListResult = { data: AuditLogRaw[] }
+
 function ActividadReciente() {
-  const { data } = useQuery({
+  const { data } = useQuery<AuditListResult, Error, AuditLogRaw[]>({
     queryKey: ['audit', 'recent'],
-    queryFn: () => api.get('/admin/audit', { params: { limit: 7, page: 1 } }),
+    queryFn: () => api.get('/admin/audit', { params: { limit: 7, page: 1 } }) as Promise<AuditListResult>,
     select: (res) => res.data ?? [],
     staleTime: 30_000,
   })
   const logs = data ?? []
 
-  const moduloBadge = (modulo) => {
+  const moduloBadge = (modulo: string) => {
     const map = {
       auth: 'bg-blue-100 text-blue-700',
       admin: 'bg-primary-100 text-primary-800',
