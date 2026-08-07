@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, ArrowLeft, CheckCircle, Send, KeyRound, AlertCircle, ShieldCheck, Loader2 } from 'lucide-react'
@@ -18,7 +18,7 @@ export default function RecuperarPassword() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const emailErr = validateEmail(email)
     if (emailErr) { setError(emailErr); return }

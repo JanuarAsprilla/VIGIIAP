@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Home, Map, FileText, Search } from 'lucide-react'
+import { ArrowLeft, Home, Map, FileText } from 'lucide-react'
 import Card3D from '@/components/ui/Card3D'
 import { EASE_OUT_EXPO } from '@/lib/animations'
 

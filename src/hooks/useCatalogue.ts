@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { NAV_LINKS } from '@/lib/constants'
+import type { CatalogueEntry } from '@/types'
 
 // Mapa estático icono por path — evita acoplamiento a la estructura de NAV_LINKS
 const ROUTE_ICONS: Record<string, LucideIcon> = {
@@ -28,7 +29,7 @@ const ROUTE_ICONS: Record<string, LucideIcon> = {
   '/solicitudes': ClipboardList,
 }
 
-function buildModuleEntries() {
+function buildModuleEntries(): CatalogueEntry[] {
   return NAV_LINKS.map((link) => ({
     id:       `mod-${link.path}`,
     group:    'Módulos',
@@ -39,7 +40,7 @@ function buildModuleEntries() {
   }))
 }
 
-function buildActionEntries(isAuthenticated: boolean) {
+function buildActionEntries(isAuthenticated: boolean): CatalogueEntry[] {
   const entries = [
     {
       id:       'res-guia',

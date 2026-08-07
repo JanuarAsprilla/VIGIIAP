@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react'
-import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, Search, ArrowUpDown, Eye, Download, X, BookOpen } from 'lucide-react'
 import { categoryIcons, CATEGORY_COLORS, typeStyles, SORT_OPTIONS } from './documentos.constants'

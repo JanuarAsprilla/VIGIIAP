@@ -68,6 +68,7 @@ function AppLoader() {
   useEffect(() => {
     // A3: detectar carga real en vez de timeout mínimo hardcodeado (era 2200ms fijo)
     if (document.readyState === 'complete') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- estado del document ya resuelto al montar
       setAppReady(true)
       return
     }
