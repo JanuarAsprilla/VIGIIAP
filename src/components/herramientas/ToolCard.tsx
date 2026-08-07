@@ -1,6 +1,8 @@
 import Card3D from '@/components/ui/Card3D'
 import { motion } from 'framer-motion'
 import { cardEnter3D } from '@/lib/animations'
+import type { LucideIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 const accentStyles = {
   primary: { border: 'border-t-primary-800', glow: 'rgba(26,86,50,0.22)'   },
@@ -9,11 +11,21 @@ const accentStyles = {
   green:   { border: 'border-t-primary-500', glow: 'rgba(33,136,66,0.20)'  },
 }
 
+interface ToolCardProps {
+  tag: string
+  title: string
+  icon: LucideIcon
+  color: keyof typeof accentStyles
+  children: ReactNode
+  index: number
+  demo?: boolean
+}
+
 /**
  * Tarjeta contenedora para cada herramienta SIG — 3D tilt.
  * Responsabilidad única: layout visual + animación de entrada.
  */
-export default function ToolCard({ tag, title, icon: Icon, color, children, index, demo = false }) {
+export default function ToolCard({ tag, title, icon: Icon, color, children, index, demo = false }: ToolCardProps) {
   const styles = accentStyles[color] || accentStyles.primary
 
   return (
