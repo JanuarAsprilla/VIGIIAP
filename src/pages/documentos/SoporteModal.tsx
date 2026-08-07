@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import type { FormErrors } from '@/types/forms'
 import { motion } from 'framer-motion'
 import { Headphones, X, CheckCircle, Send } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { CONSULTA_TYPES } from './documentos.constants'
 
-export function SoporteDocumentalModal({ onClose }) {
+export function SoporteDocumentalModal({ onClose }: { onClose: () => void }) {
   const { user, isAuthenticated } = useAuth()
   const [step, setStep] = useState('form')
   const [form, setForm] = useState({
@@ -17,12 +17,12 @@ export function SoporteDocumentalModal({ onClose }) {
   const [errors, setErrors] = useState<Record<string, string | undefined>>({})
 
   useEffect(() => {
-    const handleKey = (e) => { if (e.key === 'Escape') onClose() }
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [onClose])
 
-  const set = (key, val) => {
+  const set = (key: keyof typeof form, val: string) => {
     setForm((prev) => ({ ...prev, [key]: val }))
     setErrors((prev) => ({ ...prev, [key]: undefined }))
   }
@@ -38,7 +38,7 @@ export function SoporteDocumentalModal({ onClose }) {
     return e
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const e2 = validate()
     if (Object.keys(e2).length) { setErrors(e2); return }
