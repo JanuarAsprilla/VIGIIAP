@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { ApiMeta } from '@/types'
 import { motion } from 'framer-motion'
 import {
-  Search, Download, Filter, ChevronLeft, ChevronRight, Loader2,
+  Search, Download, ChevronLeft, ChevronRight, Loader2,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
@@ -47,8 +47,18 @@ const ACCION_LABEL = {
 
 const PAGE_SIZE = 10
 
-function normalizeLog(l) {
-  const accionInfo = ACCION_LABEL[l.accion] ?? { label: l.accion, badge: 'bg-gray-100 text-gray-600' }
+interface AuditLogRaw {
+  id: string
+  accion: string
+  modulo: string
+  descripcion?: string | null
+  usuario_email?: string | null
+  ip?: string | null
+  creado_en: string
+}
+
+function normalizeLog(l: AuditLogRaw) {
+  const accionInfo = (ACCION_LABEL as Record<string, { label: string; badge: string }>)[l.accion] ?? { label: l.accion, badge: 'bg-gray-100 text-gray-600' }
   return {
     id:         l.id,
     accion:     l.accion,
@@ -67,7 +77,7 @@ function useAuditLog(params = {}) {
   return useQuery({
     queryKey: ['admin', 'audit', params],
     queryFn:  () => api.get('/admin/audit', { params }),
-    select:   (res: unknown[] | { data?: unknown[]; meta?: ApiMeta }) => ({
+    select:   (res: AuditLogRaw[] | { data?: AuditLogRaw[]; meta?: ApiMeta }) => ({
       data: (Array.isArray(res) ? res : (res.data ?? [])).map(normalizeLog),
       meta: Array.isArray(res) ? undefined : res.meta,
     }),
@@ -203,7 +213,7 @@ export default function Actividad() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${MODULO_STYLES[log.modulo] ?? 'bg-bg-alt text-text-muted'}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${(MODULO_STYLES as Record<string, string>)[log.modulo] ?? 'bg-bg-alt text-text-muted'}`}>
                       {log.modulo}
                     </span>
                   </td>

@@ -98,7 +98,7 @@ export default function Login() {
     return e
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setServerError('')
     setErrorCode(null)
@@ -222,7 +222,7 @@ export default function Login() {
               icon={Mail}
               type="email"
               value={email}
-              onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })) }}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })) }}
               placeholder="usuario@iiap.org.co"
               error={errors.email}
               autoComplete="email"
@@ -233,7 +233,7 @@ export default function Login() {
               icon={Lock}
               type={showPass ? 'text' : 'password'}
               value={password}
-              onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })) }}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })) }}
               placeholder="••••••••"
               error={errors.password}
               autoComplete="current-password"
@@ -294,7 +294,7 @@ export default function Login() {
               icon={User}
               type="text"
               value={nombreVisitante}
-              onChange={(e) => setNombre(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNombre(e.target.value)}
               placeholder="¿Cómo te llamas? (opcional)"
             />
 
