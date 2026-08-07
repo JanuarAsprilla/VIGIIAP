@@ -2,14 +2,15 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { BellOff, ExternalLink, User, FileText, ClipboardList } from 'lucide-react'
 import { panelAnim } from './panelAnim'
+import type { Notificacion } from '@/types'
 
 const TYPE_META = {
-  usuario:   { Icon: User,          color: 'text-blue-600',   bg: 'bg-blue-50'   },
-  solicitud: { Icon: ClipboardList, color: 'text-orange-600', bg: 'bg-orange-50' },
-  default:   { Icon: FileText,      color: 'text-text-muted', bg: 'bg-bg-alt'    },
+  usuario:   { Icon: User,          color: 'text-blue-600',   bg: 'bg-blue-50',   label: 'Usuario' },
+  solicitud: { Icon: ClipboardList, color: 'text-orange-600', bg: 'bg-orange-50', label: 'Solicitud' },
+  default:   { Icon: FileText,      color: 'text-text-muted', bg: 'bg-bg-alt',    label: 'General' },
 }
 
-function timeAgo(iso) {
+function timeAgo(iso: string | undefined) {
   if (!iso) return ''
   const diff = Date.now() - new Date(iso).getTime()
   const m = Math.floor(diff / 60000)
@@ -21,12 +22,12 @@ function timeAgo(iso) {
   return `hace ${d} d`
 }
 
-function NotificationItem({ item, isRead, onSelect }: { item: { id: string; mensaje: string; tipo?: string; leida?: boolean; creado_en?: string; link?: string }; isRead: boolean; onSelect: () => void }) {
-  const { Icon, color, bg } = (TYPE_META as Record<string, typeof TYPE_META.default>)[item.tipo ?? 'default'] ?? TYPE_META.default
+function NotificationItem({ item, isRead, onSelect }: { item: Notificacion; isRead: boolean; onSelect: () => void }) {
+  const { Icon, color, bg, label } = (TYPE_META as Record<string, typeof TYPE_META.default>)[item.tipo ?? 'default'] ?? TYPE_META.default
 
   return (
     <Link
-      to={item.link}
+      to={item.link ?? '#'}
       onClick={onSelect}
       className="flex items-start gap-3 px-4 py-3 hover:bg-bg-alt transition-colors no-underline group"
     >
@@ -37,17 +38,14 @@ function NotificationItem({ item, isRead, onSelect }: { item: { id: string; mens
         <p className={`text-[0.6rem] font-bold uppercase tracking-wider mb-0.5 ${
           isRead ? 'text-text-muted' : color
         }`}>
-          {item.tag}
+          {label}
         </p>
         <p className={`text-sm leading-snug line-clamp-2 group-hover:text-primary-800 transition-colors ${
           isRead ? 'text-text-muted' : 'text-text font-medium'
         }`}>
-          {item.title}
+          {item.mensaje}
         </p>
-        {item.meta && (
-          <p className="text-xs text-text-muted mt-0.5 truncate">{item.meta}</p>
-        )}
-        <p className="text-xs text-text-muted mt-1">{timeAgo(item.time)}</p>
+        <p className="text-xs text-text-muted mt-1">{timeAgo(item.creado_en)}</p>
       </div>
       {!isRead && (
         <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0 mt-2" aria-hidden="true" />
@@ -56,7 +54,7 @@ function NotificationItem({ item, isRead, onSelect }: { item: { id: string; mens
   )
 }
 
-export default function NotificacionesPanel({ onClose, items, readIds, onMarkAllRead, onMarkRead }: { onClose: () => void; items: { id: string; mensaje: string; tipo?: string; leida?: boolean; creado_en?: string; link?: string }[]; readIds: string[]; onMarkAllRead: (ids: string[]) => void; onMarkRead: (id: string) => void }) {
+export default function NotificacionesPanel({ onClose, items, readIds, onMarkAllRead, onMarkRead }: { onClose: () => void; items: Notificacion[]; readIds: string[]; onMarkAllRead: (ids: string[]) => void; onMarkRead: (id: string) => void }) {
   const unreadCount = items.filter((n) => !readIds.includes(n.id)).length
   const allRead     = unreadCount === 0
 
@@ -76,7 +74,7 @@ export default function NotificacionesPanel({ onClose, items, readIds, onMarkAll
         </div>
         {!allRead && (
           <button
-            onClick={onMarkAllRead}
+            onClick={() => onMarkAllRead(items.map((i) => i.id))}
             className="text-xs text-primary-800 hover:text-primary-600 font-semibold transition-colors"
           >
             Marcar todas como leídas

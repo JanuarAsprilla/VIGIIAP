@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 
 export type Density = 'compact' | 'normal' | 'comfortable'
 
-interface NotifPrefs {
+export interface NotifPrefs {
   solicitudes: boolean
   mapas: boolean
   email: boolean

@@ -10,7 +10,7 @@ import { matches } from '@/lib/search'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { useDocumentosList } from '@/hooks/useDocumentos'
 import { CATEGORY_META, fadeUp } from './documentos/documentos.constants'
-import { forceDownload, useClickOutside, descargarUrl } from './documentos/documentos.utils'
+import { forceDownload, useClickOutside, descargarUrl, type CategoryItem, type DocItem } from './documentos/documentos.utils'
 import { CategoryCard } from './documentos/CategoryCard'
 import { CategoryModal } from './documentos/CategoryModal'
 import { PreviewModal } from './documentos/PreviewModal'
@@ -20,23 +20,23 @@ import { useRef } from 'react'
 
 export default function Documentos() {
   const { query, setQuery } = useSearch()
-  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [selectedCategory, setSelectedCategory] = useState<CategoryItem | null>(null)
   const [showSoporte, setShowSoporte] = useState(false)
   const [activeTypes, setActiveTypes] = useState<string[]>([])
   const [showFilter, setShowFilter] = useState(false)
-  const [previewDoc, setPreviewDoc] = useState(null)
+  const [previewDoc, setPreviewDoc] = useState<DocItem | null>(null)
   const [previewCategory, setPreviewCategory] = useState('')
 
   const filterRef = useRef(null)
   useClickOutside(filterRef, () => setShowFilter(false))
 
   const { toasts, toast, dismiss } = useToast()
-  const handleDownload = async (doc) => {
+  const handleDownload = async (doc: DocItem) => {
     await forceDownload(descargarUrl('documento', doc.id), `${doc.name}.${doc.type}`)
     toast(`Descargando "${doc.name}"`, 'success')
   }
 
-  const toggleType = (type) => {
+  const toggleType = (type: string) => {
     setActiveTypes((prev) =>
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     )
@@ -47,11 +47,11 @@ export default function Documentos() {
   const allDocs = data?.data ?? []
 
   const allCategories = (() => {
-    const map: Record<string, { id: string; title: string; icon: string; thumbnail: string | null; docs: { name: string; type: string; size: string; updated: string; dateISO: string; url: string }[] }> = {}
+    const map: Record<string, CategoryItem> = {}
     allDocs.forEach((d) => {
       const catName = d.categoria || 'General'
       if (!map[catName]) {
-        const meta = CATEGORY_META[catName] ?? CATEGORY_META.default
+        const meta = (CATEGORY_META as Record<string, { icon: string }>)[catName] ?? CATEGORY_META.default
         map[catName] = {
           id:        catName.toLowerCase().replace(/\s+/g, '-'),
           title:     catName,
@@ -63,6 +63,7 @@ export default function Documentos() {
         map[catName].thumbnail = d.categoria_thumbnail_url
       }
       map[catName].docs.push({
+        id:      d.id,
         name:    d.nombre,
         type:    d.type,
         size:    d.tamano ?? '—',
@@ -82,12 +83,13 @@ export default function Documentos() {
     return { ...cat, filteredDocs: filtered }
   }).filter((cat) => !isFiltering || cat.filteredDocs.length > 0)
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- reset intencional de paginación al cambiar filtros
   useEffect(() => { setCatPage(1) }, [query, activeTypes])
 
   const catTotalPages  = Math.ceil(displayCategories.length / CAT_PAGE_SIZE) || 1
   const pagedCategories = displayCategories.slice((catPage - 1) * CAT_PAGE_SIZE, catPage * CAT_PAGE_SIZE)
 
-  const openCategory = (cat) => {
+  const openCategory = (cat: CategoryItem) => {
     setSelectedCategory(allCategories.find((c) => c.id === cat.id) || cat)
   }
 
