@@ -32,7 +32,7 @@ import {
   useDownloadSolicitudArchivo,
 } from '@/hooks/useSolicitudes'
 import { useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa, useMapaBySlug } from '@/hooks/useMapas'
-import { useCreateDocumento, useUpdateDocumento, useDeleteDocumento, useDocumentoBySlug } from '@/hooks/useDocumentos'
+import { useCreateDocumento, useUpdateDocumento, useDeleteDocumento, useDocumentoBySlug, useToggleActivoDocumento } from '@/hooks/useDocumentos'
 import {
   useCreateUsuario, useUpdateUsuarioRol, useToggleActivo,
   useDeleteUsuario, useUpdatePerfil, useUpdatePassword,
@@ -287,6 +287,18 @@ describe('useDeleteDocumento', () => {
 
     await act(async () => { await result.current.mutateAsync('4') })
     expect(api.delete).toHaveBeenCalledWith('/documentos/4')
+  })
+})
+
+describe('useToggleActivoDocumento', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls PATCH /documentos/:id/activo', async () => {
+    vi.mocked(api.patch).mockResolvedValue({})
+    const { result } = renderHook(() => useToggleActivoDocumento(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync({ id: '7', activo: false }) })
+    expect(api.patch).toHaveBeenCalledWith('/documentos/7/activo', { activo: false })
   })
 })
 
