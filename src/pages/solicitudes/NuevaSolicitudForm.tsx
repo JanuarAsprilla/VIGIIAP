@@ -13,19 +13,23 @@ const MAX_ARCHIVOS  = 5
 const MAX_MB        = 10
 const ACCEPT_TYPES  = '.pdf,.jpg,.jpeg,.png,.webp'
 
-function formatBytes(bytes) {
+function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function fileIcon(mime) {
+function fileIcon(mime: string) {
   return mime === 'application/pdf'
     ? <FileText className="w-4 h-4 text-red-500 shrink-0" />
     : <Image className="w-4 h-4 text-blue-500 shrink-0" />
 }
 
-export function NuevaSolicitudForm({ formRef }) {
+interface NuevaSolicitudFormProps {
+  formRef: React.RefObject<HTMLDivElement | null>
+}
+
+export function NuevaSolicitudForm({ formRef }: NuevaSolicitudFormProps) {
   const { user, isAuthenticated } = useAuth()
   const [showSuccess, setShowSuccess]     = useState(false)
   const [submittedCorreo, setSubmittedCorreo] = useState('')
@@ -64,10 +68,10 @@ export function NuevaSolicitudForm({ formRef }) {
     e.target.value = ''
   }
 
-  const removeArchivo = (idx) =>
+  const removeArchivo = (idx: number) =>
     setArchivos((prev) => prev.filter((_, i) => i !== idx))
 
-  const set = (key, val) => {
+  const set = (key: keyof typeof form, val: string) => {
     setForm((prev) => ({ ...prev, [key]: val }))
     setErrors((prev) => ({ ...prev, [key]: undefined }))
     setServerError('')
@@ -85,7 +89,7 @@ export function NuevaSolicitudForm({ formRef }) {
     return e
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const e2 = validate()
     if (Object.keys(e2).length) { setErrors(e2); return }
@@ -96,7 +100,7 @@ export function NuevaSolicitudForm({ formRef }) {
         descripcion: form.descripcion.trim(),
       })
       // Subir archivos adjuntos si hay, de forma secuencial
-      const sol = solicitud as { id?: string }
+      const sol = solicitud as unknown as { id?: string }
       if (archivos.length && sol?.id) {
         for (const file of archivos) {
           await uploadArchivo.mutateAsync({ solicitudId: sol.id, file }).catch(() => {})

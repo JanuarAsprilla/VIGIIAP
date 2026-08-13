@@ -10,12 +10,14 @@ const CAPAS = [
   { value: 'lote',    label: 'Lote_Comunidad_C3.shp',        area: 3271.5,  perimetro: 218.9 },
 ]
 
-const UNIDAD_FACTOR = { ha: 1, 'km2': 0.01, 'm2': 10000 }
-const UNIDAD_LABEL  = { ha: 'ha', 'km2': 'km²', 'm2': 'm²' }
+type Unidad = 'ha' | 'km2' | 'm2'
+
+const UNIDAD_FACTOR: Record<Unidad, number> = { ha: 1, 'km2': 0.01, 'm2': 10000 }
+const UNIDAD_LABEL:  Record<Unidad, string> = { ha: 'ha', 'km2': 'km²', 'm2': 'm²' }
 
 export default function CalculadoraAreas() {
   const [capa,    setCapa]    = useState('')
-  const [unidad,  setUnidad]  = useState('ha')
+  const [unidad,  setUnidad]  = useState<Unidad>('ha')
   const [loading, setLoading] = useState(false)
   const [result,  setResult]  = useState<{ area: number | string; perimetro: number | string; poligonos: number; crs: string } | null>(null)
 
@@ -61,7 +63,7 @@ export default function CalculadoraAreas() {
             <select
               id="ca-unidad"
               value={unidad}
-              onChange={(e) => { setUnidad(e.target.value); setResult(null) }}
+              onChange={(e) => { setUnidad(e.target.value as Unidad); setResult(null) }}
               className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
             >
               <option value="ha">Hectáreas (ha)</option>

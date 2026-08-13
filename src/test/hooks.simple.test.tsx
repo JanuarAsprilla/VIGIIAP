@@ -3,19 +3,21 @@ import { renderHook, act } from '@testing-library/react'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 
 // ─── matchMedia mock (jsdom no lo incluye) ────────────────────────────────────
-function makeMq(initialMatches) {
-  const listeners: Function[] = []
+type MqListener = (event: { matches: boolean; media: string }) => void
+
+function makeMq(initialMatches: boolean) {
+  const listeners: MqListener[] = []
   const mq = {
     matches: initialMatches,
     media: '(prefers-reduced-motion: reduce)',
     onchange: null,
-    addEventListener:    (_, fn) => listeners.push(fn),
-    removeEventListener: (_, fn) => {
+    addEventListener:    (_type: string, fn: MqListener) => listeners.push(fn),
+    removeEventListener: (_type: string, fn: MqListener) => {
       const i = listeners.indexOf(fn)
       if (i !== -1) listeners.splice(i, 1)
     },
     dispatchEvent: () => true,
-    _fire(newMatches) {
+    _fire(newMatches: boolean) {
       mq.matches = newMatches
       listeners.forEach((fn) => fn({ matches: newMatches, media: mq.media }))
     },
@@ -26,7 +28,7 @@ function makeMq(initialMatches) {
 
 // ─── useReducedMotion ─────────────────────────────────────────────────────────
 describe('useReducedMotion', () => {
-  let mq
+  let mq: ReturnType<typeof makeMq>
 
   beforeEach(() => {
     mq = makeMq(false)

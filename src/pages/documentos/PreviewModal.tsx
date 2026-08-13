@@ -2,10 +2,16 @@ import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { FileText, FileSpreadsheet, Eye, Download, X } from 'lucide-react'
 import { typeStyles } from './documentos.constants'
-import { forceDownload, descargarUrl } from './documentos.utils'
+import { forceDownload, descargarUrl, type DocItem } from './documentos.utils'
 
-export function PreviewModal({ doc, categoryTitle, onClose }) {
-  const s = typeStyles[doc.type] || typeStyles.pdf
+interface PreviewModalProps {
+  doc: DocItem
+  categoryTitle: string
+  onClose: () => void
+}
+
+export function PreviewModal({ doc, categoryTitle, onClose }: PreviewModalProps) {
+  const s = (typeStyles as Record<string, typeof typeStyles.pdf>)[doc.type] || typeStyles.pdf
   const isImage  = doc.url && /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(doc.url)
   const isPdf    = doc.type === 'pdf'
   const isOffice = doc.type === 'docx' || doc.type === 'doc' || doc.type === 'xlsx' || doc.type === 'xls'
@@ -13,7 +19,7 @@ export function PreviewModal({ doc, categoryTitle, onClose }) {
   const modalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handleKey = (e) => { if (e.key === 'Escape') onClose() }
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [onClose])
@@ -31,7 +37,7 @@ export function PreviewModal({ doc, categoryTitle, onClose }) {
 
     ;(first as HTMLElement)?.focus()
 
-    const handleTab = (e) => {
+    const handleTab = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return
       if (e.shiftKey) {
         if (document.activeElement === first) { e.preventDefault(); (last as HTMLElement)?.focus() }

@@ -92,13 +92,6 @@ test.describe('Panel de administración', () => {
     await expect(heading).toBeVisible();
   });
 
-  test('admin accede a gestión de noticias', async ({ page }) => {
-    await page.goto('/admin/noticias');
-    await expect(page).toHaveURL(/admin\/noticias/);
-    const heading = page.locator('h1, h2').first();
-    await expect(heading).toBeVisible();
-  });
-
   test('admin accede a gestión de documentos', async ({ page }) => {
     await page.goto('/admin/documentos');
     await expect(page).toHaveURL(/admin\/documentos/);

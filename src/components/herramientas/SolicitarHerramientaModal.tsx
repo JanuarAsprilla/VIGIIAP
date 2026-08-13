@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { useCreateSolicitud } from '@/hooks/useSolicitudes'
 import { motion } from 'framer-motion'
 import { PlusCircle, Send, X, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
@@ -14,20 +14,20 @@ const TOOL_TYPES = [
   { value: 'otro',             label: 'Otro'                               },
 ]
 
-export default function SolicitarHerramientaModal({ onClose }) {
+export default function SolicitarHerramientaModal({ onClose }: { onClose: () => void }) {
   const [step,        setStep]        = useState('form') // 'form' | 'success'
   const [form,        setForm]        = useState({ nombre: '', tipo: '', descripcion: '', justificacion: '' })
-  const [errors,      setErrors]      = useState<Record<string, string>>({})
+  const [errors,      setErrors]      = useState<Record<string, string | undefined>>({})
   const [serverError, setServerError] = useState<string | null>(null)
   const createSolicitud = useCreateSolicitud()
 
   useEffect(() => {
-    const fn = (e) => { if (e.key === 'Escape') onClose() }
+    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', fn)
     return () => document.removeEventListener('keydown', fn)
   }, [onClose])
 
-  const set = (k, v) => {
+  const set = (k: keyof typeof form, v: string) => {
     setForm((p) => ({ ...p, [k]: v }))
     setErrors((p) => ({ ...p, [k]: undefined }))
     setServerError(null)
@@ -44,7 +44,7 @@ export default function SolicitarHerramientaModal({ onClose }) {
     return e
   }
 
-  const handleSubmit = async (ev) => {
+  const handleSubmit = async (ev: FormEvent<HTMLFormElement>) => {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }

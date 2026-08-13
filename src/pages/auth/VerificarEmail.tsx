@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckCircle, XCircle, Loader2, ArrowLeft, RefreshCw } from 'lucide-react'
@@ -36,7 +36,7 @@ export default function VerificarEmail() {
       })
   }, [token, navigate])
 
-  const handleReenviar = async (e) => {
+  const handleReenviar = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!email.trim()) return
     setResending(true)

@@ -5,7 +5,7 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { createElement } from 'react'
+import { createElement, type ReactNode } from 'react'
 
 vi.mock('@/lib/api', () => ({
   default: {
@@ -32,7 +32,7 @@ import {
   useDownloadSolicitudArchivo,
 } from '@/hooks/useSolicitudes'
 import { useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa, useMapaBySlug } from '@/hooks/useMapas'
-import { useCreateDocumento, useUpdateDocumento, useDeleteDocumento, useDocumentoBySlug } from '@/hooks/useDocumentos'
+import { useCreateDocumento, useUpdateDocumento, useDeleteDocumento, useDocumentoBySlug, useToggleActivoDocumento } from '@/hooks/useDocumentos'
 import {
   useCreateUsuario, useUpdateUsuarioRol, useToggleActivo,
   useDeleteUsuario, useUpdatePerfil, useUpdatePassword,
@@ -43,7 +43,7 @@ function makeWrapper() {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { retry: false } },
   })
-  return ({ children }) => createElement(QueryClientProvider, { client: qc }, children)
+  return ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: qc }, children)
 }
 
 // ─── useSolicitudes mutations ─────────────────────────────────────────────────
@@ -287,6 +287,18 @@ describe('useDeleteDocumento', () => {
 
     await act(async () => { await result.current.mutateAsync('4') })
     expect(api.delete).toHaveBeenCalledWith('/documentos/4')
+  })
+})
+
+describe('useToggleActivoDocumento', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls PATCH /documentos/:id/activo', async () => {
+    vi.mocked(api.patch).mockResolvedValue({})
+    const { result } = renderHook(() => useToggleActivoDocumento(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync({ id: '7', activo: false }) })
+    expect(api.patch).toHaveBeenCalledWith('/documentos/7/activo', { activo: false })
   })
 })
 

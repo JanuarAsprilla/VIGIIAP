@@ -1,9 +1,13 @@
 import { Eye } from 'lucide-react'
 import { fadeUp } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
-import { useMisSolicitudes } from '@/hooks/useSolicitudes'
+import { useMisSolicitudes, type SolicitudData } from '@/hooks/useSolicitudes'
 
-export function MisSolicitudes({ onVerDetalle }) {
+interface MisSolicitudesProps {
+  onVerDetalle: (sol: SolicitudData) => void
+}
+
+export function MisSolicitudes({ onVerDetalle }: MisSolicitudesProps) {
   const { data, isLoading } = useMisSolicitudes()
   const mis = data?.data ?? []
 

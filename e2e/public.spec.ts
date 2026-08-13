@@ -13,24 +13,9 @@ test.describe('Página principal', () => {
 
   test('la nav tiene enlaces a secciones principales', async ({ page }) => {
     await page.goto('/');
-    // Noticias y Documentos son rutas públicas sin login
-    await expect(page.locator('a[href*="noticias"]').first()).toBeVisible();
-  });
-});
-
-test.describe('Noticias — listado', () => {
-  test('retorna 200 y muestra la sección de noticias', async ({ page }) => {
-    await page.goto('/noticias');
-    await expect(page).toHaveURL(/noticias/);
-    // Título de sección visible
-    const heading = page.locator('h1, h2').first();
-    await expect(heading).toBeVisible();
-  });
-
-  test('filtro de búsqueda existe en la página', async ({ page }) => {
-    await page.goto('/noticias');
-    const searchInput = page.locator('input[type="search"], input[placeholder*="buscar" i], input[placeholder*="filtrar" i]');
-    await expect(searchInput.first()).toBeVisible();
+    // Mapas y Documentos son rutas públicas sin login
+    await expect(page.locator('a[href*="mapas"]').first()).toBeVisible();
+    await expect(page.locator('a[href*="documentos"]').first()).toBeVisible();
   });
 });
 

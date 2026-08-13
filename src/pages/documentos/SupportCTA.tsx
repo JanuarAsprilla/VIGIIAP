@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { Headphones } from 'lucide-react'
 import { fadeUp } from './documentos.constants'
 
-export function SupportCTA({ onContactar }) {
+export function SupportCTA({ onContactar }: { onContactar: () => void }) {
   return (
     <motion.div
       {...fadeUp(0.5)}

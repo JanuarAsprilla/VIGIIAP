@@ -14,6 +14,7 @@ import {
   validateEmail, validateRequired,
   validateSelect, validateCheckbox,
   validatePasswordStrength, passwordCriteria,
+  type PasswordCriteria,
 } from '@/lib/validators'
 
 const PERFILES = [
@@ -24,7 +25,7 @@ const PERFILES = [
   { value: 'publico',       label: 'Usuario Público General'            },
 ]
 
-const CRITERIA_LABELS = [
+const CRITERIA_LABELS: { key: keyof PasswordCriteria; label: string }[] = [
   { key: 'length',      label: 'Mínimo 8 caracteres'           },
   { key: 'upper',       label: 'Al menos una mayúscula (A–Z)'  },
   { key: 'lower',   label: 'Al menos una minúscula (a–z)'        },
@@ -59,7 +60,7 @@ function Field({ id, label, icon: Icon, error, hint, children }: { id?: string; 
   )
 }
 
-function PasswordStrengthMeter({ value }) {
+function PasswordStrengthMeter({ value }: { value: string }) {
   const criteria = passwordCriteria(value)
   const met      = Object.values(criteria).filter(Boolean).length
   if (!value) return null
@@ -121,7 +122,7 @@ function PasswordStrengthMeter({ value }) {
   )
 }
 
-const inputCls = (err) =>
+const inputCls = (err: string | undefined) =>
   `w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm text-text placeholder:text-text-muted bg-white focus:outline-none focus:ring-2 transition ${
     err ? 'border-red-400 focus:border-red-400 focus:ring-red-400/10'
         : 'border-border focus:border-primary-800 focus:ring-primary-800/10'
@@ -142,7 +143,7 @@ export default function SolicitarAcceso() {
   })
   const [errors, setErrors] = useState<FormErrors>({})
 
-  const set = (k, v) => {
+  const set = (k: keyof typeof form, v: string | boolean) => {
     setForm((p) => ({ ...p, [k]: v }))
     setErrors((p) => ({ ...p, [k]: undefined }))
     setServerError('')
@@ -168,7 +169,7 @@ export default function SolicitarAcceso() {
     return e
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }

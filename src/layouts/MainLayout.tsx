@@ -6,13 +6,13 @@ import TopBar from '@/components/TopBar'
 import FooterBar from '@/components/FooterBar'
 import BottomTabs from '@/components/BottomTabs'
 import CommandPalette from '@/components/CommandPalette'
-import { useUI } from '@/contexts/UIContext'
+import { useUI, type Density } from '@/contexts/UIContext'
 import { useLenis } from '@/hooks/useLenis'
 
-const DENSITY_PADDING = {
-  compact: 'p-2 lg:p-3 pb-20 lg:pb-3',
-  normal:  'p-4 lg:p-6 pb-20 lg:pb-6',
-  comodo:  'p-6 lg:p-10 pb-20 lg:pb-10',
+const DENSITY_PADDING: Record<Density, string> = {
+  compact:     'p-2 lg:p-3 pb-20 lg:pb-3',
+  normal:      'p-4 lg:p-6 pb-20 lg:pb-6',
+  comfortable: 'p-6 lg:p-10 pb-20 lg:pb-10',
 }
 
 // ── Ambient background orbs (fixed, behind everything) ──
@@ -37,7 +37,7 @@ export default function MainLayout() {
 
   // Global keyboard shortcut: Cmd+K / Ctrl+K
   useEffect(() => {
-    function handleKeyDown(e) {
+    function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault()
         openPalette()

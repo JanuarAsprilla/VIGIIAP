@@ -5,13 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import {
-  User, Mail, Building2, Shield, Bell, Palette,
+  User, Building2, Shield,
   Lock, Eye, EyeOff, CheckCircle, AlertCircle,
   Camera, LogOut, ChevronRight, Layers, Monitor, Sun,
-  Smartphone, Laptop, Trash2, QrCode, KeyRound, RefreshCw,
+  Smartphone, Laptop, Trash2, RefreshCw,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useUI } from '@/contexts/UIContext'
+import { useUI, type NotifPrefs } from '@/contexts/UIContext'
 import { useNavigate, Link } from 'react-router-dom'
 import { useUpdatePassword, useUpdatePerfil } from '@/hooks/useUsuarios'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -126,7 +126,7 @@ function CambiarPassword() {
   const [serverError, setServerError] = useState('')
   const updatePassword = useUpdatePassword()
 
-  const set = (k, v) => { setForm((p) => ({ ...p, [k]: v })); setErrors((p) => ({ ...p, [k]: undefined })); setServerError('') }
+  const set = (k: keyof typeof form, v: string) => { setForm((p) => ({ ...p, [k]: v })); setErrors((p) => ({ ...p, [k]: undefined })); setServerError('') }
 
   const validate = () => {
     const e: FormErrors = {}
@@ -138,7 +138,7 @@ function CambiarPassword() {
     return e
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
@@ -420,9 +420,9 @@ function SesionesActivas() {
 function Notificaciones() {
   const { notifPrefs: prefs, setNotifPrefs: setPrefs } = useUI()
 
-  const toggle = (k: string) => setPrefs({ ...prefs, [k]: !prefs[k as keyof typeof prefs] })
+  const toggle = (k: keyof NotifPrefs) => setPrefs({ ...prefs, [k]: !prefs[k] })
 
-  const items = [
+  const items: { key: keyof NotifPrefs; label: string; desc: string }[] = [
     { key: 'solicitudes', label: 'Estado de solicitudes',    desc: 'Cambios en el estado de tus trámites' },
     { key: 'mapas',      label: 'Actualizaciones de mapas',  desc: 'Nuevas capas o versiones de mapas' },
     { key: 'email',      label: 'Resumen por correo',        desc: 'Recibir resumen semanal de actividad' },
@@ -544,13 +544,13 @@ export default function Perfil() {
   const [editField, setEditField] = useState<'nombre' | 'institucion' | null>(null)
   const [editError, setEditError]   = useState('')
 
-  const startEdit = (field) => {
+  const startEdit = (field: 'nombre' | 'institucion') => {
     setEditField(field)
     setEditError('')
   }
   const cancelEdit = () => { setEditField(null); setEditError('') }
 
-  const saveEdit = async (field, value) => {
+  const saveEdit = async (field: 'nombre' | 'institucion', value: string) => {
     const trimmed = value.trim()
     if (field === 'nombre' && !trimmed) { setEditError('El nombre no puede estar vacío'); return }
     try {

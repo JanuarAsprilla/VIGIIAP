@@ -14,8 +14,20 @@
  *   className   — clases del contenedor
  *   children
  */
-import { useRef } from 'react'
-import { motion, useMotionValue, useTransform, useSpring, useMotionTemplate } from 'framer-motion'
+import { useRef, type ReactNode, type MouseEvent as ReactMouseEvent, type CSSProperties } from 'react'
+import { motion, useMotionValue, useTransform, useSpring, useMotionTemplate, type TargetAndTransition, type MotionStyle } from 'framer-motion'
+
+interface Card3DProps {
+  children: ReactNode
+  className?: string
+  intensity?: number
+  glare?: boolean
+  disabled?: boolean
+  glow?: string | null
+  whileHover?: TargetAndTransition
+  style?: MotionStyle
+  [key: string]: unknown
+}
 
 export default function Card3D({
   children,
@@ -27,7 +39,7 @@ export default function Card3D({
   whileHover = {},
   style      = {},
   ...rest
-}) {
+}: Card3DProps) {
   const ref    = useRef<HTMLDivElement>(null)
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
@@ -44,7 +56,7 @@ export default function Card3D({
   const glareOp = useMotionValue(0)
   const glareBg = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(255,255,255,0.15), transparent 65%)`
 
-  const onMove = (e) => {
+  const onMove = (e: ReactMouseEvent<HTMLDivElement>) => {
     if (disabled) return
     const rect = ref.current?.getBoundingClientRect()
     if (!rect) return
@@ -60,8 +72,10 @@ export default function Card3D({
   }
 
   if (disabled) {
+    // Rama sin motion.div — style puede incluir props de framer-motion (transformPerspective, etc.)
+    // que un <div> plano no tipa, pero el navegador simplemente las ignora si no aplican.
     return (
-      <div className={className} style={style} {...rest}>
+      <div className={className} style={style as CSSProperties} {...rest}>
         {children}
       </div>
     )

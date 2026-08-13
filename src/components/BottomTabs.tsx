@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { Home, Map, FileText, Wrench, PenLine, Lock } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { ROLES } from '@/contexts/AuthContext'
+import { ROLES } from '@/lib/constants/roles'
 
 const TABS = [
   { icon: Home,     label: 'Inicio',       path: '/',             protected: false },

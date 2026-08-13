@@ -1,8 +1,13 @@
 import { motion } from 'framer-motion'
 import { staggerContainer, staggerItem3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
+import type { SolicitudData } from '@/hooks/useSolicitudes'
 
-export function BottomStats({ rows }) {
+interface BottomStatsProps {
+  rows: SolicitudData[]
+}
+
+export function BottomStats({ rows }: BottomStatsProps) {
   const total     = rows.length
   const pendiente = rows.filter((r) => r.estado === 'Pendiente' || r.estado === 'En Revisión').length
   const resuelta  = rows.filter((r) => r.estado === 'Resuelta' || r.estado === 'Aprobado').length

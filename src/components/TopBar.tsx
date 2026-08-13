@@ -14,7 +14,7 @@ import {
   ChevronDown, X, HelpCircle, Command, Sun, Moon,
 } from 'lucide-react'
 import { useAuth }   from '@/contexts/AuthContext'
-import { ROLES }     from '@/contexts/AuthContext'
+import { ROLES }     from '@/lib/constants/roles'
 import { useTheme }  from '@/contexts/ThemeContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { useUI }     from '@/contexts/UIContext'
@@ -45,7 +45,7 @@ const PAGE_LABELS = {
 // ── Hook: estado de notificaciones leídas persistido en localStorage ──
 
 function useReadNotifications() {
-  const [readIds, setReadIds] = useState(() => {
+  const [readIds, setReadIds] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       return stored ? JSON.parse(stored) : []
@@ -60,8 +60,8 @@ function useReadNotifications() {
     } catch { /* localStorage no disponible — modo privado o sin permisos */ }
   }, [readIds])
 
-  const markRead    = useCallback((id) => setReadIds((prev) => [...new Set([...prev, id])]), [])
-  const markAllRead = useCallback((ids) => setReadIds((prev) => [...new Set([...prev, ...ids])]), [])
+  const markRead    = useCallback((id: string) => setReadIds((prev) => [...new Set([...prev, id])]), [])
+  const markAllRead = useCallback((ids: string[]) => setReadIds((prev) => [...new Set([...prev, ...ids])]), [])
 
   return { readIds, markRead, markAllRead }
 }
@@ -79,8 +79,10 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
   const placeholder = (SEARCH_PLACEHOLDERS as Record<string, string>)[location.pathname] ?? (SEARCH_PLACEHOLDERS as Record<string, string>)['/']
   const activeLabel = (PAGE_LABELS as Record<string, string>)[location.pathname]
 
+  type PanelName = 'soporte' | 'notificaciones' | 'ajustes' | 'dropdown'
+
   const [showMobileSearch, setShowMobileSearch] = useState(false)
-  const [activePanel, setActivePanel]           = useState(null)
+  const [activePanel, setActivePanel]           = useState<PanelName | null>(null)
 
   const panelRef    = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -95,22 +97,23 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
   const unreadCount = notifItems.filter((n) => !readIds.includes(n.id)).length
   const hasUnread   = notifications && unreadCount > 0
 
-  // Limpiar búsqueda y cerrar mobile search al navegar
+  // Limpiar búsqueda y cerrar mobile search al navegar — reset intencional al cambiar de ruta
   useEffect(() => {
     setQuery('')
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowMobileSearch(false)
     setActivePanel(null)
   }, [location.pathname, setQuery])
 
   // Cerrar paneles al hacer clic fuera o presionar Escape
   useEffect(() => {
-    function onMouseDown(e) {
+    function onMouseDown(e: MouseEvent) {
       const outside =
-        !panelRef.current?.contains(e.target) &&
-        !dropdownRef.current?.contains(e.target)
+        !panelRef.current?.contains(e.target as Node) &&
+        !dropdownRef.current?.contains(e.target as Node)
       if (outside) setActivePanel(null)
     }
-    function onKeyDown(e) {
+    function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         setActivePanel(null)
         setShowMobileSearch(false)
@@ -125,7 +128,7 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
   }, [])
 
   const togglePanel = useCallback(
-    (panel) => setActivePanel((prev) => (prev === panel ? null : panel)),
+    (panel: PanelName) => setActivePanel((prev) => (prev === panel ? null : panel)),
     [],
   )
 

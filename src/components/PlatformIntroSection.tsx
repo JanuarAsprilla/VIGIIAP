@@ -60,7 +60,7 @@ const B = {
 }
 
 // ── Utilidades ────────────────────────────────────────────────────────────────
-function insidePoly(px, py, poly) {
+function insidePoly(px: number, py: number, poly: number[][]) {
   let inside = false
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
     const [xi, yi] = poly[i], [xj, yj] = poly[j]
@@ -70,14 +70,14 @@ function insidePoly(px, py, poly) {
   return inside
 }
 
-function segDist(px, py, ax, ay, bx, by) {
+function segDist(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
   const dx = bx - ax, dy = by - ay, l2 = dx*dx + dy*dy
   if (l2 === 0) return Math.hypot(px-ax, py-ay)
   const t = Math.max(0, Math.min(1, ((px-ax)*dx + (py-ay)*dy) / l2))
   return Math.hypot(px-ax-t*dx, py-ay-t*dy)
 }
 
-function boundaryDist(px, py) {
+function boundaryDist(px: number, py: number) {
   let m = Infinity
   for (let i = 0; i < CHOCO_BOUNDARY.length; i++) {
     const j = (i + 1) % CHOCO_BOUNDARY.length
@@ -240,6 +240,8 @@ function ChocoMapCloud({ isDark, prefersReduced }: { isDark: boolean; prefersRed
       transparent:true, depthWrite:false,
       blending:isDark?THREE.AdditiveBlending:THREE.NormalBlending,
     })
+    // Cachea el material en el ref para acceso imperativo en useFrame/useEffect — patrón R3F estándar.
+    // eslint-disable-next-line react-hooks/refs
     matRef.current = m
     return m
   // ShaderMaterial se crea una sola vez; isDark se actualiza vía el useEffect siguiente.
@@ -274,6 +276,8 @@ function ChocoMapCloud({ isDark, prefersReduced }: { isDark: boolean; prefersRed
 // ── Partículas ambientales — polvo cinematográfico (~180 puntos) ──────────────
 function AmbientDust({ isDark, prefersReduced }: { isDark: boolean; prefersReduced: boolean }) {
   const matRef = useRef<import("three").ShaderMaterial | null>(null)
+  // Distribución aleatoria de partículas generada una sola vez al montar — no re-render-dependiente.
+  /* eslint-disable react-hooks/purity */
   const geo = useMemo(()=>{
     const N=180, p=new Float32Array(N*3), o=new Float32Array(N), s=new Float32Array(N)
     for(let i=0;i<N;i++){
@@ -286,6 +290,7 @@ function AmbientDust({ isDark, prefersReduced }: { isDark: boolean; prefersReduc
     g.setAttribute('aS',new THREE.BufferAttribute(s,1))
     return g
   },[])
+  /* eslint-enable react-hooks/purity */
 
   const mat = useMemo(()=>{
     const m=new THREE.ShaderMaterial({
@@ -309,6 +314,7 @@ function AmbientDust({ isDark, prefersReduced }: { isDark: boolean; prefersReduc
       transparent:true, depthWrite:false,
       blending:isDark?THREE.AdditiveBlending:THREE.NormalBlending,
     })
+    // eslint-disable-next-line react-hooks/refs -- cachea el material para acceso imperativo en useFrame/useEffect
     matRef.current=m; return m
   // Geometry se crea una sola vez; color se actualiza vía el useEffect siguiente.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -364,7 +370,16 @@ function Scene({ isDark, prefersReduced }: { isDark: boolean; prefersReduced: bo
 }
 
 // ── Capítulos ─────────────────────────────────────────────────────────────────
-const CHAPTERS=[
+interface Chapter {
+  num: string
+  eyebrow: string
+  headline: string
+  body: string
+  stat: { value: string; label: string }
+  accent: string
+}
+
+const CHAPTERS: Chapter[] = [
   { num:'01', eyebrow:'El territorio',
     headline:'Donde la vida alcanza su máxima expresión',
     body:'El Chocó Biogeográfico es uno de los cinco hotspots de biodiversidad más importantes del planeta. Sus 187.000 km² de selvas húmedas tropicales —con más de 12.000 mm de lluvia al año— albergan miles de especies endémicas, muchas aún sin documentar. Un patrimonio natural sin igual que el mundo tiene el deber de proteger.',
@@ -379,7 +394,7 @@ const CHAPTERS=[
     stat:{value:'6',label:'módulos especializados integrados'}, accent:'#93c5fd'},
 ]
 
-function ChapterText({ chapter, isActive, isDark }: { chapter: { num?: number; title?: string; body?: string; stat?: { value: string; label: string }; accent?: string; [key: string]: unknown }; isActive: boolean; isDark: boolean }){
+function ChapterText({ chapter, isActive, isDark }: { chapter: Chapter; isActive: boolean; isDark: boolean }){
   return(
     <AnimatePresence mode="wait">
       {isActive&&(

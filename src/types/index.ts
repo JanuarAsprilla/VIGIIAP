@@ -142,6 +142,15 @@ export interface Solicitud {
 
 // ─── Usuarios ─────────────────────────────────────────────────────────────────
 
+export type UserRole =
+  | 'super_admin'
+  | 'admin_sig'
+  | 'investigador'
+  | 'tecnico'
+  | 'institucional'
+  | 'publico'
+  | 'visitante'
+
 export interface Usuario {
   id: string
   nombre: string

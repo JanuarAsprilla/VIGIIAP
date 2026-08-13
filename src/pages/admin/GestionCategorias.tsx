@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, type FormEvent } from 'react'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -40,13 +40,14 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { 
   const [objectUrl, setObjectUrl] = useState<string | null>(null)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- deriva la preview URL del File recibido
     if (!currentFile) { setObjectUrl(null); return }
     const url = URL.createObjectURL(currentFile)
     setObjectUrl(url)
     return () => URL.revokeObjectURL(url)
   }, [currentFile])
 
-  const accept = useCallback((file) => {
+  const accept = useCallback((file: File | null | undefined) => {
     if (!file || !file.type.startsWith('image/')) return
     if (file.size > 5 * 1024 * 1024) return
     onFile(file)
@@ -100,7 +101,7 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { 
 }
 
 // ── Tarjeta de categoría ──────────────────────────────────────────────────────
-function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbnail }: { cat: { nombre: string; descripcion?: string | null; thumbnail_url?: string | null; activo?: boolean }; docCount: number; onDelete: (nombre: string) => void; onThumbnailSaved: (nombre: string) => void; uploadThumbnail: ReturnType<typeof import('@/hooks/useCategorias').useUploadCategoriaThumbnail> }) {
+function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbnail }: { cat: { nombre: string; descripcion?: string | null; thumbnail_url?: string | null; activo?: boolean }; docCount: number; onDelete: (target: { nombre: string }) => void; onThumbnailSaved: (nombre: string) => void; uploadThumbnail: ReturnType<typeof import('@/hooks/useCategorias').useUploadCategoriaThumbnail> }) {
   const [file, setFile]         = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress]   = useState(0)
@@ -108,6 +109,7 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
   const [fileObjectUrl, setFileObjectUrl] = useState<string | null>(null)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- deriva la preview URL del File recibido
     if (!file) { setFileObjectUrl(null); return }
     const url = URL.createObjectURL(file)
     setFileObjectUrl(url)
@@ -244,7 +246,7 @@ export default function GestionCategorias() {
     return acc
   }, {} as Record<string, number>)
 
-  const handleCreate = async (e) => {
+  const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!newName.trim()) { setNewError('El nombre es obligatorio'); return }
     setNewError(null)

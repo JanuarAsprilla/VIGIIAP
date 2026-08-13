@@ -10,7 +10,8 @@ import {
   ArrowRight, ChevronDown, Users, Building2, Plus,
 } from 'lucide-react'
 import { ALL_MODULES } from '@/lib/constants'
-import { useAuth, ROLES } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { ROLES } from '@/lib/constants/roles'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'

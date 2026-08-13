@@ -27,6 +27,8 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// El hook vive junto a su Provider — patrón establecido en todo el proyecto.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSearch() {
   const context = useContext(SearchContext)
   if (!context) {

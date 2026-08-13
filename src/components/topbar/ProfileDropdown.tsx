@@ -6,9 +6,10 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { panelAnim } from './panelAnim'
-import { ROLES } from '@/contexts/AuthContext'
+import { ROLES } from '@/lib/constants/roles'
+import type { AuthUser } from '@/contexts/AuthContext'
 
-function RoleBadge({ user }) {
+function RoleBadge({ user }: { user: AuthUser | null }) {
   const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE
   const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN
   const isAdmin      = user?.role === ROLES.ADMIN || isSuperAdmin
@@ -56,7 +57,7 @@ function MenuItem({ to = '', icon: Icon, label, onClick = undefined, danger = fa
   )
 }
 
-export default function ProfileDropdown({ user, onClose, onLogout }) {
+export default function ProfileDropdown({ user, onClose, onLogout }: { user: AuthUser | null; onClose: () => void; onLogout: () => void }) {
   const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE
   const isAdmin      = user?.role === ROLES.ADMIN || user?.role === ROLES.SUPER_ADMIN
   const isVerified   = !isUnverified

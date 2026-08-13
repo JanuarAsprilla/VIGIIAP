@@ -3,7 +3,24 @@ import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
 import type { ApiMeta } from '@/types'
 
-function formatBytes(bytes) {
+interface DocumentoRaw {
+  id: string
+  slug?: string
+  titulo: string
+  tipo: string
+  anio?: number
+  autores?: string | null
+  resumen?: string | null
+  archivo_url?: string | null
+  visibilidad?: string
+  activo: boolean
+  creado_en: string
+  categoria?: string | null
+  categoria_thumbnail_url?: string | null
+  tamano_bytes?: number | null
+}
+
+function formatBytes(bytes: number | null | undefined) {
   if (!bytes) return null
   const k = 1024
   const sizes = ['B', 'KB', 'MB', 'GB']
@@ -11,9 +28,9 @@ function formatBytes(bytes) {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
 }
 
-const EXT_TYPE = { doc: 'docx', xls: 'xlsx' }
+const EXT_TYPE: Record<string, string> = { doc: 'docx', xls: 'xlsx' }
 
-function normalizeDoc(d) {
+function normalizeDoc(d: DocumentoRaw) {
   const rawExt = d.archivo_url?.split('?')[0].split('.').pop()?.toLowerCase() ?? 'pdf'
   const type   = EXT_TYPE[rawExt] ?? rawExt
   return {
@@ -45,8 +62,8 @@ export type DocumentoListResult = { data: DocumentoData[]; meta: ApiMeta }
 
 export const DOCS_KEYS = {
   all:    ['documentos'],
-  list:   (params) => ['documentos', 'list', params],
-  detail: (slug)   => ['documentos', 'detail', slug],
+  list:   (params: Record<string, unknown>) => ['documentos', 'list', params],
+  detail: (slug: string | undefined)        => ['documentos', 'detail', slug],
 }
 
 export function useDocumentosList(params: Record<string, unknown> = {}) {
@@ -60,10 +77,10 @@ export function useDocumentosList(params: Record<string, unknown> = {}) {
   })
 }
 
-export function useDocumentoBySlug(slug) {
+export function useDocumentoBySlug(slug: string | undefined) {
   return useQuery({
     queryKey: DOCS_KEYS.detail(slug),
-    queryFn:  () => api.get(`/documentos/${slug}`),
+    queryFn:  () => api.get(`/documentos/${slug}`) as Promise<DocumentoRaw>,
     select:   normalizeDoc,
     enabled:  !!slug,
   })

@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion'
 import { Eye, ChevronLeft, ChevronRight } from 'lucide-react'
 import { fadeUp } from '@/lib/animations'
+import type { SolicitudData } from '@/hooks/useSolicitudes'
 import { StatusBadge } from './StatusBadge'
 import { FiltroDropdown } from './FiltroDropdown'
 import { PAGE_SIZE } from './solicitudes.utils'
 
 
-const ROW_LEFT_BORDER = {
+const ROW_LEFT_BORDER: Record<string, string> = {
   green:  'border-l-green-400',
   yellow: 'border-l-yellow-400',
   orange: 'border-l-orange-400',
@@ -15,7 +16,19 @@ const ROW_LEFT_BORDER = {
   teal:   'border-l-teal-400',
 }
 
-export function SolicitudesTable({ rows, onVerDetalle, filtro, onFiltroChange, totalAll, page, totalPages, onPrev, onNext }) {
+interface SolicitudesTableProps {
+  rows: SolicitudData[]
+  onVerDetalle: (sol: SolicitudData) => void
+  filtro: string
+  onFiltroChange: (value: string) => void
+  totalAll: number
+  page: number
+  totalPages: number
+  onPrev: () => void
+  onNext: () => void
+}
+
+export function SolicitudesTable({ rows, onVerDetalle, filtro, onFiltroChange, totalAll, page, totalPages, onPrev, onNext }: SolicitudesTableProps) {
   const desde = (page - 1) * PAGE_SIZE + 1
   const hasta = Math.min(page * PAGE_SIZE, rows.length + (page - 1) * PAGE_SIZE)
 

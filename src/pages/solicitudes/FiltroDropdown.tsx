@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SlidersHorizontal, ChevronDown, Check } from 'lucide-react'
 
-export const ESTADOS_FILTRO = [
+const ESTADOS_FILTRO = [
   { value: '',           label: 'Todos los estados' },
   { value: 'Pendiente',  label: 'Pendiente',   color: 'bg-orange-500' },
   { value: 'En Revisión',label: 'En Revisión', color: 'bg-blue-500' },
@@ -11,13 +11,18 @@ export const ESTADOS_FILTRO = [
   { value: 'Rechazado',  label: 'Rechazado',   color: 'bg-red-500' },
 ]
 
-export function FiltroDropdown({ filtro, onChange }) {
+interface FiltroDropdownProps {
+  filtro: string
+  onChange: (value: string) => void
+}
+
+export function FiltroDropdown({ filtro, onChange }: FiltroDropdownProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handleClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)

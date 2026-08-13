@@ -4,7 +4,7 @@ import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
 import type { ApiMeta } from '@/types'
 
-const TIPO_LABEL = {
+const TIPO_LABEL: Record<string, string> = {
   'uso-suelo':         'Certificado de Uso de Suelo',
   'linderos':          'Consulta de Linderos',
   'estudio-ambiental': 'Estudio Técnico Ambiental',
@@ -13,21 +13,21 @@ const TIPO_LABEL = {
   'otro':              'Otro',
 }
 
-const ESTADO_LABEL = {
+const ESTADO_LABEL: Record<string, string> = {
   pendiente:   'Pendiente',
   en_revision: 'En Revisión',
   aprobada:    'Aprobado',
   rechazada:   'Rechazado',
   resuelta:    'Resuelta',
 }
-const ESTADO_COLOR = {
+const ESTADO_COLOR: Record<string, string> = {
   'Pendiente':   'orange',
   'En Revisión': 'blue',
   'Aprobado':    'green',
   'Rechazado':   'red',
   'Resuelta':    'teal',
 }
-export const ESTADO_API = {
+export const ESTADO_API: Record<string, string> = {
   'Pendiente':   'pendiente',
   'En Revisión': 'en_revision',
   'Aprobado':    'aprobada',
@@ -36,7 +36,7 @@ export const ESTADO_API = {
 }
 
 // Transiciones válidas por estado — espejo de la máquina del backend
-export const TRANSICIONES_VALIDAS = {
+export const TRANSICIONES_VALIDAS: Record<string, string[]> = {
   pendiente:   ['En Revisión', 'Aprobado', 'Rechazado'],
   en_revision: ['Pendiente', 'Aprobado', 'Rechazado', 'Resuelta'],
   aprobada:    ['Resuelta', 'En Revisión'],
@@ -90,10 +90,12 @@ export const SOL_KEYS = {
   detail: (id: string | null | undefined)   => ['solicitudes', 'detail', id],
 }
 
+type SolicitudRawListResult = { data: SolicitudRaw[]; meta: ApiMeta }
+
 export function useSolicitudesAdmin(params: Record<string, unknown> = {}) {
-  return useQuery<SolicitudListResult>({
+  return useQuery<SolicitudRawListResult, Error, SolicitudListResult>({
     queryKey: SOL_KEYS.list(params),
-    queryFn:  () => api.get('/solicitudes', { params }),
+    queryFn:  () => api.get('/solicitudes', { params }) as Promise<SolicitudRawListResult>,
     select:   (res) => ({
       data: res.data.map(normalizeSolicitud),
       meta: res.meta,
@@ -102,9 +104,9 @@ export function useSolicitudesAdmin(params: Record<string, unknown> = {}) {
 }
 
 export function useMisSolicitudes(params: Record<string, unknown> = {}) {
-  return useQuery<SolicitudListResult>({
+  return useQuery<SolicitudRawListResult, Error, SolicitudListResult>({
     queryKey: SOL_KEYS.mine(params),
-    queryFn:  () => api.get('/solicitudes/mis-solicitudes', { params }),
+    queryFn:  () => api.get('/solicitudes/mis-solicitudes', { params }) as Promise<SolicitudRawListResult>,
     select:   (res) => ({
       data: res.data.map(normalizeSolicitud),
       meta: res.meta,
@@ -113,11 +115,11 @@ export function useMisSolicitudes(params: Record<string, unknown> = {}) {
 }
 
 export function useSolicitudById(id: string | null | undefined) {
-  return useQuery<SolicitudData>({
+  return useQuery<SolicitudRaw, Error, SolicitudData>({
     queryKey: SOL_KEYS.detail(id),
-    queryFn:  () => api.get(`/solicitudes/${id}`),
+    queryFn:  () => api.get(`/solicitudes/${id}`) as Promise<SolicitudRaw>,
     enabled:  !!id,
-    select:   (res) => normalizeSolicitud(res),
+    select:   normalizeSolicitud,
   })
 }
 

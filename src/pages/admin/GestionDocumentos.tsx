@@ -27,17 +27,17 @@ const BASE_CATEGORIES = [
 ]
 const TIPOS = ['PDF', 'Word', 'Excel']
 
-const ACCEPT = {
+const ACCEPT: Record<string, string> = {
   PDF:   '.pdf,application/pdf',
   Word:  '.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   Excel: '.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 }
-const MAX_SIZE_BYTES = {
+const MAX_SIZE_BYTES: Record<string, number> = {
   PDF:   20 * 1024 * 1024,
   Word:  50 * 1024 * 1024,
   Excel: 50 * 1024 * 1024,
 }
-const TIPO_HINT = {
+const TIPO_HINT: Record<string, string> = {
   PDF:   'Archivos PDF — máx. 20 MB',
   Word:  'Archivos Word (.doc, .docx) — máx. 50 MB',
   Excel: 'Archivos Excel (.xls, .xlsx) — máx. 50 MB',
@@ -54,7 +54,7 @@ const EMPTY_FORM = {
   autor: '', anio: '', visibilidad: 'publico',
 }
 
-function typeToTipo(type) {
+function typeToTipo(type: string | null | undefined) {
   const t = type?.toLowerCase()
   if (t === 'doc' || t === 'docx' || t === 'word') return 'Word'
   if (t === 'xls' || t === 'xlsx' || t === 'excel') return 'Excel'
@@ -72,9 +72,9 @@ const TipoIcon = ({ tipo }: { tipo: string }) => {
 }
 
 // ── useClickOutside ──────────────────────────────────────────────────────────
-function useClickOutside(ref, handler) {
+function useClickOutside(ref: React.RefObject<HTMLElement | null>, handler: () => void) {
   useEffect(() => {
-    const listener = (e) => { if (ref.current && !ref.current.contains(e.target)) handler() }
+    const listener = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) handler() }
     document.addEventListener('mousedown', listener)
     return () => document.removeEventListener('mousedown', listener)
   }, [ref, handler])
@@ -89,6 +89,7 @@ function CategoryCombobox({ value, onChange, allCategories }: { value: string; o
   useClickOutside(ref, () => setOpen(false))
 
   // Sincronizar si el valor externo cambia (ej: al abrir el modal de edición)
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- resync intencional de input controlado
   useEffect(() => { setInput(value || '') }, [value])
 
   const filtered = allCategories.filter((c) =>
@@ -97,7 +98,7 @@ function CategoryCombobox({ value, onChange, allCategories }: { value: string; o
   const isNew = input.trim() !== '' &&
     !allCategories.some((c) => c.toLowerCase() === input.trim().toLowerCase())
 
-  const select = (cat) => { onChange(cat); setInput(cat); setOpen(false) }
+  const select = (cat: string) => { onChange(cat); setInput(cat); setOpen(false) }
 
   return (
     <div className="relative" ref={ref}>
@@ -170,7 +171,7 @@ function CategoryCombobox({ value, onChange, allCategories }: { value: string; o
   )
 }
 
-function formatBytes(bytes) {
+function formatBytes(bytes: number | null | undefined) {
   if (!bytes) return '0 B'
   const k = 1024
   const sizes = ['B', 'KB', 'MB', 'GB']
@@ -198,7 +199,7 @@ function SavedToast({ message, onDone }: { message: string; onDone: () => void }
 }
 
 // ── Barra de progreso de subida ───────────────────────────────────────────────
-function UploadProgress({ progress }: { progress: number }) {
+function UploadProgress({ progress }: { progress: number | null }) {
   if (progress === null || progress === 0) return null
   return (
     <div className="space-y-1.5">
@@ -243,12 +244,12 @@ function VisibilidadSelector({ value, onChange }: { value: string; onChange: (v:
 }
 
 // ── Dropzone ──────────────────────────────────────────────────────────────────
-function FileDropzone({ tipo, onFile, currentFile, editing, onError }: { tipo: string; onFile: (f: File | null) => void; currentFile: File | null; editing: DocumentoData | null; onError: (msg: string) => void }) {
+function FileDropzone({ tipo, onFile, currentFile, editing, onError }: { tipo: string; onFile: (f: File | null) => void; currentFile: File | null; editing: DocumentoData | null; onError: (msg: string | null) => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const accept = ACCEPT[tipo]
 
-  const validateAndAccept = useCallback((file) => {
+  const validateAndAccept = useCallback((file: File | null | undefined) => {
     if (!file) return
     const maxBytes = MAX_SIZE_BYTES[tipo]
     if (maxBytes && file.size > maxBytes) {
@@ -259,7 +260,7 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }: { tipo: s
     onFile(file)
   }, [tipo, onFile, onError])
 
-  const handleDrop = useCallback((e) => {
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault(); setDragging(false)
     validateAndAccept(e.dataTransfer.files[0])
   }, [validateAndAccept])
@@ -346,6 +347,7 @@ export default function GestionDocumentos() {
     ? docs.filter((d) => typeToTipo(d.type) === filtroTipo)
     : docs
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- reset intencional de paginación al cambiar filtros
   useEffect(() => { setPage(1) }, [search, filtroCategoria, filtroTipo])
 
   const openCreate = () => {
@@ -354,14 +356,14 @@ export default function GestionDocumentos() {
     setUploadProgress(null); setShowModal(true)
   }
 
-  const openEdit = (d) => {
+  const openEdit = (d: DocumentoData) => {
     setEditing(d)
     setForm({
       nombre:      d.nombre,
       categoria:   d.categoria,
       tipo:        typeToTipo(d.type),
       autor:       d.autores ?? '',
-      anio:        d.anio ?? '',
+      anio:        d.anio != null ? String(d.anio) : '',
       visibilidad: d.visibilidad ?? 'publico',
     })
     setFormErrors({}); setUploadedFile(null); setUploadError(null)
@@ -377,7 +379,7 @@ export default function GestionDocumentos() {
     return e
   }
 
-  const handleSave = async (ev) => {
+  const handleSave = async (ev: React.FormEvent<HTMLFormElement>) => {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setFormErrors(e); return }
@@ -392,7 +394,7 @@ export default function GestionDocumentos() {
     if (uploadedFile) payload.append('archivo', uploadedFile)
 
     const onUploadProgress = uploadedFile
-      ? (ev) => setUploadProgress(ev.total ? Math.round((ev.loaded / ev.total) * 100) : 50)
+      ? (ev: import('axios').AxiosProgressEvent) => setUploadProgress(ev.total ? Math.round((ev.loaded / ev.total) * 100) : 50)
       : undefined
 
     try {
@@ -582,7 +584,7 @@ export default function GestionDocumentos() {
           </div>
           <PaginationBar
             page={page}
-            totalPages={data?.meta?.totalPages ?? 1}
+            totalPages={data?.meta?.pages ?? 1}
             total={data?.meta?.total ?? 0}
             pageSize={PAGE_SIZE}
             onPage={setPage}
@@ -642,7 +644,7 @@ export default function GestionDocumentos() {
 
                 {/* Dropzone */}
                 <FileDropzone tipo={form.tipo} onFile={setUploadedFile} currentFile={uploadedFile}
-                  editing={!!editing} onError={setUploadError} />
+                  editing={editing} onError={setUploadError} />
                 {uploadError && (
                   <div className="flex items-center gap-2 text-red-500 text-xs">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />{uploadError}

@@ -3,13 +3,13 @@
  * Light (default): editorial blanco con textura verde-sage
  * Dark: dark forest — mapa del Chocó como textura + orbe verde
  */
-import { useState, type ComponentType } from 'react'
+import { useState } from 'react'
 import type { AuthUser } from '@/contexts/AuthContext'
 import { NavLink, Link } from 'react-router-dom'
-import { PlusCircle, LogOut, X, Sparkles, Lock, Shield, ChevronRight } from 'lucide-react'
+import { PlusCircle, LogOut, X, Sparkles, Lock, Shield, ChevronRight, type LucideIcon } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
-import { ROLES } from '@/contexts/AuthContext'
+import { ROLES } from '@/lib/constants/roles'
 import { motion, AnimatePresence } from 'framer-motion'
 import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
 
@@ -27,7 +27,7 @@ const navItemVariant = {
 
 // ── Nav link ─────────────────────────────────────────────────────────────────
 function SidebarLink({ link, onClose, userRole, isAuthenticated }: {
-  link: { path: string; label: string; icon: ComponentType<{ className?: string }> }
+  link: { path: string; label: string; icon: LucideIcon }
   onClose: () => void
   userRole: string
   isAuthenticated: boolean
@@ -120,7 +120,7 @@ function SidebarLink({ link, onClose, userRole, isAuthenticated }: {
 }
 
 // ── User card ─────────────────────────────────────────────────────────────────
-function UserMiniCard({ user }: { user: AuthUser | null }) {
+function UserMiniCard({ user }: { user: AuthUser }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -6 }}
@@ -265,7 +265,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }:
               key={link.path}
               link={link}
               onClose={onClose}
-              userRole={user?.role}
+              userRole={user?.role ?? ''}
               isAuthenticated={isAuthenticated}
             />
           ))}

@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   Save, Globe, Bell, Shield, AlertTriangle,
   Mail, Phone, MapPin, CheckCircle, AlertCircle,
+  type LucideIcon,
 } from 'lucide-react'
 
 import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
@@ -12,7 +13,14 @@ import api from '@/lib/api'
 
 const fadeUp = fadeUpSm
 
-function SectionCard({ title, icon: Icon, children, delay = 0 }) {
+interface SectionCardProps {
+  title: string
+  icon: LucideIcon
+  children: React.ReactNode
+  delay?: number
+}
+
+function SectionCard({ title, icon: Icon, children, delay = 0 }: SectionCardProps) {
   return (
     <Card3D
       initial={{ opacity: 0, y: 22, rotateX: 4, scale: 0.97 }}
@@ -47,7 +55,13 @@ function FieldRow({ label, hint, children }: { label?: string; hint?: string; ch
   )
 }
 
-function Toggle({ checked, onChange, label }) {
+interface ToggleProps {
+  checked: boolean
+  onChange: () => void
+  label?: string
+}
+
+function Toggle({ checked, onChange, label }: ToggleProps) {
   return (
     <label className="inline-flex items-center gap-3 cursor-pointer">
       <div
@@ -105,6 +119,7 @@ export default function Configuracion() {
 
   useEffect(() => {
     if (!remoteConfig) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resync intencional al llegar la config remota
     setGeneral((g) => ({
       siteName: remoteConfig.siteName ?? g.siteName,
       siteDesc: remoteConfig.siteDesc ?? g.siteDesc,
@@ -201,11 +216,11 @@ export default function Configuracion() {
         </FieldRow>
         <hr className="border-border" />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
+          {([
             { key: 'email', label: 'Correo de contacto', icon: Mail },
             { key: 'phone', label: 'Teléfono', icon: Phone },
             { key: 'address', label: 'Dirección', icon: MapPin },
-          ].map(({ key, label, icon: Ic }) => (
+          ] as { key: keyof typeof general; label: string; icon: LucideIcon }[]).map(({ key, label, icon: Ic }) => (
             <div key={key}>
               <label htmlFor={`conf-${key}`} className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5 flex items-center gap-1">
                 <Ic className="w-3 h-3" aria-hidden="true" />{label}
@@ -225,12 +240,12 @@ export default function Configuracion() {
       {/* Notifications */}
       <SectionCard title="Notificaciones" icon={Bell} delay={0.14}>
         <div className="space-y-3">
-          {[
+          {([
             { key: 'emailNotifs', label: 'Notificaciones por correo electrónico' },
             { key: 'solicitudNotifs', label: 'Alertas de nuevas solicitudes' },
             { key: 'loginNotifs', label: 'Notificar nuevos inicios de sesión' },
             { key: 'reportesSemanal', label: 'Reporte semanal de actividad' },
-          ].map(({ key, label }) => (
+          ] as { key: keyof typeof notifs; label: string }[]).map(({ key, label }) => (
             <div key={key} className="flex items-center justify-between py-1">
               <span className="text-sm text-text">{label}</span>
               <Toggle checked={notifs[key]} onChange={() => setNotifs((n) => ({ ...n, [key]: !n[key] }))} label="" />
@@ -242,11 +257,11 @@ export default function Configuracion() {
       {/* Roles & Permisos */}
       <SectionCard title="Roles y Permisos" icon={Shield} delay={0.2}>
         <div className="space-y-3">
-          {[
+          {([
             { key: 'publicoCanSolicitar', label: 'Usuarios Público pueden enviar solicitudes' },
             { key: 'investigadorCanUpload', label: 'Investigadores pueden subir documentos' },
             { key: 'requireApproval', label: 'Requerir aprobación de administrador para nuevos usuarios' },
-          ].map(({ key, label }) => (
+          ] as { key: keyof typeof roles; label: string }[]).map(({ key, label }) => (
             <div key={key} className="flex items-center justify-between py-1">
               <span className="text-sm text-text">{label}</span>
               <Toggle checked={roles[key]} onChange={() => setRoles((r) => ({ ...r, [key]: !r[key] }))} label="" />

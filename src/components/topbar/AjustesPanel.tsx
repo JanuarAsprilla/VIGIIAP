@@ -1,16 +1,16 @@
 import { motion } from 'framer-motion'
-import { Layers, Monitor, Sun, Moon, CheckCircle } from 'lucide-react'
-import { useUI } from '@/contexts/UIContext'
+import { Layers, Monitor, Sun, Moon, CheckCircle, type LucideIcon } from 'lucide-react'
+import { useUI, type Density } from '@/contexts/UIContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { panelAnim } from './panelAnim'
 
-const DENSITY_OPTIONS = [
-  { value: 'compact', label: 'Compacto', Icon: Layers  },
-  { value: 'normal',  label: 'Normal',   Icon: Monitor },
-  { value: 'comodo',  label: 'Cómodo',   Icon: Sun     },
+const DENSITY_OPTIONS: { value: Density; label: string; Icon: LucideIcon }[] = [
+  { value: 'compact',     label: 'Compacto', Icon: Layers  },
+  { value: 'normal',      label: 'Normal',   Icon: Monitor },
+  { value: 'comfortable', label: 'Cómodo',   Icon: Sun     },
 ]
 
-export default function AjustesPanel({ onClose }) {
+export default function AjustesPanel({ onClose }: { onClose: () => void }) {
   const { density, setDensity, notifications, setNotifications } = useUI()
   const { isDark, toggleTheme } = useTheme()
 
@@ -32,7 +32,7 @@ export default function AjustesPanel({ onClose }) {
             {DENSITY_OPTIONS.map(({ value, label, Icon }) => (
               <button
                 key={value}
-                onClick={() => setDensity(value as Parameters<typeof setDensity>[0])}
+                onClick={() => setDensity(value)}
                 aria-pressed={density === value}
                 className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg border text-[0.65rem] font-bold uppercase tracking-wider transition-colors ${
                   density === value

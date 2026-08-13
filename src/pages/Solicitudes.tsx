@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Download, PlusCircle } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
-import { useMisSolicitudes } from '@/hooks/useSolicitudes'
+import { useMisSolicitudes, type SolicitudData } from '@/hooks/useSolicitudes'
 import { fadeUp } from '@/lib/animations'
 import { PAGE_SIZE, exportCSV } from './solicitudes/solicitudes.utils'
 import { SolicitudesTable } from './solicitudes/SolicitudesTable'
@@ -20,13 +20,13 @@ export default function Solicitudes() {
   const { query } = useSearch()
   const [filtroEstado, setFiltroEstado] = useState('')
   const [page, setPage] = useState(1)
-  const [detalleItem, setDetalleItem] = useState(null)
+  const [detalleItem, setDetalleItem] = useState<SolicitudData | null>(null)
   const formRef = useRef<HTMLDivElement>(null)
 
   const { data } = useMisSolicitudes()
   const allRows = data?.data ?? []
 
-  const handleFiltro = (val) => { setFiltroEstado(val); setPage(1) }
+  const handleFiltro = (val: string) => { setFiltroEstado(val); setPage(1) }
 
   const allFiltered = allRows.filter((s) => {
     const searchOk = matches([s.id, s.tipo, s.subtipo, s.estado], query)

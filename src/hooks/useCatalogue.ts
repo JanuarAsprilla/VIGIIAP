@@ -13,13 +13,14 @@ import { useMemo } from 'react'
 import {
   Home, Map as MapIcon, FileText, Globe, Wrench,
   ClipboardList, UserCircle, BookOpen,
-  HelpCircle, FileCheck,
+  HelpCircle, FileCheck, type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { NAV_LINKS } from '@/lib/constants'
+import type { CatalogueEntry } from '@/types'
 
 // Mapa estático icono por path — evita acoplamiento a la estructura de NAV_LINKS
-const ROUTE_ICONS = {
+const ROUTE_ICONS: Record<string, LucideIcon> = {
   '/':            Home,
   '/mapas':       MapIcon,
   '/documentos':  FileText,
@@ -28,7 +29,7 @@ const ROUTE_ICONS = {
   '/solicitudes': ClipboardList,
 }
 
-function buildModuleEntries() {
+function buildModuleEntries(): CatalogueEntry[] {
   return NAV_LINKS.map((link) => ({
     id:       `mod-${link.path}`,
     group:    'Módulos',
@@ -39,7 +40,7 @@ function buildModuleEntries() {
   }))
 }
 
-function buildActionEntries(isAuthenticated) {
+function buildActionEntries(isAuthenticated: boolean): CatalogueEntry[] {
   const entries = [
     {
       id:       'res-guia',

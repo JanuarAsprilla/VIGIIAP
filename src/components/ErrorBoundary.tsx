@@ -2,21 +2,30 @@ import * as Sentry from '@sentry/react'
 import React, { Component } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
+interface ErrorBoundaryProps {
+  children?: React.ReactNode
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean
+  error: unknown
+}
+
 /**
  * Captura errores de renderizado en el árbol de componentes hijos.
  * Evita que un crash en un módulo deje la app en blanco.
  */
-export default class ErrorBoundary extends Component<{ children?: React.ReactNode }, { hasError: boolean; error: unknown }> {
-  constructor(props) {
+export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props)
     this.state = { hasError: false, error: null }
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
     return { hasError: true, error }
   }
 
-  componentDidCatch(error, info) {
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
     if (import.meta.env.DEV) {
       console.error('[ErrorBoundary]', error, info.componentStack)
     }

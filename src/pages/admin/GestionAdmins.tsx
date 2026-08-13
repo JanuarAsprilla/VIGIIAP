@@ -9,7 +9,7 @@ interface AdminSigUser {
 }
 type AdminUsersApiRes = { data?: { usuarios?: AdminSigUser[] }; usuarios?: AdminSigUser[] }
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ShieldCheck, UserPlus, Users, Activity, RefreshCw, X, Eye, EyeOff } from 'lucide-react'
+import { ShieldCheck, UserPlus, Users, Activity, RefreshCw, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { staggerContainer, staggerItem3D, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
@@ -18,7 +18,7 @@ import api from '@/lib/api'
 // ── API helpers ───────────────────────────────────────────────────────────────
 const fetchSuperStats  = () => api.get('/admin/super/stats')
 const fetchAdminUsers  = () => api.get('/admin/usuarios?rol=admin_sig')
-const crearAdmin       = (data) => api.post('/admin/super/crear-admin', data)
+const crearAdmin       = (data: { nombre: string; email: string; institucion: string }) => api.post('/admin/super/crear-admin', data)
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, color = 'primary' }: { icon: React.ComponentType<{ className?: string }>; label: string; value?: number | string; color?: string }) {
@@ -60,14 +60,14 @@ function CrearAdminModal({ onClose, onSuccess }: { onClose: () => void; onSucces
     },
   })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setServerError(null)
     if (!showConfirm) { setShowConfirm(true); return }
     mutation.mutate(form)
   }
 
-  const set = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }))
+  const set = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((prev) => ({ ...prev, [field]: e.target.value }))
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">

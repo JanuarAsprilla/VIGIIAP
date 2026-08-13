@@ -97,7 +97,7 @@ const PANEL_ANIM = {
   initial:    { opacity: 0, scale: 0.96, y: -12 },
   animate:    { opacity: 1, scale: 1,    y: 0    },
   exit:       { opacity: 0, scale: 0.96, y: -12  },
-  transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] },
+  transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] as const },
 }
 
 export default function CommandPalette() {
@@ -142,6 +142,7 @@ export default function CommandPalette() {
   // Reset state when opening
   useEffect(() => {
     if (paletteOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset intencional al abrir el palette
       setQuery('')
       setActiveIndex(0)
       // Defer focus so AnimatePresence can mount the element
@@ -150,6 +151,7 @@ export default function CommandPalette() {
   }, [paletteOpen])
 
   // Reset active index when results change
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- reset intencional al cambiar la búsqueda
   useEffect(() => { setActiveIndex(0) }, [query])
 
   // Scroll active item into view
@@ -217,7 +219,6 @@ export default function CommandPalette() {
         onClick={(e) => { if (e.target === e.currentTarget) closePalette() }}
         onKeyDown={handleFocusTrap}
       >
-        {/* @ts-ignore framer-motion v12 spread type */}
         <motion.div
           {...PANEL_ANIM}
           ref={panelRef}

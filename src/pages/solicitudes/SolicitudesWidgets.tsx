@@ -7,12 +7,16 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Eye, ArrowRight } from 'lucide-react'
-import { useMisSolicitudes } from '@/hooks/useSolicitudes'
+import { useMisSolicitudes, type SolicitudData } from '@/hooks/useSolicitudes'
 import { fadeUp, staggerContainer, staggerItem3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 
+interface MisSolicitudesProps {
+  onVerDetalle: (sol: SolicitudData) => void
+}
+
 // ── Mis Solicitudes ──
-export function MisSolicitudes({ onVerDetalle }) {
+export function MisSolicitudes({ onVerDetalle }: MisSolicitudesProps) {
   const { data, isLoading } = useMisSolicitudes()
   const mis = data?.data ?? []
 
@@ -94,8 +98,12 @@ export function AyudaCTA() {
   )
 }
 
+interface BottomStatsProps {
+  rows: SolicitudData[]
+}
+
 // ── Bottom KPIs ──
-export function BottomStats({ rows }) {
+export function BottomStats({ rows }: BottomStatsProps) {
   const total     = rows.length
   const pendiente = rows.filter((r) => r.estado === 'Pendiente' || r.estado === 'En Revisión').length
   const resuelta  = rows.filter((r) => r.estado === 'Resuelta' || r.estado === 'Aprobado').length

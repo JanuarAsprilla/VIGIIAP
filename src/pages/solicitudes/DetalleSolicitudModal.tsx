@@ -1,9 +1,16 @@
 import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { X, Check, CheckCircle, AlertCircle, Clock, PlusCircle } from 'lucide-react'
+import type { SolicitudData } from '@/hooks/useSolicitudes'
 import { StatusBadge } from './StatusBadge'
 
-export function DetalleSolicitudModal({ sol, onClose, onNueva }) {
+interface DetalleSolicitudModalProps {
+  sol: SolicitudData
+  onClose: () => void
+  onNueva: () => void
+}
+
+export function DetalleSolicitudModal({ sol, onClose, onNueva }: DetalleSolicitudModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -12,7 +19,7 @@ export function DetalleSolicitudModal({ sol, onClose, onNueva }) {
     const FOCUSABLE = 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'
     const getFocusable = () => [...el.querySelectorAll(FOCUSABLE)]
     ;(getFocusable()[0] as HTMLElement)?.focus()
-    const trap = (e) => {
+    const trap = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { onClose(); return }
       if (e.key !== 'Tab') return
       const nodes = getFocusable()

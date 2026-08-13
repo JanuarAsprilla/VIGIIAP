@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Mail, Phone, Clock, ExternalLink } from 'lucide-react'
 import { panelAnim } from './panelAnim'
 
-export default function SoportePanel({ onClose }) {
+export default function SoportePanel({ onClose }: { onClose: () => void }) {
   return (
     <motion.div
       {...panelAnim}

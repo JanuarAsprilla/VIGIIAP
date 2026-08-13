@@ -13,7 +13,7 @@ const FAQS = [
   { q: '¿Cómo contacto al soporte técnico?', a: 'Puede comunicarse con el equipo de soporte a través del módulo de Documentos (sección "Soporte Documental") o escribiendo directamente a info@iiap.org.co.' },
 ]
 
-function FAQItem({ faq, index }) {
+function FAQItem({ faq, index }: { faq: { q: string; a: string }; index: number }) {
   const [open, setOpen] = useState(false)
   return (
     <Card3D

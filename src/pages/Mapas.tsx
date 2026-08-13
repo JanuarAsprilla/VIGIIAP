@@ -2,11 +2,10 @@
  * tokens: design.md · stamp: 2026-05-25
  */
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Map, Filter, ChevronLeft, ChevronRight, X,
-  FileText, Image, Globe, Loader2, Eye, Download, Calendar, ExternalLink,
+  FileText, Globe, Loader2, Eye, Download, Calendar,
 } from 'lucide-react'
 import { MAP_CATEGORIES, MAP_FORMATS, MAP_YEARS } from '@/lib/constants'
 import { useMapasList } from '@/hooks/useMapas'
@@ -158,7 +157,7 @@ const CATEGORY_COLORS = {
 }
 
 interface MapCardProps { map: MapaData; index: number; onPreview?: (map: MapaData, format: string) => void }
-function MapCard({ map, index, onPreview }: MapCardProps) {
+function MapCard({ map, index }: MapCardProps) {
   const colors = CATEGORY_COLORS[map.category as keyof typeof CATEGORY_COLORS] ?? { pill: 'bg-primary-100 text-primary-700', accent: '#1B4332' }
   const hasPdf     = map.formats.includes('PDF')
   const hasImg     = map.formats.includes('IMG')
@@ -236,7 +235,7 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
             </button>
           )}
           {hasPdf && (
-            <a href={map.archivo_pdf_url} target="_blank" rel="noopener noreferrer"
+            <a href={map.archivo_pdf_url ?? undefined} target="_blank" rel="noopener noreferrer"
               className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors no-underline">
               <Eye className="w-3.5 h-3.5" />
               Visualizar
@@ -250,7 +249,7 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
             </button>
           )}
           {hasImg && (
-            <a href={map.archivo_img_url} target="_blank" rel="noopener noreferrer"
+            <a href={map.archivo_img_url ?? undefined} target="_blank" rel="noopener noreferrer"
               className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors no-underline">
               <Eye className="w-3.5 h-3.5" />
               Visualizar
@@ -297,7 +296,7 @@ export default function Mapas() {
   const { toasts, dismiss } = useToast()
   const [filters, setFilters] = useState({ category: '', format: '', year: '' })
   const [page, setPage]       = useState(1)
-  const [previewMap, setPreviewMap]       = useState(null)
+  const [previewMap, setPreviewMap]       = useState<MapaData | null>(null)
   const [previewFormat, setPreviewFormat] = useState<string | null>(null)
   const PER_PAGE = 6
 

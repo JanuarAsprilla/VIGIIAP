@@ -5,7 +5,7 @@ import ToolCard from './ToolCard'
 import { wgs84ToMagna, magnaToWgs84 } from '@/lib/proyeccionMagna'
 
 export default function ConversorCoordenadas() {
-  const [modo,     setModo]     = useState('wgs2magna') // 'wgs2magna' | 'magna2wgs'
+  const [modo,     setModo]     = useState<'wgs2magna' | 'magna2wgs'>('wgs2magna')
   const [latInput, setLatInput] = useState('4.8213')
   const [lonInput, setLonInput] = useState('-76.7324')
   const [xInput,   setXInput]   = useState('1042482')
@@ -47,16 +47,16 @@ export default function ConversorCoordenadas() {
     })
   }
 
-  const switchModo = (id) => { setModo(id); setResult(null); setError('') }
+  const switchModo = (id: 'wgs2magna' | 'magna2wgs') => { setModo(id); setResult(null); setError('') }
 
   return (
     <ToolCard tag="Geodésico" title="Conversor de Coordenadas" icon={ArrowLeftRight} color="gold" index={2}>
       {/* Mode toggle */}
       <div className="flex gap-1 p-1 bg-bg-alt rounded-xl mb-4">
-        {[
+        {([
           { id: 'wgs2magna', label: 'WGS84 → Magna' },
           { id: 'magna2wgs', label: 'Magna → WGS84' },
-        ].map((m) => (
+        ] as { id: 'wgs2magna' | 'magna2wgs'; label: string }[]).map((m) => (
           <button
             key={m.id}
             onClick={() => switchModo(m.id)}

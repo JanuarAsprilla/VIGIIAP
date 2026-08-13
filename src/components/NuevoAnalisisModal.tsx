@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PlusCircle, X, ChevronRight, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { useCreateSolicitud } from '@/hooks/useSolicitudes'
 import { ANALYSIS_TYPES, ANALYSIS_DEPARTMENTS } from '@/lib/constants'
 
-export default function NuevoAnalisisModal({ onClose }) {
+export default function NuevoAnalisisModal({ onClose }: { onClose: () => void }) {
   const modalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -14,21 +14,21 @@ export default function NuevoAnalisisModal({ onClose }) {
     const getFocusable = () => [...el.querySelectorAll(FOCUSABLE)]
     const first = getFocusable()[0]
     ;(first as HTMLElement)?.focus()
-    const trap = (e) => {
+    const trap = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return
       const nodes = getFocusable()
       const last = nodes[nodes.length - 1]
       if (e.shiftKey) { if (document.activeElement === nodes[0]) { e.preventDefault(); (last as HTMLElement)?.focus() } }
       else            { if (document.activeElement === last)      { e.preventDefault(); (nodes[0] as HTMLElement)?.focus() } }
     }
-    const close = (e) => { if (e.key === 'Escape') onClose() }
+    const close = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     el.addEventListener('keydown', trap)
     el.addEventListener('keydown', close)
     return () => { el.removeEventListener('keydown', trap); el.removeEventListener('keydown', close) }
   }, [onClose])
   const [step,        setStep]        = useState('form') // 'form' | 'success'
   const [form,        setForm]        = useState({ nombre: '', tipo: '', departamento: '', notas: '' })
-  const [errors,      setErrors]      = useState<Record<string, string>>({})
+  const [errors,      setErrors]      = useState<Record<string, string | undefined>>({})
   const [serverError, setServerError] = useState<string | null>(null)
   const createSolicitud = useCreateSolicitud()
 
@@ -39,7 +39,7 @@ export default function NuevoAnalisisModal({ onClose }) {
     return e
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const e2 = validate()
     if (Object.keys(e2).length) { setErrors(e2); return }
@@ -55,7 +55,7 @@ export default function NuevoAnalisisModal({ onClose }) {
     }
   }
 
-  const set = (key, val) => {
+  const set = (key: keyof typeof form, val: string) => {
     setForm((prev) => ({ ...prev, [key]: val }))
     setErrors((prev) => ({ ...prev, [key]: undefined }))
   }

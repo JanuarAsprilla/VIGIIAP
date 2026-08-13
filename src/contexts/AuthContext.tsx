@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/react'
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import api from '@/lib/api'
 import queryClient from '@/lib/queryClient'
+import { ROLES } from '@/lib/constants/roles'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,18 +45,7 @@ export interface AuthContextValue {
   refreshProfile: () => Promise<AuthUser | undefined>
 }
 
-// ─── Mapeo de roles backend → etiquetas UI ────────────────────────────────────
-export const ROLES = {
-  SUPER_ADMIN:   'Super Administrador',
-  ADMIN:         'Administrador SIG',
-  INVESTIGADOR:  'Investigador',
-  TECNICO:       'Técnico SIG',
-  INSTITUCIONAL: 'Funcionario Institucional',
-  PUBLICO:       'Público',
-  VISITANTE:     'Visitante',
-}
-
-const ROLE_MAP = {
+const ROLE_MAP: Record<string, string> = {
   super_admin:  ROLES.SUPER_ADMIN,
   admin_sig:    ROLES.ADMIN,
   investigador: ROLES.INVESTIGADOR,
@@ -98,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading]         = useState(false)
   const [initializing, setInitializing] = useState(true)
 
-  const persistUser = useCallback((normalized) => {
+  const persistUser = useCallback((normalized: AuthUser) => {
     // C-01: No escribir datos de usuario en localStorage (XSS risk).
     // El token JWT lo gestiona el backend con cookie HttpOnly (PR #10).
     setUser(normalized)
@@ -117,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Definido antes de los effects para poder usarse en el effect de mount.
   const refreshProfile = useCallback(async () => {
     try {
-      const raw = await api.get('/auth/me')
+      const raw = (await api.get('/auth/me')) as RawAuthUser
       const normalized = normalizeUser(raw)
       persistUser(normalized)
       return normalized
@@ -131,6 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // initializing se mantiene true hasta que la promesa resuelva (éxito o error)
   // para evitar que RequireAuth redirija al login antes de saber si hay sesión.
   useEffect(() => {
+    // Patrón "fetch on mount" — setInitializing solo se dispara una vez que
+    // la promesa resuelve (éxito o error), no sincrónicamente en el efecto.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshProfile().finally(() => setInitializing(false))
   }, [refreshProfile])
 
@@ -145,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // ── Login institucional ──
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email: string, password: string) => {
     setLoading(true)
     try {
       const res = (await api.post('/auth/login', { email, password })) as
@@ -163,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { token, user: raw } = res as { token: string; user: Record<string, unknown> }
       // C-01: token no se escribe en localStorage; cookie HttpOnly.
       void token
-      const normalized = normalizeUser(raw)
+      const normalized = normalizeUser(raw as RawAuthUser)
       persistUser(normalized)
       Sentry.setUser({ id: normalized.id, role: normalized.rol })
       return normalized
@@ -179,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { token, user: raw } = (await api.post('/auth/visitante', { nombre: nombre || undefined })) as { token: string; user: Record<string, unknown> }
       // C-01: token no se escribe en localStorage; gestionado por cookie HttpOnly.
       void token
-      const normalized = normalizeUser(raw)
+      const normalized = normalizeUser(raw as RawAuthUser)
       persistUser(normalized)
       Sentry.setUser({ id: normalized.id, role: normalized.rol })
       return normalized
@@ -189,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [persistUser])
 
   // ── Registro ──
-  const register = useCallback(async (data) => {
+  const register = useCallback(async (data: Record<string, unknown>) => {
     return api.post('/auth/registro', data)
   }, [])
 
@@ -225,6 +218,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// El hook vive junto a su Provider — patrón establecido en todo el proyecto
+// (ver ThemeContext, UIContext, SearchContext). Separarlo en otro archivo
+// solo para satisfacer fast-refresh no aporta valor aquí.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth debe usarse dentro de AuthProvider')
