@@ -5,8 +5,8 @@ import { panelAnim } from './panelAnim'
 import type { Notificacion } from '@/types'
 
 const TYPE_META = {
-  usuario:   { Icon: User,          color: 'text-blue-600',   bg: 'bg-blue-50',   label: 'Usuario' },
-  solicitud: { Icon: ClipboardList, color: 'text-orange-600', bg: 'bg-orange-50', label: 'Solicitud' },
+  usuario:   { Icon: User,          color: 'text-magenta',    bg: 'bg-magenta/10',    label: 'Usuario' },
+  solicitud: { Icon: ClipboardList, color: 'text-gold-500',   bg: 'bg-gold-500/10',   label: 'Solicitud' },
   default:   { Icon: FileText,      color: 'text-text-muted', bg: 'bg-bg-alt',    label: 'General' },
 }
 

@@ -26,6 +26,10 @@
   /* ── Acento lima — biodiversidad ──────────────────── */
   --color-accent: #B0CB1F;
 
+  /* ── Acentos secundarios oficiales — grafismos Emberá / fauna ── */
+  --color-magenta: #E51A4B;   /* Pantone 1925 C — trazabilidad / analítica */
+  --color-yellow:  #FFED00;   /* Pantone 802/803 C — alerta / pendiente puro */
+
   /* ── Orange ────────────────────────────────────────── */
   --color-orange-400: #F4A261;
   --color-orange-500: #F08143;

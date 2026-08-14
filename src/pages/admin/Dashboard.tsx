@@ -92,10 +92,10 @@ function KPICards({ stats, isLoading }: { stats: DashboardStats | undefined; isL
 // ── Gráfico de Solicitudes por Estado ──
 function SolicitudesChart({ solicitudes }: { solicitudes: SolicitudData[] }) {
   const estados = [
-    { label: 'Pendiente',   color: 'bg-orange-400', textColor: 'text-orange-600' },
-    { label: 'En Revisión', color: 'bg-blue-400',   textColor: 'text-blue-600'   },
-    { label: 'Aprobado',    color: 'bg-green-500',  textColor: 'text-green-700'  },
-    { label: 'Rechazado',   color: 'bg-red-400',    textColor: 'text-red-600'    },
+    { label: 'Pendiente',   color: 'bg-gold-500',    textColor: 'text-gold-500'    },
+    { label: 'En Revisión', color: 'bg-primary-500', textColor: 'text-primary-500' },
+    { label: 'Aprobado',    color: 'bg-primary-700', textColor: 'text-primary-700' },
+    { label: 'Rechazado',   color: 'bg-red',         textColor: 'text-red-dark'    },
   ]
   const total = solicitudes.length
   const bars = estados.map((e) => ({
@@ -331,11 +331,11 @@ function ActividadReciente() {
 
   const moduloBadge = (modulo: string) => {
     const map = {
-      auth: 'bg-blue-100 text-blue-700',
+      auth: 'bg-primary-500/12 text-primary-500',
       admin: 'bg-primary-100 text-primary-800',
-      solicitudes: 'bg-yellow-100 text-yellow-700',
-      mapas: 'bg-green-100 text-green-700',
-      documentos: 'bg-orange-100 text-orange-700',
+      solicitudes: 'bg-gold-400/12 text-gold-400',
+      mapas: 'bg-primary-700/10 text-primary-700',
+      documentos: 'bg-gold-500/12 text-gold-500',
     }
     return (map as Record<string, string>)[modulo] ?? 'bg-gray-100 text-gray-600'
   }
@@ -388,7 +388,7 @@ function QuickActions() {
   const actions = [
     { label: 'Nuevo Usuario',    to: '/admin/usuarios',    icon: Users,        color: 'from-[#D4A373] to-[#B8860B]'    },
     { label: 'Ver Solicitudes',  to: '/admin/solicitudes', icon: ClipboardList,color: 'from-primary-500 to-primary-700' },
-    { label: 'Gestionar Docs',   to: '/admin/documentos',  icon: FileText,     color: 'from-teal-500 to-teal-700'       },
+    { label: 'Gestionar Docs',   to: '/admin/documentos',  icon: FileText,     color: 'from-magenta to-red-dark'        },
     { label: 'Ver Actividad',    to: '/admin/actividad',   icon: Zap,          color: 'from-orange-400 to-orange-600'   },
   ]
   return (

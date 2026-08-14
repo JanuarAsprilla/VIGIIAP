@@ -45,7 +45,7 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
-            <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded mr-2 ${isImage ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-500'}`}>
+            <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded mr-2 ${isImage ? 'bg-gold-400/12 text-gold-400' : 'bg-red/8 text-red'}`}>
               {format}
             </span>
             <span className="text-sm font-semibold text-text">{map.title}</span>
@@ -147,13 +147,14 @@ async function forceDownload(url: string): Promise<void> {
   }
 }
 
+/* Paleta oficial IIAP — categorías de mapas */
 const CATEGORY_COLORS = {
-  'Hidrología':       { pill: 'bg-blue-100 text-blue-700',    accent: '#3b82f6' },
-  'Biodiversidad':    { pill: 'bg-green-100 text-green-700',  accent: '#22c55e' },
-  'Zonificación':     { pill: 'bg-violet-100 text-violet-700',accent: '#8b5cf6' },
-  'Cartografía Base': { pill: 'bg-slate-100 text-slate-600',  accent: '#64748b' },
-  'Infraestructura':  { pill: 'bg-orange-100 text-orange-700',accent: '#f97316' },
-  'Riesgo':           { pill: 'bg-red-100 text-red-600',      accent: '#ef4444' },
+  'Hidrología':       { pill: 'bg-primary-500/12 text-primary-500', accent: '#009846' },
+  'Biodiversidad':    { pill: 'bg-accent/15 text-primary-800',      accent: '#B0CB1F' },
+  'Zonificación':     { pill: 'bg-magenta/12 text-magenta',         accent: '#E51A4B' },
+  'Cartografía Base': { pill: 'bg-primary-700/10 text-primary-700', accent: '#1A5632' },
+  'Infraestructura':  { pill: 'bg-gold-500/12 text-gold-500',       accent: '#F08143' },
+  'Riesgo':           { pill: 'bg-red/8 text-red-dark',             accent: '#C12A2B' },
 }
 
 interface MapCardProps { map: MapaData; index: number; onPreview?: (map: MapaData, format: string) => void }
@@ -209,8 +210,8 @@ function MapCard({ map, index }: MapCardProps) {
 
         {/* Format badges top-right */}
         <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
-          {hasPdf && <span className="px-2 py-0.5 bg-red-500 text-white text-[0.6rem] font-bold uppercase rounded">PDF</span>}
-          {hasImg && <span className="px-2 py-0.5 bg-blue-500 text-white text-[0.6rem] font-bold uppercase rounded">IMG</span>}
+          {hasPdf && <span className="px-2 py-0.5 bg-red text-white text-[0.6rem] font-bold uppercase rounded">PDF</span>}
+          {hasImg && <span className="px-2 py-0.5 bg-gold-400 text-primary-900 text-[0.6rem] font-bold uppercase rounded">IMG</span>}
           {hasGeovisor && <span className="px-2 py-0.5 bg-primary-800 text-white text-[0.6rem] font-bold uppercase rounded">Geovisor</span>}
         </div>
       </div>
@@ -243,7 +244,7 @@ function MapCard({ map, index }: MapCardProps) {
           )}
           {hasImg && (
             <button onClick={() => forceDownload(`${import.meta.env.VITE_API_URL ?? '/api'}/descargar/mapa/${map.id}?campo=archivo_img`)}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-gold-400/40 hover:text-gold-400 hover:bg-gold-400/10 transition-colors">
               <Download className="w-3.5 h-3.5" />
               Descargar
             </button>

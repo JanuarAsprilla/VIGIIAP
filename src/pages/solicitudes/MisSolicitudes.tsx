@@ -40,11 +40,11 @@ export function MisSolicitudes({ onVerDetalle }: MisSolicitudesProps) {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className={`text-[0.6rem] font-bold px-2 py-0.5 rounded-full ${
-                s.estadoColor === 'green'  ? 'bg-green-100 text-green-700'
-                : s.estadoColor === 'red'  ? 'bg-red-100 text-red-700'
-                : s.estadoColor === 'teal' ? 'bg-teal-100 text-teal-700'
-                : s.estadoColor === 'blue' ? 'bg-blue-100 text-blue-700'
-                : 'bg-orange-100 text-orange-700'
+                s.estadoColor === 'green'  ? 'bg-primary-700/10 text-primary-700'
+                : s.estadoColor === 'red'  ? 'bg-red/8 text-red-dark'
+                : s.estadoColor === 'teal' ? 'bg-accent/18 text-primary-800'
+                : s.estadoColor === 'blue' ? 'bg-primary-500/12 text-primary-500'
+                : 'bg-gold-500/12 text-gold-500'
               }`}>{s.estado}</span>
               <button onClick={() => onVerDetalle(s)}
                 className="p-1 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors">

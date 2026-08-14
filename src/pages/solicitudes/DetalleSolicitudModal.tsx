@@ -78,11 +78,11 @@ export function DetalleSolicitudModal({ sol, onClose, onNueva }: DetalleSolicitu
 
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {isResuelta && (
-            <div className="flex items-start gap-3 p-4 bg-teal-50 border border-teal-200 rounded-xl">
-              <CheckCircle className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="flex items-start gap-3 p-4 bg-accent/10 border border-accent/30 rounded-xl">
+              <CheckCircle className="w-5 h-5 text-primary-700 shrink-0 mt-0.5" aria-hidden="true" />
               <div>
-                <p className="text-sm font-bold text-teal-800">Solicitud tramitada</p>
-                <p className="text-xs text-teal-700 mt-0.5 leading-relaxed">
+                <p className="text-sm font-bold text-primary-800">Solicitud tramitada</p>
+                <p className="text-xs text-primary-700 mt-0.5 leading-relaxed">
                   Tu solicitud fue procesada. Revisa tu correo electrónico para obtener
                   la respuesta, archivos o documentos adjuntos del IIAP.
                 </p>
@@ -116,9 +116,9 @@ export function DetalleSolicitudModal({ sol, onClose, onNueva }: DetalleSolicitu
                     <div className="flex flex-col items-center flex-1 min-w-0">
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors ${
                         done
-                          ? isReject ? 'bg-red-500 border-red-500'
-                            : isTeal ? 'bg-teal-500 border-teal-500'
-                            : isLast && isAprobado ? 'bg-green-500 border-green-500'
+                          ? isReject ? 'bg-red border-red'
+                            : isTeal ? 'bg-accent border-accent'
+                            : isLast && isAprobado ? 'bg-primary-700 border-primary-700'
                             : 'bg-primary-800 border-primary-800'
                           : 'bg-white border-border'
                       }`}>
@@ -131,7 +131,7 @@ export function DetalleSolicitudModal({ sol, onClose, onNueva }: DetalleSolicitu
                       </div>
                       <span className={`text-[0.6rem] font-semibold mt-1.5 text-center leading-tight ${
                         done
-                          ? isReject ? 'text-red-600' : isTeal ? 'text-teal-700' : 'text-primary-800'
+                          ? isReject ? 'text-red-dark' : isTeal ? 'text-primary-700' : 'text-primary-800'
                           : 'text-text-muted'
                       }`}>
                         {step}
@@ -150,28 +150,28 @@ export function DetalleSolicitudModal({ sol, onClose, onNueva }: DetalleSolicitu
 
           {(sol.notas || isResuelta || !isPendiente) && (
             <div className={`p-4 rounded-xl border ${
-              isRechazado  ? 'bg-red-50 border-red-200'
-              : isResuelta ? 'bg-teal-50 border-teal-200'
-              : isAprobado ? 'bg-green-50 border-green-200'
+              isRechazado  ? 'bg-red/8 border-red/25'
+              : isResuelta ? 'bg-accent/10 border-accent/30'
+              : isAprobado ? 'bg-primary-700/8 border-primary-700/25'
               : 'bg-primary-50 border-primary-200'
             }`}>
               <div className="flex items-start gap-2.5">
                 {isRechazado
-                  ? <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" aria-hidden="true" />
+                  ? <AlertCircle className="w-4 h-4 text-red-dark shrink-0 mt-0.5" aria-hidden="true" />
                   : isResuelta
-                    ? <CheckCircle className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" aria-hidden="true" />
+                    ? <CheckCircle className="w-4 h-4 text-primary-700 shrink-0 mt-0.5" aria-hidden="true" />
                     : isAprobado
-                      ? <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" aria-hidden="true" />
+                      ? <CheckCircle className="w-4 h-4 text-primary-700 shrink-0 mt-0.5" aria-hidden="true" />
                       : <Clock className="w-4 h-4 text-primary-700 shrink-0 mt-0.5" aria-hidden="true" />
                 }
                 <div>
                   <p className={`text-[0.6rem] font-bold uppercase tracking-wider mb-1 ${
-                    isRechazado ? 'text-red-700' : isResuelta ? 'text-teal-700' : isAprobado ? 'text-green-700' : 'text-primary-700'
+                    isRechazado ? 'text-red-dark' : isResuelta ? 'text-primary-700' : isAprobado ? 'text-primary-700' : 'text-primary-700'
                   }`}>
                     {isResuelta ? 'Respuesta del IIAP' : 'Nota del administrador'}
                   </p>
                   <p className={`text-xs leading-relaxed ${
-                    isRechazado ? 'text-red-800' : isResuelta ? 'text-teal-800' : isAprobado ? 'text-green-800' : 'text-primary-800'
+                    isRechazado ? 'text-red-dark' : isResuelta ? 'text-primary-800' : isAprobado ? 'text-primary-800' : 'text-primary-800'
                   }`}>
                     {sol.notas || 'Sin observaciones adicionales.'}
                   </p>

@@ -4,11 +4,11 @@ import { SlidersHorizontal, ChevronDown, Check } from 'lucide-react'
 
 const ESTADOS_FILTRO = [
   { value: '',           label: 'Todos los estados' },
-  { value: 'Pendiente',  label: 'Pendiente',   color: 'bg-orange-500' },
-  { value: 'En Revisión',label: 'En Revisión', color: 'bg-blue-500' },
-  { value: 'Aprobado',   label: 'Aprobado',    color: 'bg-green-500' },
-  { value: 'Resuelta',   label: 'Resuelta',    color: 'bg-teal-500' },
-  { value: 'Rechazado',  label: 'Rechazado',   color: 'bg-red-500' },
+  { value: 'Pendiente',  label: 'Pendiente',   color: 'bg-gold-500' },
+  { value: 'En Revisión',label: 'En Revisión', color: 'bg-primary-500' },
+  { value: 'Aprobado',   label: 'Aprobado',    color: 'bg-primary-700' },
+  { value: 'Resuelta',   label: 'Resuelta',    color: 'bg-accent' },
+  { value: 'Rechazado',  label: 'Rechazado',   color: 'bg-red' },
 ]
 
 interface FiltroDropdownProps {

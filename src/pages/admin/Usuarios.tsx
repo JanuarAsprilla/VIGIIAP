@@ -21,9 +21,9 @@ const fadeUp = fadeUpSm
 const ROLES_LIST = [ROLES.ADMIN, ROLES.INVESTIGADOR, ROLES.TECNICO, ROLES.INSTITUCIONAL, ROLES.PUBLICO]
 const ROLE_COLORS = {
   [ROLES.ADMIN]:         'bg-primary-100 text-primary-800',
-  [ROLES.INVESTIGADOR]:  'bg-blue-100 text-blue-700',
-  [ROLES.TECNICO]:       'bg-indigo-100 text-indigo-700',
-  [ROLES.INSTITUCIONAL]: 'bg-teal-100 text-teal-700',
+  [ROLES.INVESTIGADOR]:  'bg-gold-400/12 text-gold-400',
+  [ROLES.TECNICO]:       'bg-magenta/12 text-magenta',
+  [ROLES.INSTITUCIONAL]: 'bg-primary-500/12 text-primary-500',
   [ROLES.PUBLICO]:       'bg-gray-100 text-gray-600',
 }
 

@@ -8,12 +8,12 @@ import { PAGE_SIZE } from './solicitudes.utils'
 
 
 const ROW_LEFT_BORDER: Record<string, string> = {
-  green:  'border-l-green-400',
-  yellow: 'border-l-yellow-400',
-  orange: 'border-l-orange-400',
-  blue:   'border-l-blue-400',
-  red:    'border-l-red-400',
-  teal:   'border-l-teal-400',
+  green:  'border-l-primary-700',
+  yellow: 'border-l-gold-400',
+  orange: 'border-l-gold-500',
+  blue:   'border-l-primary-500',
+  red:    'border-l-red',
+  teal:   'border-l-accent',
 }
 
 interface SolicitudesTableProps {

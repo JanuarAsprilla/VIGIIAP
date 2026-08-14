@@ -18,18 +18,19 @@ export const CATEGORY_META = {
   'Formatos y Plantillas':  { icon: 'FileSpreadsheet' },
 }
 
+/* Paleta oficial IIAP (Manual de Identidad Visual) — sin tonos ajenos a marca */
 export const CATEGORY_COLORS = {
-  'Cartografía':            { from: '#1B4332', to: '#2D6A4F' },
-  'Estudios Ambientales':   { from: '#7C2D12', to: '#C2410C' },
-  'Normativa':              { from: '#1E3A5F', to: '#1D4ED8' },
-  'Informes Técnicos':      { from: '#78350F', to: '#B45309' },
-  'Biodiversidad':          { from: '#14532D', to: '#15803D' },
-  'Hidrología':             { from: '#1E3A8A', to: '#0284C7' },
-  'Protocolos Ambientales': { from: '#1B4332', to: '#40916C' },
-  'Bibliografía Técnica':   { from: '#0F766E', to: '#0D9488' },
-  'Análisis de Tendencias': { from: '#4C1D95', to: '#7C3AED' },
-  'Formatos y Plantillas':  { from: '#92400E', to: '#D4A373' },
-  default:                  { from: '#1B4332', to: '#52B788' },
+  'Cartografía':            { from: '#1A5632', to: '#218842' },
+  'Estudios Ambientales':   { from: '#C12A2B', to: '#F08143' },
+  'Normativa':              { from: '#284E39', to: '#1A5632' },
+  'Informes Técnicos':      { from: '#F08143', to: '#F7AC42' },
+  'Biodiversidad':          { from: '#1A5632', to: '#B0CB1F' },
+  'Hidrología':             { from: '#218842', to: '#009846' },
+  'Protocolos Ambientales': { from: '#284E39', to: '#009846' },
+  'Bibliografía Técnica':   { from: '#E95B8C', to: '#F18A87' },
+  'Análisis de Tendencias': { from: '#C12A2B', to: '#E51A4B' },
+  'Formatos y Plantillas':  { from: '#F7AC42', to: '#FFF383' },
+  default:                  { from: '#1A5632', to: '#009846' },
 }
 
 export { fadeUp } from '@/lib/animations'
@@ -40,9 +41,9 @@ export const categoryIcons = {
 }
 
 export const typeStyles = {
-  pdf:  { bg: 'bg-red-50',   text: 'text-red-500',   label: 'PDF' },
-  docx: { bg: 'bg-blue-50',  text: 'text-blue-500',  label: 'Word' },
-  xlsx: { bg: 'bg-green-50', text: 'text-green-600', label: 'Excel' },
+  pdf:  { bg: 'bg-red/8',      text: 'text-red',      label: 'PDF' },
+  docx: { bg: 'bg-gold-400/10', text: 'text-gold-400', label: 'Word' },
+  xlsx: { bg: 'bg-primary-50',  text: 'text-primary-700', label: 'Excel' },
 }
 
 export const SORT_OPTIONS = [

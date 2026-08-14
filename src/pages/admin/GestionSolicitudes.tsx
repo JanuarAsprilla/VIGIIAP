@@ -19,11 +19,11 @@ import { useToast, ToastContainer } from '@/components/Toast'
 const fadeUp = fadeUpSm
 
 const ESTADO_BADGE: Record<string, string> = {
-  'Pendiente':   'bg-orange-100 text-orange-700',
-  'En Revisión': 'bg-blue-100 text-blue-700',
-  'Aprobado':    'bg-green-100 text-green-700',
-  'Rechazado':   'bg-red-100 text-red-600',
-  'Resuelta':    'bg-teal-100 text-teal-700',
+  'Pendiente':   'bg-gold-500/12 text-gold-500',
+  'En Revisión': 'bg-primary-500/12 text-primary-500',
+  'Aprobado':    'bg-primary-700/10 text-primary-700',
+  'Rechazado':   'bg-red/8 text-red-dark',
+  'Resuelta':    'bg-accent/18 text-primary-800',
 }
 
 const PAGE_SIZE = 10
@@ -291,7 +291,7 @@ export default function GestionSolicitudes() {
                         <button
                           onClick={() => handleMarcarRevision(s)}
                           disabled={updateEstado.isPending}
-                          className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 disabled:opacity-50 transition-colors"
+                          className="p-1.5 rounded-lg text-primary-500 hover:bg-primary-500/10 disabled:opacity-50 transition-colors"
                           title="Marcar en revisión"
                         >
                           {updateEstado.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
@@ -446,8 +446,8 @@ export default function GestionSolicitudes() {
                         <div key={i} className="flex gap-3 pb-4 last:pb-0">
                           <div className="flex flex-col items-center">
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white text-[0.55rem] font-bold ${
-                              isLast && isReject ? 'bg-red-500'
-                              : isLast && isTeal  ? 'bg-teal-500'
+                              isLast && isReject ? 'bg-red'
+                              : isLast && isTeal  ? 'bg-accent'
                               : isLast            ? 'bg-primary-800'
                               : 'bg-primary-300'
                             }`}>
@@ -469,12 +469,12 @@ export default function GestionSolicitudes() {
                 {selected.estado === 'Resuelta' && selected.notas && (
                   <div className="px-6 py-4">
                     <SectionLabel>Respuesta enviada al solicitante</SectionLabel>
-                    <div className="bg-teal-50 border border-teal-200 rounded-xl p-4">
+                    <div className="bg-accent/10 border border-accent/30 rounded-xl p-4">
                       <div className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
-                        <p className="text-sm text-teal-800 leading-relaxed">{selected.notas}</p>
+                        <CheckCircle className="w-4 h-4 text-primary-700 shrink-0 mt-0.5" />
+                        <p className="text-sm text-primary-800 leading-relaxed">{selected.notas}</p>
                       </div>
-                      <p className="text-[0.6rem] text-teal-600 mt-2">
+                      <p className="text-[0.6rem] text-primary-700 mt-2">
                         Respuesta enviada por correo al solicitante
                       </p>
                     </div>
@@ -576,7 +576,7 @@ export default function GestionSolicitudes() {
                         <button
                           onClick={() => handleMarcarRevision(selected)}
                           disabled={updateEstado.isPending}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-2 bg-primary-600 text-white rounded-lg text-xs font-bold hover:bg-primary-700 disabled:opacity-60 transition-colors"
                         >
                           {updateEstado.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
                           En revisión
