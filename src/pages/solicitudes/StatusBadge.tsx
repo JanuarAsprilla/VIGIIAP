@@ -1,18 +1,19 @@
+/* Claves de estado sobre paleta oficial IIAP — sin azules/teales genéricos */
 const styles: Record<string, string> = {
-  green:  'bg-green-100 text-green-700',
-  yellow: 'bg-yellow-100 text-yellow-700',
-  orange: 'bg-orange-100 text-orange-700',
-  blue:   'bg-blue-100 text-blue-700',
-  red:    'bg-red-100 text-red-700',
-  teal:   'bg-teal-100 text-teal-700',
+  green:  'bg-primary-700/10 text-primary-700',   // Aprobado
+  yellow: 'bg-gold-400/12 text-gold-400',
+  orange: 'bg-gold-500/12 text-gold-500',          // Pendiente
+  blue:   'bg-primary-500/12 text-primary-500',    // En Revisión
+  red:    'bg-red/8 text-red-dark',                // Rechazado
+  teal:   'bg-accent/18 text-primary-800',          // Resuelta
 }
 const dotStyles: Record<string, string> = {
-  green:  'bg-green-500',
-  yellow: 'bg-yellow-500',
-  orange: 'bg-orange-500',
-  blue:   'bg-blue-500',
-  red:    'bg-red-500',
-  teal:   'bg-teal-500',
+  green:  'bg-primary-700',
+  yellow: 'bg-gold-400',
+  orange: 'bg-gold-500',
+  blue:   'bg-primary-500',
+  red:    'bg-red',
+  teal:   'bg-accent',
 }
 
 interface StatusBadgeProps {

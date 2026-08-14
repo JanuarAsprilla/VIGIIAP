@@ -62,3 +62,6 @@ coverage/
 # Internal planning docs (keep local, not in repo)
 DESIGN.md
 PRODUCT.md
+
+# Impeccable design-hook local cache
+.impeccable/

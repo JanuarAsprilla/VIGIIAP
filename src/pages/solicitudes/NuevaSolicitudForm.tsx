@@ -21,8 +21,8 @@ function formatBytes(bytes: number) {
 
 function fileIcon(mime: string) {
   return mime === 'application/pdf'
-    ? <FileText className="w-4 h-4 text-red-500 shrink-0" />
-    : <Image className="w-4 h-4 text-blue-500 shrink-0" />
+    ? <FileText className="w-4 h-4 text-red shrink-0" />
+    : <Image className="w-4 h-4 text-gold-400 shrink-0" />
 }
 
 interface NuevaSolicitudFormProps {

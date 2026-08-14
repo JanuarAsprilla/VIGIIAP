@@ -44,9 +44,9 @@ const TIPO_HINT: Record<string, string> = {
 }
 
 const VISIBILIDAD = [
-  { value: 'publico',     label: 'Público general',      icon: Globe,       color: 'text-green-700 bg-green-50 border-green-300',    pill: 'bg-green-100 text-green-700' },
-  { value: 'usuarios',    label: 'Usuarios registrados', icon: Users,       color: 'text-blue-700 bg-blue-50 border-blue-300',       pill: 'bg-blue-100 text-blue-700' },
-  { value: 'acreditados', label: 'Solo acreditados',     icon: ShieldCheck, color: 'text-purple-700 bg-purple-50 border-purple-300', pill: 'bg-purple-100 text-purple-700' },
+  { value: 'publico',     label: 'Público general',      icon: Globe,       color: 'text-primary-700 bg-primary-700/8 border-primary-700/30', pill: 'bg-primary-700/10 text-primary-700' },
+  { value: 'usuarios',    label: 'Usuarios registrados', icon: Users,       color: 'text-gold-400 bg-gold-400/10 border-gold-400/40',          pill: 'bg-gold-400/12 text-gold-400' },
+  { value: 'acreditados', label: 'Solo acreditados',     icon: ShieldCheck, color: 'text-magenta bg-magenta/10 border-magenta/40',              pill: 'bg-magenta/12 text-magenta' },
 ]
 
 const EMPTY_FORM = {
@@ -65,9 +65,9 @@ const visMap = Object.fromEntries(VISIBILIDAD.map((v) => [v.value, v]))
 
 const TipoIcon = ({ tipo }: { tipo: string }) => {
   const t = tipo?.toLowerCase()
-  if (t === 'pdf')  return <FileText className="w-4 h-4 text-red-500" />
-  if (t === 'docx' || t === 'doc' || t === 'word')  return <FileText className="w-4 h-4 text-blue-500" />
-  if (t === 'xlsx' || t === 'xls' || t === 'excel') return <FileSpreadsheet className="w-4 h-4 text-green-600" />
+  if (t === 'pdf')  return <FileText className="w-4 h-4 text-red" />
+  if (t === 'docx' || t === 'doc' || t === 'word')  return <FileText className="w-4 h-4 text-gold-400" />
+  if (t === 'xlsx' || t === 'xls' || t === 'excel') return <FileSpreadsheet className="w-4 h-4 text-primary-700" />
   return <File className="w-4 h-4 text-primary-600" />
 }
 

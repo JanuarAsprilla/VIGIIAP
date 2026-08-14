@@ -33,9 +33,9 @@ const MAX_SIZE_BYTES: Record<string, number> = {
 }
 
 const VISIBILIDAD = [
-  { value: 'publico',     label: 'Público',      desc: 'Visible para todos',             Icon: Globe,       border: 'border-emerald-500', bg: 'bg-emerald-50',  text: 'text-emerald-700', pill: 'bg-emerald-100 text-emerald-700' },
-  { value: 'usuarios',    label: 'Usuarios',     desc: 'Solo usuarios registrados',      Icon: Users,       border: 'border-blue-500',   bg: 'bg-blue-50',     text: 'text-blue-700',    pill: 'bg-blue-100 text-blue-700' },
-  { value: 'acreditados', label: 'Acreditados',  desc: 'Investigadores y admins',        Icon: ShieldCheck, border: 'border-violet-500', bg: 'bg-violet-50',   text: 'text-violet-700',  pill: 'bg-violet-100 text-violet-700' },
+  { value: 'publico',     label: 'Público',      desc: 'Visible para todos',             Icon: Globe,       border: 'border-primary-600', bg: 'bg-primary-600/8',  text: 'text-primary-700', pill: 'bg-primary-700/10 text-primary-700' },
+  { value: 'usuarios',    label: 'Usuarios',     desc: 'Solo usuarios registrados',      Icon: Users,       border: 'border-gold-400',    bg: 'bg-gold-400/10',    text: 'text-gold-400',    pill: 'bg-gold-400/12 text-gold-400' },
+  { value: 'acreditados', label: 'Acreditados',  desc: 'Investigadores y admins',        Icon: ShieldCheck, border: 'border-magenta',     bg: 'bg-magenta/10',     text: 'text-magenta',     pill: 'bg-magenta/12 text-magenta' },
 ]
 const visMap = Object.fromEntries(VISIBILIDAD.map((v) => [v.value, v]))
 
@@ -46,12 +46,12 @@ const EMPTY_FORM = {
 }
 
 const TEMATICA_COLORS = {
-  'Hidrología':       'bg-blue-100 text-blue-700',
-  'Cartografía Base': 'bg-gray-100 text-gray-600',
-  'Biodiversidad':    'bg-green-100 text-green-700',
-  'Zonificación':     'bg-purple-100 text-purple-700',
-  'Infraestructura':  'bg-orange-100 text-orange-700',
-  'Riesgo':           'bg-red-100 text-red-600',
+  'Hidrología':       'bg-primary-500/12 text-primary-500',
+  'Cartografía Base': 'bg-primary-700/10 text-primary-700',
+  'Biodiversidad':    'bg-accent/15 text-primary-800',
+  'Zonificación':     'bg-magenta/12 text-magenta',
+  'Infraestructura':  'bg-gold-500/12 text-gold-500',
+  'Riesgo':           'bg-red/8 text-red-dark',
 }
 
 function useClickOutside(ref: React.RefObject<HTMLElement | null>, handler: () => void) {
@@ -615,7 +615,7 @@ export default function GestionMapas() {
                               <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${(TEMATICA_COLORS as Record<string, string>)[m.tematica] ?? 'bg-gray-100 text-gray-600'}`}>{m.tematica}</span>
                               <span className={`text-[0.6rem] font-semibold px-1.5 py-0.5 rounded border ${
                                 m.formato === 'PDF' ? 'border-red-200 text-red-500' :
-                                m.formato === 'IMG' ? 'border-blue-200 text-blue-500' :
+                                m.formato === 'IMG' ? 'border-gold-400/40 text-gold-400' :
                                 'border-primary-200 text-primary-700'
                               }`}>{m.formato}</span>
                               {!m.visible && (
@@ -649,7 +649,7 @@ export default function GestionMapas() {
                             {(m.archivo_pdf_url || m.archivo_img_url || m.geovisor_url) && (
                               <button
                                 onClick={() => window.open(m.archivo_img_url || m.archivo_pdf_url || m.geovisor_url || undefined, '_blank', 'noopener,noreferrer')}
-                                className="p-1.5 rounded-lg text-text-muted hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
                                 title="Ver archivo">
                                 <ExternalLink className="w-3.5 h-3.5" />
                               </button>
