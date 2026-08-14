@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import {
   UserCircle, ClipboardList, BookOpen, LogOut,
@@ -8,6 +7,7 @@ import {
 import { panelAnim } from './panelAnim'
 import { ROLES } from '@/lib/constants/roles'
 import type { AuthUser } from '@/contexts/AuthContext'
+import GlassPanel from '@/components/ui/GlassPanel'
 
 function RoleBadge({ user }: { user: AuthUser | null }) {
   const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE
@@ -44,7 +44,7 @@ function MenuItem({ to = '', icon: Icon, label, onClick = undefined, danger = fa
   to?: string; icon: LucideIcon
   label: string; onClick?: () => void; danger?: boolean
 }) {
-  const base = `flex items-center gap-3 px-4 py-2.5 text-sm no-underline transition-colors w-full text-left ${danger ? 'text-orange-600 hover:bg-orange-50' : 'text-text hover:bg-bg-alt'}`
+  const base = `flex items-center gap-3 px-4 py-2.5 text-sm no-underline transition-colors w-full text-left ${danger ? 'text-red-dark hover:bg-red/8' : 'text-text hover:bg-bg-alt'}`
   if (to) return (
     <li><Link to={to} onClick={onClick} className={base}>
       <Icon className={`w-4 h-4 ${danger ? '' : 'text-text-muted'}`} aria-hidden="true" />{label}
@@ -63,10 +63,7 @@ export default function ProfileDropdown({ user, onClose, onLogout }: { user: Aut
   const isVerified   = !isUnverified
 
   return (
-    <motion.div
-      {...panelAnim}
-      className="absolute top-full right-0 mt-2 w-60 bg-white border border-border rounded-xl shadow-float overflow-hidden z-50"
-    >
+    <GlassPanel {...panelAnim} width="w-60">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2.5 mb-2">
@@ -112,6 +109,6 @@ export default function ProfileDropdown({ user, onClose, onLogout }: { user: Aut
           <MenuItem icon={LogOut} label="Cerrar Sesión" onClick={onLogout} danger />
         </div>
       </nav>
-    </motion.div>
+    </GlassPanel>
   )
 }

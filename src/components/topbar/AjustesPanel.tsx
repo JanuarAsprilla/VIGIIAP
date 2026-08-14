@@ -1,8 +1,8 @@
-import { motion } from 'framer-motion'
 import { Layers, Monitor, Sun, Moon, CheckCircle, type LucideIcon } from 'lucide-react'
 import { useUI, type Density } from '@/contexts/UIContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { panelAnim } from './panelAnim'
+import GlassPanel from '@/components/ui/GlassPanel'
 
 const DENSITY_OPTIONS: { value: Density; label: string; Icon: LucideIcon }[] = [
   { value: 'compact',     label: 'Compacto', Icon: Layers  },
@@ -15,10 +15,7 @@ export default function AjustesPanel({ onClose }: { onClose: () => void }) {
   const { isDark, toggleTheme } = useTheme()
 
   return (
-    <motion.div
-      {...panelAnim}
-      className="absolute top-full right-0 mt-2 w-64 bg-white border border-border rounded-xl shadow-float overflow-hidden z-50"
-    >
+    <GlassPanel {...panelAnim} width="w-64">
       <div className="px-4 py-3 border-b border-border">
         <p className="text-sm font-bold text-text">Ajustes rápidos</p>
       </div>
@@ -110,6 +107,6 @@ export default function AjustesPanel({ onClose }: { onClose: () => void }) {
           Listo
         </button>
       </div>
-    </motion.div>
+    </GlassPanel>
   )
 }

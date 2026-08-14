@@ -1,8 +1,8 @@
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { BellOff, ExternalLink, User, FileText, ClipboardList } from 'lucide-react'
 import { panelAnim } from './panelAnim'
 import type { Notificacion } from '@/types'
+import GlassPanel from '@/components/ui/GlassPanel'
 
 const TYPE_META = {
   usuario:   { Icon: User,          color: 'text-magenta',    bg: 'bg-magenta/10',    label: 'Usuario' },
@@ -48,7 +48,7 @@ function NotificationItem({ item, isRead, onSelect }: { item: Notificacion; isRe
         <p className="text-xs text-text-muted mt-1">{timeAgo(item.creado_en)}</p>
       </div>
       {!isRead && (
-        <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0 mt-2" aria-hidden="true" />
+        <span className="w-2 h-2 rounded-full bg-gold-500 shrink-0 mt-2" aria-hidden="true" />
       )}
     </Link>
   )
@@ -59,15 +59,12 @@ export default function NotificacionesPanel({ onClose, items, readIds, onMarkAll
   const allRead     = unreadCount === 0
 
   return (
-    <motion.div
-      {...panelAnim}
-      className="absolute top-full right-0 mt-2 w-80 bg-white border border-border rounded-xl shadow-float overflow-hidden z-50"
-    >
+    <GlassPanel {...panelAnim} width="w-80">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <p className="text-sm font-bold text-text">Notificaciones</p>
           {!allRead && (
-            <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-orange-500 text-white text-[0.6rem] font-bold rounded-full">
+            <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-gold-500 text-white text-[0.6rem] font-bold rounded-full">
               {unreadCount}
             </span>
           )}
@@ -84,8 +81,8 @@ export default function NotificacionesPanel({ onClose, items, readIds, onMarkAll
 
       {allRead ? (
         <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-          <div className="w-12 h-12 bg-primary-50 rounded-full flex items-center justify-center mb-3">
-            <BellOff className="w-5 h-5 text-primary-800" aria-hidden="true" />
+          <div className="w-12 h-12 bg-primary-500/10 rounded-full flex items-center justify-center mb-3">
+            <BellOff className="w-5 h-5 text-primary-500" aria-hidden="true" />
           </div>
           <p className="text-sm font-semibold text-text mb-1">Todo al día</p>
           <p className="text-xs text-text-muted">No tienes notificaciones pendientes.</p>
@@ -114,6 +111,6 @@ export default function NotificacionesPanel({ onClose, items, readIds, onMarkAll
           <ExternalLink className="w-3.5 h-3.5" />
         </Link>
       </div>
-    </motion.div>
+    </GlassPanel>
   )
 }

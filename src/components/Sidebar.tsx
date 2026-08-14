@@ -66,8 +66,10 @@ function SidebarLink({ link, onClose, userRole, isAuthenticated }: {
               transition={{ type: 'spring', stiffness: 420, damping: 34 }}
               style={{
                 background: 'linear-gradient(135deg, var(--nav-active-pill) 0%, var(--nav-active-pill) 100%)',
+                backdropFilter: 'blur(8px) saturate(160%)',
+                WebkitBackdropFilter: 'blur(8px) saturate(160%)',
                 border: '1px solid var(--nav-active-border)',
-                boxShadow: '0 0 20px rgba(0,152,70,0.10), inset 0 1px 0 rgba(255,255,255,0.04)',
+                boxShadow: '0 0 20px rgba(0,152,70,0.10), inset 0 1px 0 var(--glass-specular)',
               }}
             />
           )}
@@ -133,13 +135,16 @@ function UserMiniCard({ user }: { user: AuthUser }) {
         className="flex items-center gap-2.5 p-2.5 rounded-xl"
         style={{
           background: 'var(--nav-user-card-bg)',
+          backdropFilter: 'blur(10px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(10px) saturate(160%)',
           border: '1px solid var(--nav-user-card-border)',
+          boxShadow: 'inset 0 1px 0 var(--glass-specular)',
         }}
       >
         <div className="relative shrink-0">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
-            style={{ background: 'linear-gradient(135deg, #009846, #1A5632)' }}
+            style={{ background: 'var(--brand-gradient)' }}
           >
             <span className="text-white text-xs font-bold">{user.initials}</span>
           </div>
@@ -208,7 +213,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }:
               transition={{ type: 'spring', stiffness: 420, damping: 18 }}
               className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shrink-0"
               style={{
-                background: 'linear-gradient(135deg, #009846, #1A5632)',
+                background: 'var(--brand-gradient)',
                 boxShadow: '0 0 16px var(--nav-logo-glow)',
               }}
             >
@@ -289,7 +294,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }:
               onClick={onClose}
               className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold no-underline transition-all hover:opacity-90 active:scale-[0.98]"
               style={{
-                background: 'linear-gradient(135deg, #009846, #1A5632)',
+                background: 'var(--brand-gradient)',
                 color: '#ffffff',
                 boxShadow: '0 4px 14px rgba(0,152,70,0.30)',
               }}
@@ -359,7 +364,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }:
                   transition={{ type: 'spring', stiffness: 420, damping: 24 }}
                   className="btn-shimmer w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-white text-sm font-semibold"
                   style={{
-                    background: 'linear-gradient(135deg, #009846, #1A5632)',
+                    background: 'var(--brand-gradient)',
                     boxShadow: '0 4px 18px rgba(0,152,70,0.28)',
                   }}
                 >
@@ -391,6 +396,28 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }:
   )
 }
 
+// ── Fondo ambiental — compartido por desktop y mobile (antes duplicado) ──────
+function SidebarAmbientBackground() {
+  return (
+    <>
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(circle, var(--nav-dot-grid) 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+          opacity: 0.7,
+        }}
+      />
+      <div
+        className="absolute top-0 left-0 right-0 h-48 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at 50% 0%, var(--nav-orb-color) 0%, transparent 70%)',
+        }}
+      />
+    </>
+  )
+}
+
 // ── Export principal ──────────────────────────────────────────────────────────
 export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   const { isAuthenticated, user, logout } = useAuth()
@@ -409,9 +436,14 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
     isAuthenticated,
   }
 
+  /* Superficie estructural: material pesado (Apple: darker/heavier materials
+     separate structural regions). Sin backdrop-filter — no hay contenido detrás
+     que difuminar (el layout usa ml-[210px], no stacking), pero el filo
+     especular superior sí comunica "vidrio" en una superficie sólida. */
   const sidebarStyle = {
     background: 'var(--nav-bg)',
     borderRight: '1px solid var(--nav-border)',
+    boxShadow: 'inset -1px 0 0 var(--glass-specular), inset 0 1px 0 var(--glass-specular)',
   }
 
   return (
@@ -421,26 +453,11 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
         className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[210px] flex-col z-40 overflow-hidden"
         style={sidebarStyle}
       >
-        {/* Dot grid overlay */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: 'radial-gradient(circle, var(--nav-dot-grid) 1px, transparent 1px)',
-            backgroundSize: '24px 24px',
-            opacity: 0.7,
-          }}
-        />
-        {/* Orbe atmosférico superior */}
-        <div
-          className="absolute top-0 left-0 right-0 h-48 pointer-events-none"
-          style={{
-            background: 'radial-gradient(ellipse at 50% 0%, var(--nav-orb-color) 0%, transparent 70%)',
-          }}
-        />
+        <SidebarAmbientBackground />
         <SidebarInner {...innerProps} />
       </aside>
 
-      {/* Mobile */}
+      {/* Mobile — flota sobre el contenido real con scrim: aquí el glass sí tiene algo detrás que difuminar */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -450,7 +467,7 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-50 backdrop-blur-[3px] lg:hidden"
+              className="fixed inset-0 z-50 backdrop-blur-md lg:hidden"
               style={{ background: 'var(--nav-overlay-bg)' }}
               onClick={onClose}
             />
@@ -461,22 +478,9 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
               exit={{ x: -260 }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
               className="fixed top-0 left-0 bottom-0 w-[240px] z-50 flex flex-col overflow-hidden lg:hidden"
-              style={sidebarStyle}
+              style={{ ...sidebarStyle, backdropFilter: 'blur(28px) saturate(180%)', WebkitBackdropFilter: 'blur(28px) saturate(180%)' }}
             >
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  backgroundImage: 'radial-gradient(circle, var(--nav-dot-grid) 1px, transparent 1px)',
-                  backgroundSize: '24px 24px',
-                  opacity: 0.7,
-                }}
-              />
-              <div
-                className="absolute top-0 left-0 right-0 h-48 pointer-events-none"
-                style={{
-                  background: 'radial-gradient(ellipse at 50% 0%, var(--nav-orb-color) 0%, transparent 70%)',
-                }}
-              />
+              <SidebarAmbientBackground />
               <SidebarInner {...innerProps} />
             </motion.aside>
           </>
