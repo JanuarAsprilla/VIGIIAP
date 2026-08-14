@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Bell, Settings, Menu, LogIn,
   ChevronDown, X, HelpCircle, Command, Sun, Moon,
+  type LucideIcon,
 } from 'lucide-react'
 import { useAuth }   from '@/contexts/AuthContext'
 import { ROLES }     from '@/lib/constants/roles'
@@ -64,6 +65,90 @@ function useReadNotifications() {
   const markAllRead = useCallback((ids: string[]) => setReadIds((prev) => [...new Set([...prev, ...ids])]), [])
 
   return { readIds, markRead, markAllRead }
+}
+
+// ── Botón de ícono — soporte/notificaciones/ajustes compartían el mismo
+//    patrón de estado activo repetido 3 veces; centralizado aquí ──
+function TopBarIconButton({ active, icon: Icon, label, badge, onClick, ariaLabel }: {
+  active: boolean
+  icon: LucideIcon
+  label?: string
+  badge?: number
+  onClick: () => void
+  ariaLabel: string
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={ariaLabel}
+      aria-expanded={active}
+      aria-haspopup="true"
+      className={`relative flex items-center gap-1.5 rounded-lg text-sm font-medium transition-all ${label ? 'px-3 py-1.5' : 'p-2'}`}
+      style={{
+        color: active ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)',
+        background: active ? (label ? 'var(--topbar-icon-on-bg2)' : 'var(--topbar-icon-on-bg)') : 'transparent',
+      }}
+    >
+      <Icon className={label ? 'w-3.5 h-3.5' : 'w-[18px] h-[18px]'} aria-hidden="true" />
+      {label}
+      {!!badge && badge > 0 && (
+        <span
+          aria-hidden="true"
+          className="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 px-0.5 bg-gold-500 rounded-full text-[0.6rem] font-bold text-white flex items-center justify-center leading-none"
+        >
+          {badge}
+        </span>
+      )}
+    </button>
+  )
+}
+
+// ── Campo de búsqueda — compartido entre la fila desktop y la fila mobile,
+//    antes duplicado casi al carácter ──
+function TopBarSearchInput({ value, onChange, placeholder, autoFocus, onClear, showPaletteHint, onOpenPalette, className = '' }: {
+  value: string
+  onChange: (v: string) => void
+  placeholder: string
+  autoFocus?: boolean
+  onClear: () => void
+  showPaletteHint?: boolean
+  onOpenPalette?: () => void
+  className?: string
+}) {
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-lg px-3 py-2 ${className}`}
+      style={{ background: 'var(--topbar-search-bg)', border: '1px solid var(--topbar-search-border)' }}
+    >
+      <Search className="w-[18px] h-[18px] shrink-0" style={{ color: 'var(--topbar-icon-off)' }} aria-hidden="true" />
+      <input
+        type="text"
+        autoFocus={autoFocus}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={placeholder}
+        className="topbar-search bg-transparent border-none outline-none text-sm w-full"
+        style={{ color: 'var(--topbar-text)' }}
+      />
+      {value ? (
+        <button onClick={onClear} aria-label="Limpiar búsqueda" className="text-text-muted hover:text-text transition-colors shrink-0">
+          <X className="w-3.5 h-3.5" aria-hidden="true" />
+        </button>
+      ) : showPaletteHint ? (
+        <button
+          onClick={onOpenPalette}
+          aria-label="Abrir búsqueda global (Cmd+K)"
+          title="Búsqueda global"
+          className="flex items-center gap-1 px-1.5 py-0.5 rounded-md transition-colors shrink-0"
+          style={{ background: 'var(--topbar-search-border)', color: 'var(--topbar-icon-off)' }}
+        >
+          <Command className="w-3 h-3" aria-hidden="true" />
+          <kbd className="text-[0.55rem] font-mono font-bold">K</kbd>
+        </button>
+      ) : null}
+    </div>
+  )
 }
 
 // ── Componente principal ──
@@ -145,9 +230,10 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
       className="sticky top-0 z-30"
       style={{
         background: 'var(--topbar-bg)',
-        backdropFilter: 'blur(18px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+        backdropFilter: 'blur(24px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
         borderBottom: '1px solid var(--topbar-border)',
+        boxShadow: 'inset 0 1px 0 var(--glass-specular)',
       }}
     >
 
@@ -169,44 +255,22 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
           <div className="hidden lg:flex items-center gap-3 flex-1">
             <div className="flex items-center gap-2 shrink-0">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: 'linear-gradient(135deg, #009846, #1A5632)', boxShadow: '0 0 10px rgba(0,152,70,0.25)' }}>
+                style={{ background: 'var(--brand-gradient)', boxShadow: '0 0 10px rgba(0,152,70,0.25)' }}>
                 <span className="text-white font-black text-xs font-display">V</span>
               </div>
               <span className="text-sm font-bold tracking-wide" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
             </div>
 
             {/* Búsqueda contextual por página */}
-            <div className="flex items-center gap-2 rounded-lg px-3 py-2 flex-1 max-w-sm" style={{background:"var(--topbar-search-bg)",border:"1px solid var(--topbar-search-border)"}}>
-              <Search className="w-[18px] h-[18px] shrink-0" style={{color:"var(--topbar-icon-off)"}} aria-hidden="true" />
-              <input
-                type="text"
-                placeholder={placeholder}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                aria-label={placeholder}
-                className="topbar-search bg-transparent border-none outline-none text-sm w-full" style={{color:"var(--topbar-text)"}}
-              />
-              {query ? (
-                <button
-                  onClick={() => setQuery('')}
-                  aria-label="Limpiar búsqueda"
-                  className="text-text-muted hover:text-text transition-colors shrink-0"
-                >
-                  <X className="w-3.5 h-3.5" aria-hidden="true" />
-                </button>
-              ) : (
-                <button
-                  onClick={openPalette}
-                  aria-label="Abrir búsqueda global (Cmd+K)"
-                  title="Búsqueda global"
-                  className="flex items-center gap-1 px-1.5 py-0.5 rounded-md transition-colors shrink-0"
-                  style={{background:"var(--topbar-search-border)",color:"var(--topbar-icon-off)"}}
-                >
-                  <Command className="w-3 h-3" aria-hidden="true" />
-                  <kbd className="text-[0.55rem] font-mono font-bold">K</kbd>
-                </button>
-              )}
-            </div>
+            <TopBarSearchInput
+              className="flex-1 max-w-sm"
+              value={query}
+              onChange={setQuery}
+              placeholder={placeholder}
+              onClear={() => setQuery('')}
+              showPaletteHint
+              onOpenPalette={openPalette}
+            />
           </div>
         </div>
 
@@ -275,15 +339,13 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
               {/* Soporte + Ayuda — solo desktop */}
               <div className="hidden md:flex items-center gap-1">
                 <div className="relative">
-                  <button
+                  <TopBarIconButton
+                    active={activePanel === 'soporte'}
+                    icon={HelpCircle}
+                    label="Soporte"
+                    ariaLabel="Soporte"
                     onClick={() => togglePanel('soporte')}
-                    aria-expanded={activePanel === 'soporte'}
-                    aria-haspopup="true"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all font-medium" style={{color: activePanel === 'soporte' ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)', background: activePanel === 'soporte' ? 'var(--topbar-icon-on-bg2)' : 'transparent'}}
-                  >
-                    <HelpCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                    Soporte
-                  </button>
+                  />
                   <AnimatePresence>
                     {activePanel === 'soporte' && (
                       <SoportePanel onClose={closePanel} />
@@ -302,23 +364,13 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
 
               {/* Notificaciones */}
               <div className="relative">
-                <button
+                <TopBarIconButton
+                  active={activePanel === 'notificaciones'}
+                  icon={Bell}
+                  badge={hasUnread ? unreadCount : undefined}
+                  ariaLabel={`Notificaciones${hasUnread ? `, ${unreadCount} sin leer` : ''}`}
                   onClick={() => togglePanel('notificaciones')}
-                  aria-label={`Notificaciones${hasUnread ? `, ${unreadCount} sin leer` : ''}`}
-                  aria-expanded={activePanel === 'notificaciones'}
-                  aria-haspopup="true"
-                  className="relative p-2 rounded-lg transition-colors" style={{color: activePanel === 'notificaciones' ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)', background: activePanel === 'notificaciones' ? 'var(--topbar-icon-on-bg)' : 'transparent'}}
-                >
-                  <Bell className="w-[18px] h-[18px]" aria-hidden="true" />
-                  {hasUnread && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 px-0.5 bg-orange-500 rounded-full text-[0.6rem] font-bold text-white flex items-center justify-center leading-none"
-                    >
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
+                />
                 <AnimatePresence>
                   {activePanel === 'notificaciones' && (
                     <NotificacionesPanel
@@ -334,15 +386,12 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
 
               {/* Ajustes — solo desktop */}
               <div className="hidden lg:block relative">
-                <button
+                <TopBarIconButton
+                  active={activePanel === 'ajustes'}
+                  icon={Settings}
+                  ariaLabel="Ajustes rápidos"
                   onClick={() => togglePanel('ajustes')}
-                  aria-label="Ajustes rápidos"
-                  aria-expanded={activePanel === 'ajustes'}
-                  aria-haspopup="true"
-                  className="p-2 rounded-lg transition-colors" style={{color: activePanel === 'ajustes' ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)', background: activePanel === 'ajustes' ? 'var(--topbar-icon-on-bg)' : 'transparent'}}
-                >
-                  <Settings className="w-[18px] h-[18px]" aria-hidden="true" />
-                </button>
+                />
                 <AnimatePresence>
                   {activePanel === 'ajustes' && (
                     <AjustesPanel onClose={closePanel} />
@@ -392,7 +441,7 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
             >
               <span
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.97]"
-                style={{ background: 'linear-gradient(135deg, #009846, #1A5632)', color: '#fff', boxShadow: '0 2px 10px rgba(0,152,70,0.25)' }}
+                style={{ background: 'var(--brand-gradient)', color: '#fff', boxShadow: '0 2px 10px rgba(0,152,70,0.25)' }}
               >
                 <LogIn className="w-4 h-4" aria-hidden="true" />
                 <span className="hidden sm:inline">Ingresar</span>
@@ -413,25 +462,13 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
             className="lg:hidden overflow-hidden" style={{borderTop:"1px solid var(--topbar-border)"}}
           >
             <div className="px-4 py-2.5">
-              <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{background:"var(--topbar-search-bg)",border:"1px solid var(--topbar-search-border)"}}>
-                <Search className="w-4 h-4 text-text-muted shrink-0" aria-hidden="true" />
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder={placeholder}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  aria-label={placeholder}
-                  className="topbar-search bg-transparent border-none outline-none text-sm w-full" style={{color:"var(--topbar-text)"}}
-                />
-                <button
-                  onClick={() => { setQuery(''); setShowMobileSearch(false) }}
-                  aria-label="Cerrar búsqueda"
-                  className="text-text-muted hover:text-text transition-colors shrink-0"
-                >
-                  <X className="w-4 h-4" aria-hidden="true" />
-                </button>
-              </div>
+              <TopBarSearchInput
+                value={query}
+                onChange={setQuery}
+                placeholder={placeholder}
+                autoFocus
+                onClear={() => { setQuery(''); setShowMobileSearch(false) }}
+              />
             </div>
           </motion.div>
         )}

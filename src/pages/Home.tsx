@@ -278,14 +278,17 @@ function parseGradient(gradient: string): [string, string] {
   return [from, to]
 }
 
-function ModuleVisual({ mod }: { mod: ModuleItem }) {
+function ModuleVisual({ mod, isDark }: { mod: ModuleItem; isDark: boolean }) {
   const [from, to] = parseGradient(mod.gradient)
   return (
     <div
       className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden"
       style={{
         background: `linear-gradient(135deg, ${from}18 0%, ${to}08 100%)`,
+        backdropFilter: 'blur(2px) saturate(140%)',
+        WebkitBackdropFilter: 'blur(2px) saturate(140%)',
         border: `1px solid ${mod.glow}`,
+        boxShadow: `0 24px 64px -12px ${mod.glow}, inset 0 1px 0 ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.5)'}`,
       }}
     >
       {/* Pattern */}
@@ -293,19 +296,25 @@ function ModuleVisual({ mod }: { mod: ModuleItem }) {
         className="absolute inset-0 opacity-[0.05]"
         style={{ backgroundImage: `radial-gradient(circle, ${mod.ctaColor} 1px, transparent 1px)`, backgroundSize: '24px 24px' }}
       />
-      {/* Centered icon */}
+      {/* Centered icon — halo de vidrio + insignia con filo especular */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${mod.gradient} flex items-center justify-center shadow-2xl`}>
+        <div
+          className="absolute w-40 h-40 rounded-full pointer-events-none"
+          style={{ background: `radial-gradient(circle, ${to}30 0%, transparent 70%)`, filter: 'blur(20px)' }}
+        />
+        <div
+          className={`relative w-24 h-24 rounded-3xl bg-gradient-to-br ${mod.gradient} flex items-center justify-center shadow-2xl`}
+          style={{ boxShadow: `0 16px 40px -8px ${mod.glow}, inset 0 1.5px 0 rgba(255,255,255,0.35)` }}
+        >
           <mod.icon className="w-12 h-12 text-white" />
         </div>
       </div>
-      {/* Floating decorative pills */}
+      {/* Floating decorative pills — vidrio con contraste garantizado sobre fondo claro u oscuro */}
       <div className="absolute top-4 left-4 right-4 flex gap-2">
         {[mod.tag, 'IIAP', 'Chocó'].map((t) => (
           <span
             key={t}
-            className="px-2.5 py-1 rounded-full text-[0.6rem] font-bold uppercase tracking-wider"
-            style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)' }}
+            className={`px-2.5 py-1 rounded-full text-[0.6rem] font-bold uppercase tracking-wider ${isDark ? 'glass-chip text-white/80' : 'glass-chip-dark text-white/90'}`}
           >
             {t}
           </span>
@@ -340,7 +349,7 @@ function ModuleShowcaseSection() {
               className={`max-w-6xl mx-auto px-6 py-14 flex flex-col ${isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-16`}
             >
               <div className="w-full lg:w-1/2 shrink-0">
-                <ModuleVisual mod={mod} />
+                <ModuleVisual mod={mod} isDark={isDark} />
               </div>
 
               <div className="flex-1">
