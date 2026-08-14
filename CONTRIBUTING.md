@@ -160,6 +160,6 @@ git merge hotfix/VIG-NNN-descripcion
 
 - [ ] El build pasa localmente (`npm run build`)
 - [ ] No hay `console.log` de debug en el código
-- [ ] Los datos del dominio están en `constants.js`, no hardcodeados en componentes
+- [ ] Los datos del dominio están en `constants.ts`, no hardcodeados en componentes
 - [ ] Los nuevos componentes tienen `aria-label` si son botones de icono
 - [ ] Se actualizó `CLAUDE.md` si cambió la arquitectura

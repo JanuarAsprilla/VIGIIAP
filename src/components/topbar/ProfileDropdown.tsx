@@ -1,0 +1,117 @@
+import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
+import {
+  UserCircle, ClipboardList, BookOpen, LogOut,
+  ShieldCheck, Lock, LayoutDashboard, CheckCircle2,
+  type LucideIcon,
+} from 'lucide-react'
+import { panelAnim } from './panelAnim'
+import { ROLES } from '@/lib/constants/roles'
+import type { AuthUser } from '@/contexts/AuthContext'
+
+function RoleBadge({ user }: { user: AuthUser | null }) {
+  const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE
+  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN
+  const isAdmin      = user?.role === ROLES.ADMIN || isSuperAdmin
+
+  if (isUnverified) return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-bold uppercase tracking-wider"
+      style={{ background: 'rgba(245,158,11,0.1)', color: '#B45309', border: '1px solid rgba(245,158,11,0.2)' }}>
+      <Lock className="w-2.5 h-2.5" />Sin verificar
+    </span>
+  )
+  if (isSuperAdmin) return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-bold uppercase tracking-wider"
+      style={{ background: 'rgba(124,58,237,0.1)', color: '#6D28D9', border: '1px solid rgba(124,58,237,0.2)' }}>
+      <ShieldCheck className="w-2.5 h-2.5" />Super Admin
+    </span>
+  )
+  if (isAdmin) return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-bold uppercase tracking-wider"
+      style={{ background: 'rgba(0,152,70,0.1)', color: '#065F46', border: '1px solid rgba(0,152,70,0.2)' }}>
+      <ShieldCheck className="w-2.5 h-2.5" />Admin SIG
+    </span>
+  )
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-bold uppercase tracking-wider"
+      style={{ background: 'rgba(0,152,70,0.08)', color: '#047857', border: '1px solid rgba(0,152,70,0.15)' }}>
+      <CheckCircle2 className="w-2.5 h-2.5" />{user?.role ?? 'Verificado'}
+    </span>
+  )
+}
+
+function MenuItem({ to = '', icon: Icon, label, onClick = undefined, danger = false }: {
+  to?: string; icon: LucideIcon
+  label: string; onClick?: () => void; danger?: boolean
+}) {
+  const base = `flex items-center gap-3 px-4 py-2.5 text-sm no-underline transition-colors w-full text-left ${danger ? 'text-orange-600 hover:bg-orange-50' : 'text-text hover:bg-bg-alt'}`
+  if (to) return (
+    <li><Link to={to} onClick={onClick} className={base}>
+      <Icon className={`w-4 h-4 ${danger ? '' : 'text-text-muted'}`} aria-hidden="true" />{label}
+    </Link></li>
+  )
+  return (
+    <li><button onClick={onClick} className={base}>
+      <Icon className={`w-4 h-4 ${danger ? '' : 'text-text-muted'}`} aria-hidden="true" />{label}
+    </button></li>
+  )
+}
+
+export default function ProfileDropdown({ user, onClose, onLogout }: { user: AuthUser | null; onClose: () => void; onLogout: () => void }) {
+  const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE
+  const isAdmin      = user?.role === ROLES.ADMIN || user?.role === ROLES.SUPER_ADMIN
+  const isVerified   = !isUnverified
+
+  return (
+    <motion.div
+      {...panelAnim}
+      className="absolute top-full right-0 mt-2 w-60 bg-white border border-border rounded-xl shadow-float overflow-hidden z-50"
+    >
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-800 rounded-full flex items-center justify-center shrink-0">
+            <span className="text-white text-xs font-bold">{user?.initials}</span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-text truncate leading-tight">{user?.name}</p>
+            {isVerified && user?.email && (
+              <p className="text-[0.65rem] text-text-muted truncate">{user?.email}</p>
+            )}
+          </div>
+        </div>
+        <RoleBadge user={user} />
+      </div>
+
+      <nav aria-label="Menú de cuenta">
+        {/* No verificado */}
+        {isUnverified && (
+          <ul className="py-1">
+            <li>
+              <Link to="/solicitar-acceso" onClick={onClose}
+                className="flex items-center gap-3 px-4 py-3 text-sm font-semibold no-underline transition-all mx-2 my-1.5 rounded-xl"
+                style={{ background: 'linear-gradient(135deg,#F7AC42,#E07030)', color: '#fff', boxShadow: '0 2px 10px rgba(247,172,66,0.30)' }}>
+                <Lock className="w-4 h-4" />Solicitar acceso institucional
+              </Link>
+            </li>
+            <MenuItem to="/guia-usuario" icon={BookOpen} label="Guía de Usuario" onClick={onClose} />
+          </ul>
+        )}
+
+        {/* Verificado */}
+        {isVerified && (
+          <ul className="py-1">
+            <MenuItem to="/perfil"       icon={UserCircle}      label="Mi Perfil"       onClick={onClose} />
+            {isAdmin && <MenuItem to="/admin" icon={LayoutDashboard} label="Panel Admin" onClick={onClose} />}
+            <MenuItem to="/solicitudes"  icon={ClipboardList}   label="Mis Solicitudes"  onClick={onClose} />
+            <MenuItem to="/guia-usuario" icon={BookOpen}        label="Guía de Usuario"  onClick={onClose} />
+          </ul>
+        )}
+
+        <div className="border-t border-border py-1">
+          <MenuItem icon={LogOut} label="Cerrar Sesión" onClick={onLogout} danger />
+        </div>
+      </nav>
+    </motion.div>
+  )
+}

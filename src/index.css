@@ -2,58 +2,71 @@
 
 /* =====================================================
    VIGIIAP Design System — Tailwind v4 Theme
-   Based on Figma: Biogeográfico Emerald
+   Paleta Oficial IIAP — Manual de Identidad Visual
    ===================================================== */
 
 @theme {
-  /* Primary palette — Chocó Biogeográfico greens */
-  --color-primary-50: #F0FFF4;
-  --color-primary-100: #D8F3DC;
-  --color-primary-200: #B7E4C7;
-  --color-primary-300: #95D5B2;
-  --color-primary-400: #74C69D;
-  --color-primary-500: #52B788;
-  --color-primary-600: #40916C;
-  --color-primary-700: #2D6A4F;
-  --color-primary-800: #1B4332;
-  --color-primary-900: #081C15;
+  /* ── Verdes institucionales ────────────────────────── */
+  --color-primary-50:  #E8F5EB;
+  --color-primary-100: #C8E6CE;
+  --color-primary-200: #A0D3AB;
+  --color-primary-300: #66BA7F;
+  --color-primary-400: #33A65E;
+  --color-primary-500: #009846;   /* secondary — verde vivo IIAP    */
+  --color-primary-600: #218842;   /* primary-light                  */
+  --color-primary-700: #1A5632;   /* primary institucional           */
+  --color-primary-800: #284E39;   /* primary-dark                   */
+  --color-primary-900: #1A2E22;
 
-  /* Gold / Accent */
-  --color-gold-300: #E9C46A;
-  --color-gold-400: #D4A373;
-  --color-gold-500: #C68B59;
+  /* ── Acento cálido — cultura / fauna ──────────────── */
+  --color-gold-300: #FECC00;      /* gold-light                     */
+  --color-gold-400: #F7AC42;      /* gold principal                 */
+  --color-gold-500: #F08143;      /* orange                         */
 
-  /* Orange */
-  --color-orange-400: #F4845F;
-  --color-orange-500: #E76F51;
-  --color-orange-600: #E67E22;
+  /* ── Acento lima — biodiversidad ──────────────────── */
+  --color-accent: #B0CB1F;
 
-  /* Neutrals */
-  --color-surface: #FFFFFF;
-  --color-bg: #F8FAF9;
-  --color-bg-alt: #EDF2F0;
-  --color-border: #E2E8F0;
-  --color-text: #1A1A2E;
+  /* ── Acentos secundarios oficiales — grafismos Emberá / fauna ── */
+  --color-magenta: #E51A4B;   /* Pantone 1925 C — trazabilidad / analítica */
+  --color-yellow:  #FFED00;   /* Pantone 802/803 C — alerta / pendiente puro */
+
+  /* ── Orange ────────────────────────────────────────── */
+  --color-orange-400: #F4A261;
+  --color-orange-500: #F08143;
+  --color-orange-600: #E07030;
+
+  /* ── Alertas / cultura afrocolombiana ─────────────── */
+  --color-red:        #E31E24;
+  --color-red-dark:   #C12A2B;
+  --color-pink:       #E95B8C;
+  --color-pink-light: #F18A87;
+
+  /* ── Neutrals ──────────────────────────────────────── */
+  --color-surface:    #FEFEFE;
+  --color-bg:         #F8FAF9;
+  --color-bg-alt:     #EDF2F0;
+  --color-border:     #E2E8F0;
+  --color-text:       #1A1A2E;
   --color-text-light: #4A5568;
   --color-text-muted: #718096;
 
-  /* Typography */
+  /* ── Typography ────────────────────────────────────── */
   --font-display: 'Playfair Display', Georgia, serif;
-  --font-body: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body:    'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Shadows */
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  /* ── Shadows ───────────────────────────────────────── */
+  --shadow-soft:     0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-card:     0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-elevated: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-float: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow-glow: 0 0 40px rgba(27, 67, 50, 0.15);
+  --shadow-float:    0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-glow:     0 0 40px rgba(26, 86, 50, 0.15);
 
-  /* Radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 24px;
+  /* ── Radius ────────────────────────────────────────── */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  24px;
   --radius-full: 9999px;
 }
 
@@ -99,10 +112,8 @@ body {
    Typography scale adjustments
    ===================================================== */
 
-/* Ensure readable minimums */
 .text-sm { font-size: clamp(0.875rem, 1.5vw, 1rem); line-height: 1.5; }
 
-/* Module page headers */
 .page-header-tag {
   font-size: clamp(0.95rem, 1.5vw, 0.85rem);
   font-weight: 700;
@@ -125,7 +136,6 @@ body {
   line-height: 1.7;
 }
 
-/* Card content readable */
 .card-title {
   font-size: clamp(0.95rem, 1.5vw, 1.1rem);
   font-weight: 700;
@@ -138,7 +148,6 @@ body {
   color: var(--color-text-muted);
 }
 
-/* Table text */
 .table-header {
   font-size: clamp(0.75rem, 1.2vw, 0.85rem);
   font-weight: 700;
@@ -178,9 +187,7 @@ body {
    3D & Motion — Design Premium System
    ===================================================== */
 
-/* ── Card lift 3D ──
-   Aplica perspective + rotación leve al hacer hover.
-   Uso: <div class="card-3d"> */
+/* ── Card lift 3D ── */
 .card-3d {
   will-change: transform;
   transform-style: preserve-3d;
@@ -191,25 +198,23 @@ body {
 .card-3d:hover {
   transform: perspective(900px) translateY(-6px) rotateX(2.5deg) rotateY(-1.5deg) scale(1.015);
   box-shadow:
-    0 24px 48px -8px rgba(27, 67, 50, 0.18),
-    0 8px 16px -4px rgba(27, 67, 50, 0.08),
-    0 0 0 1px rgba(27, 67, 50, 0.06);
+    0 24px 48px -8px rgba(26, 86, 50, 0.18),
+    0 8px 16px -4px rgba(26, 86, 50, 0.08),
+    0 0 0 1px rgba(26, 86, 50, 0.06);
 }
 
-/* ── Glow border on hover ──
-   Uso: <div class="glow-hover"> */
+/* ── Glow border on hover ── */
 .glow-hover {
   transition: box-shadow 0.3s ease;
 }
 .glow-hover:hover {
   box-shadow:
-    0 0 0 1px rgba(27, 67, 50, 0.15),
-    0 0 24px 2px rgba(27, 67, 50, 0.12),
-    0 0 48px 4px rgba(82, 183, 136, 0.06);
+    0 0 0 1px rgba(26, 86, 50, 0.15),
+    0 0 24px 2px rgba(26, 86, 50, 0.12),
+    0 0 48px 4px rgba(0, 152, 70, 0.06);
 }
 
-/* ── Shimmer sweep on primary buttons ──
-   Uso: <button class="btn-shimmer"> */
+/* ── Shimmer sweep on primary buttons ── */
 .btn-shimmer {
   position: relative;
   overflow: hidden;
@@ -235,8 +240,7 @@ body {
   100%     { transform: skewX(-20deg) translateX(280%); }
 }
 
-/* ── Float — sutil levitación para elementos hero ──
-   Uso: <div class="animate-float"> */
+/* ── Float — sutil levitación para elementos hero ── */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50%       { transform: translateY(-8px); }
@@ -245,40 +249,36 @@ body {
   animation: float 4s ease-in-out infinite;
 }
 
-/* ── Pulse glow ──
-   Uso: <div class="animate-pulse-glow"> */
+/* ── Pulse glow ── */
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(27, 67, 50, 0.18);
+    box-shadow: 0 0 0 0 rgba(26, 86, 50, 0.18);
   }
   50% {
-    box-shadow: 0 0 0 12px rgba(27, 67, 50, 0);
+    box-shadow: 0 0 0 12px rgba(26, 86, 50, 0);
   }
 }
 .animate-pulse-glow {
   animation: pulse-glow 2.4s ease-in-out infinite;
 }
 
-/* ── Gradient text ──
-   Uso: <h1 class="text-gradient"> */
+/* ── Gradient text — Verdes IIAP ── */
 .text-gradient {
-  background: linear-gradient(135deg, #1B4332 0%, #40916C 50%, #74C69D 100%);
+  background: linear-gradient(135deg, #1A5632 0%, #218842 50%, #009846 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ── Gold gradient text ──
-   Uso: <span class="text-gradient-gold"> */
+/* ── Gold gradient text — Cultura / Fauna ── */
 .text-gradient-gold {
-  background: linear-gradient(135deg, #C68B59 0%, #D4A373 60%, #E9C46A 100%);
+  background: linear-gradient(135deg, #F08143 0%, #F7AC42 60%, #FECC00 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ── Glassmorphism ──
-   Uso: <div class="glass-card"> */
+/* ── Glassmorphism ── */
 .glass-card {
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(16px) saturate(180%);
@@ -286,17 +286,15 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-/* ── Frosted dark (para overlays, modales) ──
-   Uso: <div class="glass-dark"> */
+/* ── Frosted dark (overlays, modales) ── */
 .glass-dark {
-  background: rgba(8, 28, 21, 0.72);
+  background: rgba(40, 78, 57, 0.72);
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* ── Noise texture overlay (aporta profundidad) ──
-   Uso: <div class="noise-overlay"> */
+/* ── Noise texture overlay ── */
 .noise-overlay::before {
   content: '';
   position: absolute;
@@ -307,8 +305,7 @@ body {
   pointer-events: none;
 }
 
-/* ── Gradient border ──
-   Uso: <div class="gradient-border"> */
+/* ── Gradient border ── */
 .gradient-border {
   position: relative;
 }
@@ -316,14 +313,13 @@ body {
   content: '';
   position: absolute;
   inset: -1px;
-  background: linear-gradient(135deg, rgba(27, 67, 50, 0.3), rgba(116, 198, 157, 0.2), transparent 60%);
+  background: linear-gradient(135deg, rgba(26, 86, 50, 0.3), rgba(0, 152, 70, 0.2), transparent 60%);
   border-radius: inherit;
   pointer-events: none;
   z-index: 0;
 }
 
-/* ── Scan line (premium data feel) ──
-   Uso: <div class="scan-lines"> */
+/* ── Scan line (premium data feel) ── */
 .scan-lines {
   position: relative;
   overflow: hidden;
@@ -342,16 +338,575 @@ body {
   pointer-events: none;
 }
 
-/* ── Hover lift (más simple que card-3d) ──
-   Uso: <button class="lift-hover"> */
+/* ── Hover lift ── */
 .lift-hover {
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
 }
 .lift-hover:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 28px -6px rgba(27, 67, 50, 0.2);
+  box-shadow: 0 12px 28px -6px rgba(26, 86, 50, 0.2);
 }
 .lift-hover:active {
   transform: translateY(0);
   box-shadow: none;
+}
+
+/* =====================================================
+   Paleta Oficial IIAP — Componentes Semánticos
+   ===================================================== */
+
+/* ── Hero section gradient ── */
+.hero-gradient {
+  background: linear-gradient(135deg, #284E39 0%, #1A5632 50%, #218842 100%);
+}
+
+/* ── Botones primarios — ámbar sobre verde oscuro ── */
+.btn-primary {
+  background: #F7AC42;
+  color: #284E39;
+  font-weight: 700;
+  border: none;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.btn-primary:hover {
+  background: #FECC00;
+  box-shadow: 0 6px 20px -4px rgba(247, 172, 66, 0.45);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  background: #F08143;
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* ── Module icons ── */
+.module-icon {
+  background: linear-gradient(135deg, #1A5632, #009846);
+}
+
+/* ── Section tags / badges institucionales ── */
+.section-tag {
+  background: #1A5632;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+}
+
+/* ── Tool card headers ── */
+.tool-header {
+  background: linear-gradient(135deg, #1A5632, #218842);
+  color: #ffffff;
+}
+
+/* ── Form headers ── */
+.form-header {
+  background: linear-gradient(135deg, #1A5632, #218842);
+  color: #ffffff;
+}
+
+/* ── Footer ── */
+.footer {
+  background: #284E39;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── Timeline — estado activo / hover ── */
+.timeline-item.active .timeline-marker,
+.timeline-item:hover .timeline-marker {
+  background: #F7AC42;
+  border-color: #F7AC42;
+  box-shadow: 0 0 0 4px rgba(247, 172, 66, 0.2);
+}
+
+/* ── Map card categories ── */
+.map-card-category {
+  color: #1A5632;
+  background: rgba(26, 86, 50, 0.1);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ── Preloader progress bar ── */
+.preloader-progress {
+  background: linear-gradient(90deg, #B0CB1F, #F7AC42);
+  border-radius: var(--radius-full);
+  height: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ── Accent lima — biodiversidad ── */
+.accent-lime {
+  color: #B0CB1F;
+}
+.bg-accent-lime {
+  background: #B0CB1F;
+}
+
+/* ── Alert states using IIAP red ── */
+.alert-danger {
+  color: #C12A2B;
+  background: rgba(227, 30, 36, 0.08);
+  border: 1px solid rgba(227, 30, 36, 0.25);
+  border-radius: var(--radius-md);
+}
+
+/* =====================================================
+   Premium Design System — Emil + Impeccable + Taste
+   ===================================================== */
+
+/* ── Custom easing curves (Emil Design Engineering) ── */
+:root {
+  /* Entrances: starts fast, feels responsive */
+  --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+  /* On-screen movement: natural acceleration/deceleration */
+  --ease-in-out-expo: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Drawer/sheet: iOS-like modal sheet */
+  --ease-drawer:     cubic-bezier(0.32, 0.72, 0, 1);
+  /* Exit: fast, clears immediately */
+  --ease-in-expo:    cubic-bezier(0.55, 0, 1, 0.45);
+
+  /* Duration scale */
+  --duration-instant:  100ms;
+  --duration-fast:     150ms;
+  --duration-normal:   250ms;
+  --duration-slow:     400ms;
+  --duration-enter:    320ms;
+  --duration-exit:     180ms;
+}
+
+/* ── Grain overlay — breaks digital flatness ── */
+/* Apply to hero sections and dark surfaces only     */
+/* Usage: <div class="grain-overlay"> inside relative parent */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+}
+
+/* Hero-scoped grain — not fixed, relative to section */
+.hero-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.032;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+}
+
+/* ── Text balance for headings ── */
+h1, h2, h3, .font-display {
+  text-wrap: balance;
+}
+
+/* ── Tabular nums for data/stats ── */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ── Focus ring — accessible, branded ── */
+:focus-visible {
+  outline: 2px solid var(--color-primary-600);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Button press feedback (Emil: all pressable elements) ── */
+.btn-press {
+  transition: transform var(--duration-instant) var(--ease-out-expo);
+}
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* ── Hover only on pointer devices (Emil: touch guard) ── */
+@media (hover: none) {
+  .lift-hover:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .card-3d:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* ── Spotlight card border — cursor-illuminated ── */
+/* Requires JS to set --mouse-x and --mouse-y CSS vars  */
+.spotlight-card {
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(26, 86, 50, 0.06),
+    transparent 40%
+  );
+}
+
+/* ── Reduced motion — fewer/gentler animations ── */
+@media (prefers-reduced-motion: reduce) {
+  .orb-1, .orb-2, .orb-3 {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ── Stagger utility — use with CSS var(--index) ── */
+/* <div style="--index: 0"> ... </div>               */
+.stagger-item {
+  animation: stagger-fade-up var(--duration-enter) var(--ease-out-expo) both;
+  animation-delay: calc(var(--index, 0) * 60ms);
+}
+
+@keyframes stagger-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Asymmetric enter/exit (Emil: slow in, fast out) ── */
+.popover-enter {
+  animation: popover-in var(--duration-enter) var(--ease-out-expo) both;
+  transform-origin: var(--radix-popover-content-transform-origin, center);
+}
+.popover-exit {
+  animation: popover-out var(--duration-exit) var(--ease-in-expo) both;
+}
+
+@keyframes popover-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes popover-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.95); }
+}
+
+/* ── @starting-style for native CSS enter animations ── */
+/* Modern replacement for JS-driven mount state         */
+@supports (selector(:has(*))) {
+  .toast-enter {
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+      opacity var(--duration-enter) var(--ease-out-expo),
+      transform var(--duration-enter) var(--ease-out-expo);
+
+    @starting-style {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+  }
+}
+
+/* ── Shimmer skeleton loader ── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-alt) 25%,
+    var(--color-border) 50%,
+    var(--color-bg-alt) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Infinite marquee / ticker strip ── */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee-scroll 28s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* ── TopBar dark glass search placeholder ── */
+.topbar-search::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* =====================================================
+   VIGIIAP Dual-Theme Shell Tokens
+   :root = LIGHT CINEMATIC EDITORIAL (default)
+   .dark = DARK FOREST (toggle)
+   ===================================================== */
+
+:root {
+  /* ── Page shell ────────────────────────────────── */
+  --shell-bg:              #F2F7F3;
+
+  /* ── Sidebar / Navigation ─────────────────────── */
+  --nav-bg:                #F2F7F3;
+  --nav-border:            rgba(26,86,50,0.12);
+  --nav-text:              #1A2E22;
+  --nav-text-muted:        rgba(26,46,34,0.45);
+  --nav-text-locked:       rgba(26,46,34,0.22);
+  --nav-active-pill:       rgba(26,86,50,0.10);
+  --nav-active-border:     rgba(26,86,50,0.20);
+  --nav-active-text:       #1A5632;
+  --nav-indicator-from:    #4ade80;
+  --nav-indicator-to:      #009846;
+  --nav-hover-bg:          rgba(26,86,50,0.05);
+  --nav-section-label:     rgba(26,46,34,0.22);
+  --nav-separator:         rgba(26,86,50,0.12);
+  --nav-user-card-bg:      rgba(26,86,50,0.06);
+  --nav-user-card-border:  rgba(26,86,50,0.16);
+  --nav-user-name:         #1A2E22;
+  --nav-user-role:         rgba(26,86,50,0.55);
+  --nav-online-ring:       rgba(26,86,50,0.10);
+  --nav-login-bg:          rgba(26,86,50,0.08);
+  --nav-login-border:      rgba(26,86,50,0.20);
+  --nav-login-text:        #1A5632;
+  --nav-action-bg:         rgba(26,86,50,0.08);
+  --nav-action-border:     rgba(26,86,50,0.18);
+  --nav-action-text:       #1A5632;
+  --nav-logout-text:       rgba(26,46,34,0.38);
+  --nav-close-text:        rgba(26,46,34,0.38);
+  --nav-logo-glow:         rgba(26,86,50,0.20);
+  --nav-topo-stroke:       #009846;
+  --nav-topo-opacity:      0.06;
+  --nav-map-blend:         multiply;
+  --nav-map-opacity:       0.035;
+  --nav-orb-color:         rgba(26,86,50,0.07);
+  --nav-dot-grid:          rgba(26,86,50,0.08);
+  --nav-overlay-bg:        rgba(0,0,0,0.50);
+
+  /* ── TopBar ────────────────────────────────────── */
+  --topbar-bg:             rgba(255,255,255,0.94);
+  --topbar-border:         rgba(26,86,50,0.10);
+  --topbar-text:           #1A2E22;
+  --topbar-text-muted:     rgba(26,46,34,0.45);
+  --topbar-text-active:    #1A5632;
+  --topbar-icon-off:       rgba(26,46,34,0.42);
+  --topbar-icon-on:        #1A5632;
+  --topbar-icon-on-bg:     rgba(26,86,50,0.10);
+  --topbar-icon-on-bg2:    rgba(26,86,50,0.14);
+  --topbar-search-bg:      rgba(26,86,50,0.06);
+  --topbar-search-border:  rgba(26,86,50,0.14);
+  --topbar-search-text:    #1A2E22;
+  --topbar-sep:            rgba(26,86,50,0.14);
+  --topbar-active-ul:      #1A5632;
+  --topbar-ph-opacity:     0.35;
+
+  /* ── BottomTabs ────────────────────────────────── */
+  --tabs-bg:               rgba(255,255,255,0.97);
+  --tabs-border:           rgba(26,86,50,0.10);
+  --tabs-text:             rgba(26,46,34,0.36);
+  --tabs-active-text:      #1A5632;
+  --tabs-active-bg:        rgba(26,86,50,0.08);
+  --tabs-locked-text:      rgba(26,46,34,0.18);
+
+  /* ── Hero (cinematic editorial light) ─────────── */
+  --hero-grad:             linear-gradient(135deg,#ECF4EF 0%,#F0F7F2 50%,#EEF5F1 100%);
+  --hero-title-color:      #1A2E22;
+  --hero-title-accent:     #1A5632;
+  --hero-sub-color:        rgba(26,46,34,0.65);
+  --hero-accent-color:     #1A5632;
+  --hero-eyebrow-border:   rgba(176,203,31,0.32);
+  --hero-eyebrow-bg:       rgba(26,86,50,0.07);
+  --hero-eyebrow-text:     rgba(26,86,50,0.85);
+  --hero-eyebrow-dot:      #B0CB1F;
+  --hero-dot-color:        rgba(26,86,50,0.14);
+  --hero-orb-1:            rgba(26,86,50,0.08);
+  --hero-orb-2:            rgba(212,163,115,0.07);
+  --hero-top-line:         linear-gradient(90deg,transparent,rgba(26,86,50,0.30),rgba(176,203,31,0.20),transparent);
+  --hero-cta-ghost-bg:     rgba(26,86,50,0.06);
+  --hero-cta-ghost-border: rgba(26,86,50,0.20);
+  --hero-cta-ghost-text:   #1A5632;
+  --hero-scroll-color:     rgba(26,46,34,0.22);
+
+  /* ── Marquee ───────────────────────────────────── */
+  --marquee-bg:            rgba(242,247,243,0.96);
+  --marquee-border:        rgba(26,86,50,0.12);
+  --marquee-text:          rgba(26,46,34,0.28);
+  --marquee-dot:           rgba(26,86,50,0.38);
+
+  /* ── Content cards ─────────────────────────────── */
+  --card-bg:               #FFFFFF;
+  --card-border:           rgba(26,86,50,0.11);
+  --news-bg:               rgba(248,253,250,0.85);
+  --news-border:           rgba(26,86,50,0.11);
+  --welcome-bg:            rgba(26,86,50,0.07);
+  --welcome-border:        rgba(26,86,50,0.16);
+
+  /* ── Stats ─────────────────────────────────────── */
+  --stats-bg:              rgba(26,86,50,0.04);
+  --stats-border:          rgba(26,86,50,0.12);
+  --stats-divider:         rgba(26,86,50,0.10);
+  --stats-value:           #1A5632;
+
+  /* ── Territory map ─────────────────────────────── */
+  --territory-overlay:     linear-gradient(180deg,rgba(6,15,9,0.92) 0%,rgba(6,15,9,0.80) 40%,rgba(6,15,9,0.70) 70%,rgba(6,15,9,0.86) 100%);
+  --territory-stat-outer:  rgba(0,152,70,0.15);
+  --territory-stat-inner:  rgba(6,15,9,0.55);
+  --territory-tag-bg:      rgba(0,152,70,0.18);
+  --territory-tag-border:  rgba(0,152,70,0.3);
+  --territory-tag-text:    rgba(255,255,255,0.75);
+
+  /* ── Note badge ─────────────────────────────────── */
+  --note-bg:               rgba(251,191,36,0.10);
+  --note-border:           rgba(251,191,36,0.22);
+  --note-text:             #B45309;
+}
+
+/* ── DARK FOREST overrides ─────────────────────────── */
+.dark {
+  /* Tailwind semantic token overrides */
+  --color-bg:              #060f09;
+  --color-bg-alt:          #091a0e;
+  --color-surface:         rgba(9,26,14,0.80);
+  --color-border:          rgba(0,152,70,0.12);
+  --color-text:            rgba(255,255,255,0.85);
+  --color-text-light:      rgba(255,255,255,0.65);
+  --color-text-muted:      rgba(255,255,255,0.40);
+
+  --shell-bg:              #060f09;
+
+  --nav-bg:                linear-gradient(180deg,#060f09 0%,#091a0e 55%,#0c1f14 100%);
+  --nav-border:            rgba(0,152,70,0.14);
+  --nav-text:              rgba(255,255,255,0.75);
+  --nav-text-muted:        rgba(255,255,255,0.38);
+  --nav-text-locked:       rgba(255,255,255,0.22);
+  --nav-active-pill:       rgba(0,152,70,0.28);
+  --nav-active-border:     rgba(0,152,70,0.28);
+  --nav-active-text:       #d1fae5;
+  --nav-hover-bg:          rgba(255,255,255,0.05);
+  --nav-section-label:     rgba(255,255,255,0.20);
+  --nav-separator:         rgba(0,152,70,0.15);
+  --nav-user-card-bg:      rgba(0,152,70,0.10);
+  --nav-user-card-border:  rgba(0,152,70,0.20);
+  --nav-user-name:         rgba(255,255,255,0.85);
+  --nav-user-role:         rgba(74,222,128,0.50);
+  --nav-online-ring:       #0a1a0e;
+  --nav-login-bg:          rgba(0,152,70,0.20);
+  --nav-login-border:      rgba(0,152,70,0.30);
+  --nav-login-text:        #d1fae5;
+  --nav-action-bg:         rgba(0,152,70,0.15);
+  --nav-action-border:     rgba(0,152,70,0.25);
+  --nav-action-text:       #d1fae5;
+  --nav-logout-text:       rgba(255,255,255,0.30);
+  --nav-close-text:        rgba(255,255,255,0.40);
+  --nav-logo-glow:         rgba(0,152,70,0.35);
+  --nav-topo-stroke:       #4ade80;
+  --nav-topo-opacity:      0.08;
+  --nav-map-blend:         luminosity;
+  --nav-map-opacity:       0.045;
+  --nav-orb-color:         rgba(0,152,70,0.18);
+  --nav-dot-grid:          rgba(0,152,70,0.12);
+  --nav-overlay-bg:        rgba(0,0,0,0.60);
+
+  --topbar-bg:             rgba(6,15,9,0.92);
+  --topbar-border:         rgba(0,152,70,0.14);
+  --topbar-text:           rgba(255,255,255,0.85);
+  --topbar-text-muted:     rgba(255,255,255,0.45);
+  --topbar-text-active:    #4ade80;
+  --topbar-icon-off:       rgba(255,255,255,0.45);
+  --topbar-icon-on:        #4ade80;
+  --topbar-icon-on-bg:     rgba(0,152,70,0.12);
+  --topbar-icon-on-bg2:    rgba(0,152,70,0.15);
+  --topbar-search-bg:      rgba(255,255,255,0.07);
+  --topbar-search-border:  rgba(0,152,70,0.18);
+  --topbar-search-text:    rgba(255,255,255,0.80);
+  --topbar-sep:            rgba(0,152,70,0.20);
+  --topbar-active-ul:      #4ade80;
+  --topbar-ph-opacity:     0.30;
+
+  --tabs-bg:               rgba(6,15,9,0.94);
+  --tabs-border:           rgba(0,152,70,0.14);
+  --tabs-text:             rgba(255,255,255,0.38);
+  --tabs-active-text:      #4ade80;
+  --tabs-active-bg:        rgba(0,152,70,0.18);
+  --tabs-locked-text:      rgba(255,255,255,0.18);
+
+  --hero-grad:             linear-gradient(135deg,#0c1f14 0%,#0f2b1a 50%,#122e1d 100%);
+  --hero-title-color:      #C8E6CE;
+  --hero-title-accent:     rgba(176,203,31,0.92);
+  --hero-sub-color:        rgba(255,255,255,0.55);
+  --hero-accent-color:     #B0CB1F;
+  --hero-eyebrow-border:   rgba(176,203,31,0.28);
+  --hero-eyebrow-bg:       rgba(0,152,70,0.10);
+  --hero-eyebrow-text:     rgba(176,203,31,0.90);
+  --hero-eyebrow-dot:      #B0CB1F;
+  --hero-dot-color:        rgba(0,152,70,0.055);
+  --hero-orb-1:            rgba(0,152,70,0.14);
+  --hero-orb-2:            rgba(247,172,66,0.10);
+  --hero-top-line:         linear-gradient(90deg,transparent,rgba(0,152,70,0.45),rgba(176,203,31,0.25),transparent);
+  --hero-cta-ghost-bg:     rgba(255,255,255,0.05);
+  --hero-cta-ghost-border: rgba(255,255,255,0.14);
+  --hero-cta-ghost-text:   rgba(255,255,255,0.75);
+  --hero-scroll-color:     rgba(255,255,255,0.25);
+
+  --marquee-bg:            rgba(6,15,9,0.90);
+  --marquee-border:        rgba(0,152,70,0.12);
+  --marquee-text:          rgba(255,255,255,0.28);
+  --marquee-dot:           rgba(74,222,128,0.55);
+
+  /* ── Content cards ─────────────────────────────── */
+  --card-bg:               rgba(9,26,14,0.80);
+  --card-border:           rgba(0,152,70,0.12);
+  --news-bg:               rgba(9,26,14,0.75);
+  --news-border:           rgba(0,152,70,0.14);
+  --welcome-bg:            rgba(0,152,70,0.10);
+  --welcome-border:        rgba(0,152,70,0.18);
+
+  /* ── Stats ─────────────────────────────────────── */
+  --stats-bg:              rgba(0,152,70,0.06);
+  --stats-border:          rgba(0,152,70,0.14);
+  --stats-divider:         rgba(0,152,70,0.10);
+  --stats-value:           #4ade80;
+
+  /* ── Territory map ─────────────────────────────── */
+  --territory-overlay:     linear-gradient(180deg,rgba(6,15,9,0.92) 0%,rgba(6,15,9,0.72) 30%,rgba(6,15,9,0.55) 60%,rgba(6,15,9,0.98) 100%);
+  --territory-stat-outer:  rgba(0,152,70,0.15);
+  --territory-stat-inner:  rgba(6,15,9,0.55);
+  --territory-tag-bg:      rgba(0,152,70,0.18);
+  --territory-tag-border:  rgba(0,152,70,0.3);
+  --territory-tag-text:    rgba(255,255,255,0.75);
+
+  /* ── Note badge ─────────────────────────────────── */
+  --note-bg:               rgba(251,191,36,0.08);
+  --note-border:           rgba(251,191,36,0.18);
+  --note-text:             #FCD34D;
+}
+
+/* ── Dark mode: topbar placeholder ─────────────────── */
+.dark .topbar-search::placeholder {
+  color: rgba(255,255,255,0.30);
+}
+.topbar-search::placeholder {
+  color: rgba(26,46,34,0.35);
 }
