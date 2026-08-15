@@ -812,7 +812,7 @@ h1, h2, h3, .font-display {
   --topbar-ph-opacity:     0.35;
 
   /* ── BottomTabs ────────────────────────────────── */
-  --tabs-bg:               rgba(255,255,255,0.97);
+  --tabs-bg:               rgba(255,255,255,0.72);
   --tabs-border:           rgba(26,86,50,0.10);
   --tabs-text:             rgba(26,46,34,0.36);
   --tabs-active-text:      #1A5632;
@@ -943,7 +943,7 @@ h1, h2, h3, .font-display {
   --topbar-active-ul:      #4ade80;
   --topbar-ph-opacity:     0.30;
 
-  --tabs-bg:               rgba(6,15,9,0.94);
+  --tabs-bg:               rgba(6,15,9,0.72);
   --tabs-border:           rgba(0,152,70,0.14);
   --tabs-text:             rgba(255,255,255,0.38);
   --tabs-active-text:      #4ade80;

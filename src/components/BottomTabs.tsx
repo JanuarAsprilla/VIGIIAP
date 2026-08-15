@@ -20,8 +20,10 @@ export default function BottomTabs() {
       className="fixed bottom-0 inset-x-0 z-50 lg:hidden"
       style={{
         background: 'var(--tabs-bg)',
-        backdropFilter: 'blur(20px) saturate(160%)',
+        backdropFilter: 'blur(28px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(180%)',
         borderTop: '1px solid var(--tabs-border)',
+        boxShadow: 'inset 0 1px 0 var(--glass-specular)',
       }}
       aria-label="Navegación principal"
     >
