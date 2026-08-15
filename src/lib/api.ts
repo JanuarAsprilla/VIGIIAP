@@ -55,11 +55,24 @@ api.interceptors.response.use(
     const originalReq  = err.config
     const isRefreshCall = originalReq?.url?.includes('/auth/refresh')
 
-    if (status === 401 && originalReq && !originalReq._retried && !isRefreshCall) {
-      originalReq._retried = true
-      const refreshed = await attemptRefresh()
-      if (refreshed) return api(originalReq)
+    if (status === 401) {
+      // Único camino que NO cierra sesión: primer 401 de esta petición,
+      // con config disponible para reintentar, que no sea el propio
+      // /auth/refresh, y cuyo refresh efectivamente funcione.
+      const canRetry = originalReq && !originalReq._retried && !isRefreshCall
+      if (canRetry) {
+        originalReq._retried = true
+        const refreshed = await attemptRefresh()
+        if (refreshed) return api(originalReq)
+      }
 
+      // Todo lo demás — sin config, ya reintentado, es el propio refresh,
+      // o el refresh falló — es una sesión muerta de verdad. Antes esta
+      // rama solo se ejecutaba en el primer 401: si el reintento posterior
+      // al refresh volvía a dar 401 (refresh "exitoso" pero sesión igual
+      // inválida), el cliente se quedaba con isAuthenticated=true para
+      // siempre mientras el servidor seguía rechazando cada petición —
+      // estado inconsistente que nunca se autocorregía.
       clearLocalSession()
       window.dispatchEvent(new Event('vigiiap:logout'))
     }
