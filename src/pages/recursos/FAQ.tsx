@@ -20,10 +20,10 @@ function FAQItem({ faq, index }: { faq: { q: string; a: string }; index: number 
       initial={{ opacity: 0, y: 20, rotateX: 5, scale: 0.97 }}
       animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
       transition={{ delay: index * 0.05, duration: 0.45, ease: EASE_OUT_EXPO }}
-      style={{ transformPerspective: 900 }}
+      style={{ transformPerspective: 900, background: 'var(--card-bg)' }}
       glow="rgba(26,86,50,0.14)"
       intensity={3}
-      className="bg-white border border-border/70 rounded-xl overflow-hidden"
+      className="border border-border/70 rounded-xl overflow-hidden"
       whileHover={{ y: -2 }}
     >
       <button
