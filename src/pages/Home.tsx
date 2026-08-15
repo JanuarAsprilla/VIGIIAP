@@ -76,15 +76,15 @@ function HeroSection() {
   return (
     <section
       className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
-      style={{ background: 'linear-gradient(160deg, #050e09 0%, #0a1f10 50%, #050e09 100%)' }}
+      style={{ background: 'var(--hero-grad)' }}
     >
-      {/* ── Fondo atmosférico CSS ── */}
+      {/* ── Fondo atmosférico CSS — dual-tema vía var(--hero-*) ── */}
       {/* Grid perspectiva suelo */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ perspective: '500px' }}>
         <div className="absolute bottom-0 left-0 right-0 h-[40%]" style={{
           transform: 'rotateX(60deg)',
           transformOrigin: 'bottom center',
-          backgroundImage: 'linear-gradient(rgba(0,152,70,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(0,152,70,0.07) 1px,transparent 1px)',
+          backgroundImage: 'linear-gradient(var(--hero-dot-color) 1px,transparent 1px),linear-gradient(90deg,var(--hero-dot-color) 1px,transparent 1px)',
           backgroundSize: '60px 60px',
           maskImage: 'linear-gradient(to top,rgba(0,0,0,0.4) 0%,transparent 100%)',
         }} />
@@ -98,23 +98,23 @@ function HeroSection() {
 
       {/* Scanline */}
       <motion.div className="absolute inset-x-0 h-px pointer-events-none"
-        style={{ background: 'linear-gradient(90deg,transparent,rgba(116,198,157,0.3),transparent)' }}
+        style={{ background: 'var(--hero-top-line)' }}
         animate={{ top: ['0%', '100%'] }}
         transition={{ duration: 4, repeat: Infinity, ease: 'linear' }} />
 
       {/* Orbs ambientales */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle,rgba(0,152,70,0.12) 0%,transparent 70%)', filter: 'blur(40px)' }} />
+        style={{ background: 'radial-gradient(circle,var(--hero-orb-1) 0%,transparent 70%)', filter: 'blur(40px)' }} />
       <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle,rgba(26,86,50,0.10) 0%,transparent 70%)', filter: 'blur(50px)' }} />
+        style={{ background: 'radial-gradient(circle,var(--hero-orb-2) 0%,transparent 70%)', filter: 'blur(50px)' }} />
 
       {/* Dot grid */}
-      <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{ backgroundImage: 'radial-gradient(circle,rgba(116,198,157,0.8) 1px,transparent 1px)', backgroundSize: '32px 32px' }} />
+      <div className="absolute inset-0 opacity-[0.5] pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(circle,var(--hero-dot-color) 1px,transparent 1px)', backgroundSize: '32px 32px' }} />
 
-      {/* Overlay gradient bottom */}
+      {/* Overlay gradient bottom — funde con la sección siguiente (siempre var(--color-bg)) */}
       <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, transparent, #050e09)' }} />
+        style={{ background: 'linear-gradient(to bottom, transparent, var(--color-bg))' }} />
 
       {/* Content */}
       <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
@@ -122,27 +122,28 @@ function HeroSection() {
           initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: EASE }}
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-5 text-xs font-bold uppercase tracking-[0.25em]"
-          style={{ background: 'rgba(0,152,70,0.15)', border: '1px solid rgba(0,152,70,0.3)', color: '#74C69D' }}
+          style={{ background: 'var(--hero-eyebrow-bg)', border: '1px solid var(--hero-eyebrow-border)', color: 'var(--hero-eyebrow-text)' }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#74C69D] animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--hero-eyebrow-dot)' }} />
           IIAP · Información Ambiental
         </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
-          className="font-display font-bold text-white mb-4 leading-[1.08]"
-          style={{ fontSize: 'clamp(1.8rem, 3.2vw, 3rem)' }}
+          className="font-display font-bold mb-4 leading-[1.08]"
+          style={{ fontSize: 'clamp(1.8rem, 3.2vw, 3rem)', color: 'var(--hero-title-color)' }}
         >
           El conocimiento ambiental
-          <span className="block" style={{ color: '#74C69D' }}>del Chocó Biogeográfico,</span>
+          <span className="block" style={{ color: 'var(--hero-title-accent)' }}>del Chocó Biogeográfico,</span>
           custodiado y disponible.
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-sm text-white/60 max-w-xl mx-auto mb-7 leading-relaxed"
+          className="text-sm max-w-xl mx-auto mb-7 leading-relaxed"
+          style={{ color: 'var(--hero-sub-color)' }}
         >
           VIGIA-IIAP es la plataforma digital del Instituto de Investigaciones Ambientales del Pacífico (IIAP) para la gestión de información ambiental del Chocó Biogeográfico.
           Mapas, documentos técnicos, herramientas SIG y trámites — todo en un solo lugar.
@@ -156,15 +157,15 @@ function HeroSection() {
           <Link
             to="/mapas"
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm no-underline transition-all hover:scale-[1.03]"
-            style={{ background: '#009846', color: '#fff' }}
+            style={{ background: 'var(--brand-gradient)', color: '#fff' }}
           >
             Explorar la plataforma
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             to="/solicitar-acceso"
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm no-underline border transition-all hover:bg-white/10"
-            style={{ border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.85)' }}
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm no-underline border transition-all"
+            style={{ background: 'var(--hero-cta-ghost-bg)', border: '1px solid var(--hero-cta-ghost-border)', color: 'var(--hero-cta-ghost-text)' }}
           >
             Solicitar acceso
           </Link>
@@ -173,15 +174,15 @@ function HeroSection() {
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 0.6 }}
-          className="mt-8 inline-flex items-center gap-6 px-6 py-3 rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+          className="glass-panel mt-8 inline-flex items-center gap-6 px-6 py-3 rounded-2xl"
+          style={{ background: 'var(--stats-bg)', borderColor: 'var(--stats-border)' }}
         >
           {HERO_STATS.map((s, i) => (
             <div key={s.label} className="flex items-center gap-4">
-              {i > 0 && <div className="w-px h-6 bg-white/10" />}
+              {i > 0 && <div className="w-px h-6" style={{ background: 'var(--stats-divider)' }} />}
               <div className="text-center">
-                <p className="text-white font-bold text-lg leading-none">{s.value}</p>
-                <p className="text-white/40 text-[0.6rem] uppercase tracking-wider mt-0.5">{s.label}</p>
+                <p className="font-bold text-lg leading-none" style={{ color: 'var(--stats-value)' }}>{s.value}</p>
+                <p className="text-[0.6rem] uppercase tracking-wider mt-0.5" style={{ color: 'var(--hero-sub-color)', opacity: 0.7 }}>{s.label}</p>
               </div>
             </div>
           ))}
@@ -193,7 +194,7 @@ function HeroSection() {
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
         animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 2 }}
       >
-        <ChevronDown className="w-5 h-5 text-white/30" aria-hidden="true" />
+        <ChevronDown className="w-5 h-5" style={{ color: 'var(--hero-scroll-color)' }} aria-hidden="true" />
       </motion.div>
     </section>
   )
