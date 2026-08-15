@@ -3,15 +3,13 @@
  * Light (default): editorial blanco con textura verde-sage
  * Dark: dark forest — mapa del Chocó como textura + orbe verde
  */
-import { useState } from 'react'
 import type { AuthUser } from '@/contexts/AuthContext'
 import { NavLink, Link } from 'react-router-dom'
-import { PlusCircle, LogOut, X, Sparkles, Lock, Shield, ChevronRight, type LucideIcon } from 'lucide-react'
+import { LogOut, X, Lock, Shield, ChevronRight, type LucideIcon } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/lib/constants/roles'
 import { motion, AnimatePresence } from 'framer-motion'
-import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
 
 
 const RESTRICTED_PATHS = ['/geovisor', '/herramientas', '/solicitudes']
@@ -121,62 +119,13 @@ function SidebarLink({ link, onClose, userRole, isAuthenticated }: {
   )
 }
 
-// ── User card ─────────────────────────────────────────────────────────────────
-function UserMiniCard({ user }: { user: AuthUser }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -6 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -6 }}
-      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
-      className="mx-3 mt-2 mb-0.5"
-    >
-      <div
-        className="flex items-center gap-2.5 p-2.5 rounded-xl"
-        style={{
-          background: 'var(--nav-user-card-bg)',
-          backdropFilter: 'blur(10px) saturate(160%)',
-          WebkitBackdropFilter: 'blur(10px) saturate(160%)',
-          border: '1px solid var(--nav-user-card-border)',
-          boxShadow: 'inset 0 1px 0 var(--glass-specular)',
-        }}
-      >
-        <div className="relative shrink-0">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
-            style={{ background: 'var(--brand-gradient)' }}
-          >
-            <span className="text-white text-xs font-bold">{user.initials}</span>
-          </div>
-          <span
-            className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-            style={{ background: '#4ade80', borderColor: 'var(--nav-online-ring)' }}
-            aria-label="En línea"
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p
-            className="text-xs font-bold truncate leading-tight"
-            style={{ color: 'var(--nav-user-name)' }}
-          >
-            {user.name}
-          </p>
-          <p
-            className="text-[0.6rem] uppercase tracking-wider truncate"
-            style={{ color: 'var(--nav-user-role)' }}
-          >
-            {user.role}
-          </p>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
+// Nota: la tarjeta de usuario (avatar+nombre+rol) se retiró de aquí — el
+// TopBar ya la muestra a la derecha; mostrarla también en el sidebar era
+// redundante.
 
 // ── Contenido del sidebar ─────────────────────────────────────────────────────
-function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }: {
+function SidebarInner({ onClose, onLogout, user, isAuthenticated }: {
   onClose: () => void
-  onOpenModal: () => void
   onLogout: () => void
   user: AuthUser | null
   isAuthenticated: boolean
@@ -247,9 +196,6 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }:
         </div>
       </div>
 
-      {/* ── User mini card — solo cuando hay sesión ── */}
-      {isAuthenticated && user && <UserMiniCard user={user} />}
-
       {/* ── Navegación ── */}
       <nav aria-label="Navegación principal" className="flex-1 py-3 px-3 overflow-y-auto">
         <p
@@ -317,7 +263,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }:
               className="space-y-1.5"
             >
               {/* Panel Admin */}
-              {user?.role === ROLES.ADMIN && (
+              {(user?.role === ROLES.ADMIN || user?.role === ROLES.SUPER_ADMIN) && (
                 <Link
                   to="/admin"
                   onClick={onClose}
@@ -340,7 +286,7 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }:
               )}
 
               {/* Visitante */}
-              {user?.isVisitante ? (
+              {user?.isVisitante && (
                 <Link
                   to="/solicitar-acceso"
                   onClick={onClose}
@@ -355,23 +301,6 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }:
                   <span>Solicitar acceso</span>
                   <ChevronRight className="w-3.5 h-3.5 ml-auto shrink-0" aria-hidden="true" />
                 </Link>
-              ) : (
-                /* Nuevo Análisis */
-                <motion.button
-                  onClick={onOpenModal}
-                  whileHover={{ scale: 1.02, boxShadow: '0 0 24px rgba(0,152,70,0.4)' }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={{ type: 'spring', stiffness: 420, damping: 24 }}
-                  className="btn-shimmer w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-white text-sm font-semibold"
-                  style={{
-                    background: 'var(--brand-gradient)',
-                    boxShadow: '0 4px 18px rgba(0,152,70,0.28)',
-                  }}
-                >
-                  <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: '#bbf7d0' }} aria-hidden="true" />
-                  <span>Nuevo Análisis</span>
-                  <PlusCircle className="w-3.5 h-3.5 ml-auto shrink-0" style={{ color: '#86efac' }} aria-hidden="true" />
-                </motion.button>
               )}
 
               {/* Cerrar sesión */}
@@ -417,7 +346,6 @@ function SidebarGrain() {
 // ── Export principal ──────────────────────────────────────────────────────────
 export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   const { isAuthenticated, user, logout } = useAuth()
-  const [showModal, setShowModal] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -426,7 +354,6 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
 
   const innerProps = {
     onClose,
-    onOpenModal: () => setShowModal(true),
     onLogout: handleLogout,
     user,
     isAuthenticated,
@@ -483,11 +410,6 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
             </motion.aside>
           </>
         )}
-      </AnimatePresence>
-
-      {/* Modal */}
-      <AnimatePresence>
-        {showModal && <NuevoAnalisisModal onClose={() => setShowModal(false)} />}
       </AnimatePresence>
     </>
   )

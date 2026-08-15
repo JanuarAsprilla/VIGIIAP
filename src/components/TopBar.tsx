@@ -252,15 +252,8 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
 
           <span className="lg:hidden text-sm font-bold tracking-wide" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
 
+          {/* Sin branding propio en desktop — el Sidebar ya lo muestra siempre visible; repetirlo aquí era redundante */}
           <div className="hidden lg:flex items-center gap-3 flex-1">
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: 'var(--brand-gradient)', boxShadow: '0 0 10px rgba(0,152,70,0.25)' }}>
-                <span className="text-white font-black text-xs font-display">V</span>
-              </div>
-              <span className="text-sm font-bold tracking-wide" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
-            </div>
-
             {/* Búsqueda contextual por página */}
             <TopBarSearchInput
               className="flex-1 max-w-sm"

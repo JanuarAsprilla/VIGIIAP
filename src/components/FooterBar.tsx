@@ -1,6 +1,25 @@
 import { Link } from 'react-router-dom'
+import { motion, useReducedMotion } from 'framer-motion'
 import { MapPin, Phone, Mail, Globe, MessageCircle, Camera, PlayCircle } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
+import { EASE_OUT_EXPO } from '@/lib/animations'
+
+// ── Reveal al hacer scroll — blur + fade-up, siempre se dispara al entrar en vista ──
+function FooterReveal({ delay = 0, className, children }: { delay?: number; className?: string; children: React.ReactNode }) {
+  const reduceMotion = useReducedMotion()
+  if (reduceMotion) return <div className={className}>{children}</div>
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16, filter: 'blur(4px)' }}
+      whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.7, delay, ease: EASE_OUT_EXPO }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  )
+}
 
 // ── Redes sociales (próximamente — placeholder hasta tener URLs reales) ──
 const socialLinks = [
@@ -39,7 +58,7 @@ export default function Footer() {
           {/* ── Main grid ── */}
           <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_2fr] gap-12 pb-8">
             {/* Brand column */}
-            <div>
+            <FooterReveal delay={0}>
               {/* Logo */}
               <div className="flex items-center gap-2 mb-6">
                 <svg viewBox="0 0 50 50" fill="none" className="w-11 h-11">
@@ -78,12 +97,12 @@ export default function Footer() {
                   </button>
                 ))}
               </div>
-            </div>
+            </FooterReveal>
 
             {/* Links columns */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
               {/* Módulos */}
-              <div>
+              <FooterReveal delay={0.1}>
                 <h4 className="text-base font-semibold mb-4">Módulos</h4>
                 <ul className="space-y-2">
                   {NAV_LINKS.filter((l) => l.path !== '/').map((link) => (
@@ -97,10 +116,10 @@ export default function Footer() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </FooterReveal>
 
               {/* Recursos */}
-              <div>
+              <FooterReveal delay={0.18}>
                 <h4 className="text-base font-semibold mb-4">Recursos</h4>
                 <ul className="space-y-2">
                   {resourceLinks.map((link) => (
@@ -114,10 +133,10 @@ export default function Footer() {
                     </li>
                   ))}
                 </ul>
-              </div>
+              </FooterReveal>
 
               {/* Contacto */}
-              <div>
+              <FooterReveal delay={0.26}>
                 <h4 className="text-base font-semibold mb-4">Contacto</h4>
                 <ul className="space-y-3">
                   <li className="flex items-center gap-2 text-sm">
@@ -133,7 +152,7 @@ export default function Footer() {
                     <span className="text-white/70">info@iiap.org.co</span>
                   </li>
                 </ul>
-              </div>
+              </FooterReveal>
             </div>
           </div>
 
