@@ -755,7 +755,11 @@ h1, h2, h3, .font-display {
   --shell-bg:              #F2F7F3;
 
   /* ── Sidebar / Navigation ─────────────────────── */
-  --nav-bg:                #F2F7F3;
+  /* Translúcido de verdad — antes era 100% opaco y el backdrop-filter no
+     tenía nada que difuminar. MainLayout pinta orbes ambientales fijos
+     detrás (z-0); con esta transparencia + blur, esos orbes se filtran
+     a través del sidebar, dando la sensación real de vidrio líquido. */
+  --nav-bg:                rgba(242,247,243,0.68);
   --nav-border:            rgba(26,86,50,0.12);
   --nav-text:              #1A2E22;
   --nav-text-muted:        rgba(26,46,34,0.45);
@@ -791,7 +795,7 @@ h1, h2, h3, .font-display {
   --nav-overlay-bg:        rgba(0,0,0,0.50);
 
   /* ── TopBar ────────────────────────────────────── */
-  --topbar-bg:             rgba(255,255,255,0.94);
+  --topbar-bg:             rgba(255,255,255,0.72);
   --topbar-border:         rgba(26,86,50,0.10);
   --topbar-text:           #1A2E22;
   --topbar-text-muted:     rgba(26,46,34,0.45);
@@ -890,7 +894,7 @@ h1, h2, h3, .font-display {
 
   --shell-bg:              #060f09;
 
-  --nav-bg:                linear-gradient(180deg,#060f09 0%,#091a0e 55%,#0c1f14 100%);
+  --nav-bg:                linear-gradient(180deg,rgba(6,15,9,0.72) 0%,rgba(9,26,14,0.72) 55%,rgba(12,31,20,0.72) 100%);
   --nav-border:            rgba(0,152,70,0.14);
   --nav-text:              rgba(255,255,255,0.75);
   --nav-text-muted:        rgba(255,255,255,0.38);
@@ -923,7 +927,7 @@ h1, h2, h3, .font-display {
   --nav-dot-grid:          rgba(0,152,70,0.12);
   --nav-overlay-bg:        rgba(0,0,0,0.60);
 
-  --topbar-bg:             rgba(6,15,9,0.92);
+  --topbar-bg:             rgba(6,15,9,0.72);
   --topbar-border:         rgba(0,152,70,0.14);
   --topbar-text:           rgba(255,255,255,0.85);
   --topbar-text-muted:     rgba(255,255,255,0.45);

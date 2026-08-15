@@ -396,25 +396,21 @@ function SidebarInner({ onClose, onOpenModal, onLogout, user, isAuthenticated }:
   )
 }
 
-// ── Fondo ambiental — compartido por desktop y mobile (antes duplicado) ──────
-function SidebarAmbientBackground() {
+// ── Textura de vidrio — solo dot-grid grabado en la superficie ───────────────
+// El orbe propio del sidebar se retiró: era redundante con los orbes de
+// MainLayout (AmbientBackground, z-0), que ahora se filtran de verdad a
+// través del vidrio translúcido del sidebar — antes ninguno de los dos
+// sistemas se veía porque --nav-bg era 100% opaco.
+function SidebarGrain() {
   return (
-    <>
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(circle, var(--nav-dot-grid) 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
-          opacity: 0.7,
-        }}
-      />
-      <div
-        className="absolute top-0 left-0 right-0 h-48 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at 50% 0%, var(--nav-orb-color) 0%, transparent 70%)',
-        }}
-      />
-    </>
+    <div
+      className="absolute inset-0 pointer-events-none"
+      style={{
+        backgroundImage: 'radial-gradient(circle, var(--nav-dot-grid) 1px, transparent 1px)',
+        backgroundSize: '24px 24px',
+        opacity: 0.5,
+      }}
+    />
   )
 }
 
@@ -436,12 +432,14 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
     isAuthenticated,
   }
 
-  /* Superficie estructural: material pesado (Apple: darker/heavier materials
-     separate structural regions). Sin backdrop-filter — no hay contenido detrás
-     que difuminar (el layout usa ml-[210px], no stacking), pero el filo
-     especular superior sí comunica "vidrio" en una superficie sólida. */
+  /* Vidrio real: --nav-bg ahora es translúcido (antes 100% opaco, por lo que
+     el backdrop-filter no tenía nada que difuminar). MainLayout pinta orbes
+     ambientales fijos detrás del sidebar (z-0, sidebar en z-40); con blur +
+     transparencia esos orbes se filtran a través, dando profundidad real. */
   const sidebarStyle = {
     background: 'var(--nav-bg)',
+    backdropFilter: 'blur(24px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     borderRight: '1px solid var(--nav-border)',
     boxShadow: 'inset -1px 0 0 var(--glass-specular), inset 0 1px 0 var(--glass-specular)',
   }
@@ -453,11 +451,11 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
         className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[210px] flex-col z-40 overflow-hidden"
         style={sidebarStyle}
       >
-        <SidebarAmbientBackground />
+        <SidebarGrain />
         <SidebarInner {...innerProps} />
       </aside>
 
-      {/* Mobile — flota sobre el contenido real con scrim: aquí el glass sí tiene algo detrás que difuminar */}
+      {/* Mobile — mismo material, blur más fuerte al flotar sobre el contenido real */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -478,9 +476,9 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
               exit={{ x: -260 }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
               className="fixed top-0 left-0 bottom-0 w-[240px] z-50 flex flex-col overflow-hidden lg:hidden"
-              style={{ ...sidebarStyle, backdropFilter: 'blur(28px) saturate(180%)', WebkitBackdropFilter: 'blur(28px) saturate(180%)' }}
+              style={{ ...sidebarStyle, backdropFilter: 'blur(32px) saturate(180%)', WebkitBackdropFilter: 'blur(32px) saturate(180%)' }}
             >
-              <SidebarAmbientBackground />
+              <SidebarGrain />
               <SidebarInner {...innerProps} />
             </motion.aside>
           </>
