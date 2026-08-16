@@ -17,6 +17,7 @@ import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { useMapasList } from '@/hooks/useMapas'
 import { useDocumentosList } from '@/hooks/useDocumentos'
+import InstitutionalRevealSection from '@/components/InstitutionalRevealSection'
 
 const PlatformIntroSection = lazy(() => import('@/components/PlatformIntroSection'))
 
@@ -329,17 +330,6 @@ function ModuleVisual({ mod, isDark }: { mod: ModuleItem; isDark: boolean }) {
           <mod.icon className="w-12 h-12 text-white" />
         </div>
       </div>
-      {/* Floating decorative pills — vidrio con contraste garantizado sobre fondo claro u oscuro */}
-      <div className="absolute top-4 left-4 right-4 flex gap-2">
-        {[mod.tag, 'IIAP', 'Chocó'].map((t) => (
-          <span
-            key={t}
-            className={`px-2.5 py-1 rounded-full text-[0.6rem] font-bold uppercase tracking-wider ${isDark ? 'glass-chip text-white/80' : 'glass-chip-dark text-white/90'}`}
-          >
-            {t}
-          </span>
-        ))}
-      </div>
     </div>
   )
 }
@@ -580,6 +570,8 @@ export default function Home() {
         <SearchResults isVisitante={isVisitante} isPublico={isPublico} />
       ) : (
         <>
+          {/* Antes de la sigla, qué significa VIGIA-IIAP */}
+          <InstitutionalRevealSection />
           <HeroSection />
           {/* PlatformIntroSection: scrollytelling del territorio Chocó */}
           <Suspense fallback={null}><PlatformIntroSection /></Suspense>
