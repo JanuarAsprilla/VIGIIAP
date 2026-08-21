@@ -4,12 +4,15 @@
  * No hay shapefile en el proyecto; se usa el contorno verificado contra el mapa oficial IIAP.
  * Renderer: partículas circulares nítidas, corte duro, sin blur.
  */
-import { useRef, useState, useMemo, useEffect } from 'react'
+import { useRef, useState, useMemo, useEffect, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
+import type { MotionValue } from 'framer-motion'
 import * as THREE from 'three'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { useIsMobileViewport } from '@/hooks/useIsMobileViewport'
+import { CinematicChocoScene } from './CinematicChocoScene'
 import MarqueeStrip from './MarqueeStrip'
 
 // ── Polígono oficial del Chocó Biogeográfico ──────────────────────────────────
@@ -356,7 +359,22 @@ function CartographicGrid({ isDark }: { isDark: boolean }) {
 }
 
 // ── Escena ────────────────────────────────────────────────────────────────────
-function Scene({ isDark, prefersReduced }: { isDark: boolean; prefersReduced: boolean }) {
+// Desktop: escena cinematográfica 3D (modelo real de Blender, cámara scrubbed por scroll).
+// Móvil / prefers-reduced-motion: nube de partículas procedural — liviana, ya
+// validada en dispositivos de gama baja, sin descarga de modelo pesado.
+function Scene({ isDark, prefersReduced, scrollYProgress, mountCinematic }: {
+  isDark: boolean
+  prefersReduced: boolean
+  scrollYProgress: MotionValue<number>
+  mountCinematic: boolean
+}) {
+  if (mountCinematic) {
+    return (
+      <Suspense fallback={null}>
+        <CinematicChocoScene scrollYProgress={scrollYProgress} isDark={isDark} />
+      </Suspense>
+    )
+  }
   return(
     <>
       <fog attach="fog" args={[isDark?'#060f09':'#EEF5F1', 5, 24]}/>
@@ -455,15 +473,26 @@ export default function PlatformIntroSection(){
   const containerRef = useRef<HTMLDivElement>(null)
   const [phase, setPhase] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
+  const [hasBeenVisible, setHasBeenVisible] = useState(false)
   const { isDark } = useTheme()
   const prefersReduced = useReducedMotion()
+  const isMobile = useIsMobileViewport()
+  // Escena cinematográfica solo en desktop y con movimiento habilitado — en
+  // móvil o reduced-motion se mantiene la nube de partículas (más liviana).
+  const useCinematic = !isMobile && !prefersReduced
 
-  // A1: IntersectionObserver — pausa el canvas cuando no es visible en el viewport
+  // A1: IntersectionObserver — pausa el canvas cuando no es visible en el viewport.
+  // El modelo 3D solo se monta (y descarga) la primera vez que la sección entra
+  // en viewport, y permanece montado después — evita recargarlo al hacer scroll
+  // hacia atrás y evita competir con el LCP inicial de la página.
   useEffect(()=>{
     const el = containerRef.current
     if (!el) return
     const io = new IntersectionObserver(
-      ([entry]) => setIsVisible(entry.isIntersecting),
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting)
+        if (entry.isIntersecting) setHasBeenVisible(true)
+      },
       { threshold: 0.1 }
     )
     io.observe(el)
@@ -504,7 +533,12 @@ export default function PlatformIntroSection(){
               gl={{antialias:true,alpha:true}}
               style={{background:'transparent'}}
             >
-              <Scene isDark={isDark} prefersReduced={prefersReduced}/>
+              <Scene
+                isDark={isDark}
+                prefersReduced={prefersReduced}
+                scrollYProgress={scrollYProgress}
+                mountCinematic={useCinematic && hasBeenVisible}
+              />
             </Canvas>
           </div>
 
