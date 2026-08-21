@@ -11,7 +11,6 @@ import type { MotionValue } from 'framer-motion'
 import * as THREE from 'three'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
-import { useIsMobileViewport } from '@/hooks/useIsMobileViewport'
 import { CinematicChocoScene } from './CinematicChocoScene'
 import MarqueeStrip from './MarqueeStrip'
 
@@ -476,10 +475,11 @@ export default function PlatformIntroSection(){
   const [hasBeenVisible, setHasBeenVisible] = useState(false)
   const { isDark } = useTheme()
   const prefersReduced = useReducedMotion()
-  const isMobile = useIsMobileViewport()
-  // Escena cinematográfica solo en desktop y con movimiento habilitado — en
-  // móvil o reduced-motion se mantiene la nube de partículas (más liviana).
-  const useCinematic = !isMobile && !prefersReduced
+  // Misma escena cinematográfica en todos los tamaños de pantalla — la
+  // plataforma es responsive y el 3D debe verse igual en móvil/tablet que en
+  // desktop. Solo se respeta prefers-reduced-motion (accesibilidad, no una
+  // señal de tamaño de dispositivo), cayendo a la nube de partículas.
+  const useCinematic = !prefersReduced
 
   // A1: IntersectionObserver — pausa el canvas cuando no es visible en el viewport.
   // El modelo 3D solo se monta (y descarga) la primera vez que la sección entra
