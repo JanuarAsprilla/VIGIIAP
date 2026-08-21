@@ -15,8 +15,7 @@ import { ROLES } from '@/lib/constants/roles'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
-import { useMapasList } from '@/hooks/useMapas'
-import { useDocumentosList } from '@/hooks/useDocumentos'
+import { usePlatformStats } from '@/hooks/usePlatformStats'
 import InstitutionalRevealSection from '@/components/InstitutionalRevealSection'
 
 const PlatformIntroSection = lazy(() => import('@/components/PlatformIntroSection'))
@@ -69,18 +68,10 @@ function ModuleCard({ mod, index, isVisitante, isPublico }: { mod: ModuleItem; i
 }
 
 // ── Sección 1: Hero ─────────────────────────────────────────────────────────────
-// Conteos reales — GET /mapas y /documentos son públicos (optionalAuthenticate
-// en backend), así que se pueden pedir sin sesión. Antes estos números eran
-// fijos y falsos (+1,248 / +3,400 / +320); ahora reflejan meta.total real de
-// cada listado. No hay endpoint público de conteo de investigadores (listar
-// usuarios es admin-only, correctamente) — se omite en vez de simularlo.
+const HERO_STAT_LABELS: Record<string, string> = { mapas: 'Mapas', documentos: 'Documentos' }
+
 function useHeroStats() {
-  const mapas      = useMapasList({ limit: 1 })
-  const documentos = useDocumentosList({ limit: 1 })
-  return [
-    { value: mapas.data?.meta?.total,      label: 'Mapas',      loading: mapas.isPending },
-    { value: documentos.data?.meta?.total, label: 'Documentos', loading: documentos.isPending },
-  ].filter((s) => s.loading || typeof s.value === 'number')
+  return usePlatformStats().map((s) => ({ ...s, label: HERO_STAT_LABELS[s.key] }))
 }
 
 function formatStat(n: number | undefined) {

@@ -1,7 +1,8 @@
 import { type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Map, FileText, Users } from 'lucide-react'
+import { ArrowLeft, Map, FileText, type LucideIcon } from 'lucide-react'
+import { usePlatformStats } from '@/hooks/usePlatformStats'
 
 // ── Mini animated globe for left panel ──
 function GlobeDecor() {
@@ -98,14 +99,18 @@ function GlobeDecor() {
   )
 }
 
-const PANEL_STATS = [
-  { icon: Map,      value: '1,248', label: 'Mapas temáticos' },
-  { icon: FileText, value: '3,400', label: 'Documentos técnicos' },
-  { icon: Users,    value: '320',   label: 'Investigadores' },
-]
+// Conteos reales — antes eran fijos y falsos (1,248 / 3,400 / 320 "investigadores").
+// No hay endpoint público de conteo de investigadores (listar usuarios es
+// admin-only, correctamente) — se omite en vez de simularlo, igual que en el
+// hero de Home (ver usePlatformStats).
+const PANEL_STAT_META: Record<string, { icon: LucideIcon; label: string }> = {
+  mapas:      { icon: Map,      label: 'Mapas temáticos' },
+  documentos: { icon: FileText, label: 'Documentos técnicos' },
+}
 
 // ── Shared Auth Layout ──
 export default function AuthLayout({ children }: { children: ReactNode }) {
+  const stats = usePlatformStats()
   return (
     <div className="min-h-screen flex">
 
@@ -174,18 +179,24 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <motion.div className="space-y-2"
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
-            {PANEL_STATS.map(({ icon: Icon, value, label }, i) => (
-              <motion.div key={label}
-                initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 + i * 0.08 }}
-                className="flex items-center gap-3 px-4 py-2.5 bg-white/5 border border-white/8 rounded-xl backdrop-blur-sm">
-                <div className="w-7 h-7 bg-primary-800/60 rounded-lg flex items-center justify-center shrink-0">
-                  <Icon className="w-3.5 h-3.5 text-primary-300" />
-                </div>
-                <span className="text-sm font-bold text-white">{value}</span>
-                <span className="text-xs text-white/45">{label}</span>
-              </motion.div>
-            ))}
+            {stats.map(({ key, value, loading }, i) => {
+              const meta = PANEL_STAT_META[key]
+              const Icon = meta.icon
+              return (
+                <motion.div key={key}
+                  initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6 + i * 0.08 }}
+                  className="flex items-center gap-3 px-4 py-2.5 bg-white/5 border border-white/8 rounded-xl backdrop-blur-sm">
+                  <div className="w-7 h-7 bg-primary-800/60 rounded-lg flex items-center justify-center shrink-0">
+                    <Icon className="w-3.5 h-3.5 text-primary-300" />
+                  </div>
+                  <span className="text-sm font-bold text-white">
+                    {loading ? '···' : `+${value?.toLocaleString('es-CO')}`}
+                  </span>
+                  <span className="text-xs text-white/45">{meta.label}</span>
+                </motion.div>
+              )
+            })}
           </motion.div>
 
           {/* Footer */}
