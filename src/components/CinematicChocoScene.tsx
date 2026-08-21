@@ -157,7 +157,9 @@ export function CinematicChocoScene({ scrollYProgress, isDark }: CinematicChocoS
   // Emisor_Ambiente_Macro y Emisor_Estela son planos fuente de sistemas de
   // partículas de Blender — no deberían renderizarse ellos mismos, solo
   // emitir, pero al no tener material propio exportan como un cuadro gris
-  // semitransparente flotando sobre el mapa; se ocultan.
+  // semitransparente flotando sobre el mapa; se ocultan. Las esferas de
+  // chispa/luciérnaga/pulso, aun atenuadas, siguen leyéndose como una bola
+  // fuera de lugar sobre el mapa — se ocultan también.
   useEffect(() => {
     const GLOW_INTENSITY = new Map([
       ['Mat_Chispa', 0.4],
@@ -165,7 +167,13 @@ export function CinematicChocoScene({ scrollYProgress, isDark }: CinematicChocoS
       ['Mat_Pulso', 0.4],
       ['Selva_Choco_PBR', 0],
     ])
-    const HIDDEN_EMITTERS = new Set(['Emisor_Ambiente_Macro', 'Emisor_Estela'])
+    const HIDDEN_EMITTERS = new Set([
+      'Emisor_Ambiente_Macro',
+      'Emisor_Estela',
+      'Particula_Chispa_Vuelo',
+      'Particula_Luciernaga',
+      'Pulso_Biodiversidad',
+    ])
     gltf.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh
       if (!mesh.isMesh) return

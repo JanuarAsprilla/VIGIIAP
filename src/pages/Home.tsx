@@ -91,7 +91,7 @@ function HeroSection() {
   const heroStats = useHeroStats()
   return (
     <section
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
+      className="relative min-h-[80vh] lg:min-h-[78vh] flex flex-col items-center justify-center overflow-hidden py-16"
       style={{ background: 'var(--hero-grad)' }}
     >
       {/* ── Fondo atmosférico CSS — dual-tema vía var(--hero-*) ── */}

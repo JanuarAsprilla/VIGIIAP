@@ -62,9 +62,9 @@ export default function InstitutionalRevealSection() {
     <div ref={rootRef} className="relative" style={{ background: 'var(--hero-grad)' }}>
       <div
         data-parallax-layers
-        className="relative h-auto lg:h-[170vh] overflow-hidden"
+        className="relative h-auto lg:h-[128vh] overflow-hidden"
       >
-        <div className="lg:sticky lg:top-0 flex flex-col items-center justify-center min-h-[70vh] lg:h-screen px-6 py-20 lg:py-0 overflow-hidden">
+        <div className="lg:sticky lg:top-0 flex flex-col items-center justify-center min-h-[60vh] lg:h-[85vh] px-6 py-16 lg:py-0 overflow-hidden">
           {/* Capa 1 — orbes ambientales, la más lenta */}
           <div data-layer="1" className="absolute inset-0 pointer-events-none" aria-hidden="true">
             <div
