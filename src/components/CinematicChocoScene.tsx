@@ -154,6 +154,10 @@ export function CinematicChocoScene({ scrollYProgress, isDark }: CinematicChocoS
   // El clearcoat exportado (KHR_materials_clearcoat) suma su propio brillo
   // especular por cada luz de la escena — con 4 luces simultáneas termina
   // sumando un velo blanquecino sobre el verde real; se desactiva.
+  // Emisor_Ambiente_Macro y Emisor_Estela son planos fuente de sistemas de
+  // partículas de Blender — no deberían renderizarse ellos mismos, solo
+  // emitir, pero al no tener material propio exportan como un cuadro gris
+  // semitransparente flotando sobre el mapa; se ocultan.
   useEffect(() => {
     const GLOW_INTENSITY = new Map([
       ['Mat_Chispa', 0.4],
@@ -161,9 +165,14 @@ export function CinematicChocoScene({ scrollYProgress, isDark }: CinematicChocoS
       ['Mat_Pulso', 0.4],
       ['Selva_Choco_PBR', 0],
     ])
+    const HIDDEN_EMITTERS = new Set(['Emisor_Ambiente_Macro', 'Emisor_Estela'])
     gltf.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh
       if (!mesh.isMesh) return
+      if (HIDDEN_EMITTERS.has(obj.name)) {
+        obj.visible = false
+        return
+      }
       const mat = mesh.material as THREE.MeshStandardMaterial
       const intensity = mat && GLOW_INTENSITY.get(mat.name)
       if (mat && intensity !== undefined) {
