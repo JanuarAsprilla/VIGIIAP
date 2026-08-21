@@ -25,6 +25,7 @@ import SoportePanel        from './topbar/SoportePanel'
 import NotificacionesPanel from './topbar/NotificacionesPanel'
 import AjustesPanel        from './topbar/AjustesPanel'
 import ProfileDropdown     from './topbar/ProfileDropdown'
+import AvatarBadge         from './ui/AvatarBadge'
 
 // ── Constantes de configuración ──
 
@@ -91,13 +92,13 @@ function TopBarIconButton({ active, icon: Icon, label, badge, onClick, ariaLabel
     >
       <Icon className={label ? 'w-3.5 h-3.5' : 'w-[18px] h-[18px]'} aria-hidden="true" />
       {label}
-      {!!badge && badge > 0 && (
-        <span
-          aria-hidden="true"
-          className="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 px-0.5 bg-gold-500 rounded-full text-[0.6rem] font-bold text-white flex items-center justify-center leading-none"
-        >
-          {badge}
-        </span>
+      {!!badge && (
+        <AvatarBadge
+          variant="count"
+          count={badge}
+          ringColor="var(--color-bg)"
+          label={`${badge} sin leer`}
+        />
       )}
     </button>
   )
@@ -252,15 +253,8 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
 
           <span className="lg:hidden text-sm font-bold tracking-wide" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
 
+          {/* Sin branding propio en desktop — el Sidebar ya lo muestra siempre visible; repetirlo aquí era redundante */}
           <div className="hidden lg:flex items-center gap-3 flex-1">
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: 'var(--brand-gradient)', boxShadow: '0 0 10px rgba(0,152,70,0.25)' }}>
-                <span className="text-white font-black text-xs font-display">V</span>
-              </div>
-              <span className="text-sm font-bold tracking-wide" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
-            </div>
-
             {/* Búsqueda contextual por página */}
             <TopBarSearchInput
               className="flex-1 max-w-sm"
@@ -415,8 +409,9 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
                   <span className="block text-sm font-medium leading-tight" style={{color:"var(--topbar-text)"}}>{user?.name}</span>
                   <span className="block text-[0.7rem] uppercase tracking-wider" style={{color:"var(--topbar-icon-on)"}}>{user?.role}</span>
                 </div>
-                <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-800 rounded-full flex items-center justify-center shrink-0">
+                <div className="relative w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-800 rounded-full flex items-center justify-center shrink-0">
                   <span className="text-white text-sm font-bold">{user?.initials}</span>
+                  <AvatarBadge variant="dot" ringColor="var(--color-bg)" label="Sesión activa" />
                 </div>
                 <ChevronDown
                   className={`w-4 h-4 hidden sm:block transition-transform ${activePanel === 'dropdown' ? 'rotate-180' : ''}`} style={{color:"var(--topbar-icon-off)"}}

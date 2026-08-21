@@ -12,6 +12,7 @@ vi.mock('framer-motion', () => ({
     span:    ({ children, ...p }: React.HTMLAttributes<HTMLSpanElement>) => <span {...p}>{children}</span>,
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useReducedMotion: () => false,
 }))
 
 // ── Helpers ────────────────────────────────────────────────────────────────────

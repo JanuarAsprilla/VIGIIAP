@@ -2,19 +2,22 @@
  * tokens: index.css · stamp: 2026-07-02
  * VIGIA-IIAP landing — Chocó Biogeográfico
  */
-import { useState, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Map, FileText, Globe, Shield, Lock,
-  ArrowRight, ChevronDown, Users, Building2, Plus,
+  ArrowRight, ChevronDown, Users, Building2, ArrowUp,
 } from 'lucide-react'
 import { ALL_MODULES } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/lib/constants/roles'
+import { useTheme } from '@/contexts/ThemeContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
-import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
+import { useMapasList } from '@/hooks/useMapas'
+import { useDocumentosList } from '@/hooks/useDocumentos'
+import InstitutionalRevealSection from '@/components/InstitutionalRevealSection'
 
 const PlatformIntroSection = lazy(() => import('@/components/PlatformIntroSection'))
 
@@ -66,16 +69,29 @@ function ModuleCard({ mod, index, isVisitante, isPublico }: { mod: ModuleItem; i
 }
 
 // ── Sección 1: Hero ─────────────────────────────────────────────────────────────
-const HERO_STATS = [
-  { value: '+1,248', label: 'Mapas' },
-  { value: '+3,400', label: 'Documentos' },
-  { value: '+320', label: 'Investigadores' },
-]
+// Conteos reales — GET /mapas y /documentos son públicos (optionalAuthenticate
+// en backend), así que se pueden pedir sin sesión. Antes estos números eran
+// fijos y falsos (+1,248 / +3,400 / +320); ahora reflejan meta.total real de
+// cada listado. No hay endpoint público de conteo de investigadores (listar
+// usuarios es admin-only, correctamente) — se omite en vez de simularlo.
+function useHeroStats() {
+  const mapas      = useMapasList({ limit: 1 })
+  const documentos = useDocumentosList({ limit: 1 })
+  return [
+    { value: mapas.data?.meta?.total,      label: 'Mapas',      loading: mapas.isPending },
+    { value: documentos.data?.meta?.total, label: 'Documentos', loading: documentos.isPending },
+  ].filter((s) => s.loading || typeof s.value === 'number')
+}
+
+function formatStat(n: number | undefined) {
+  return typeof n === 'number' ? `+${n.toLocaleString('es-CO')}` : '—'
+}
 
 function HeroSection() {
+  const heroStats = useHeroStats()
   return (
     <section
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
+      className="relative min-h-[80vh] lg:min-h-[78vh] flex flex-col items-center justify-center overflow-hidden py-16"
       style={{ background: 'var(--hero-grad)' }}
     >
       {/* ── Fondo atmosférico CSS — dual-tema vía var(--hero-*) ── */}
@@ -171,22 +187,26 @@ function HeroSection() {
           </Link>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-          className="glass-panel mt-8 inline-flex items-center gap-6 px-6 py-3 rounded-2xl"
-          style={{ background: 'var(--stats-bg)', borderColor: 'var(--stats-border)' }}
-        >
-          {HERO_STATS.map((s, i) => (
-            <div key={s.label} className="flex items-center gap-4">
-              {i > 0 && <div className="w-px h-6" style={{ background: 'var(--stats-divider)' }} />}
-              <div className="text-center">
-                <p className="font-bold text-lg leading-none" style={{ color: 'var(--stats-value)' }}>{s.value}</p>
-                <p className="text-[0.6rem] uppercase tracking-wider mt-0.5" style={{ color: 'var(--hero-sub-color)', opacity: 0.7 }}>{s.label}</p>
+        {heroStats.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            transition={{ delay: 0.8, duration: 0.6 }}
+            className="glass-panel mt-8 inline-flex items-center gap-6 px-6 py-3 rounded-2xl"
+            style={{ background: 'var(--stats-bg)', borderColor: 'var(--stats-border)' }}
+          >
+            {heroStats.map((s, i) => (
+              <div key={s.label} className="flex items-center gap-4">
+                {i > 0 && <div className="w-px h-6" style={{ background: 'var(--stats-divider)' }} />}
+                <div className="text-center">
+                  <p className="font-bold text-lg leading-none tabular" style={{ color: 'var(--stats-value)' }}>
+                    {s.loading ? '···' : formatStat(s.value)}
+                  </p>
+                  <p className="text-[0.6rem] uppercase tracking-wider mt-0.5" style={{ color: 'var(--hero-sub-color)', opacity: 0.7 }}>{s.label}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </motion.div>
+            ))}
+          </motion.div>
+        )}
       </div>
 
       {/* Scroll indicator */}
@@ -310,22 +330,12 @@ function ModuleVisual({ mod, isDark }: { mod: ModuleItem; isDark: boolean }) {
           <mod.icon className="w-12 h-12 text-white" />
         </div>
       </div>
-      {/* Floating decorative pills — vidrio con contraste garantizado sobre fondo claro u oscuro */}
-      <div className="absolute top-4 left-4 right-4 flex gap-2">
-        {[mod.tag, 'IIAP', 'Chocó'].map((t) => (
-          <span
-            key={t}
-            className={`px-2.5 py-1 rounded-full text-[0.6rem] font-bold uppercase tracking-wider ${isDark ? 'glass-chip text-white/80' : 'glass-chip-dark text-white/90'}`}
-          >
-            {t}
-          </span>
-        ))}
-      </div>
     </div>
   )
 }
 
 function ModuleShowcaseSection() {
+  const { isDark } = useTheme()
   return (
     <section style={{ background: 'var(--color-bg)' }}>
       <div className="max-w-6xl mx-auto px-6 pt-16 pb-10 text-center">
@@ -335,11 +345,13 @@ function ModuleShowcaseSection() {
         <h2 className="font-display text-4xl font-bold text-text">Cinco herramientas. Un territorio.</h2>
       </div>
 
+      {/* Todas las filas alternan solo bg/bg-alt (dual-tema) — antes la fila
+          del Geovisor forzaba fondo negro fijo #050e09 sin importar el tema
+          del sitio; ahora respeta el mismo toggle que el resto de la página. */}
       {ALL_MODULES.map((mod, i) => {
         const isEven = i % 2 === 0
-        const isDark = i % 3 === 2
         const [, to] = parseGradient(mod.gradient)
-        const rowBg = isDark ? '#050e09' : i % 2 === 1 ? 'var(--color-bg-alt)' : 'var(--color-bg)'
+        const rowBg = i % 2 === 1 ? 'var(--color-bg-alt)' : 'var(--color-bg)'
         const ctaFrom = mod.gradient.includes('#1A5632') ? '#009846' : mod.ctaColor
         return (
           <div key={mod.id} style={{ background: rowBg }}>
@@ -354,13 +366,13 @@ function ModuleShowcaseSection() {
               </div>
 
               <div className="flex-1">
-                <span className={`text-[0.65rem] font-bold uppercase tracking-[0.25em] block mb-3 ${isDark ? 'text-primary-400' : 'text-primary-700'}`}>
+                <span className="text-[0.65rem] font-bold uppercase tracking-[0.25em] block mb-3 text-primary-700">
                   {mod.tag}
                 </span>
-                <h3 className={`font-display text-3xl font-bold mb-4 leading-tight ${isDark ? 'text-white' : 'text-text'}`}>
+                <h3 className="font-display text-3xl font-bold mb-4 leading-tight text-text">
                   {mod.title}
                 </h3>
-                <p className={`text-sm leading-relaxed mb-8 ${isDark ? 'text-white/60' : 'text-text-muted'}`}>
+                <p className="text-sm leading-relaxed mb-8 text-text-muted">
                   {mod.description}
                 </p>
                 <Link
@@ -401,16 +413,16 @@ const PROFILES = [
 
 function ForWhomSection() {
   return (
-    <section className="py-20 px-6" style={{ background: '#050e09' }}>
+    <section className="py-20 px-6" style={{ background: 'var(--color-bg-alt)' }}>
       <div className="max-w-6xl mx-auto">
         <motion.div
           whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 20 }} viewport={{ once: true }}
           transition={{ duration: 0.5 }} className="text-center mb-16"
         >
-          <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] block mb-3" style={{ color: '#74C69D' }}>
+          <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] block mb-3 text-primary-700">
             Para todos
           </span>
-          <h2 className="font-display text-4xl font-bold text-white">¿Quién usa VIGIA-IIAP?</h2>
+          <h2 className="font-display text-4xl font-bold text-text">¿Quién usa VIGIA-IIAP?</h2>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -420,7 +432,7 @@ function ForWhomSection() {
               whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 32 }} viewport={{ once: true, margin: '-40px' }}
               transition={{ duration: 0.55, delay: i * 0.1, ease: EASE }}
               className="rounded-2xl p-8 border relative overflow-hidden"
-              style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}
+              style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
             >
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center mb-6"
@@ -428,8 +440,8 @@ function ForWhomSection() {
               >
                 <p.icon className="w-5 h-5" style={{ color: p.accent }} />
               </div>
-              <h3 className="font-display text-lg font-bold text-white mb-3">{p.title}</h3>
-              <p className="text-sm text-white/50 leading-relaxed">{p.desc}</p>
+              <h3 className="font-display text-lg font-bold text-text mb-3">{p.title}</h3>
+              <p className="text-sm text-text-muted leading-relaxed">{p.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -510,12 +522,43 @@ function SearchResults({ isVisitante, isPublico }: { isVisitante: boolean; isPub
   )
 }
 
+// ── Botón flotante "volver arriba" — reemplaza el antiguo FAB de Nuevo Análisis ──
+function ScrollTopFab() {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 600)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Volver arriba"
+          initial={{ opacity: 0, scale: 0.7, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.7, y: 12 }}
+          whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.93 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+          className="glass-panel fixed bottom-20 lg:bottom-6 right-6 z-30 flex items-center justify-center rounded-full"
+          style={{ width: '3.25rem', height: '3.25rem', color: 'var(--hero-title-color, var(--color-text))' }}
+        >
+          <ArrowUp className="w-5 h-5" aria-hidden="true" />
+        </motion.button>
+      )}
+    </AnimatePresence>
+  )
+}
+
 // ── Home ─────────────────────────────────────────────────────────────────────────
 export default function Home() {
   const { isAuthenticated, user, isVisitante, loginVisitante } = useAuth()
   const isPublico = user?.role === ROLES.PUBLICO
   const { query } = useSearch()
-  const [showModal, setShowModal] = useState(false)
 
   const isSearching = Boolean(query.trim())
 
@@ -527,6 +570,8 @@ export default function Home() {
         <SearchResults isVisitante={isVisitante} isPublico={isPublico} />
       ) : (
         <>
+          {/* Antes de la sigla, qué significa VIGIA-IIAP */}
+          <InstitutionalRevealSection />
           <HeroSection />
           {/* PlatformIntroSection: scrollytelling del territorio Chocó */}
           <Suspense fallback={null}><PlatformIntroSection /></Suspense>
@@ -537,23 +582,7 @@ export default function Home() {
         </>
       )}
 
-      {/* FAB nuevo análisis */}
-      {isAuthenticated && !user?.isVisitante && (
-        <motion.button
-          onClick={() => setShowModal(true)}
-          aria-label="Nuevo análisis"
-          whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.93 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-          className="fixed bottom-20 lg:bottom-6 right-6 z-30 flex items-center justify-center rounded-full text-white"
-          style={{ width: '3.25rem', height: '3.25rem', background: 'linear-gradient(135deg, #F7AC42, #F08143)', boxShadow: '0 8px 32px rgba(247,172,66,0.45)', color: '#284E39' }}
-        >
-          <Plus className="w-5 h-5" aria-hidden="true" />
-        </motion.button>
-      )}
-
-      <AnimatePresence>
-        {showModal && <NuevoAnalisisModal onClose={() => setShowModal(false)} />}
-      </AnimatePresence>
+      <ScrollTopFab />
     </>
   )
 }

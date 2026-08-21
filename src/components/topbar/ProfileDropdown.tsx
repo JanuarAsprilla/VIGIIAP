@@ -8,6 +8,7 @@ import { panelAnim } from './panelAnim'
 import { ROLES } from '@/lib/constants/roles'
 import type { AuthUser } from '@/contexts/AuthContext'
 import GlassPanel from '@/components/ui/GlassPanel'
+import AvatarBadge from '@/components/ui/AvatarBadge'
 
 function RoleBadge({ user }: { user: AuthUser | null }) {
   const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE
@@ -67,8 +68,9 @@ export default function ProfileDropdown({ user, onClose, onLogout }: { user: Aut
       {/* Header */}
       <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2.5 mb-2">
-          <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-800 rounded-full flex items-center justify-center shrink-0">
+          <div className="relative w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-800 rounded-full flex items-center justify-center shrink-0">
             <span className="text-white text-xs font-bold">{user?.initials}</span>
+            <AvatarBadge variant="dot" ringColor="var(--glass-panel-bg)" label="Sesión activa" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-text truncate leading-tight">{user?.name}</p>
