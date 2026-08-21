@@ -132,7 +132,10 @@ export function CinematicChocoScene({ scrollYProgress, isDark }: CinematicChocoS
       camera.far = size * 4
       camera.updateProjectionMatrix()
     }
-    scene.fog = new THREE.Fog(isDark ? 0x060f09 : 0xeef5f1, size * 0.18, size * 0.95)
+    // El world shader del .blend ("Mundo_Selva_Nocturna") es un degradado
+    // índigo nocturno → ámbar de horizonte que no exporta a glTF — se
+    // aproxima aquí como niebla índigo (THREE.Fog solo admite un color).
+    scene.fog = new THREE.Fog(isDark ? 0x140f22 : 0xeef5f1, size * 0.18, size * 0.95)
     return () => { scene.fog = null }
   }, [gltf, camera, scene, isDark])
   /* eslint-enable react-hooks/immutability */
