@@ -98,7 +98,7 @@ interface CinematicChocoSceneProps {
 
 export function CinematicChocoScene({ scrollYProgress, isDark }: CinematicChocoSceneProps) {
   const gltf = useGLTF(MODEL_URL)
-  const { camera, scene } = useThree()
+  const { camera, scene, gl } = useThree()
 
   const rig = useMemo(() => {
     const camNames = ['CAM_01_Overview_Hero', 'CAM_02_Flythrough', 'CAM_03_Macro_Hotspot'] as const
@@ -134,10 +134,59 @@ export function CinematicChocoScene({ scrollYProgress, isDark }: CinematicChocoS
     }
     // El world shader del .blend ("Mundo_Selva_Nocturna") es un degradado
     // índigo nocturno → ámbar de horizonte que no exporta a glTF — se
-    // aproxima aquí como niebla índigo (THREE.Fog solo admite un color).
-    scene.fog = new THREE.Fog(isDark ? 0x140f22 : 0xeef5f1, size * 0.18, size * 0.95)
+    // aproxima aquí como niebla índigo (THREE.Fog solo admite un color). En
+    // claro se usa un verde salvia pálido (no blanco puro) para no lavar el
+    // territorio, con el rango empezando más lejos para conservar el primer plano.
+    scene.fog = isDark
+      ? new THREE.Fog(0x140f22, size * 0.18, size * 0.95)
+      : new THREE.Fog(0xd7e8dc, size * 0.32, size * 1.3)
     return () => { scene.fog = null }
   }, [gltf, camera, scene, isDark])
+
+  // Las intensidades de emisión horneadas en Blender (Mat_Chispa/Luciernaga/
+  // Pulso, 5x-8x) están calibradas para el pipeline de EEVEE con su propio
+  // bloom/exposición — bajo el tone-mapping ACES de three.js sin ajustar,
+  // saturan a blanco (el "sol" en vez de un brillo verde biodiversidad).
+  // Selva_Choco_PBR trae además un emissiveFactor gris plano (0.5,0.5,0.5)
+  // del nodo "Auto_Iluminacion_Segura" (red de seguridad para el preview de
+  // EEVEE) que lava el verde real de los vertex colors sin importar la luz
+  // de escena — se anula por completo, ya que la iluminación la aporta React.
+  // El clearcoat exportado (KHR_materials_clearcoat) suma su propio brillo
+  // especular por cada luz de la escena — con 4 luces simultáneas termina
+  // sumando un velo blanquecino sobre el verde real; se desactiva.
+  useEffect(() => {
+    const GLOW_INTENSITY = new Map([
+      ['Mat_Chispa', 0.4],
+      ['Mat_Luciernaga', 0.4],
+      ['Mat_Pulso', 0.4],
+      ['Selva_Choco_PBR', 0],
+    ])
+    gltf.scene.traverse((obj) => {
+      const mesh = obj as THREE.Mesh
+      if (!mesh.isMesh) return
+      const mat = mesh.material as THREE.MeshStandardMaterial
+      const intensity = mat && GLOW_INTENSITY.get(mat.name)
+      if (mat && intensity !== undefined) {
+        mat.emissiveIntensity = intensity
+      }
+      if (mat && mat.name === 'Selva_Choco_PBR') {
+        // Factor base multiplicativo sobre los vertex colors: blanco en
+        // oscuro (color real sin tocar), verde bosque real en claro (donde
+        // el fondo pálido de la página necesitaba más presencia de verde).
+        mat.color.set(isDark ? '#ffffff' : '#5fcb85')
+        ;(mat as unknown as THREE.MeshPhysicalMaterial).clearcoat = 0
+      }
+    })
+  }, [gltf, isDark])
+
+  // Exposición reducida solo mientras esta escena cinematográfica está
+  // montada — no afecta el fallback de partículas, que ya está calibrado
+  // para la exposición por defecto del Canvas.
+  useEffect(() => {
+    const prevExposure = gl.toneMappingExposure
+    gl.toneMappingExposure = 0.72
+    return () => { gl.toneMappingExposure = prevExposure }
+  }, [gl])
   /* eslint-enable react-hooks/immutability */
 
   const posA = useRef(new THREE.Vector3())
@@ -200,18 +249,18 @@ export function CinematicChocoScene({ scrollYProgress, isDark }: CinematicChocoS
       {/* Iluminación propia — los colores de los materiales (selva, océano,
           bioluminiscencia) son los reales horneados desde Blender; solo la
           intensidad de luz se adapta por tema para que se vean bien en ambos. */}
-      <ambientLight intensity={isDark ? 0.95 : 1.3} color={isDark ? '#3a8f5c' : '#ffffff'} />
+      <ambientLight intensity={isDark ? 0.42 : 0.32} color={isDark ? '#3a8f5c' : '#ffffff'} />
       <hemisphereLight
-        args={[isDark ? '#a8e6c9' : '#f4faf6', isDark ? '#04140a' : '#c8dcd0', isDark ? 0.9 : 1.1]}
+        args={[isDark ? '#a8e6c9' : '#f4faf6', isDark ? '#04140a' : '#c8dcd0', isDark ? 0.4 : 0.3]}
       />
       <directionalLight
         position={[10, 14, 8]}
-        intensity={isDark ? 1.4 : 2.1}
+        intensity={isDark ? 0.75 : 0.85}
         color={isDark ? '#bfe8cf' : '#fff4e0'}
       />
       <directionalLight
         position={[0, 4, 12]}
-        intensity={isDark ? 0.6 : 0.8}
+        intensity={isDark ? 0.3 : 0.3}
         color={isDark ? '#8fd6a8' : '#ffffff'}
       />
       <primitive object={gltf.scene} />
