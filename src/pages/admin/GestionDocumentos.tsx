@@ -416,9 +416,13 @@ export default function GestionDocumentos() {
 
   const confirmDelete = async () => {
     if (!deleteTarget) return
-    await deleteDocumento.mutateAsync(deleteTarget.id)
-    setToast(`Documento "${deleteTarget.nombre}" eliminado`)
-    setDeleteTarget(null)
+    try {
+      await deleteDocumento.mutateAsync(deleteTarget.id)
+      setToast(`Documento "${deleteTarget.nombre}" eliminado`)
+      setDeleteTarget(null)
+    } catch (err) {
+      setToast(getApiErrorMessage(err, 'No se pudo eliminar el documento. Intenta de nuevo.'))
+    }
   }
 
   // Todas las categorías: base + las que ya existen en documentos cargados + las de la tabla categorias
@@ -756,10 +760,10 @@ export default function GestionDocumentos() {
                 <span className="text-xs">Esta acción no se puede deshacer.</span>
               </p>
               <div className="flex gap-3">
-                <button onClick={() => setDeleteTarget(null)}
-                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors">Cancelar</button>
-                <button onClick={confirmDelete}
-                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">Sí, eliminar</button>
+                <button onClick={() => setDeleteTarget(null)} disabled={deleteDocumento.isPending}
+                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors disabled:opacity-50">Cancelar</button>
+                <button onClick={confirmDelete} disabled={deleteDocumento.isPending}
+                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50">{deleteDocumento.isPending ? 'Eliminando…' : 'Sí, eliminar'}</button>
               </div>
             </motion.div>
           </div>

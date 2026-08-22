@@ -486,14 +486,22 @@ export default function GestionMapas() {
   const toggleVisible = async (id: string) => {
     const m = mapas.find((x) => x.id === id)
     if (!m) return
-    try { await toggleActivo.mutateAsync({ id, activo: !m.visible }) } catch { /* silencioso */ }
+    try {
+      await toggleActivo.mutateAsync({ id, activo: !m.visible })
+    } catch (err) {
+      setToast(getApiErrorMessage(err, 'No se pudo cambiar la visibilidad del mapa.'))
+    }
   }
 
   const confirmDelete = async () => {
     if (!deleteTarget) return
-    await deleteMapa.mutateAsync(deleteTarget.id)
-    setToast(`Mapa "${deleteTarget.nombre}" eliminado`)
-    setDeleteTarget(null)
+    try {
+      await deleteMapa.mutateAsync(deleteTarget.id)
+      setToast(`Mapa "${deleteTarget.nombre}" eliminado`)
+      setDeleteTarget(null)
+    } catch (err) {
+      setToast(getApiErrorMessage(err, 'No se pudo eliminar el mapa. Intenta de nuevo.'))
+    }
   }
 
   const mapasVisibles = mapas.filter((m) => m.visible).length
@@ -891,13 +899,13 @@ export default function GestionMapas() {
                 <span className="text-xs">Esta acción no se puede deshacer.</span>
               </p>
               <div className="flex gap-3">
-                <button onClick={() => setDeleteTarget(null)}
-                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors">
+                <button onClick={() => setDeleteTarget(null)} disabled={deleteMapa.isPending}
+                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors disabled:opacity-50">
                   Cancelar
                 </button>
-                <button onClick={confirmDelete}
-                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">
-                  Sí, eliminar
+                <button onClick={confirmDelete} disabled={deleteMapa.isPending}
+                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50">
+                  {deleteMapa.isPending ? 'Eliminando…' : 'Sí, eliminar'}
                 </button>
               </div>
             </motion.div>

@@ -321,7 +321,7 @@ interface AuditLogRaw {
 type AuditListResult = { data: AuditLogRaw[] }
 
 function ActividadReciente() {
-  const { data } = useQuery<AuditListResult, Error, AuditLogRaw[]>({
+  const { data, isLoading, isError, refetch } = useQuery<AuditListResult, Error, AuditLogRaw[]>({
     queryKey: ['audit', 'recent'],
     queryFn: () => api.get('/admin/audit', { params: { limit: 7, page: 1 } }) as Promise<AuditListResult>,
     select: (res) => res.data ?? [],
@@ -349,7 +349,18 @@ function ActividadReciente() {
         </Link>
       </div>
       <div className="divide-y divide-border max-h-64 overflow-y-auto">
-        {logs.length === 0 && (
+        {isLoading && (
+          <p className="px-5 py-6 text-xs text-text-muted text-center">Cargando…</p>
+        )}
+        {isError && (
+          <div className="px-5 py-6 text-center">
+            <p className="text-xs text-red-500 mb-2">No se pudo cargar la actividad reciente.</p>
+            <button onClick={() => refetch()} className="text-xs font-semibold text-primary-700 hover:text-primary-900 transition-colors">
+              Reintentar
+            </button>
+          </div>
+        )}
+        {!isLoading && !isError && logs.length === 0 && (
           <p className="px-5 py-6 text-xs text-text-muted text-center italic">Sin actividad registrada</p>
         )}
         {logs.map((log) => {
@@ -423,7 +434,7 @@ function QuickActions() {
 
 export default function Dashboard() {
   const { user } = useAuth()
-  const { data: stats, isLoading: loadingStats } = useAdminStats()
+  const { data: stats, isLoading: loadingStats, isError: statsError, refetch: refetchStats } = useAdminStats()
   const { data: solData } = useSolicitudesAdmin({ limit: 100 })
   const { data: usrData } = useUsuariosList({ limit: 100 })
   const solicitudes = solData?.data ?? []
@@ -445,6 +456,12 @@ export default function Dashboard() {
       </motion.div>
 
       {/* KPIs */}
+      {statsError && (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-red/10 border border-red/25 rounded-xl text-sm text-red-dark">
+          <span>No se pudieron cargar las estadísticas del panel.</span>
+          <button onClick={() => refetchStats()} className="text-xs font-semibold underline shrink-0">Reintentar</button>
+        </div>
+      )}
       <KPICards stats={stats} isLoading={loadingStats} />
 
       {/* Alerta solicitudes */}

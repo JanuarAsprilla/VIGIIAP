@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { ApiMeta } from '@/types'
 import { motion } from 'framer-motion'
 import {
-  Search, Download, ChevronLeft, ChevronRight, Loader2,
+  Search, Download, ChevronLeft, ChevronRight, Loader2, AlertCircle,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
@@ -89,7 +89,7 @@ export default function Actividad() {
   const [filtroModulo, setFiltroModulo] = useState('')
   const [page, setPage] = useState(1)
 
-  const { data, isLoading } = useAuditLog({
+  const { data, isLoading, isError, refetch } = useAuditLog({
     modulo: filtroModulo || undefined,
     limit:  PAGE_SIZE,
     offset: (page - 1) * PAGE_SIZE,
@@ -199,7 +199,18 @@ export default function Actividad() {
                   </td>
                 </tr>
               )}
-              {!isLoading && filtered.length === 0 && (
+              {isError && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-10 text-center">
+                    <AlertCircle className="w-6 h-6 text-red-400 mx-auto mb-2" />
+                    <p className="text-sm text-red-500 mb-3">No se pudo cargar el registro de actividad.</p>
+                    <button onClick={() => refetch()} className="text-xs font-semibold text-primary-700 hover:text-primary-900 transition-colors">
+                      Reintentar
+                    </button>
+                  </td>
+                </tr>
+              )}
+              {!isLoading && !isError && filtered.length === 0 && (
                 <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-text-muted">Sin eventos registrados</td></tr>
               )}
               {filtered.map((log) => (

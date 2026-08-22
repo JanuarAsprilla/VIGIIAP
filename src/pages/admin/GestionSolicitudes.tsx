@@ -6,7 +6,7 @@ import type { ArchivoSolicitud, SolicitudData } from '@/hooks/useSolicitudes'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, X, CheckCircle, XCircle, Clock, Eye,
-  Download, Loader2,
+  Download, Loader2, Trash2,
   Mail, User, FileText, Send, MessageSquare, AlertCircle,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, drawerAnim, EASE_OUT_EXPO } from '@/lib/animations'
@@ -62,6 +62,7 @@ export default function GestionSolicitudes() {
 
   const [selected, setSelected] = useState<SolicitudData | null>(null)
   const [accionModal, setAccionModal] = useState<{ type: 'approve' | 'reject'; sol: SolicitudData } | null>(null)
+  const [deleteArchivoTarget, setDeleteArchivoTarget] = useState<ArchivoSolicitud | null>(null)
 
   const archivosQuery     = useSolicitudArchivos(selected?._id)
   const archivos          = archivosQuery.data ?? []
@@ -140,6 +141,7 @@ export default function GestionSolicitudes() {
     try {
       await deleteArchivo.mutateAsync({ solicitudId: selected._id, archivoId: archivo.id })
       toast(`Archivo "${archivo.nombre}" eliminado`, 'success')
+      setDeleteArchivoTarget(null)
     } catch {
       toast('Error al eliminar el archivo', 'error')
     }
@@ -516,7 +518,7 @@ export default function GestionSolicitudes() {
                             className="text-xs text-primary-700 hover:text-primary-900 font-medium ml-1 transition-colors disabled:opacity-50">
                             Descargar
                           </button>
-                          <button onClick={() => handleDeleteArchivo(a)}
+                          <button onClick={() => setDeleteArchivoTarget(a)}
                             disabled={deleteArchivo.isPending}
                             className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors disabled:opacity-50">
                             Eliminar
@@ -544,6 +546,7 @@ export default function GestionSolicitudes() {
                         rows={4}
                         value={respuesta}
                         onChange={(e) => setRespuesta(e.target.value)}
+                        maxLength={2000}
                         placeholder="Redacta la respuesta oficial. Incluye resultados del trámite, observaciones técnicas o instrucciones..."
                         className="w-full px-3 py-2.5 border border-primary-200 bg-[var(--card-bg)] rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
                       />
@@ -655,6 +658,34 @@ export default function GestionSolicitudes() {
                 >
                   {updateEstado.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   {accionModal.type === 'approve' ? 'Confirmar Aprobación' : 'Confirmar Rechazo'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete archivo confirm modal */}
+      <AnimatePresence>
+        {deleteArchivoTarget && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+              <div className="w-12 h-12 bg-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-5 h-5 text-red-dark" />
+              </div>
+              <h3 className="text-base font-bold text-text mb-2">Eliminar archivo</h3>
+              <p className="text-sm text-text-muted mb-6">
+                ¿Seguro que deseas eliminar <strong className="text-text">"{deleteArchivoTarget.nombre}"</strong>?<br />
+                <span className="text-xs">Esta acción no se puede deshacer.</span>
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeleteArchivoTarget(null)} disabled={deleteArchivo.isPending}
+                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors disabled:opacity-50">
+                  Cancelar
+                </button>
+                <button onClick={() => handleDeleteArchivo(deleteArchivoTarget)} disabled={deleteArchivo.isPending}
+                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50">
+                  {deleteArchivo.isPending ? 'Eliminando…' : 'Sí, eliminar'}
                 </button>
               </div>
             </motion.div>
