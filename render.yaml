@@ -22,6 +22,9 @@ services:
         name: Permissions-Policy
         value: camera=(), microphone=(), geolocation=(), payment=()
       - path: /*
+        name: Cross-Origin-Opener-Policy
+        value: same-origin
+      - path: /*
         name: Content-Security-Policy
         value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://pub-6c93d629c29246448421c3d6ef6a6132.r2.dev https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org; connect-src 'self' https://vigiiap-backend.onrender.com https://o4511597449838592.ingest.us.sentry.io https://*.basemaps.cartocdn.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
     routes:
