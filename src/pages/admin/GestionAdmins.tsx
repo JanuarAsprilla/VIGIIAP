@@ -76,7 +76,7 @@ function CrearAdminModal({ onClose, onSuccess }: { onClose: () => void; onSucces
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 16 }}
         transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-        className="bg-white rounded-2xl shadow-xl w-full max-w-md"
+        className="bg-[var(--card-bg)] rounded-2xl shadow-xl w-full max-w-md"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
@@ -301,7 +301,7 @@ export default function GestionAdmins() {
         animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
         transition={{ delay: 0.22, duration: 0.5, ease: EASE_OUT_EXPO }}
         style={{ transformPerspective: 900 }}
-        className="bg-white border border-border rounded-2xl overflow-hidden">
+        className="bg-[var(--card-bg)] border border-border rounded-2xl overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <h2 className="text-sm font-semibold text-text flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-primary-700" />

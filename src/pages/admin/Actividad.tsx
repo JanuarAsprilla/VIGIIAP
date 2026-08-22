@@ -161,13 +161,13 @@ export default function Actividad() {
             placeholder="Buscar por usuario, acción o descripción..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+            className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
           />
         </div>
         <select
           value={filtroModulo}
           onChange={(e) => { setFiltroModulo(e.target.value); setPage(1) }}
-          className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
+          className="px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
         >
           <option value="">Todos los módulos</option>
           {MODULOS_OPCIONES.map((m) => <option key={m} value={m}>{m}</option>)}
@@ -182,7 +182,7 @@ export default function Actividad() {
         style={{ transformPerspective: 900 }}
         glow="rgba(26,86,50,0.12)"
         intensity={3}
-        className="bg-white border border-border/70 rounded-xl overflow-hidden"
+        className="bg-[var(--card-bg)] border border-border/70 rounded-xl overflow-hidden"
         whileHover={{ y: -2 }}
       >
         <div className="overflow-x-auto">

@@ -29,7 +29,7 @@ function SectionCard({ title, icon: Icon, children, delay = 0 }: SectionCardProp
       style={{ transformPerspective: 900 }}
       glow="rgba(26,86,50,0.12)"
       intensity={3}
-      className="bg-white border border-border/70 rounded-xl overflow-hidden"
+      className="bg-[var(--card-bg)] border border-border/70 rounded-xl overflow-hidden"
       whileHover={{ y: -3 }}
     >
       <div className="flex items-center gap-2.5 px-6 py-4 border-b border-border bg-bg-alt/40">
@@ -193,7 +193,7 @@ export default function Configuracion() {
             type="text"
             value={general.siteName}
             onChange={(e) => setGeneral((g) => ({ ...g, siteName: e.target.value }))}
-            className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+            className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
           />
         </FieldRow>
         <hr className="border-border" />
@@ -202,7 +202,7 @@ export default function Configuracion() {
             type="text"
             value={general.siteDesc}
             onChange={(e) => setGeneral((g) => ({ ...g, siteDesc: e.target.value }))}
-            className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+            className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
           />
         </FieldRow>
         <hr className="border-border" />
@@ -211,7 +211,7 @@ export default function Configuracion() {
             type="text"
             value={general.region}
             onChange={(e) => setGeneral((g) => ({ ...g, region: e.target.value }))}
-            className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+            className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
           />
         </FieldRow>
         <hr className="border-border" />
@@ -230,7 +230,7 @@ export default function Configuracion() {
                 type="text"
                 value={general[key]}
                 onChange={(e) => setGeneral((g) => ({ ...g, [key]: e.target.value }))}
-                className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+                className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
               />
             </div>
           ))}
@@ -318,7 +318,7 @@ export default function Configuracion() {
                 rows={3}
                 value={mantenimiento.mensaje}
                 onChange={(e) => setMantenimiento((m) => ({ ...m, mensaje: e.target.value }))}
-                className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
+                className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
               />
             </div>
           </motion.div>

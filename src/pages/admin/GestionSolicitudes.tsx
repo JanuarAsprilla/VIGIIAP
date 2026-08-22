@@ -197,14 +197,14 @@ export default function GestionSolicitudes() {
             placeholder="Buscar por ID, tipo o solicitante..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-            className="w-full pl-9 pr-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+            className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
           />
         </div>
         <select
           value={filtroEstado}
           aria-label="Filtrar por estado de solicitud"
           onChange={(e) => { setFiltroEstado(e.target.value); setPage(1) }}
-          className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
+          className="px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
         >
           <option value="">Todos los estados</option>
           <option>Pendiente</option>
@@ -217,7 +217,7 @@ export default function GestionSolicitudes() {
           value={filtroTipo}
           aria-label="Filtrar por tipo de solicitud"
           onChange={(e) => { setFiltroTipo(e.target.value); setPage(1) }}
-          className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
+          className="px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
         >
           <option value="">Todos los tipos</option>
           {TIPOS_SOLICITUD.map((t) => <option key={t}>{t}</option>)}
@@ -232,7 +232,7 @@ export default function GestionSolicitudes() {
         style={{ transformPerspective: 900 }}
         glow="rgba(26,86,50,0.12)"
         intensity={3}
-        className="bg-white border border-border/70 rounded-xl overflow-hidden"
+        className="bg-[var(--card-bg)] border border-border/70 rounded-xl overflow-hidden"
         whileHover={{ y: -2 }}
       >
         <div className="overflow-x-auto">
@@ -349,7 +349,7 @@ export default function GestionSolicitudes() {
             <motion.div
               key="drawer"
               {...drawerAnim}
-              className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col"
+              className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-[var(--card-bg)] shadow-2xl flex flex-col"
             >
               {/* Drawer Header */}
               <div className="flex items-start justify-between px-6 py-5 border-b border-border bg-bg-alt/40 shrink-0">
@@ -545,7 +545,7 @@ export default function GestionSolicitudes() {
                         value={respuesta}
                         onChange={(e) => setRespuesta(e.target.value)}
                         placeholder="Redacta la respuesta oficial. Incluye resultados del trámite, observaciones técnicas o instrucciones..."
-                        className="w-full px-3 py-2.5 border border-primary-200 bg-white rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
+                        className="w-full px-3 py-2.5 border border-primary-200 bg-[var(--card-bg)] rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
                       />
                       <div className="flex items-center justify-between">
                         <p className={`text-xs ${respuesta.trim().length < 10 ? 'text-text-muted' : 'text-primary-700'}`}>
@@ -624,7 +624,7 @@ export default function GestionSolicitudes() {
       <AnimatePresence>
         {accionModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${accionModal.type === 'approve' ? 'bg-green-100' : 'bg-red-100'}`}>
                 {accionModal.type === 'approve' ? <CheckCircle className="w-5 h-5 text-green-600" /> : <XCircle className="w-5 h-5 text-red-600" />}
               </div>

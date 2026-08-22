@@ -61,12 +61,12 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { 
         <img src={preview} alt="Portada" className="w-full h-full object-cover" loading="eager" />
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
           <button type="button" onClick={() => inputRef.current?.click()}
-            className="px-3 py-1.5 bg-white text-text text-xs font-semibold rounded-lg hover:bg-bg-alt transition-colors">
+            className="px-3 py-1.5 bg-[var(--card-bg)] text-text text-xs font-semibold rounded-lg hover:bg-bg-alt transition-colors">
             Cambiar imagen
           </button>
           {currentFile && (
             <button type="button" onClick={() => onFile(null)}
-              className="p-1.5 bg-white text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+              className="p-1.5 bg-[var(--card-bg)] text-red-500 rounded-lg hover:bg-red-50 transition-colors">
               <X className="w-4 h-4" />
             </button>
           )}
@@ -146,7 +146,7 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] as const }}
       glow="rgba(26,86,50,0.16)"
       intensity={5}
-      className="bg-white border border-border/70 rounded-2xl overflow-hidden flex flex-col"
+      className="bg-[var(--card-bg)] border border-border/70 rounded-2xl overflow-hidden flex flex-col"
       whileHover={{ y: -4 }}
     >
       {/* Imagen */}
@@ -310,7 +310,7 @@ export default function GestionCategorias() {
 
       {/* Estado vacío */}
       {!isLoading && categorias.length === 0 && (
-        <motion.div {...fadeUp(0.08)} className="flex flex-col items-center justify-center py-20 text-center bg-white border border-dashed border-border rounded-2xl">
+        <motion.div {...fadeUp(0.08)} className="flex flex-col items-center justify-center py-20 text-center bg-[var(--card-bg)] border border-dashed border-border rounded-2xl">
           <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mb-4">
             <FolderOpen className="w-8 h-8 text-primary-400" />
           </div>
@@ -354,7 +354,7 @@ export default function GestionCategorias() {
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
             onClick={(e) => { if (e.target === e.currentTarget && !isSaving) setShowNew(false) }}
           >
-            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-md">
               <div className="flex items-center justify-between px-6 py-5 border-b border-border">
                 <div>
                   <h3 className="text-base font-bold text-text">Nueva categoría</h3>
@@ -378,7 +378,7 @@ export default function GestionCategorias() {
                     placeholder="Ej: Estudios Socioeconómicos"
                     autoFocus
                     onChange={(e) => { setNewName(e.target.value); setNewError(null) }}
-                    className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${newError ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                    className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${newError ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
                   />
                   {newError && <p className="text-xs text-red-500 mt-1">{newError}</p>}
                 </div>
@@ -411,7 +411,7 @@ export default function GestionCategorias() {
       <AnimatePresence>
         {deleteTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trash2 className="w-5 h-5 text-red-600" />
               </div>

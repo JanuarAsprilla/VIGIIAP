@@ -110,7 +110,7 @@ function CategoryCombobox({ value, onChange, allCategories }: { value: string; o
           placeholder="Selecciona o escribe una categoría nueva…"
           onChange={(e) => { setInput(e.target.value); onChange(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
-          className="w-full pl-8 pr-8 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+          className="w-full pl-8 pr-8 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
         />
         <button
           type="button"
@@ -129,7 +129,7 @@ function CategoryCombobox({ value, onChange, allCategories }: { value: string; o
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-30 top-full mt-1 w-full bg-white border border-border rounded-xl shadow-xl overflow-hidden"
+            className="absolute z-30 top-full mt-1 w-full bg-[var(--card-bg)] border border-border rounded-xl shadow-xl overflow-hidden"
             style={{ maxHeight: '14rem', overflowY: 'auto' }}
           >
             {filtered.length > 0 && (
@@ -231,7 +231,7 @@ function VisibilidadSelector({ value, onChange }: { value: string; onChange: (v:
         {VISIBILIDAD.map(({ value: v, label, icon: Icon, color }) => (
           <button key={v} type="button" onClick={() => onChange(v)}
             className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 text-xs font-semibold transition-all text-center ${
-              value === v ? color : 'bg-white text-text-muted border-border hover:border-primary-300'
+              value === v ? color : 'bg-[var(--card-bg)] text-text-muted border-border hover:border-primary-300'
             }`}
           >
             <Icon className="w-4 h-4" />
@@ -465,7 +465,7 @@ export default function GestionDocumentos() {
               className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
                 filtroCategoria === c.label
                   ? 'bg-primary-800 text-white border-primary-800'
-                  : 'bg-white text-text-muted border-border hover:border-primary-800 hover:text-primary-800'
+                  : 'bg-[var(--card-bg)] text-text-muted border-border hover:border-primary-800 hover:text-primary-800'
               }`}>
               {c.label} <span className="ml-1 opacity-70">{c.count}</span>
             </button>
@@ -479,10 +479,10 @@ export default function GestionDocumentos() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input type="text" aria-label="Buscar documentos por nombre o autor" placeholder="Buscar documento por nombre o autor…"
             value={search} onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition" />
+            className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition" />
         </div>
         <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}
-          className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition">
+          className="px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition">
           <option value="">Todos los tipos</option>
           {TIPOS.map((t) => <option key={t}>{t}</option>)}
         </select>
@@ -502,7 +502,7 @@ export default function GestionDocumentos() {
 
       {/* Empty state */}
       {!isLoading && !isError && docs.length === 0 && (
-        <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-white border border-dashed border-border rounded-2xl">
+        <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-[var(--card-bg)] border border-dashed border-border rounded-2xl">
           <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mb-4">
             <FolderOpen className="w-8 h-8 text-primary-400" />
           </div>
@@ -524,7 +524,7 @@ export default function GestionDocumentos() {
             style={{ transformPerspective: 900 }}
             glow="rgba(26,86,50,0.12)"
             intensity={3}
-            className="bg-white border border-border/70 rounded-xl overflow-hidden"
+            className="bg-[var(--card-bg)] border border-border/70 rounded-xl overflow-hidden"
             whileHover={{ y: -2 }}
           >
           <div className="overflow-x-auto">
@@ -599,10 +599,10 @@ export default function GestionDocumentos() {
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
             onClick={(e) => { if (e.target === e.currentTarget && !isSubmitting) setShowModal(false) }}>
-            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
 
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-border sticky top-0 bg-white z-10">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-border sticky top-0 bg-[var(--card-bg)] z-10">
                 <div>
                   <h3 className="text-base font-bold text-text">
                     {editing ? 'Editar documento' : 'Ingresar nuevo documento'}
@@ -631,7 +631,7 @@ export default function GestionDocumentos() {
                         className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition-all ${
                           form.tipo === t
                             ? 'bg-primary-800 text-white border-primary-800 shadow-sm'
-                            : 'bg-white text-text-muted border-border hover:border-primary-400'
+                            : 'bg-[var(--card-bg)] text-text-muted border-border hover:border-primary-400'
                         }`}>
                         {t === 'PDF'   && <FileText className="w-4 h-4" />}
                         {t === 'Word'  && <FileText className="w-4 h-4" />}
@@ -664,7 +664,7 @@ export default function GestionDocumentos() {
                   <input id="gd-nombre" type="text" value={form.nombre}
                     placeholder="Ej: Informe de biodiversidad cuenca del Baudó — 2024"
                     onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
-                    className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.nombre ? 'border-red-400' : 'border-border focus:border-primary-800'}`} />
+                    className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.nombre ? 'border-red-400' : 'border-border focus:border-primary-800'}`} />
                   {formErrors.nombre && <p className="text-xs text-red-500 mt-1">{formErrors.nombre}</p>}
                 </div>
 
@@ -676,7 +676,7 @@ export default function GestionDocumentos() {
                   <input id="gd-autor" type="text" value={form.autor}
                     placeholder="Nombre del autor o institución responsable"
                     onChange={(e) => setForm((f) => ({ ...f, autor: e.target.value }))}
-                    className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition" />
+                    className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition" />
                 </div>
 
                 {/* Categoría + portada + Año */}
@@ -707,7 +707,7 @@ export default function GestionDocumentos() {
                     <input id="gd-anio" type="number" min="1900" max="2100" value={form.anio}
                       placeholder={String(new Date().getFullYear())}
                       onChange={(e) => setForm((f) => ({ ...f, anio: e.target.value }))}
-                      className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition" />
+                      className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition" />
                   </div>
                 </div>
 
@@ -746,7 +746,7 @@ export default function GestionDocumentos() {
       <AnimatePresence>
         {deleteTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trash2 className="w-5 h-5 text-red-600" />
               </div>

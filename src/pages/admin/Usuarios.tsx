@@ -38,7 +38,7 @@ function UserDrawer({ user, onClose }: { user: UsuarioData; onClose: () => void 
         className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
         onClick={onClose}
       />
-      <motion.div key="drawer" {...drawerAnim} className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-sm bg-white shadow-2xl flex flex-col">
+      <motion.div key="drawer" {...drawerAnim} className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-sm bg-[var(--card-bg)] shadow-2xl flex flex-col">
         {/* Header */}
         <div className="px-6 py-5 border-b border-border bg-gradient-to-br from-primary-50 to-white">
           <div className="flex items-start justify-between mb-4">
@@ -164,7 +164,7 @@ function InviteModal({ onClose, assignableRoles }: { onClose: () => void; assign
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+      <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
         <div className="flex items-center justify-between px-6 py-5 border-b border-border">
           <h3 className="text-base font-bold text-text">Crear Usuario</h3>
           <button onClick={onClose} className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"><X className="w-5 h-5" /></button>
@@ -211,7 +211,7 @@ function InviteModal({ onClose, assignableRoles }: { onClose: () => void; assign
             </div>
             <div>
               <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Rol a asignar</label>
-              <select value={rol} onChange={(e) => setRol(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
+              <select value={rol} onChange={(e) => setRol(e.target.value)} className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition">
                 {assignableRoles.map((r) => <option key={r}>{r}</option>)}
               </select>
             </div>
@@ -370,14 +370,14 @@ export default function Usuarios() {
             placeholder="Buscar por nombre o correo..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+            className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
           />
         </div>
-        <select value={filtroRol} onChange={(e) => setFiltroRol(e.target.value)} className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition">
+        <select value={filtroRol} onChange={(e) => setFiltroRol(e.target.value)} className="px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition">
           <option value="">Todos los roles</option>
           {ROLES_LIST.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
-        <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition">
+        <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} className="px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition">
           <option value="">Todos los estados</option>
           <option value="Activo">Activo</option>
           <option value="Inactivo">Inactivo</option>
@@ -392,7 +392,7 @@ export default function Usuarios() {
         style={{ transformPerspective: 900 }}
         glow="rgba(26,86,50,0.12)"
         intensity={3}
-        className="bg-white border border-border/70 rounded-xl overflow-hidden"
+        className="bg-[var(--card-bg)] border border-border/70 rounded-xl overflow-hidden"
         whileHover={{ y: -2 }}
       >
         <div className="overflow-x-auto">
@@ -524,7 +524,7 @@ export default function Usuarios() {
             role="dialog" aria-modal="true" aria-labelledby="modal-rol-title"
             onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false) }}
           >
-            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
               <div className="flex items-center justify-between px-6 py-5 border-b border-border">
                 <div>
                   <h3 id="modal-rol-title" className="text-base font-bold text-text">Cambiar Rol</h3>
@@ -545,7 +545,7 @@ export default function Usuarios() {
                     value={form.rol}
                     onChange={(e) => { setForm((f) => ({ ...f, rol: e.target.value })); setFormErrors({}) }}
                     aria-describedby={formErrors.rol ? 'error-rol' : undefined}
-                    className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.rol ? 'border-red-400' : 'border-border'}`}
+                    className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.rol ? 'border-red-400' : 'border-border'}`}
                   >
                     {assignableRoles.map((r) => <option key={r} value={r}>{r}</option>)}
                   </select>
@@ -574,7 +574,7 @@ export default function Usuarios() {
       <AnimatePresence>
         {deleteTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trash2 className="w-5 h-5 text-red-600" />
               </div>

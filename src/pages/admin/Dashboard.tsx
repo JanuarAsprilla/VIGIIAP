@@ -60,7 +60,7 @@ function KPICards({ stats, isLoading }: { stats: DashboardStats | undefined; isL
             <Card3D
               glow={KPI_GLOW[i]}
               intensity={4}
-              className="bg-white border border-border/70 rounded-xl p-5 relative overflow-hidden"
+              className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5 relative overflow-hidden"
               whileHover={{ y: -3 }}
             >
               {/* Subtle corner glow */}
@@ -120,7 +120,7 @@ function SolicitudesChart({ solicitudes }: { solicitudes: SolicitudData[] }) {
   const weeklyMax = Math.max(...weeklyData, 1)
 
   return (
-    <motion.div {...fadeUp(0.28)} className="bg-white border border-border rounded-xl p-5">
+    <motion.div {...fadeUp(0.28)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5">
       <h3 className="text-sm font-bold text-text mb-4">Solicitudes por Estado</h3>
 
       {/* Bar chart */}
@@ -203,7 +203,7 @@ function RolesChart({ usuarios }: { usuarios: { rol: string }[] }) {
   ]
 
   return (
-    <motion.div {...fadeUp(0.3)} className="bg-white border border-border rounded-xl p-5">
+    <motion.div {...fadeUp(0.3)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5">
       <h3 className="text-sm font-bold text-text mb-4">Distribución de Roles</h3>
       <div className="space-y-3">
         {items.map((item) => (
@@ -240,7 +240,7 @@ function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }
   }
 
   return (
-    <motion.div {...fadeUp(0.2)} className="bg-white border border-border rounded-xl overflow-hidden">
+    <motion.div {...fadeUp(0.2)} className="bg-[var(--card-bg)] border border-border rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <h3 className="text-sm font-bold text-text">Solicitudes Pendientes</h3>
         <Link to="/admin/solicitudes" className="text-xs font-semibold text-primary-800 hover:text-primary-600 no-underline flex items-center gap-1">
@@ -341,7 +341,7 @@ function ActividadReciente() {
   }
 
   return (
-    <motion.div {...fadeUp(0.25)} className="bg-white border border-border rounded-xl overflow-hidden">
+    <motion.div {...fadeUp(0.25)} className="bg-[var(--card-bg)] border border-border rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <h3 className="text-sm font-bold text-text">Actividad Reciente</h3>
         <Link to="/admin/actividad" className="text-xs font-semibold text-primary-800 hover:text-primary-600 no-underline flex items-center gap-1">
