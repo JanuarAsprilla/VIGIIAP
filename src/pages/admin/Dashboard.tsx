@@ -60,7 +60,7 @@ function KPICards({ stats, isLoading }: { stats: DashboardStats | undefined; isL
             <Card3D
               glow={KPI_GLOW[i]}
               intensity={4}
-              className="bg-white border border-border/70 rounded-xl p-5 relative overflow-hidden"
+              className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5 relative overflow-hidden"
               whileHover={{ y: -3 }}
             >
               {/* Subtle corner glow */}
@@ -120,7 +120,7 @@ function SolicitudesChart({ solicitudes }: { solicitudes: SolicitudData[] }) {
   const weeklyMax = Math.max(...weeklyData, 1)
 
   return (
-    <motion.div {...fadeUp(0.28)} className="bg-white border border-border rounded-xl p-5">
+    <motion.div {...fadeUp(0.28)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5">
       <h3 className="text-sm font-bold text-text mb-4">Solicitudes por Estado</h3>
 
       {/* Bar chart */}
@@ -174,15 +174,15 @@ function AlertasSolicitudes({ solicitudes }: { solicitudes: SolicitudData[] }) {
   const pendientes = solicitudes.filter((s) => s.estado === 'Pendiente' || s.estado === 'En Revisión')
   if (pendientes.length === 0) return null
   return (
-    <motion.div {...fadeUp(0.15)} className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+    <motion.div {...fadeUp(0.15)} className="flex items-start gap-3 px-4 py-3 bg-gold-500/10 border border-gold-500/25 rounded-xl">
+      <AlertTriangle className="w-4 h-4 text-gold-500 shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-amber-800">
+        <p className="text-sm font-semibold text-gold-500">
           {pendientes.length} solicitud{pendientes.length > 1 ? 'es' : ''} pendiente{pendientes.length > 1 ? 's' : ''} de respuesta
         </p>
-        <p className="text-xs text-amber-700 mt-0.5">Revisa y asigna revisor en Gestión de Solicitudes</p>
+        <p className="text-xs text-gold-400 mt-0.5">Revisa y asigna revisor en Gestión de Solicitudes</p>
       </div>
-      <Link to="/admin/solicitudes" className="shrink-0 text-xs font-bold text-amber-800 hover:text-amber-900 no-underline flex items-center gap-1 whitespace-nowrap">
+      <Link to="/admin/solicitudes" className="shrink-0 text-xs font-bold text-gold-500 hover:text-gold-400 no-underline flex items-center gap-1 whitespace-nowrap">
         Ver <ArrowRight className="w-3 h-3" />
       </Link>
     </motion.div>
@@ -203,7 +203,7 @@ function RolesChart({ usuarios }: { usuarios: { rol: string }[] }) {
   ]
 
   return (
-    <motion.div {...fadeUp(0.3)} className="bg-white border border-border rounded-xl p-5">
+    <motion.div {...fadeUp(0.3)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5">
       <h3 className="text-sm font-bold text-text mb-4">Distribución de Roles</h3>
       <div className="space-y-3">
         {items.map((item) => (
@@ -240,7 +240,7 @@ function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }
   }
 
   return (
-    <motion.div {...fadeUp(0.2)} className="bg-white border border-border rounded-xl overflow-hidden">
+    <motion.div {...fadeUp(0.2)} className="bg-[var(--card-bg)] border border-border rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <h3 className="text-sm font-bold text-text">Solicitudes Pendientes</h3>
         <Link to="/admin/solicitudes" className="text-xs font-semibold text-primary-800 hover:text-primary-600 no-underline flex items-center gap-1">
@@ -286,14 +286,14 @@ function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }
                   <>
                     <button
                       onClick={() => setConfirm({ _id: sol._id, accion: 'Aprobado' })}
-                      className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+                      className="p-1.5 rounded-lg text-primary-600 hover:bg-primary-500/10 transition-colors"
                       title="Aprobar"
                     >
                       <CheckCircle className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setConfirm({ _id: sol._id, accion: 'Rechazado' })}
-                      className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                      className="p-1.5 rounded-lg text-red-dark hover:bg-red/10 transition-colors"
                       title="Rechazar"
                     >
                       <XCircle className="w-4 h-4" />
@@ -321,7 +321,7 @@ interface AuditLogRaw {
 type AuditListResult = { data: AuditLogRaw[] }
 
 function ActividadReciente() {
-  const { data } = useQuery<AuditListResult, Error, AuditLogRaw[]>({
+  const { data, isLoading, isError, refetch } = useQuery<AuditListResult, Error, AuditLogRaw[]>({
     queryKey: ['audit', 'recent'],
     queryFn: () => api.get('/admin/audit', { params: { limit: 7, page: 1 } }) as Promise<AuditListResult>,
     select: (res) => res.data ?? [],
@@ -332,16 +332,16 @@ function ActividadReciente() {
   const moduloBadge = (modulo: string) => {
     const map = {
       auth: 'bg-primary-500/12 text-primary-500',
-      admin: 'bg-primary-100 text-primary-800',
+      admin: 'bg-primary-700/10 text-primary-700',
       solicitudes: 'bg-gold-400/12 text-gold-400',
       mapas: 'bg-primary-700/10 text-primary-700',
       documentos: 'bg-gold-500/12 text-gold-500',
     }
-    return (map as Record<string, string>)[modulo] ?? 'bg-gray-100 text-gray-600'
+    return (map as Record<string, string>)[modulo] ?? 'bg-bg-alt text-text-muted'
   }
 
   return (
-    <motion.div {...fadeUp(0.25)} className="bg-white border border-border rounded-xl overflow-hidden">
+    <motion.div {...fadeUp(0.25)} className="bg-[var(--card-bg)] border border-border rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <h3 className="text-sm font-bold text-text">Actividad Reciente</h3>
         <Link to="/admin/actividad" className="text-xs font-semibold text-primary-800 hover:text-primary-600 no-underline flex items-center gap-1">
@@ -349,7 +349,18 @@ function ActividadReciente() {
         </Link>
       </div>
       <div className="divide-y divide-border max-h-64 overflow-y-auto">
-        {logs.length === 0 && (
+        {isLoading && (
+          <p className="px-5 py-6 text-xs text-text-muted text-center">Cargando…</p>
+        )}
+        {isError && (
+          <div className="px-5 py-6 text-center">
+            <p className="text-xs text-red-500 mb-2">No se pudo cargar la actividad reciente.</p>
+            <button onClick={() => refetch()} className="text-xs font-semibold text-primary-700 hover:text-primary-900 transition-colors">
+              Reintentar
+            </button>
+          </div>
+        )}
+        {!isLoading && !isError && logs.length === 0 && (
           <p className="px-5 py-6 text-xs text-text-muted text-center italic">Sin actividad registrada</p>
         )}
         {logs.map((log) => {
@@ -423,7 +434,7 @@ function QuickActions() {
 
 export default function Dashboard() {
   const { user } = useAuth()
-  const { data: stats, isLoading: loadingStats } = useAdminStats()
+  const { data: stats, isLoading: loadingStats, isError: statsError, refetch: refetchStats } = useAdminStats()
   const { data: solData } = useSolicitudesAdmin({ limit: 100 })
   const { data: usrData } = useUsuariosList({ limit: 100 })
   const solicitudes = solData?.data ?? []
@@ -445,6 +456,12 @@ export default function Dashboard() {
       </motion.div>
 
       {/* KPIs */}
+      {statsError && (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-red/10 border border-red/25 rounded-xl text-sm text-red-dark">
+          <span>No se pudieron cargar las estadísticas del panel.</span>
+          <button onClick={() => refetchStats()} className="text-xs font-semibold underline shrink-0">Reintentar</button>
+        </div>
+      )}
       <KPICards stats={stats} isLoading={loadingStats} />
 
       {/* Alerta solicitudes */}
