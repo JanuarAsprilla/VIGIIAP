@@ -201,7 +201,10 @@ function SidebarContent({ onClose, onLogout, user }: { onClose: () => void; onLo
           onClick={onLogout}
           whileHover={{ x: 3 }}
           transition={{ type: 'spring', stiffness: 400 }}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-text-muted hover:text-orange-500 hover:bg-orange-500/5 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+          style={{ color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.16)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.32)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.18)' }}
         >
           <LogOut className="w-4 h-4 shrink-0" aria-hidden="true" />
           <span>Cerrar Sesión</span>
@@ -221,7 +224,7 @@ export default function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: bool
   return (
     <>
       {/* Desktop */}
-      <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[220px] bg-white border-r border-border flex-col z-40">
+      <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[220px] bg-[var(--card-bg)] border-r border-border flex-col z-40">
         <SidebarContent {...props} />
       </aside>
 
@@ -244,7 +247,7 @@ export default function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: bool
               animate={{ x: 0 }}
               exit={{ x: -260 }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="fixed top-0 left-0 bottom-0 w-[240px] bg-white z-50 flex flex-col shadow-float lg:hidden"
+              className="fixed top-0 left-0 bottom-0 w-[240px] bg-[var(--card-bg)] z-50 flex flex-col shadow-float lg:hidden"
             >
               <SidebarContent {...props} />
             </motion.aside>
