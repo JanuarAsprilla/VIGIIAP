@@ -503,14 +503,6 @@ body {
   align-items: center;
 }
 
-/* ── Preloader progress bar ── */
-.preloader-progress {
-  background: linear-gradient(90deg, #B0CB1F, #F7AC42);
-  border-radius: var(--radius-full);
-  height: 3px;
-  transition: width 0.3s ease;
-}
-
 /* ── Accent lima — biodiversidad ── */
 .accent-lime {
   color: #B0CB1F;
