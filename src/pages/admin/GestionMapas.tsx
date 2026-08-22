@@ -113,14 +113,14 @@ function CategoryCombobox({ value, onChange, allOptions, placeholder = 'Seleccio
             {filtered.map((cat) => (
               <button key={cat} type="button" onClick={() => select(cat)}
                 className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${
-                  value === cat ? 'bg-primary-50 text-primary-800 font-semibold' : 'text-text hover:bg-bg-alt'
+                  value === cat ? 'bg-primary-500/12 text-primary-700 font-semibold' : 'text-text hover:bg-bg-alt'
                 }`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-primary-400 shrink-0" />{cat}
               </button>
             ))}
             {isNew && (
               <button type="button" onClick={() => select(input.trim())}
-                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-primary-800 hover:bg-primary-50 border-t border-border transition-colors flex items-center gap-2">
+                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-primary-800 hover:bg-primary-500/10 border-t border-border transition-colors flex items-center gap-2">
                 <Plus className="w-3.5 h-3.5 shrink-0" />
                 Crear: <em className="not-italic font-bold">&ldquo;{input.trim()}&rdquo;</em>
               </button>
@@ -233,10 +233,10 @@ function ThumbnailDropzone({ onFile, existing }: { onFile: (f: File | null) => v
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
           className={`flex items-center gap-3 px-4 py-3 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
-            dragging ? 'border-primary-600 bg-primary-50' : 'border-border hover:border-primary-400 hover:bg-bg-alt/60'
+            dragging ? 'border-primary-600 bg-primary-500/10' : 'border-border hover:border-primary-400 hover:bg-bg-alt/60'
           }`}
         >
-          <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${dragging ? 'bg-primary-100' : 'bg-bg-alt'}`}>
+          <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${dragging ? 'bg-primary-500/12' : 'bg-bg-alt'}`}>
             <Image className={`w-4 h-4 ${dragging ? 'text-primary-700' : 'text-text-muted'}`} />
           </div>
           <div>
@@ -288,7 +288,7 @@ function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, o
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-xl"
+          className="flex items-center gap-3 px-4 py-3 bg-primary-500/10 border border-primary-500/25 rounded-xl"
         >
           <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
           <div className="flex-1 min-w-0">
@@ -308,11 +308,11 @@ function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, o
           onClick={() => inputRef.current?.click()}
           className={`relative flex flex-col items-center justify-center gap-2 px-4 py-10 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
             dragging
-              ? 'border-primary-600 bg-primary-50 scale-[1.01]'
+              ? 'border-primary-600 bg-primary-500/10 scale-[1.01]'
               : 'border-border hover:border-primary-400 hover:bg-bg-alt/60'
           }`}
         >
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${dragging ? 'bg-primary-100' : 'bg-bg-alt'}`}>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${dragging ? 'bg-primary-500/12' : 'bg-bg-alt'}`}>
             <Upload className={`w-6 h-6 transition-colors ${dragging ? 'text-primary-700' : 'text-text-muted'}`} />
           </div>
           <div className="text-center">
@@ -550,7 +550,7 @@ export default function GestionMapas() {
 
       {/* Error state */}
       {isError && (
-        <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-red-50 border border-red-200 rounded-2xl">
+        <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-red/10 border border-red/25 rounded-2xl">
           <AlertCircle className="w-10 h-10 text-red-400 mb-3" />
           <h3 className="text-base font-bold text-red-700 mb-1">Error al cargar los mapas</h3>
           <p className="text-sm text-red-500 mb-5">No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.</p>
@@ -563,7 +563,7 @@ export default function GestionMapas() {
       {/* Empty state */}
       {!isLoading && !isError && mapas.length === 0 && (
         <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-[var(--card-bg)] border border-dashed border-border rounded-2xl">
-          <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-primary-500/12 rounded-2xl flex items-center justify-center mb-4">
             <MapPin className="w-8 h-8 text-primary-400" />
           </div>
           <h3 className="text-base font-bold text-text mb-1">Aún no hay mapas registrados</h3>
@@ -612,14 +612,14 @@ export default function GestionMapas() {
                         <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${(TEMATICA_COLORS as Record<string, string>)[m.tematica] ?? 'bg-gray-100 text-gray-600'}`}>{m.tematica}</span>
+                              <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${(TEMATICA_COLORS as Record<string, string>)[m.tematica] ?? 'bg-bg-alt text-text-muted'}`}>{m.tematica}</span>
                               <span className={`text-[0.6rem] font-semibold px-1.5 py-0.5 rounded border ${
-                                m.formato === 'PDF' ? 'border-red-200 text-red-500' :
+                                m.formato === 'PDF' ? 'border-red/30 text-red-500' :
                                 m.formato === 'IMG' ? 'border-gold-400/40 text-gold-400' :
-                                'border-primary-200 text-primary-700'
+                                'border-primary-500/30 text-primary-700'
                               }`}>{m.formato}</span>
                               {!m.visible && (
-                                <span className="text-[0.6rem] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Oculto</span>
+                                <span className="text-[0.6rem] font-semibold px-1.5 py-0.5 rounded bg-bg-alt text-text-muted">Oculto</span>
                               )}
                             </div>
                             <p className="text-sm font-bold text-text">{m.nombre}</p>
@@ -628,7 +628,7 @@ export default function GestionMapas() {
                           </div>
                           <button
                             onClick={() => toggleVisible(m.id)}
-                            className={`shrink-0 p-1.5 rounded-lg transition-colors ${m.visible ? 'text-primary-700 hover:bg-primary-50' : 'text-text-muted hover:bg-bg-alt'}`}
+                            className={`shrink-0 p-1.5 rounded-lg transition-colors ${m.visible ? 'text-primary-700 hover:bg-primary-500/10' : 'text-text-muted hover:bg-bg-alt'}`}
                             title={m.visible ? 'Visible — clic para ocultar' : 'Oculto — clic para publicar'}
                           >
                             {m.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -649,18 +649,18 @@ export default function GestionMapas() {
                             {(m.archivo_pdf_url || m.archivo_img_url || m.geovisor_url) && (
                               <button
                                 onClick={() => window.open(m.archivo_img_url || m.archivo_pdf_url || m.geovisor_url || undefined, '_blank', 'noopener,noreferrer')}
-                                className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
+                                className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors"
                                 title="Ver archivo">
                                 <ExternalLink className="w-3.5 h-3.5" />
                               </button>
                             )}
                             <button onClick={() => openEdit(m)}
-                              className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
+                              className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors"
                               title="Editar mapa">
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button onClick={() => setDeleteTarget(m)}
-                              className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
+                              className="p-1.5 rounded-lg text-text-muted hover:text-red-dark hover:bg-red/10 transition-colors"
                               title="Eliminar mapa">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -739,7 +739,7 @@ export default function GestionMapas() {
                   </div>
                 )}
                 {formErrors.archivo && (
-                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs">
+                  <div className="flex items-center gap-2 p-3 bg-red/10 border border-red/25 rounded-xl text-red-dark text-xs">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />{formErrors.archivo}
                   </div>
                 )}
@@ -852,7 +852,7 @@ export default function GestionMapas() {
 
                 {/* Error */}
                 {submitError && (
-                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                  <div className="flex items-start gap-2 p-3 bg-red/10 border border-red/25 rounded-xl text-red-dark text-sm">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                     {submitError}
                   </div>
@@ -882,8 +882,8 @@ export default function GestionMapas() {
         {deleteTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-5 h-5 text-red-600" />
+              <div className="w-12 h-12 bg-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-5 h-5 text-red-dark" />
               </div>
               <h3 className="text-base font-bold text-text mb-2">Eliminar mapa</h3>
               <p className="text-sm text-text-muted mb-6">

@@ -66,7 +66,7 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { 
           </button>
           {currentFile && (
             <button type="button" onClick={() => onFile(null)}
-              className="p-1.5 bg-[var(--card-bg)] text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+              className="p-1.5 bg-[var(--card-bg)] text-red-500 rounded-lg hover:bg-red/10 transition-colors">
               <X className="w-4 h-4" />
             </button>
           )}
@@ -86,7 +86,7 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { 
       onClick={() => inputRef.current?.click()}
       className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl cursor-pointer transition-all
         ${compact ? 'py-5' : 'py-10'}
-        ${dragging ? 'border-primary-600 bg-primary-50' : 'border-border hover:border-primary-400 hover:bg-bg-alt/60'}`}
+        ${dragging ? 'border-primary-600 bg-primary-500/10' : 'border-border hover:border-primary-400 hover:bg-bg-alt/60'}`}
     >
       <Upload className={`w-6 h-6 ${dragging ? 'text-primary-600' : 'text-text-muted'}`} />
       <p className="text-xs text-text-muted text-center px-3">
@@ -172,7 +172,7 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
           <h3 className="text-sm font-bold text-text leading-snug">{cat.nombre}</h3>
           <button
             onClick={() => onDelete(cat)}
-            className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+            className="p-1.5 rounded-lg text-text-muted hover:text-red-dark hover:bg-red/10 transition-colors shrink-0"
             title="Eliminar categoría"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -300,9 +300,9 @@ export default function GestionCategorias() {
       </motion.div>
 
       {/* Explicación */}
-      <motion.div {...fadeUp(0.04)} className="flex items-start gap-3 p-4 bg-primary-50 border border-primary-200 rounded-xl">
-        <Tag className="w-4 h-4 text-primary-700 mt-0.5 shrink-0" />
-        <p className="text-xs text-primary-800">
+      <motion.div {...fadeUp(0.04)} className="flex items-start gap-3 p-4 bg-primary-500/10 border border-primary-500/25 rounded-xl">
+        <Tag className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
+        <p className="text-xs text-primary-600">
           Cada categoría agrupa documentos del mismo tema. La imagen de portada aparece como fondo de la tarjeta en el portal público de Documentos.
           Las categorías sin imagen muestran un fondo con degradado de color.
         </p>
@@ -311,7 +311,7 @@ export default function GestionCategorias() {
       {/* Estado vacío */}
       {!isLoading && categorias.length === 0 && (
         <motion.div {...fadeUp(0.08)} className="flex flex-col items-center justify-center py-20 text-center bg-[var(--card-bg)] border border-dashed border-border rounded-2xl">
-          <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-primary-500/12 rounded-2xl flex items-center justify-center mb-4">
             <FolderOpen className="w-8 h-8 text-primary-400" />
           </div>
           <h3 className="text-base font-bold text-text mb-1">No hay categorías</h3>
@@ -412,8 +412,8 @@ export default function GestionCategorias() {
         {deleteTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-5 h-5 text-red-600" />
+              <div className="w-12 h-12 bg-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-5 h-5 text-red-dark" />
               </div>
               <h3 className="text-base font-bold text-text mb-2">Eliminar categoría</h3>
               <p className="text-sm text-text-muted mb-1">

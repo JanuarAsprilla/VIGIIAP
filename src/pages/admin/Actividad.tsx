@@ -15,34 +15,31 @@ const fadeUp = fadeUpSm
 const MODULO_STYLES = {
   auth:       'bg-primary-500/12 text-primary-500',
   usuarios:   'bg-magenta/12 text-magenta',
-  admin:      'bg-primary-100 text-primary-800',
+  admin:      'bg-primary-700/10 text-primary-700',
   solicitudes:'bg-gold-400/12 text-gold-400',
   mapas:      'bg-primary-700/10 text-primary-700',
   documentos: 'bg-gold-500/12 text-gold-500',
 }
 
 const ACCION_LABEL = {
-  login:                 { label: 'Login',               badge: 'bg-green-100 text-green-700'   },
+  login:                 { label: 'Login',               badge: 'bg-primary-500/12 text-primary-500' },
   registro:              { label: 'Registro',             badge: 'bg-primary-500/12 text-primary-500' },
-  login_visitante:       { label: 'Visitante',            badge: 'bg-gray-100 text-gray-600'     },
-  create_usuario:        { label: 'Crear usuario',        badge: 'bg-green-100 text-green-700'   },
-  update_usuario:        { label: 'Actualizar usuario',   badge: 'bg-amber-100 text-amber-700'   },
-  update_rol:            { label: 'Cambio de rol',        badge: 'bg-amber-100 text-amber-700'   },
-  delete_usuario:        { label: 'Eliminar usuario',     badge: 'bg-red-100 text-red-600'       },
-  change_password:       { label: 'Cambio contraseña',    badge: 'bg-amber-100 text-amber-700'   },
+  login_visitante:       { label: 'Visitante',            badge: 'bg-bg-alt text-text-muted'     },
+  create_usuario:        { label: 'Crear usuario',        badge: 'bg-primary-500/12 text-primary-500' },
+  update_usuario:        { label: 'Actualizar usuario',   badge: 'bg-gold-500/12 text-gold-500'  },
+  update_rol:            { label: 'Cambio de rol',        badge: 'bg-gold-500/12 text-gold-500'  },
+  delete_usuario:        { label: 'Eliminar usuario',     badge: 'bg-red/10 text-red-dark'       },
+  change_password:       { label: 'Cambio contraseña',    badge: 'bg-gold-500/12 text-gold-500'  },
   create_solicitud:       { label: 'Nueva solicitud',      badge: 'bg-gold-400/12 text-gold-400'  },
-  update_solicitud_estado:{ label: 'Estado solicitud',    badge: 'bg-yellow-100 text-yellow-700' },
-  update_perfil:          { label: 'Actualizar perfil',   badge: 'bg-amber-100 text-amber-700'    },
-  update_configuracion:   { label: 'Configuración',       badge: 'bg-primary-100 text-primary-800'},
-  create_mapa:            { label: 'Crear mapa',          badge: 'bg-green-100 text-green-700'    },
-  update_mapa:            { label: 'Actualizar mapa',     badge: 'bg-amber-100 text-amber-700'    },
-  delete_mapa:            { label: 'Eliminar mapa',       badge: 'bg-red-100 text-red-600'        },
-  create_noticia:         { label: 'Crear noticia',       badge: 'bg-pink/12 text-pink'            },
-  update_noticia:         { label: 'Actualizar noticia',  badge: 'bg-amber-100 text-amber-700'    },
-  delete_noticia:         { label: 'Eliminar noticia',    badge: 'bg-red-100 text-red-600'        },
-  create_documento:       { label: 'Subir documento',     badge: 'bg-orange-100 text-orange-700'  },
-  update_documento:       { label: 'Editar documento',    badge: 'bg-amber-100 text-amber-700'    },
-  delete_documento:       { label: 'Eliminar documento',  badge: 'bg-red-100 text-red-600'        },
+  update_solicitud_estado:{ label: 'Estado solicitud',    badge: 'bg-gold-400/12 text-gold-400'  },
+  update_perfil:          { label: 'Actualizar perfil',   badge: 'bg-gold-500/12 text-gold-500'   },
+  update_configuracion:   { label: 'Configuración',       badge: 'bg-primary-700/10 text-primary-700'},
+  create_mapa:            { label: 'Crear mapa',          badge: 'bg-primary-500/12 text-primary-500' },
+  update_mapa:            { label: 'Actualizar mapa',     badge: 'bg-gold-500/12 text-gold-500'   },
+  delete_mapa:            { label: 'Eliminar mapa',       badge: 'bg-red/10 text-red-dark'        },
+  create_documento:       { label: 'Subir documento',     badge: 'bg-orange-500/12 text-orange-500' },
+  update_documento:       { label: 'Editar documento',    badge: 'bg-gold-500/12 text-gold-500'   },
+  delete_documento:       { label: 'Eliminar documento',  badge: 'bg-red/10 text-red-dark'        },
 }
 
 const PAGE_SIZE = 10
@@ -58,7 +55,7 @@ interface AuditLogRaw {
 }
 
 function normalizeLog(l: AuditLogRaw) {
-  const accionInfo = (ACCION_LABEL as Record<string, { label: string; badge: string }>)[l.accion] ?? { label: l.accion, badge: 'bg-gray-100 text-gray-600' }
+  const accionInfo = (ACCION_LABEL as Record<string, { label: string; badge: string }>)[l.accion] ?? { label: l.accion, badge: 'bg-bg-alt text-text-muted' }
   return {
     id:         l.id,
     accion:     l.accion,

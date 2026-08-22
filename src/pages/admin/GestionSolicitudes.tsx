@@ -274,7 +274,7 @@ export default function GestionSolicitudes() {
                     )}
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ESTADO_BADGE[s.estado] ?? 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ESTADO_BADGE[s.estado] ?? 'bg-bg-alt text-text-muted'}`}>
                       {s.estado}
                     </span>
                   </td>
@@ -282,7 +282,7 @@ export default function GestionSolicitudes() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => { setSelected(s); setRespuesta('') }}
-                        className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
+                        className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors"
                         title="Ver detalle"
                       >
                         <Eye className="w-3.5 h-3.5" />
@@ -301,7 +301,7 @@ export default function GestionSolicitudes() {
                         <button
                           onClick={() => { setAccionModal({ type: 'approve', sol: s }); setNota('') }}
                           disabled={updateEstado.isPending}
-                          className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors"
+                          className="p-1.5 rounded-lg text-primary-600 hover:bg-primary-500/10 disabled:opacity-50 transition-colors"
                           title="Aprobar"
                         >
                           <CheckCircle className="w-3.5 h-3.5" />
@@ -311,7 +311,7 @@ export default function GestionSolicitudes() {
                         <button
                           onClick={() => { setAccionModal({ type: 'reject', sol: s }); setNota('') }}
                           disabled={updateEstado.isPending}
-                          className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                          className="p-1.5 rounded-lg text-red-dark hover:bg-red/10 disabled:opacity-50 transition-colors"
                           title="Rechazar"
                         >
                           <XCircle className="w-3.5 h-3.5" />
@@ -356,7 +356,7 @@ export default function GestionSolicitudes() {
                 <div>
                   <span className="text-xs font-bold text-primary-800">{selected.id}</span>
                   <h3 className="text-base font-bold text-text mt-0.5">{selected.tipo}</h3>
-                  <span className={`inline-block mt-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full ${ESTADO_BADGE[selected.estado] ?? 'bg-gray-100 text-gray-600'}`}>
+                  <span className={`inline-block mt-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full ${ESTADO_BADGE[selected.estado] ?? 'bg-bg-alt text-text-muted'}`}>
                     {selected.estado}
                   </span>
                 </div>
@@ -372,7 +372,7 @@ export default function GestionSolicitudes() {
                 <div className="px-6 py-4 space-y-3">
                   <SectionLabel>Solicitante</SectionLabel>
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-primary-500/12 flex items-center justify-center shrink-0">
                       <User className="w-4 h-4 text-primary-700" />
                     </div>
                     <div>
@@ -531,7 +531,7 @@ export default function GestionSolicitudes() {
                 {canDo(selected, 'Resuelta') && (
                   <div className="px-6 py-4 space-y-3">
                     <SectionLabel>Comunicación con el solicitante</SectionLabel>
-                    <div className="bg-primary-50 border border-primary-100 rounded-xl p-4 space-y-3">
+                    <div className="bg-primary-500/10 border border-primary-500/20 rounded-xl p-4 space-y-3">
                       <div className="flex items-center gap-2">
                         <MessageSquare className="w-4 h-4 text-primary-700" />
                         <p className="text-xs font-bold text-primary-800">Enviar respuesta y resolver</p>
@@ -625,8 +625,8 @@ export default function GestionSolicitudes() {
         {accionModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${accionModal.type === 'approve' ? 'bg-green-100' : 'bg-red-100'}`}>
-                {accionModal.type === 'approve' ? <CheckCircle className="w-5 h-5 text-green-600" /> : <XCircle className="w-5 h-5 text-red-600" />}
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${accionModal.type === 'approve' ? 'bg-primary-500/12' : 'bg-red/10'}`}>
+                {accionModal.type === 'approve' ? <CheckCircle className="w-5 h-5 text-primary-600" /> : <XCircle className="w-5 h-5 text-red-dark" />}
               </div>
               <h3 className="text-base font-bold text-text text-center mb-1">
                 {accionModal.type === 'approve' ? 'Aprobar Solicitud' : 'Rechazar Solicitud'}

@@ -146,7 +146,7 @@ function CategoryCombobox({ value, onChange, allCategories }: { value: string; o
                 onClick={() => select(cat)}
                 className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${
                   value === cat
-                    ? 'bg-primary-50 text-primary-800 font-semibold'
+                    ? 'bg-primary-500/12 text-primary-700 font-semibold'
                     : 'text-text hover:bg-bg-alt'
                 }`}
               >
@@ -158,7 +158,7 @@ function CategoryCombobox({ value, onChange, allCategories }: { value: string; o
               <button
                 type="button"
                 onClick={() => select(input.trim())}
-                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-primary-800 hover:bg-primary-50 border-t border-border transition-colors flex items-center gap-2"
+                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-primary-800 hover:bg-primary-500/10 border-t border-border transition-colors flex items-center gap-2"
               >
                 <Plus className="w-3.5 h-3.5 shrink-0" />
                 Crear categoría: <em className="not-italic font-bold">&ldquo;{input.trim()}&rdquo;</em>
@@ -273,7 +273,7 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }: { tipo: s
       </label>
       {currentFile ? (
         <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
+          className="flex items-center gap-3 px-4 py-3 bg-primary-500/10 border border-primary-500/25 rounded-xl">
           <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-text truncate">{currentFile.name}</p>
@@ -291,10 +291,10 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }: { tipo: s
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
           className={`relative flex flex-col items-center justify-center gap-2 px-4 py-10 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
-            dragging ? 'border-primary-600 bg-primary-50 scale-[1.01]' : 'border-border hover:border-primary-400 hover:bg-bg-alt/60'
+            dragging ? 'border-primary-600 bg-primary-500/10 scale-[1.01]' : 'border-border hover:border-primary-400 hover:bg-bg-alt/60'
           }`}
         >
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${dragging ? 'bg-primary-100' : 'bg-bg-alt'}`}>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${dragging ? 'bg-primary-500/12' : 'bg-bg-alt'}`}>
             <Upload className={`w-6 h-6 transition-colors ${dragging ? 'text-primary-700' : 'text-text-muted'}`} />
           </div>
           <div className="text-center">
@@ -490,7 +490,7 @@ export default function GestionDocumentos() {
 
       {/* Error state */}
       {isError && (
-        <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-red-50 border border-red-200 rounded-2xl">
+        <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-red/10 border border-red/25 rounded-2xl">
           <AlertCircle className="w-10 h-10 text-red-400 mb-3" />
           <h3 className="text-base font-bold text-red-700 mb-1">Error al cargar los documentos</h3>
           <p className="text-sm text-red-500 mb-5">No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.</p>
@@ -503,7 +503,7 @@ export default function GestionDocumentos() {
       {/* Empty state */}
       {!isLoading && !isError && docs.length === 0 && (
         <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-[var(--card-bg)] border border-dashed border-border rounded-2xl">
-          <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-primary-500/12 rounded-2xl flex items-center justify-center mb-4">
             <FolderOpen className="w-8 h-8 text-primary-400" />
           </div>
           <h3 className="text-base font-bold text-text mb-1">Aún no hay documentos registrados</h3>
@@ -552,7 +552,7 @@ export default function GestionDocumentos() {
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-xs px-2 py-0.5 bg-primary-50 text-primary-800 rounded-full font-medium whitespace-nowrap">{d.categoria}</span>
+                        <span className="text-xs px-2 py-0.5 bg-primary-500/12 text-primary-700 rounded-full font-medium whitespace-nowrap">{d.categoria}</span>
                       </td>
                       <td className="px-5 py-3.5">
                         <span className={`inline-flex items-center gap-1 text-[0.65rem] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${vis.pill}`}>
@@ -565,12 +565,12 @@ export default function GestionDocumentos() {
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-1">
                           <button onClick={() => openEdit(d)}
-                            className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
+                            className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors"
                             title="Editar documento">
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button onClick={() => setDeleteTarget(d)}
-                            className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
+                            className="p-1.5 rounded-lg text-text-muted hover:text-red-dark hover:bg-red/10 transition-colors"
                             title="Eliminar documento">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -651,7 +651,7 @@ export default function GestionDocumentos() {
                   </div>
                 )}
                 {formErrors.archivo && (
-                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs">
+                  <div className="flex items-center gap-2 p-3 bg-red/10 border border-red/25 rounded-xl text-red-dark text-xs">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />{formErrors.archivo}
                   </div>
                 )}
@@ -719,7 +719,7 @@ export default function GestionDocumentos() {
 
                 {/* Error */}
                 {submitError && (
-                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                  <div className="flex items-start gap-2 p-3 bg-red/10 border border-red/25 rounded-xl text-red-dark text-sm">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />{submitError}
                   </div>
                 )}
@@ -747,8 +747,8 @@ export default function GestionDocumentos() {
         {deleteTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-5 h-5 text-red-600" />
+              <div className="w-12 h-12 bg-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-5 h-5 text-red-dark" />
               </div>
               <h3 className="text-base font-bold text-text mb-2">Eliminar documento</h3>
               <p className="text-sm text-text-muted mb-6">

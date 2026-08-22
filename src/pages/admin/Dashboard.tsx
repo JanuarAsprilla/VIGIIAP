@@ -174,15 +174,15 @@ function AlertasSolicitudes({ solicitudes }: { solicitudes: SolicitudData[] }) {
   const pendientes = solicitudes.filter((s) => s.estado === 'Pendiente' || s.estado === 'En Revisión')
   if (pendientes.length === 0) return null
   return (
-    <motion.div {...fadeUp(0.15)} className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+    <motion.div {...fadeUp(0.15)} className="flex items-start gap-3 px-4 py-3 bg-gold-500/10 border border-gold-500/25 rounded-xl">
+      <AlertTriangle className="w-4 h-4 text-gold-500 shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-amber-800">
+        <p className="text-sm font-semibold text-gold-500">
           {pendientes.length} solicitud{pendientes.length > 1 ? 'es' : ''} pendiente{pendientes.length > 1 ? 's' : ''} de respuesta
         </p>
-        <p className="text-xs text-amber-700 mt-0.5">Revisa y asigna revisor en Gestión de Solicitudes</p>
+        <p className="text-xs text-gold-400 mt-0.5">Revisa y asigna revisor en Gestión de Solicitudes</p>
       </div>
-      <Link to="/admin/solicitudes" className="shrink-0 text-xs font-bold text-amber-800 hover:text-amber-900 no-underline flex items-center gap-1 whitespace-nowrap">
+      <Link to="/admin/solicitudes" className="shrink-0 text-xs font-bold text-gold-500 hover:text-gold-400 no-underline flex items-center gap-1 whitespace-nowrap">
         Ver <ArrowRight className="w-3 h-3" />
       </Link>
     </motion.div>
@@ -286,14 +286,14 @@ function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }
                   <>
                     <button
                       onClick={() => setConfirm({ _id: sol._id, accion: 'Aprobado' })}
-                      className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+                      className="p-1.5 rounded-lg text-primary-600 hover:bg-primary-500/10 transition-colors"
                       title="Aprobar"
                     >
                       <CheckCircle className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setConfirm({ _id: sol._id, accion: 'Rechazado' })}
-                      className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                      className="p-1.5 rounded-lg text-red-dark hover:bg-red/10 transition-colors"
                       title="Rechazar"
                     >
                       <XCircle className="w-4 h-4" />
@@ -332,12 +332,12 @@ function ActividadReciente() {
   const moduloBadge = (modulo: string) => {
     const map = {
       auth: 'bg-primary-500/12 text-primary-500',
-      admin: 'bg-primary-100 text-primary-800',
+      admin: 'bg-primary-700/10 text-primary-700',
       solicitudes: 'bg-gold-400/12 text-gold-400',
       mapas: 'bg-primary-700/10 text-primary-700',
       documentos: 'bg-gold-500/12 text-gold-500',
     }
-    return (map as Record<string, string>)[modulo] ?? 'bg-gray-100 text-gray-600'
+    return (map as Record<string, string>)[modulo] ?? 'bg-bg-alt text-text-muted'
   }
 
   return (

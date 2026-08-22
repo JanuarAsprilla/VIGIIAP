@@ -20,11 +20,11 @@ const fadeUp = fadeUpSm
 // Source of truth para roles: sincronizado con AuthContext
 const ROLES_LIST = [ROLES.ADMIN, ROLES.INVESTIGADOR, ROLES.TECNICO, ROLES.INSTITUCIONAL, ROLES.PUBLICO]
 const ROLE_COLORS = {
-  [ROLES.ADMIN]:         'bg-primary-100 text-primary-800',
+  [ROLES.ADMIN]:         'bg-primary-700/10 text-primary-700',
   [ROLES.INVESTIGADOR]:  'bg-gold-400/12 text-gold-400',
   [ROLES.TECNICO]:       'bg-magenta/12 text-magenta',
   [ROLES.INSTITUCIONAL]: 'bg-primary-500/12 text-primary-500',
-  [ROLES.PUBLICO]:       'bg-gray-100 text-gray-600',
+  [ROLES.PUBLICO]:       'bg-bg-alt text-text-muted',
 }
 
 // ── User detail drawer ──
@@ -53,7 +53,7 @@ function UserDrawer({ user, onClose }: { user: UsuarioData; onClose: () => void 
           <p className="text-xs text-text-muted mt-0.5">{user.correo}</p>
           <div className="flex items-center gap-2 mt-3">
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ROLE_COLORS[user.rol]}`}>{user.rol}</span>
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${user.estado === 'Activo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${user.estado === 'Activo' ? 'bg-primary-500/12 text-primary-500' : 'bg-red/10 text-red-dark'}`}>
               {user.estado}
             </span>
           </div>
@@ -233,8 +233,8 @@ function InviteModal({ onClose, assignableRoles }: { onClose: () => void; assign
           </form>
         ) : (
           <div className="p-6 text-center space-y-4">
-            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle className="w-7 h-7 text-green-600" />
+            <div className="w-14 h-14 bg-primary-500/12 rounded-full flex items-center justify-center mx-auto">
+              <CheckCircle className="w-7 h-7 text-primary-600" />
             </div>
             <div>
               <h4 className="text-sm font-bold text-text mb-1">¡Usuario creado!</h4>
@@ -430,11 +430,11 @@ export default function Usuarios() {
                   </td>
                   <td className="px-5 py-3.5">
                     {u.emailVerified ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary-500 bg-primary-500/12 px-2 py-0.5 rounded-full">
                         <CheckCircle className="w-3 h-3" />Sí
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-gold-500 bg-gold-500/12 px-2 py-0.5 rounded-full">
                         <XCircle className="w-3 h-3" />Pendiente
                       </span>
                     )}
@@ -447,8 +447,8 @@ export default function Usuarios() {
                         title={u.activo ? 'Clic para desactivar' : 'Clic para activar'}
                         className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
                           u.activo
-                            ? 'bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600'
-                            : 'bg-red-100 text-red-600 hover:bg-green-100 hover:text-green-700'
+                            ? 'bg-primary-500/12 text-primary-500 hover:bg-red/10 hover:text-red-dark'
+                            : 'bg-red/10 text-red-dark hover:bg-primary-500/12 hover:text-primary-500'
                         }`}
                       >
                         {toggleActivo.isPending
@@ -458,7 +458,7 @@ export default function Usuarios() {
                         {u.estado}
                       </button>
                     ) : (
-                      <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${u.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                      <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${u.activo ? 'bg-primary-500/12 text-primary-500' : 'bg-red/10 text-red-dark'}`}>
                         {u.activo ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                         {u.estado}
                       </span>
@@ -467,13 +467,13 @@ export default function Usuarios() {
                   <td className="px-5 py-3.5">
                     {manageable ? (
                       <div className="flex items-center gap-1.5">
-                        <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors" title="Cambiar rol" aria-label={`Editar rol de ${u.nombre}`}>
+                        <button onClick={() => openEdit(u)} className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors" title="Cambiar rol" aria-label={`Editar rol de ${u.nombre}`}>
                           <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
                         </button>
                         <button
                           onClick={() => setDeleteTarget(u)}
                           disabled={deleteUser.isPending && deleteTarget?.id === u.id}
-                          className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                          className="p-1.5 rounded-lg text-text-muted hover:text-red-dark hover:bg-red/10 disabled:opacity-50 transition-colors"
                           aria-label={`Eliminar usuario ${u.nombre}`}
                         >
                           {deleteUser.isPending && deleteTarget?.id === u.id
@@ -575,8 +575,8 @@ export default function Usuarios() {
         {deleteTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-5 h-5 text-red-600" />
+              <div className="w-12 h-12 bg-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-5 h-5 text-red-dark" />
               </div>
               <h3 className="text-base font-bold text-text mb-2">Eliminar Usuario</h3>
               <p className="text-sm text-text-muted mb-6">

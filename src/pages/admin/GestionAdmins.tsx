@@ -23,10 +23,10 @@ const crearAdmin       = (data: { nombre: string; email: string; institucion: st
 // ── Sub-components ────────────────────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, color = 'primary' }: { icon: React.ComponentType<{ className?: string }>; label: string; value?: number | string; color?: string }) {
   const colors = {
-    primary: 'bg-primary-50 text-primary-700 border-primary-200',
-    amber:   'bg-amber-50  text-amber-700  border-amber-200',
-    green:   'bg-green-50  text-green-700  border-green-200',
-    red:     'bg-red-50    text-red-700    border-red-200',
+    primary: 'bg-primary-500/10 text-primary-600 border-primary-500/25',
+    amber:   'bg-gold-500/10    text-gold-500     border-gold-500/25',
+    green:   'bg-primary-500/10 text-primary-500  border-primary-500/25',
+    red:     'bg-red/10         text-red-dark     border-red/25',
   }
   return (
     <Card3D
@@ -91,7 +91,7 @@ function CrearAdminModal({ onClose, onSuccess }: { onClose: () => void; onSucces
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {showConfirm && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+            <div className="bg-gold-500/10 border border-gold-500/25 rounded-xl p-3 text-sm text-gold-500">
               Se creará el usuario <strong>{form.email}</strong> como Administrador SIG. Recibirá su contraseña temporal por correo. ¿Confirmar?
             </div>
           )}
@@ -139,7 +139,7 @@ function CrearAdminModal({ onClose, onSuccess }: { onClose: () => void; onSucces
           </div>
 
           {serverError && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{serverError}</p>
+            <p className="text-sm text-red-dark bg-red/10 border border-red/25 rounded-xl px-3 py-2">{serverError}</p>
           )}
 
           <div className="flex gap-2 pt-1">
@@ -205,7 +205,7 @@ function AdminTable({ usuarios, isLoading }: { usuarios: AdminSigUser[] | undefi
               <td className="px-4 py-3 text-text-muted">{u.email}</td>
               <td className="px-4 py-3 text-text-muted">{u.institucion ?? '—'}</td>
               <td className="px-4 py-3">
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${u.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${u.activo ? 'bg-primary-500/12 text-primary-500' : 'bg-red/10 text-red-dark'}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${u.activo ? 'bg-green-500' : 'bg-red-400'}`} />
                   {u.activo ? 'Activo' : 'Inactivo'}
                 </span>
@@ -273,9 +273,9 @@ export default function GestionAdmins() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800 flex items-center gap-2"
+            className="bg-primary-500/10 border border-primary-500/25 rounded-xl px-4 py-3 text-sm text-primary-600 flex items-center gap-2"
           >
-            <ShieldCheck className="w-4 h-4 shrink-0 text-green-600" />
+            <ShieldCheck className="w-4 h-4 shrink-0 text-primary-600" />
             {successMsg}
           </motion.div>
         )}
