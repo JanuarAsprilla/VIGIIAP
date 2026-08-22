@@ -29,7 +29,7 @@ function SectionCard({ title, icon: Icon, children, delay = 0 }: SectionCardProp
       style={{ transformPerspective: 900 }}
       glow="rgba(26,86,50,0.12)"
       intensity={3}
-      className="bg-white border border-border/70 rounded-xl overflow-hidden"
+      className="bg-[var(--card-bg)] border border-border/70 rounded-xl overflow-hidden"
       whileHover={{ y: -3 }}
     >
       <div className="flex items-center gap-2.5 px-6 py-4 border-b border-border bg-bg-alt/40">
@@ -64,17 +64,20 @@ interface ToggleProps {
 function Toggle({ checked, onChange, label }: ToggleProps) {
   return (
     <label className="inline-flex items-center gap-3 cursor-pointer">
-      <div
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
         onClick={onChange}
-        className={`relative w-10 h-5.5 rounded-full transition-colors duration-200 ${checked ? 'bg-primary-800' : 'bg-gray-200'}`}
+        className={`relative w-10 h-5.5 rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 ${checked ? 'bg-primary-800' : 'bg-bg-alt border border-border'}`}
         style={{ height: '22px' }}
       >
         <span
           className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${checked ? 'translate-x-5' : 'translate-x-0.5'}`}
           style={{ display: 'block' }}
         />
-      </div>
-      <span className="text-sm text-text">{label}</span>
+      </button>
+      {label && <span className="text-sm text-text">{label}</span>}
     </label>
   )
 }
@@ -128,6 +131,17 @@ export default function Configuracion() {
       phone:    remoteConfig.phone    ?? g.phone,
       address:  remoteConfig.address  ?? g.address,
     }))
+    setNotifs((n) => ({
+      emailNotifs:      remoteConfig.emailNotifs      === undefined ? n.emailNotifs      : remoteConfig.emailNotifs      === 'true',
+      solicitudNotifs:  remoteConfig.solicitudNotifs  === undefined ? n.solicitudNotifs  : remoteConfig.solicitudNotifs  === 'true',
+      loginNotifs:      remoteConfig.loginNotifs      === undefined ? n.loginNotifs      : remoteConfig.loginNotifs      === 'true',
+      reportesSemanal:  remoteConfig.reportesSemanal  === undefined ? n.reportesSemanal  : remoteConfig.reportesSemanal  === 'true',
+    }))
+    setRoles((r) => ({
+      publicoCanSolicitar:   remoteConfig.publicoCanSolicitar   === undefined ? r.publicoCanSolicitar   : remoteConfig.publicoCanSolicitar   === 'true',
+      investigadorCanUpload: remoteConfig.investigadorCanUpload === undefined ? r.investigadorCanUpload : remoteConfig.investigadorCanUpload === 'true',
+      requireApproval:       remoteConfig.requireApproval       === undefined ? r.requireApproval       : remoteConfig.requireApproval       === 'true',
+    }))
     setMantenimiento((m) => ({
       modoMantenimiento: remoteConfig.modoMantenimiento === 'true',
       mensaje: remoteConfig.mensajeMantenimiento ?? m.mensaje,
@@ -150,8 +164,15 @@ export default function Configuracion() {
   const handleSave = () => {
     saveMutation.mutate({
       ...general,
-      modoMantenimiento:    String(mantenimiento.modoMantenimiento),
-      mensajeMantenimiento: mantenimiento.mensaje,
+      emailNotifs:           String(notifs.emailNotifs),
+      solicitudNotifs:       String(notifs.solicitudNotifs),
+      loginNotifs:           String(notifs.loginNotifs),
+      reportesSemanal:       String(notifs.reportesSemanal),
+      publicoCanSolicitar:   String(roles.publicoCanSolicitar),
+      investigadorCanUpload: String(roles.investigadorCanUpload),
+      requireApproval:       String(roles.requireApproval),
+      modoMantenimiento:     String(mantenimiento.modoMantenimiento),
+      mensajeMantenimiento:  mantenimiento.mensaje,
     })
   }
 
@@ -193,7 +214,7 @@ export default function Configuracion() {
             type="text"
             value={general.siteName}
             onChange={(e) => setGeneral((g) => ({ ...g, siteName: e.target.value }))}
-            className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+            className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
           />
         </FieldRow>
         <hr className="border-border" />
@@ -202,7 +223,7 @@ export default function Configuracion() {
             type="text"
             value={general.siteDesc}
             onChange={(e) => setGeneral((g) => ({ ...g, siteDesc: e.target.value }))}
-            className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+            className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
           />
         </FieldRow>
         <hr className="border-border" />
@@ -211,7 +232,7 @@ export default function Configuracion() {
             type="text"
             value={general.region}
             onChange={(e) => setGeneral((g) => ({ ...g, region: e.target.value }))}
-            className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+            className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
           />
         </FieldRow>
         <hr className="border-border" />
@@ -230,7 +251,7 @@ export default function Configuracion() {
                 type="text"
                 value={general[key]}
                 onChange={(e) => setGeneral((g) => ({ ...g, [key]: e.target.value }))}
-                className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+                className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
               />
             </div>
           ))}
@@ -269,17 +290,17 @@ export default function Configuracion() {
           ))}
         </div>
         <hr className="border-border" />
-        <div className="bg-primary-50 rounded-xl p-4">
-          <p className="text-[0.65rem] font-bold uppercase tracking-wider text-primary-700 mb-2">Roles del Sistema</p>
+        <div className="bg-[var(--welcome-bg)] border border-[var(--welcome-border)] rounded-xl p-4">
+          <p className="text-[0.65rem] font-bold uppercase tracking-wider text-[var(--stats-value)] mb-2">Roles del Sistema</p>
           {[
             { rol: 'Administrador SIG', desc: 'Acceso completo al panel de administración y todos los módulos' },
             { rol: 'Investigador', desc: 'Acceso a mapas, documentos, geovisor, herramientas y solicitudes' },
             { rol: 'Público', desc: 'Solo acceso al inicio de sesión y módulos públicos. Módulos técnicos bloqueados' },
           ].map(({ rol, desc }) => (
             <div key={rol} className="flex items-start gap-2 py-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary-700 mt-1.5 shrink-0" />
+              <div className="w-1.5 h-1.5 rounded-full bg-[var(--stats-value)] mt-1.5 shrink-0" />
               <div>
-                <span className="text-xs font-bold text-primary-800">{rol}: </span>
+                <span className="text-xs font-bold text-[var(--stats-value)]">{rol}: </span>
                 <span className="text-xs text-text-muted">{desc}</span>
               </div>
             </div>
@@ -307,9 +328,9 @@ export default function Configuracion() {
             exit={{ opacity: 0, height: 0 }}
             className="space-y-3"
           >
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-800">El modo mantenimiento está activo. Los usuarios no administradores verán el mensaje configurado.</p>
+            <div className="bg-[var(--note-bg)] border border-[var(--note-border)] rounded-xl p-4 flex gap-3">
+              <AlertTriangle className="w-4 h-4 text-[var(--note-text)] shrink-0 mt-0.5" />
+              <p className="text-xs text-[var(--note-text)]">El modo mantenimiento está activo. Los usuarios no administradores verán el mensaje configurado.</p>
             </div>
             <div>
               <label htmlFor="conf-mant-msg" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Mensaje de mantenimiento</label>
@@ -318,7 +339,7 @@ export default function Configuracion() {
                 rows={3}
                 value={mantenimiento.mensaje}
                 onChange={(e) => setMantenimiento((m) => ({ ...m, mensaje: e.target.value }))}
-                className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
+                className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
               />
             </div>
           </motion.div>

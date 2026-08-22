@@ -6,7 +6,7 @@ import type { ArchivoSolicitud, SolicitudData } from '@/hooks/useSolicitudes'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, X, CheckCircle, XCircle, Clock, Eye,
-  Download, Loader2,
+  Download, Loader2, Trash2,
   Mail, User, FileText, Send, MessageSquare, AlertCircle,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, drawerAnim, EASE_OUT_EXPO } from '@/lib/animations'
@@ -62,6 +62,7 @@ export default function GestionSolicitudes() {
 
   const [selected, setSelected] = useState<SolicitudData | null>(null)
   const [accionModal, setAccionModal] = useState<{ type: 'approve' | 'reject'; sol: SolicitudData } | null>(null)
+  const [deleteArchivoTarget, setDeleteArchivoTarget] = useState<ArchivoSolicitud | null>(null)
 
   const archivosQuery     = useSolicitudArchivos(selected?._id)
   const archivos          = archivosQuery.data ?? []
@@ -140,6 +141,7 @@ export default function GestionSolicitudes() {
     try {
       await deleteArchivo.mutateAsync({ solicitudId: selected._id, archivoId: archivo.id })
       toast(`Archivo "${archivo.nombre}" eliminado`, 'success')
+      setDeleteArchivoTarget(null)
     } catch {
       toast('Error al eliminar el archivo', 'error')
     }
@@ -197,14 +199,14 @@ export default function GestionSolicitudes() {
             placeholder="Buscar por ID, tipo o solicitante..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-            className="w-full pl-9 pr-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+            className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
           />
         </div>
         <select
           value={filtroEstado}
           aria-label="Filtrar por estado de solicitud"
           onChange={(e) => { setFiltroEstado(e.target.value); setPage(1) }}
-          className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
+          className="px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
         >
           <option value="">Todos los estados</option>
           <option>Pendiente</option>
@@ -217,7 +219,7 @@ export default function GestionSolicitudes() {
           value={filtroTipo}
           aria-label="Filtrar por tipo de solicitud"
           onChange={(e) => { setFiltroTipo(e.target.value); setPage(1) }}
-          className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
+          className="px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
         >
           <option value="">Todos los tipos</option>
           {TIPOS_SOLICITUD.map((t) => <option key={t}>{t}</option>)}
@@ -232,7 +234,7 @@ export default function GestionSolicitudes() {
         style={{ transformPerspective: 900 }}
         glow="rgba(26,86,50,0.12)"
         intensity={3}
-        className="bg-white border border-border/70 rounded-xl overflow-hidden"
+        className="bg-[var(--card-bg)] border border-border/70 rounded-xl overflow-hidden"
         whileHover={{ y: -2 }}
       >
         <div className="overflow-x-auto">
@@ -274,7 +276,7 @@ export default function GestionSolicitudes() {
                     )}
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ESTADO_BADGE[s.estado] ?? 'bg-gray-100 text-gray-600'}`}>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${ESTADO_BADGE[s.estado] ?? 'bg-bg-alt text-text-muted'}`}>
                       {s.estado}
                     </span>
                   </td>
@@ -282,7 +284,7 @@ export default function GestionSolicitudes() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => { setSelected(s); setRespuesta('') }}
-                        className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
+                        className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors"
                         title="Ver detalle"
                       >
                         <Eye className="w-3.5 h-3.5" />
@@ -301,7 +303,7 @@ export default function GestionSolicitudes() {
                         <button
                           onClick={() => { setAccionModal({ type: 'approve', sol: s }); setNota('') }}
                           disabled={updateEstado.isPending}
-                          className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors"
+                          className="p-1.5 rounded-lg text-primary-600 hover:bg-primary-500/10 disabled:opacity-50 transition-colors"
                           title="Aprobar"
                         >
                           <CheckCircle className="w-3.5 h-3.5" />
@@ -311,7 +313,7 @@ export default function GestionSolicitudes() {
                         <button
                           onClick={() => { setAccionModal({ type: 'reject', sol: s }); setNota('') }}
                           disabled={updateEstado.isPending}
-                          className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                          className="p-1.5 rounded-lg text-red-dark hover:bg-red/10 disabled:opacity-50 transition-colors"
                           title="Rechazar"
                         >
                           <XCircle className="w-3.5 h-3.5" />
@@ -349,14 +351,14 @@ export default function GestionSolicitudes() {
             <motion.div
               key="drawer"
               {...drawerAnim}
-              className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col"
+              className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-[var(--card-bg)] shadow-2xl flex flex-col"
             >
               {/* Drawer Header */}
               <div className="flex items-start justify-between px-6 py-5 border-b border-border bg-bg-alt/40 shrink-0">
                 <div>
                   <span className="text-xs font-bold text-primary-800">{selected.id}</span>
                   <h3 className="text-base font-bold text-text mt-0.5">{selected.tipo}</h3>
-                  <span className={`inline-block mt-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full ${ESTADO_BADGE[selected.estado] ?? 'bg-gray-100 text-gray-600'}`}>
+                  <span className={`inline-block mt-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full ${ESTADO_BADGE[selected.estado] ?? 'bg-bg-alt text-text-muted'}`}>
                     {selected.estado}
                   </span>
                 </div>
@@ -372,7 +374,7 @@ export default function GestionSolicitudes() {
                 <div className="px-6 py-4 space-y-3">
                   <SectionLabel>Solicitante</SectionLabel>
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-primary-500/12 flex items-center justify-center shrink-0">
                       <User className="w-4 h-4 text-primary-700" />
                     </div>
                     <div>
@@ -516,7 +518,7 @@ export default function GestionSolicitudes() {
                             className="text-xs text-primary-700 hover:text-primary-900 font-medium ml-1 transition-colors disabled:opacity-50">
                             Descargar
                           </button>
-                          <button onClick={() => handleDeleteArchivo(a)}
+                          <button onClick={() => setDeleteArchivoTarget(a)}
                             disabled={deleteArchivo.isPending}
                             className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors disabled:opacity-50">
                             Eliminar
@@ -531,7 +533,7 @@ export default function GestionSolicitudes() {
                 {canDo(selected, 'Resuelta') && (
                   <div className="px-6 py-4 space-y-3">
                     <SectionLabel>Comunicación con el solicitante</SectionLabel>
-                    <div className="bg-primary-50 border border-primary-100 rounded-xl p-4 space-y-3">
+                    <div className="bg-primary-500/10 border border-primary-500/20 rounded-xl p-4 space-y-3">
                       <div className="flex items-center gap-2">
                         <MessageSquare className="w-4 h-4 text-primary-700" />
                         <p className="text-xs font-bold text-primary-800">Enviar respuesta y resolver</p>
@@ -544,8 +546,9 @@ export default function GestionSolicitudes() {
                         rows={4}
                         value={respuesta}
                         onChange={(e) => setRespuesta(e.target.value)}
+                        maxLength={2000}
                         placeholder="Redacta la respuesta oficial. Incluye resultados del trámite, observaciones técnicas o instrucciones..."
-                        className="w-full px-3 py-2.5 border border-primary-200 bg-white rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
+                        className="w-full px-3 py-2.5 border border-primary-200 bg-[var(--card-bg)] rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
                       />
                       <div className="flex items-center justify-between">
                         <p className={`text-xs ${respuesta.trim().length < 10 ? 'text-text-muted' : 'text-primary-700'}`}>
@@ -624,9 +627,9 @@ export default function GestionSolicitudes() {
       <AnimatePresence>
         {accionModal && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${accionModal.type === 'approve' ? 'bg-green-100' : 'bg-red-100'}`}>
-                {accionModal.type === 'approve' ? <CheckCircle className="w-5 h-5 text-green-600" /> : <XCircle className="w-5 h-5 text-red-600" />}
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${accionModal.type === 'approve' ? 'bg-primary-500/12' : 'bg-red/10'}`}>
+                {accionModal.type === 'approve' ? <CheckCircle className="w-5 h-5 text-primary-600" /> : <XCircle className="w-5 h-5 text-red-dark" />}
               </div>
               <h3 className="text-base font-bold text-text text-center mb-1">
                 {accionModal.type === 'approve' ? 'Aprobar Solicitud' : 'Rechazar Solicitud'}
@@ -655,6 +658,34 @@ export default function GestionSolicitudes() {
                 >
                   {updateEstado.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   {accionModal.type === 'approve' ? 'Confirmar Aprobación' : 'Confirmar Rechazo'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete archivo confirm modal */}
+      <AnimatePresence>
+        {deleteArchivoTarget && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+              <div className="w-12 h-12 bg-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-5 h-5 text-red-dark" />
+              </div>
+              <h3 className="text-base font-bold text-text mb-2">Eliminar archivo</h3>
+              <p className="text-sm text-text-muted mb-6">
+                ¿Seguro que deseas eliminar <strong className="text-text">"{deleteArchivoTarget.nombre}"</strong>?<br />
+                <span className="text-xs">Esta acción no se puede deshacer.</span>
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeleteArchivoTarget(null)} disabled={deleteArchivo.isPending}
+                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors disabled:opacity-50">
+                  Cancelar
+                </button>
+                <button onClick={() => handleDeleteArchivo(deleteArchivoTarget)} disabled={deleteArchivo.isPending}
+                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50">
+                  {deleteArchivo.isPending ? 'Eliminando…' : 'Sí, eliminar'}
                 </button>
               </div>
             </motion.div>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { ApiMeta } from '@/types'
 import { motion } from 'framer-motion'
 import {
-  Search, Download, ChevronLeft, ChevronRight, Loader2,
+  Search, Download, ChevronLeft, ChevronRight, Loader2, AlertCircle,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
@@ -15,34 +15,31 @@ const fadeUp = fadeUpSm
 const MODULO_STYLES = {
   auth:       'bg-primary-500/12 text-primary-500',
   usuarios:   'bg-magenta/12 text-magenta',
-  admin:      'bg-primary-100 text-primary-800',
+  admin:      'bg-primary-700/10 text-primary-700',
   solicitudes:'bg-gold-400/12 text-gold-400',
   mapas:      'bg-primary-700/10 text-primary-700',
   documentos: 'bg-gold-500/12 text-gold-500',
 }
 
 const ACCION_LABEL = {
-  login:                 { label: 'Login',               badge: 'bg-green-100 text-green-700'   },
+  login:                 { label: 'Login',               badge: 'bg-primary-500/12 text-primary-500' },
   registro:              { label: 'Registro',             badge: 'bg-primary-500/12 text-primary-500' },
-  login_visitante:       { label: 'Visitante',            badge: 'bg-gray-100 text-gray-600'     },
-  create_usuario:        { label: 'Crear usuario',        badge: 'bg-green-100 text-green-700'   },
-  update_usuario:        { label: 'Actualizar usuario',   badge: 'bg-amber-100 text-amber-700'   },
-  update_rol:            { label: 'Cambio de rol',        badge: 'bg-amber-100 text-amber-700'   },
-  delete_usuario:        { label: 'Eliminar usuario',     badge: 'bg-red-100 text-red-600'       },
-  change_password:       { label: 'Cambio contraseña',    badge: 'bg-amber-100 text-amber-700'   },
+  login_visitante:       { label: 'Visitante',            badge: 'bg-bg-alt text-text-muted'     },
+  create_usuario:        { label: 'Crear usuario',        badge: 'bg-primary-500/12 text-primary-500' },
+  update_usuario:        { label: 'Actualizar usuario',   badge: 'bg-gold-500/12 text-gold-500'  },
+  update_rol:            { label: 'Cambio de rol',        badge: 'bg-gold-500/12 text-gold-500'  },
+  delete_usuario:        { label: 'Eliminar usuario',     badge: 'bg-red/10 text-red-dark'       },
+  change_password:       { label: 'Cambio contraseña',    badge: 'bg-gold-500/12 text-gold-500'  },
   create_solicitud:       { label: 'Nueva solicitud',      badge: 'bg-gold-400/12 text-gold-400'  },
-  update_solicitud_estado:{ label: 'Estado solicitud',    badge: 'bg-yellow-100 text-yellow-700' },
-  update_perfil:          { label: 'Actualizar perfil',   badge: 'bg-amber-100 text-amber-700'    },
-  update_configuracion:   { label: 'Configuración',       badge: 'bg-primary-100 text-primary-800'},
-  create_mapa:            { label: 'Crear mapa',          badge: 'bg-green-100 text-green-700'    },
-  update_mapa:            { label: 'Actualizar mapa',     badge: 'bg-amber-100 text-amber-700'    },
-  delete_mapa:            { label: 'Eliminar mapa',       badge: 'bg-red-100 text-red-600'        },
-  create_noticia:         { label: 'Crear noticia',       badge: 'bg-pink/12 text-pink'            },
-  update_noticia:         { label: 'Actualizar noticia',  badge: 'bg-amber-100 text-amber-700'    },
-  delete_noticia:         { label: 'Eliminar noticia',    badge: 'bg-red-100 text-red-600'        },
-  create_documento:       { label: 'Subir documento',     badge: 'bg-orange-100 text-orange-700'  },
-  update_documento:       { label: 'Editar documento',    badge: 'bg-amber-100 text-amber-700'    },
-  delete_documento:       { label: 'Eliminar documento',  badge: 'bg-red-100 text-red-600'        },
+  update_solicitud_estado:{ label: 'Estado solicitud',    badge: 'bg-gold-400/12 text-gold-400'  },
+  update_perfil:          { label: 'Actualizar perfil',   badge: 'bg-gold-500/12 text-gold-500'   },
+  update_configuracion:   { label: 'Configuración',       badge: 'bg-primary-700/10 text-primary-700'},
+  create_mapa:            { label: 'Crear mapa',          badge: 'bg-primary-500/12 text-primary-500' },
+  update_mapa:            { label: 'Actualizar mapa',     badge: 'bg-gold-500/12 text-gold-500'   },
+  delete_mapa:            { label: 'Eliminar mapa',       badge: 'bg-red/10 text-red-dark'        },
+  create_documento:       { label: 'Subir documento',     badge: 'bg-orange-500/12 text-orange-500' },
+  update_documento:       { label: 'Editar documento',    badge: 'bg-gold-500/12 text-gold-500'   },
+  delete_documento:       { label: 'Eliminar documento',  badge: 'bg-red/10 text-red-dark'        },
 }
 
 const PAGE_SIZE = 10
@@ -58,7 +55,7 @@ interface AuditLogRaw {
 }
 
 function normalizeLog(l: AuditLogRaw) {
-  const accionInfo = (ACCION_LABEL as Record<string, { label: string; badge: string }>)[l.accion] ?? { label: l.accion, badge: 'bg-gray-100 text-gray-600' }
+  const accionInfo = (ACCION_LABEL as Record<string, { label: string; badge: string }>)[l.accion] ?? { label: l.accion, badge: 'bg-bg-alt text-text-muted' }
   return {
     id:         l.id,
     accion:     l.accion,
@@ -92,7 +89,7 @@ export default function Actividad() {
   const [filtroModulo, setFiltroModulo] = useState('')
   const [page, setPage] = useState(1)
 
-  const { data, isLoading } = useAuditLog({
+  const { data, isLoading, isError, refetch } = useAuditLog({
     modulo: filtroModulo || undefined,
     limit:  PAGE_SIZE,
     offset: (page - 1) * PAGE_SIZE,
@@ -161,13 +158,13 @@ export default function Actividad() {
             placeholder="Buscar por usuario, acción o descripción..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+            className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
           />
         </div>
         <select
           value={filtroModulo}
           onChange={(e) => { setFiltroModulo(e.target.value); setPage(1) }}
-          className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
+          className="px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
         >
           <option value="">Todos los módulos</option>
           {MODULOS_OPCIONES.map((m) => <option key={m} value={m}>{m}</option>)}
@@ -182,7 +179,7 @@ export default function Actividad() {
         style={{ transformPerspective: 900 }}
         glow="rgba(26,86,50,0.12)"
         intensity={3}
-        className="bg-white border border-border/70 rounded-xl overflow-hidden"
+        className="bg-[var(--card-bg)] border border-border/70 rounded-xl overflow-hidden"
         whileHover={{ y: -2 }}
       >
         <div className="overflow-x-auto">
@@ -202,7 +199,18 @@ export default function Actividad() {
                   </td>
                 </tr>
               )}
-              {!isLoading && filtered.length === 0 && (
+              {isError && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-10 text-center">
+                    <AlertCircle className="w-6 h-6 text-red-400 mx-auto mb-2" />
+                    <p className="text-sm text-red-500 mb-3">No se pudo cargar el registro de actividad.</p>
+                    <button onClick={() => refetch()} className="text-xs font-semibold text-primary-700 hover:text-primary-900 transition-colors">
+                      Reintentar
+                    </button>
+                  </td>
+                </tr>
+              )}
+              {!isLoading && !isError && filtered.length === 0 && (
                 <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-text-muted">Sin eventos registrados</td></tr>
               )}
               {filtered.map((log) => (

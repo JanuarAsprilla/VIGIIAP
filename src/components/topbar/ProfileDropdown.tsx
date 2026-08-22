@@ -41,20 +41,39 @@ function RoleBadge({ user }: { user: AuthUser | null }) {
   )
 }
 
-function MenuItem({ to = '', icon: Icon, label, onClick = undefined, danger = false }: {
-  to?: string; icon: LucideIcon
-  label: string; onClick?: () => void; danger?: boolean
+// Fila plana estándar del menú (Mi Perfil, Mis Solicitudes, Guía de Usuario).
+function MenuItem({ to = '', icon: Icon, label, onClick = undefined }: {
+  to?: string; icon: LucideIcon; label: string; onClick?: () => void
 }) {
-  const base = `flex items-center gap-3 px-4 py-2.5 text-sm no-underline transition-colors w-full text-left ${danger ? 'text-red-dark hover:bg-red/8' : 'text-text hover:bg-bg-alt'}`
+  const base = 'flex items-center gap-3 px-4 py-2.5 text-sm no-underline transition-colors w-full text-left text-text hover:bg-bg-alt'
   if (to) return (
     <li><Link to={to} onClick={onClick} className={base}>
-      <Icon className={`w-4 h-4 ${danger ? '' : 'text-text-muted'}`} aria-hidden="true" />{label}
+      <Icon className="w-4 h-4 text-text-muted" aria-hidden="true" />{label}
     </Link></li>
   )
   return (
     <li><button onClick={onClick} className={base}>
-      <Icon className={`w-4 h-4 ${danger ? '' : 'text-text-muted'}`} aria-hidden="true" />{label}
+      <Icon className="w-4 h-4 text-text-muted" aria-hidden="true" />{label}
     </button></li>
+  )
+}
+
+// Fila con peso propio para acciones que deben destacar sobre el resto del
+// menú (Panel Admin, Cerrar Sesión) — visibles en reposo, no solo al hover.
+function EmphasisItem({ to = '', icon: Icon, label, onClick, tone }: {
+  to?: string; icon: LucideIcon; label: string; onClick?: () => void
+  tone: 'admin' | 'danger'
+}) {
+  const style = tone === 'admin'
+    ? { background: 'linear-gradient(135deg, #B0CB1F, #8CA318)', color: '#10230f', boxShadow: '0 2px 10px rgba(176,203,31,0.28)' }
+    : { background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.18)' }
+  const className = 'flex items-center gap-3 px-4 py-2.5 text-sm font-bold no-underline transition-all w-full text-left rounded-xl mx-2 my-1 hover:opacity-90 active:scale-[0.98]'
+  const content = <><Icon className="w-4 h-4 shrink-0" aria-hidden="true" />{label}</>
+  if (to) return (
+    <li><Link to={to} onClick={onClick} className={className} style={style}>{content}</Link></li>
+  )
+  return (
+    <li><button onClick={onClick} className={className} style={style}>{content}</button></li>
   )
 }
 
@@ -101,14 +120,14 @@ export default function ProfileDropdown({ user, onClose, onLogout }: { user: Aut
         {isVerified && (
           <ul className="py-1">
             <MenuItem to="/perfil"       icon={UserCircle}      label="Mi Perfil"       onClick={onClose} />
-            {isAdmin && <MenuItem to="/admin" icon={LayoutDashboard} label="Panel Admin" onClick={onClose} />}
+            {isAdmin && <EmphasisItem to="/admin" icon={LayoutDashboard} label="Panel Admin" onClick={onClose} tone="admin" />}
             <MenuItem to="/solicitudes"  icon={ClipboardList}   label="Mis Solicitudes"  onClick={onClose} />
             <MenuItem to="/guia-usuario" icon={BookOpen}        label="Guía de Usuario"  onClick={onClose} />
           </ul>
         )}
 
         <div className="border-t border-border py-1">
-          <MenuItem icon={LogOut} label="Cerrar Sesión" onClick={onLogout} danger />
+          <EmphasisItem icon={LogOut} label="Cerrar Sesión" onClick={onLogout} tone="danger" />
         </div>
       </nav>
     </GlassPanel>

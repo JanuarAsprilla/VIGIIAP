@@ -267,18 +267,18 @@ function SidebarInner({ onClose, onLogout, user, isAuthenticated }: {
                 <Link
                   to="/admin"
                   onClick={onClose}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold no-underline transition-all mb-1"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold no-underline transition-all hover:opacity-90 active:scale-[0.98] mb-1"
                   style={{
-                    background: 'rgba(176,203,31,0.1)',
-                    border: '1px solid rgba(176,203,31,0.25)',
-                    color: '#d9f99d',
+                    background: 'linear-gradient(135deg, #B0CB1F, #8CA318)',
+                    color: '#10230f',
+                    boxShadow: '0 4px 14px rgba(176,203,31,0.35)',
                   }}
                 >
                   <Shield className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                   <span>Panel Admin</span>
                   <span
                     className="ml-auto text-[0.52rem] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
-                    style={{ background: 'rgba(176,203,31,0.2)', color: '#d9f99d' }}
+                    style={{ background: 'rgba(16,35,15,0.18)', color: '#10230f' }}
                   >
                     SIG
                   </span>
@@ -309,10 +309,10 @@ function SidebarInner({ onClose, onLogout, user, isAuthenticated }: {
                 whileHover={{ x: 3 }}
                 whileTap={{ x: 0 }}
                 transition={{ type: 'spring', stiffness: 400 }}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors"
-                style={{ color: 'var(--nav-logout-text)' }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = 'rgba(239,68,68,0.06)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--nav-logout-text)'; e.currentTarget.style.background = 'transparent' }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                style={{ color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.16)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.32)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.18)' }}
               >
                 <LogOut className="w-[16px] h-[16px] shrink-0" aria-hidden="true" />
                 <span>Cerrar Sesión</span>
