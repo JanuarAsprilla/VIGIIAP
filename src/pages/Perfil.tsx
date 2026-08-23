@@ -21,7 +21,7 @@ import api from '@/lib/api'
 interface SectionProps { title: string; description?: string; children: React.ReactNode }
 function Section({ title, description, children }: SectionProps) {
   return (
-    <div className="bg-white border border-border rounded-2xl overflow-hidden">
+    <div className="bg-[var(--card-bg)] border border-border rounded-2xl overflow-hidden">
       <div className="px-6 py-4 border-b border-border">
         <h3 className="font-semibold text-text">{title}</h3>
         {description && <p className="text-xs text-text-muted mt-0.5">{description}</p>}
@@ -86,7 +86,7 @@ interface PasswordInputProps {
   error?: string; onChange: (value: string) => void; onToggle: () => void
 }
 function PasswordInput({ id, placeholder, value, visible, error, onChange, onToggle }: PasswordInputProps) {
-  const cls = `w-full pl-10 pr-10 py-2.5 border rounded-xl text-sm text-text placeholder:text-text-muted bg-white focus:outline-none focus:ring-2 transition ${
+  const cls = `w-full pl-10 pr-10 py-2.5 border rounded-xl text-sm text-text placeholder:text-text-muted bg-[var(--card-bg)] focus:outline-none focus:ring-2 transition ${
     error ? 'border-red-400 focus:border-red-400 focus:ring-red-400/10'
           : 'border-border focus:border-primary-800 focus:ring-primary-800/10'
   }`
@@ -157,14 +157,14 @@ function CambiarPassword() {
       <AnimatePresence>
         {success && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="flex items-center gap-2.5 bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm">
+            className="flex items-center gap-2.5 bg-primary-500/10 border border-primary-500/25 text-primary-600 rounded-xl px-4 py-3 text-sm">
             <CheckCircle className="w-4 h-4 shrink-0" />
             Contraseña actualizada correctamente.
           </motion.div>
         )}
         {serverError && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+            className="flex items-center gap-2.5 bg-red/10 border border-red/25 text-red-dark rounded-xl px-4 py-3 text-sm">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {serverError}
           </motion.div>
@@ -262,22 +262,22 @@ function TwoFactor() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${has2fa || step === 'done' ? 'bg-green-50' : 'bg-surface'}`}>
-            <Smartphone className={`w-4 h-4 ${has2fa || step === 'done' ? 'text-green-600' : 'text-text-muted'}`} />
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${has2fa || step === 'done' ? 'bg-primary-500/12' : 'bg-surface'}`}>
+            <Smartphone className={`w-4 h-4 ${has2fa || step === 'done' ? 'text-primary-600' : 'text-text-muted'}`} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-text-primary">Autenticación en dos pasos</p>
+            <p className="text-sm font-semibold text-text">Autenticación en dos pasos</p>
             <p className="text-xs text-text-muted">{has2fa || step === 'done' ? 'Activa — su cuenta tiene protección adicional' : 'Inactiva — active para mayor seguridad'}</p>
           </div>
         </div>
         {(has2fa || step === 'done') ? (
           <button onClick={() => setShowDisableConfirm(true)} disabled={loading}
-            className="text-xs text-red-600 hover:text-red-700 font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
+            className="text-xs text-red-dark hover:text-red-dark font-medium px-3 py-1.5 rounded-lg hover:bg-red/10 transition-colors">
             Desactivar
           </button>
         ) : (
           <button onClick={startSetup} disabled={loading || step === 'setup'}
-            className="text-xs text-primary-800 font-medium px-3 py-1.5 rounded-lg hover:bg-primary-50 transition-colors">
+            className="text-xs text-primary-800 font-medium px-3 py-1.5 rounded-lg hover:bg-primary-500/10 transition-colors">
             {loading ? 'Cargando…' : 'Activar'}
           </button>
         )}
@@ -300,21 +300,21 @@ function TwoFactor() {
       )}
 
       {step === 'done' && (
-        <div className="flex items-center gap-2 text-green-700 bg-green-50 px-4 py-3 rounded-xl text-sm">
+        <div className="flex items-center gap-2 text-primary-600 bg-primary-500/10 px-4 py-3 rounded-xl text-sm">
           <CheckCircle className="w-4 h-4 flex-shrink-0" />
           ¡2FA activado exitosamente! Su cuenta está protegida.
         </div>
       )}
-      {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">{error}</p>}
+      {error && <p className="text-sm text-red-dark bg-red/10 px-4 py-3 rounded-xl">{error}</p>}
 
       <AnimatePresence>
         {showDisableConfirm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center"
+              className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center"
             >
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 bg-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trash2 className="w-5 h-5 text-red-600" aria-hidden="true" />
               </div>
               <h3 className="text-base font-bold text-text mb-2">Desactivar 2FA</h3>
@@ -373,7 +373,7 @@ function SesionesActivas() {
       <div className="flex items-center justify-between">
         <p className="text-xs text-text-muted">{sessions.length} sesión{sessions.length !== 1 ? 'es' : ''} activa{sessions.length !== 1 ? 's' : ''}</p>
         <div className="flex gap-2">
-          <button onClick={() => refetch()} className="text-xs text-text-muted hover:text-text-primary flex items-center gap-1">
+          <button onClick={() => refetch()} className="text-xs text-text-muted hover:text-text flex items-center gap-1">
             <RefreshCw className="w-3 h-3" /> Actualizar
           </button>
           {sessions.length > 1 && (
@@ -392,11 +392,11 @@ function SesionesActivas() {
       ) : (
         <div className="space-y-2">
           {sessions.map((s) => (
-            <div key={s.id} className={`flex items-center justify-between px-4 py-3 rounded-xl border ${s.current ? 'border-primary-200 bg-primary-50/40' : 'border-border bg-surface'}`}>
+            <div key={s.id} className={`flex items-center justify-between px-4 py-3 rounded-xl border ${s.current ? 'border-primary-500/30 bg-primary-500/8' : 'border-border bg-surface'}`}>
               <div className="flex items-center gap-3">
                 <div className="text-text-muted">{deviceIcon(s.userAgent)}</div>
                 <div>
-                  <p className="text-xs font-medium text-text-primary truncate max-w-[180px]">
+                  <p className="text-xs font-medium text-text truncate max-w-[180px]">
                     {s.current ? 'Esta sesión' : (s.userAgent.split('(')[0].trim() || 'Dispositivo')}
                   </p>
                   <p className="text-[10px] text-text-muted">{s.ip} · {new Date(s.createdAt).toLocaleDateString('es-CO')}</p>
@@ -404,7 +404,7 @@ function SesionesActivas() {
               </div>
               {!s.current && (
                 <button onClick={() => revoke.mutate(s.id)} disabled={revoke.isPending}
-                  className="p-1.5 text-text-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                  className="p-1.5 text-text-muted hover:text-red-dark hover:bg-red/10 rounded-lg transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -472,7 +472,7 @@ function Apariencia() {
               onClick={() => setDensity(value as Parameters<typeof setDensity>[0])}
               className={`flex flex-col items-center gap-2 px-3 py-4 rounded-xl border-2 text-center transition-all ${
                 density === value
-                  ? 'bg-primary-50 border-primary-800 text-primary-800'
+                  ? 'bg-primary-500/10 border-primary-800 text-primary-800'
                   : 'border-border text-text-muted hover:border-primary-300 hover:text-text'
               }`}
             >
@@ -568,9 +568,9 @@ export default function Perfil() {
   }
 
   const roleColor = {
-    'Administrador SIG': 'bg-red-100 text-red-700',
-    'Investigador':      'bg-gold-100 text-gold-700',
-    'Público':           'bg-primary-100 text-primary-700',
+    'Administrador SIG': 'bg-primary-700/10 text-primary-700',
+    'Investigador':      'bg-gold-400/12 text-gold-400',
+    'Público':           'bg-bg-alt text-text-muted',
   }[user?.role ?? ''] ?? 'bg-bg-alt text-text-muted'
 
   return (
@@ -592,7 +592,7 @@ export default function Perfil() {
         style={{ transformPerspective: 900 }}
         glow="rgba(26,86,50,0.18)"
         intensity={4}
-        className="bg-white border border-border/70 rounded-2xl p-6 flex items-center gap-5"
+        className="bg-[var(--card-bg)] border border-border/70 rounded-2xl p-6 flex items-center gap-5"
         whileHover={{ y: -3 }}
       >
         {/* Avatar */}
@@ -601,7 +601,7 @@ export default function Perfil() {
             <span className="text-white text-2xl font-bold font-display">{user?.initials}</span>
           </div>
           <button
-            className="absolute -bottom-1 -right-1 w-7 h-7 bg-white border border-border rounded-full flex items-center justify-center hover:bg-bg-alt transition-colors shadow-sm"
+            className="absolute -bottom-1 -right-1 w-7 h-7 bg-[var(--card-bg)] border border-border rounded-full flex items-center justify-center hover:bg-bg-alt transition-colors shadow-sm"
             title="Cambiar foto"
           >
             <Camera className="w-3.5 h-3.5 text-text-muted" />
@@ -658,7 +658,7 @@ export default function Perfil() {
             <FieldRow label="Correo electrónico">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-text font-medium">{user?.email}</span>
-                <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-primary-600 bg-primary-500/10 px-2 py-0.5 rounded-full">
                   <CheckCircle className="w-2.5 h-2.5" />
                   Verificado
                 </span>
@@ -789,7 +789,7 @@ export default function Perfil() {
         transition={{ delay: 0.32, duration: 0.5, ease: EASE_OUT_EXPO }}
         style={{ transformPerspective: 900 }}
         whileHover={{ y: -3 }}
-        className="bg-white border border-border/70 rounded-2xl overflow-hidden"
+        className="bg-[var(--card-bg)] border border-border/70 rounded-2xl overflow-hidden"
       >
         <div className="px-6 py-4 border-b border-border">
           <h3 className="font-semibold text-text">Acciones de Cuenta</h3>
