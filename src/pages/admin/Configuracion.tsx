@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import {
-  Save, Globe, Bell, Shield, AlertTriangle,
+  Save, Globe, Bell, Shield, AlertTriangle, Scale,
   Mail, Phone, MapPin, CheckCircle, AlertCircle,
   type LucideIcon,
 } from 'lucide-react'
@@ -10,6 +10,8 @@ import {
 import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import api from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
+import { ROLES } from '@/lib/constants/roles'
 
 const fadeUp = fadeUpSm
 
@@ -83,6 +85,9 @@ function Toggle({ checked, onChange, label }: ToggleProps) {
 }
 
 export default function Configuracion() {
+  const { user } = useAuth()
+  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN
+
   const [general, setGeneral] = useState({
     siteName: 'VIGIA-IIAP',
     siteDesc: 'Visor Gestor de Información del Instituto de Investigaciones Ambientales del Pacífico',
@@ -109,6 +114,8 @@ export default function Configuracion() {
     modoMantenimiento: false,
     mensaje: 'El sistema estará en mantenimiento programado. Disculpe las molestias.',
   })
+
+  const [politicaPrivacidad, setPoliticaPrivacidad] = useState('')
 
   const [saveStatus, setSaveStatus] = useState<'ok' | 'error' | null>(null)
 
@@ -146,6 +153,9 @@ export default function Configuracion() {
       modoMantenimiento: remoteConfig.modoMantenimiento === 'true',
       mensaje: remoteConfig.mensajeMantenimiento ?? m.mensaje,
     }))
+    if (remoteConfig.politicaPrivacidad !== undefined) {
+      setPoliticaPrivacidad(remoteConfig.politicaPrivacidad ?? '')
+    }
   }, [remoteConfig])
 
   // ── Save mutation ──
@@ -173,6 +183,10 @@ export default function Configuracion() {
       requireApproval:       String(roles.requireApproval),
       modoMantenimiento:     String(mantenimiento.modoMantenimiento),
       mensajeMantenimiento:  mantenimiento.mensaje,
+      // Solo super_admin puede editar contenido legal — el backend rechaza
+      // toda la petición si esta clave llega de un admin_sig, así que ni
+      // siquiera se incluye en el payload para el resto de roles.
+      ...(isSuperAdmin ? { politicaPrivacidad } : {}),
     })
   }
 
@@ -345,6 +359,24 @@ export default function Configuracion() {
           </motion.div>
         )}
       </SectionCard>
+
+      {/* Política de privacidad — exclusivo super_admin */}
+      {isSuperAdmin && (
+        <SectionCard title="Política de Tratamiento de Datos Personales" icon={Scale} delay={0.32}>
+          <p className="text-xs text-text-muted">
+            Este texto se muestra públicamente en <code className="text-[0.7rem]">/terminos</code> y
+            es lo que respalda el cumplimiento de la Ley 1581 de 2012. Solo Super Administrador
+            puede editarlo — el backend rechaza el cambio si lo intenta cualquier otro rol.
+          </p>
+          <textarea
+            rows={12}
+            value={politicaPrivacidad}
+            onChange={(e) => setPoliticaPrivacidad(e.target.value)}
+            placeholder="Responsable del tratamiento, datos que se recolectan, finalidad, derechos ARCO, cómo ejercerlos, autorización y vigencia. Separe cada apartado con una línea en blanco — así se muestran como párrafos independientes."
+            className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm font-mono leading-relaxed focus:outline-none focus:border-primary-800 transition resize-y"
+          />
+        </SectionCard>
+      )}
 
     </div>
   )

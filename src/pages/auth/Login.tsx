@@ -313,6 +313,14 @@ export default function Login() {
                 regístrate aquí
               </Link>.
             </p>
+
+            <p className="text-[0.65rem] text-text-muted/70 text-center leading-relaxed">
+              Si indicas tu nombre, se registra junto con datos técnicos de la sesión con
+              fines de seguridad y auditoría. Ver{' '}
+              <Link to="/terminos" className="hover:underline">
+                tratamiento de datos personales
+              </Link>.
+            </p>
           </motion.form>
         )}
       </AnimatePresence>
