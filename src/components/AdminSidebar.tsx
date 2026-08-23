@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Users, ClipboardList,
   FileText, Map, Settings, Activity, X,
-  LogOut, Globe, Shield, Tag, ShieldCheck,
+  LogOut, Globe, Shield, Tag, ShieldCheck, Trash2,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/lib/constants/roles'
@@ -166,6 +166,7 @@ function SidebarContent({ onClose, onLogout, user }: { onClose: () => void; onLo
             </p>
             <motion.div variants={navContainer} initial="initial" animate="animate" className="space-y-0.5">
               <AdminNavLink link={{ label: 'Gestión de Admins', path: '/admin/superadmin', icon: ShieldCheck }} />
+              <AdminNavLink link={{ label: 'Papelera', path: '/admin/papelera', icon: Trash2 }} />
             </motion.div>
           </div>
         )}

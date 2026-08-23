@@ -611,6 +611,7 @@ export default function GestionMapas() {
                   {rowItems.map((m) => (
                     <motion.div key={m.id} {...fadeUpSm()}>
                       <Card3D
+                        disabled
                         glow="rgba(26,86,50,0.14)"
                         intensity={4}
                         className={`bg-[var(--card-bg)] border rounded-xl p-5 transition-all h-full ${m.visible ? 'border-border/70' : 'border-border/50 opacity-55'}`}

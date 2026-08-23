@@ -50,6 +50,7 @@ const AdminConfig      = lazy(() => import('./pages/admin/Configuracion'))
 const AdminActividad   = lazy(() => import('./pages/admin/Actividad'))
 const AdminCategorias  = lazy(() => import('./pages/admin/GestionCategorias'))
 const AdminGestionAdmins = lazy(() => import('./pages/admin/GestionAdmins'))
+const AdminPapelera      = lazy(() => import('./pages/admin/Papelera'))
 
 // Fallback genérico para Geovisor (mapa de pantalla completa, sin skeleton de columnas)
 function GeovisorLoader() {
@@ -175,6 +176,7 @@ function AppRoutes() {
               {/* ── Rutas exclusivas Super Admin ── */}
               <Route element={<RequireSuperAdmin />}>
                 <Route path="/admin/superadmin" element={<Suspense fallback={<GenericPageSkeleton />}><AdminGestionAdmins /></Suspense>} />
+                <Route path="/admin/papelera"   element={<Suspense fallback={<GenericPageSkeleton />}><AdminPapelera /></Suspense>} />
               </Route>
             </Route>
           </Route>
