@@ -813,12 +813,30 @@ export default function Perfil() {
             <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary-800 transition-colors" />
           </Link>
 
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-between px-6 py-4 hover:bg-red-50 transition-colors group text-left"
+          <a
+            href={`mailto:info@iiap.org.co?subject=${encodeURIComponent('Solicitud sobre mis datos personales')}&body=${encodeURIComponent(`Solicito ejercer mi derecho de [acceso / rectificación / eliminación / oposición] sobre mis datos personales tratados por VIGIA-IIAP.\n\nCorreo registrado: ${user?.email ?? ''}`)}`}
+            className="flex items-center justify-between px-6 py-4 hover:bg-bg-alt transition-colors no-underline group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center">
+              <div className="w-9 h-9 bg-bg-alt rounded-xl flex items-center justify-center">
+                <Shield className="w-4 h-4 text-text-muted" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-text group-hover:text-primary-800 transition-colors">
+                  Privacidad y mis datos
+                </p>
+                <p className="text-xs text-text-muted">Solicita acceso, corrección o eliminación de tus datos (Ley 1581 de 2012)</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary-800 transition-colors" />
+          </a>
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-between px-6 py-4 hover:bg-red/10 transition-colors group text-left"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-red/10 rounded-xl flex items-center justify-center">
                 <LogOut className="w-4 h-4 text-orange-600" />
               </div>
               <div>
