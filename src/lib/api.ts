@@ -1,12 +1,15 @@
 import axios from 'axios'
 
 // Auth via HttpOnly cookie — el navegador la adjunta automáticamente.
-// Backend (PR #10) implementa Set-Cookie: vigiiap_token=<jwt>; HttpOnly; Secure; SameSite=Strict.
-// Para logout: backend envía Set-Cookie: vigiiap_token=; Max-Age=0.
+// Backend (PR #10) implementa Set-Cookie: vigiiap_token=<jwt>; HttpOnly; Secure; SameSite=None
+// (frontend y backend en subdominios distintos). Para logout: Set-Cookie: vigiiap_token=; Max-Age=0.
+// SameSite=None expone a CSRF vía formularios cross-site — por eso toda petición
+// mutante autenticada por cookie exige el header X-CSRF-Token (ver más abajo).
 
 function clearLocalSession() {
   localStorage.removeItem('vigiiap_token')
   localStorage.removeItem('vigiiap_user')
+  clearCsrfToken()
 }
 
 // ─── Cliente base ─────────────────────────────────────────────────────────────
@@ -17,12 +20,41 @@ const api = axios.create({
   withCredentials: true,
 })
 
+// ─── Token CSRF (double-submit) ────────────────────────────────────────────────
+// El backend liga este token al valor actual de la cookie de sesión (HMAC), así
+// que cambia cada vez que el access token cambia (login, refresh). Se pide una
+// sola vez y se cachea; las peticiones concurrentes que lo necesiten esperan el
+// mismo fetch en lugar de disparar cada una su propio GET /auth/csrf-token.
+const SAFE_METHODS = new Set(['get', 'head', 'options'])
+let csrfToken: string | null = null
+let csrfPromise: Promise<string | null> | null = null
+
+function clearCsrfToken() {
+  csrfToken = null
+}
+
+async function fetchCsrfToken(): Promise<string | null> {
+  csrfPromise ??= axios
+    .get<{ csrfToken: string }>(`${api.defaults.baseURL}/auth/csrf-token`, { withCredentials: true })
+    .then((res) => { csrfToken = res.data.csrfToken; return csrfToken })
+    .catch(() => null)
+    .finally(() => { csrfPromise = null })
+  return csrfPromise
+}
+
 // ─── Request interceptor ──────────────────────────────────────────────────────
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type']
     config.timeout = 300_000  // 5 min — uploads grandes de mapas/documentos
   }
+
+  const method = config.method?.toLowerCase()
+  if (method && !SAFE_METHODS.has(method)) {
+    const token = csrfToken ?? (await fetchCsrfToken())
+    if (token) config.headers['X-CSRF-Token'] = token
+  }
+
   return config
 })
 
@@ -41,7 +73,12 @@ let refreshPromise: Promise<boolean> | null = null
 async function attemptRefresh(): Promise<boolean> {
   refreshPromise ??= axios
     .post(`${api.defaults.baseURL}/auth/refresh`, {}, { withCredentials: true })
-    .then(() => true)
+    .then(() => {
+      // El access token cambió — el CSRF token cacheado (ligado al anterior
+      // vía HMAC) queda inválido; se pedirá uno nuevo en la próxima petición mutante.
+      clearCsrfToken()
+      return true
+    })
     .catch(() => false)
     .finally(() => { refreshPromise = null })
   return refreshPromise
@@ -75,6 +112,18 @@ api.interceptors.response.use(
       // estado inconsistente que nunca se autocorregía.
       clearLocalSession()
       window.dispatchEvent(new Event('vigiiap:logout'))
+    }
+
+    if (status === 403 && err.response?.data?.error === 'Token CSRF inválido o ausente') {
+      // Token cacheado obsoleto (ej. carrera con un refresh reciente) — se pide
+      // uno nuevo y se reintenta la petición original una sola vez.
+      const canRetry = originalReq && !originalReq._retried
+      if (canRetry) {
+        originalReq._retried = true
+        clearCsrfToken()
+        const token = await fetchCsrfToken()
+        if (token) return api(originalReq)
+      }
     }
 
     const rawMsg  = err.response?.data?.error ?? err.message ?? 'Error inesperado'
