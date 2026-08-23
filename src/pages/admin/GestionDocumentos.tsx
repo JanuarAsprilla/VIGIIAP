@@ -519,9 +519,10 @@ export default function GestionDocumentos() {
         </motion.div>
       )}
 
-      {/* Table */}
+      {/* Table — sin tilt 3D: es una superficie de datos que se opera, no se admira */}
       {docs.length > 0 && (
         <Card3D
+            disabled
             initial={{ opacity: 0, y: 20, rotateX: 4, scale: 0.97 }}
             animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
             transition={{ delay: 0.16, duration: 0.5, ease: EASE_OUT_EXPO }}

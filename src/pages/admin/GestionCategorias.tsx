@@ -139,6 +139,7 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
 
   return (
     <Card3D
+      disabled
       layout
       initial={{ opacity: 0, y: 16, rotateX: 5, scale: 0.97 }}
       animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}

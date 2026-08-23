@@ -293,8 +293,9 @@ export default function GestionAdmins() {
         <motion.div variants={staggerItem3D}><StatCard icon={Users}       label="Sin verificar"   value={stats?.pendientes_verificacion} color="red" /></motion.div>
       </motion.div>
 
-      {/* Admins table */}
+      {/* Admins table — sin tilt 3D: es una superficie de datos que se opera, no se admira */}
       <Card3D
+        disabled
         glow="rgba(26,86,50,0.10)"
         intensity={3}
         initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}

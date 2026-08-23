@@ -25,6 +25,7 @@ interface SectionCardProps {
 function SectionCard({ title, icon: Icon, children, delay = 0 }: SectionCardProps) {
   return (
     <Card3D
+      disabled
       initial={{ opacity: 0, y: 22, rotateX: 4, scale: 0.97 }}
       animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
       transition={{ delay, duration: 0.5, ease: EASE_OUT_EXPO }}
@@ -181,12 +182,15 @@ export default function Configuracion() {
       publicoCanSolicitar:   String(roles.publicoCanSolicitar),
       investigadorCanUpload: String(roles.investigadorCanUpload),
       requireApproval:       String(roles.requireApproval),
-      modoMantenimiento:     String(mantenimiento.modoMantenimiento),
-      mensajeMantenimiento:  mantenimiento.mensaje,
-      // Solo super_admin puede editar contenido legal — el backend rechaza
-      // toda la petición si esta clave llega de un admin_sig, así que ni
-      // siquiera se incluye en el payload para el resto de roles.
-      ...(isSuperAdmin ? { politicaPrivacidad } : {}),
+      // Modo mantenimiento y política de privacidad son exclusivos de
+      // super_admin — el backend rechaza toda la petición si cualquiera de
+      // estas claves llega de un admin_sig, así que ni siquiera se incluyen
+      // en el payload para el resto de roles.
+      ...(isSuperAdmin ? {
+        modoMantenimiento:    String(mantenimiento.modoMantenimiento),
+        mensajeMantenimiento: mantenimiento.mensaje,
+        politicaPrivacidad,
+      } : {}),
     })
   }
 
@@ -322,43 +326,45 @@ export default function Configuracion() {
         </div>
       </SectionCard>
 
-      {/* Mantenimiento */}
-      <SectionCard title="Modo Mantenimiento" icon={AlertTriangle} delay={0.26}>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-text">Activar modo mantenimiento</p>
-            <p className="text-xs text-text-muted">Muestra un aviso a todos los usuarios no administradores</p>
-          </div>
-          <Toggle
-            checked={mantenimiento.modoMantenimiento}
-            onChange={() => setMantenimiento((m) => ({ ...m, modoMantenimiento: !m.modoMantenimiento }))}
-            label=""
-          />
-        </div>
-        {mantenimiento.modoMantenimiento && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="space-y-3"
-          >
-            <div className="bg-[var(--note-bg)] border border-[var(--note-border)] rounded-xl p-4 flex gap-3">
-              <AlertTriangle className="w-4 h-4 text-[var(--note-text)] shrink-0 mt-0.5" />
-              <p className="text-xs text-[var(--note-text)]">El modo mantenimiento está activo. Los usuarios no administradores verán el mensaje configurado.</p>
-            </div>
+      {/* Mantenimiento — exclusivo super_admin: apaga la plataforma para todos */}
+      {isSuperAdmin && (
+        <SectionCard title="Modo Mantenimiento" icon={AlertTriangle} delay={0.26}>
+          <div className="flex items-center justify-between">
             <div>
-              <label htmlFor="conf-mant-msg" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Mensaje de mantenimiento</label>
-              <textarea
-                id="conf-mant-msg"
-                rows={3}
-                value={mantenimiento.mensaje}
-                onChange={(e) => setMantenimiento((m) => ({ ...m, mensaje: e.target.value }))}
-                className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
-              />
+              <p className="text-sm font-semibold text-text">Activar modo mantenimiento</p>
+              <p className="text-xs text-text-muted">Muestra un aviso a todos los usuarios no administradores</p>
             </div>
-          </motion.div>
-        )}
-      </SectionCard>
+            <Toggle
+              checked={mantenimiento.modoMantenimiento}
+              onChange={() => setMantenimiento((m) => ({ ...m, modoMantenimiento: !m.modoMantenimiento }))}
+              label=""
+            />
+          </div>
+          {mantenimiento.modoMantenimiento && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-3"
+            >
+              <div className="bg-[var(--note-bg)] border border-[var(--note-border)] rounded-xl p-4 flex gap-3">
+                <AlertTriangle className="w-4 h-4 text-[var(--note-text)] shrink-0 mt-0.5" />
+                <p className="text-xs text-[var(--note-text)]">El modo mantenimiento está activo. Los usuarios no administradores verán el mensaje configurado.</p>
+              </div>
+              <div>
+                <label htmlFor="conf-mant-msg" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Mensaje de mantenimiento</label>
+                <textarea
+                  id="conf-mant-msg"
+                  rows={3}
+                  value={mantenimiento.mensaje}
+                  onChange={(e) => setMantenimiento((m) => ({ ...m, mensaje: e.target.value }))}
+                  className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition resize-none"
+                />
+              </div>
+            </motion.div>
+          )}
+        </SectionCard>
+      )}
 
       {/* Política de privacidad — exclusivo super_admin */}
       {isSuperAdmin && (
