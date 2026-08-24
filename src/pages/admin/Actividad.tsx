@@ -1,86 +1,15 @@
 import { useState } from 'react'
-import type { ApiMeta } from '@/types'
 import { motion } from 'framer-motion'
 import {
   Search, Download, ChevronLeft, ChevronRight, Loader2, AlertCircle,
 } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
-import api from '@/lib/api'
 import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
-import { formatDate } from '@/lib/dateUtils'
+import { useAuditLog, MODULO_STYLES } from '@/hooks/useAuditLog'
 
 const fadeUp = fadeUpSm
 
-const MODULO_STYLES = {
-  auth:       'bg-primary-500/12 text-primary-500',
-  usuarios:   'bg-magenta/12 text-magenta',
-  admin:      'bg-primary-700/10 text-primary-700',
-  solicitudes:'bg-gold-400/12 text-gold-400',
-  mapas:      'bg-primary-700/10 text-primary-700',
-  documentos: 'bg-gold-500/12 text-gold-500',
-}
-
-const ACCION_LABEL = {
-  login:                 { label: 'Login',               badge: 'bg-primary-500/12 text-primary-500' },
-  registro:              { label: 'Registro',             badge: 'bg-primary-500/12 text-primary-500' },
-  login_visitante:       { label: 'Visitante',            badge: 'bg-bg-alt text-text-muted'     },
-  create_usuario:        { label: 'Crear usuario',        badge: 'bg-primary-500/12 text-primary-500' },
-  update_usuario:        { label: 'Actualizar usuario',   badge: 'bg-gold-500/12 text-gold-500'  },
-  update_rol:            { label: 'Cambio de rol',        badge: 'bg-gold-500/12 text-gold-500'  },
-  delete_usuario:        { label: 'Eliminar usuario',     badge: 'bg-red/10 text-red-dark'       },
-  change_password:       { label: 'Cambio contraseña',    badge: 'bg-gold-500/12 text-gold-500'  },
-  create_solicitud:       { label: 'Nueva solicitud',      badge: 'bg-gold-400/12 text-gold-400'  },
-  update_solicitud_estado:{ label: 'Estado solicitud',    badge: 'bg-gold-400/12 text-gold-400'  },
-  update_perfil:          { label: 'Actualizar perfil',   badge: 'bg-gold-500/12 text-gold-500'   },
-  update_configuracion:   { label: 'Configuración',       badge: 'bg-primary-700/10 text-primary-700'},
-  create_mapa:            { label: 'Crear mapa',          badge: 'bg-primary-500/12 text-primary-500' },
-  update_mapa:            { label: 'Actualizar mapa',     badge: 'bg-gold-500/12 text-gold-500'   },
-  delete_mapa:            { label: 'Eliminar mapa',       badge: 'bg-red/10 text-red-dark'        },
-  create_documento:       { label: 'Subir documento',     badge: 'bg-orange-500/12 text-orange-500' },
-  update_documento:       { label: 'Editar documento',    badge: 'bg-gold-500/12 text-gold-500'   },
-  delete_documento:       { label: 'Eliminar documento',  badge: 'bg-red/10 text-red-dark'        },
-}
-
 const PAGE_SIZE = 10
-
-interface AuditLogRaw {
-  id: string
-  accion: string
-  modulo: string
-  descripcion?: string | null
-  usuario_email?: string | null
-  ip?: string | null
-  creado_en: string
-}
-
-function normalizeLog(l: AuditLogRaw) {
-  const accionInfo = (ACCION_LABEL as Record<string, { label: string; badge: string }>)[l.accion] ?? { label: l.accion, badge: 'bg-bg-alt text-text-muted' }
-  return {
-    id:         l.id,
-    accion:     l.accion,
-    accionLabel: accionInfo.label,
-    badge:      accionInfo.badge,
-    modulo:     l.modulo,
-    descripcion: l.descripcion ?? '',
-    email:      l.usuario_email ?? '—',
-    ip:         l.ip ?? '—',
-    fecha:      formatDate(l.creado_en),
-    creado_en:  l.creado_en,
-  }
-}
-
-function useAuditLog(params = {}) {
-  return useQuery({
-    queryKey: ['admin', 'audit', params],
-    queryFn:  () => api.get('/admin/audit', { params }),
-    select:   (res: AuditLogRaw[] | { data?: AuditLogRaw[]; meta?: ApiMeta }) => ({
-      data: (Array.isArray(res) ? res : (res.data ?? [])).map(normalizeLog),
-      meta: Array.isArray(res) ? undefined : res.meta,
-    }),
-    staleTime: 30_000,
-  })
-}
 
 const MODULOS_OPCIONES = ['auth', 'usuarios', 'admin', 'solicitudes', 'mapas', 'documentos']
 
@@ -222,7 +151,7 @@ export default function Actividad() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${(MODULO_STYLES as Record<string, string>)[log.modulo] ?? 'bg-bg-alt text-text-muted'}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${MODULO_STYLES[log.modulo] ?? 'bg-bg-alt text-text-muted'}`}>
                       {log.modulo}
                     </span>
                   </td>

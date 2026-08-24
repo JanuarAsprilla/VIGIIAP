@@ -13,14 +13,14 @@ const TIPO_LABEL: Record<string, string> = {
   'otro':              'Otro',
 }
 
-const ESTADO_LABEL: Record<string, string> = {
+export const ESTADO_LABEL: Record<string, string> = {
   pendiente:   'Pendiente',
   en_revision: 'En Revisión',
   aprobada:    'Aprobado',
   rechazada:   'Rechazado',
   resuelta:    'Resuelta',
 }
-const ESTADO_COLOR: Record<string, string> = {
+export const ESTADO_COLOR: Record<string, string> = {
   'Pendiente':   'orange',
   'En Revisión': 'blue',
   'Aprobado':    'green',
