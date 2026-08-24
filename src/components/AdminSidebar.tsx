@@ -178,7 +178,7 @@ function SidebarContent({ onClose, onLogout, user }: { onClose: () => void; onLo
         <Link
           to="/"
           onClick={onClose}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-light hover:text-primary-800 hover:bg-primary-50 transition-colors no-underline border border-border"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-light hover:text-primary-800 hover:bg-primary-500/10 transition-colors no-underline border border-border"
         >
           <Globe className="w-4 h-4 shrink-0" aria-hidden="true" />
           <span>Volver al Sitio</span>
