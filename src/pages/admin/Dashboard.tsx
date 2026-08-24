@@ -1,13 +1,12 @@
 /* Hallmark · macrostructure: Workbench · genre: admin-dashboard
- * tokens: design.md · stamp: 2026-05-25
+ * tokens: design.md · stamp: 2026-08-24
  */
 import { useState } from 'react'
 import type { SolicitudData } from '@/hooks/useSolicitudes'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useQuery } from '@tanstack/react-query'
 import {
-  Users, ClipboardList, FileText, Eye,
+  Users, ClipboardList, FileText, Map as MapIcon,
   TrendingUp, TrendingDown, CheckCircle, XCircle,
   ArrowRight, Zap, AlertTriangle,
 } from 'lucide-react'
@@ -15,23 +14,18 @@ import { useAuth } from '@/contexts/AuthContext'
 import { fadeUpSm, staggerContainer, staggerItem3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import { useAdminStats } from '@/hooks/useStats'
-import { useSolicitudesAdmin, useUpdateEstadoSolicitud } from '@/hooks/useSolicitudes'
+import {
+  useSolicitudesAdmin, useUpdateEstadoSolicitud,
+  ESTADO_LABEL, ESTADO_COLOR,
+} from '@/hooks/useSolicitudes'
 import { useUsuariosList } from '@/hooks/useUsuarios'
-import api from '@/lib/api'
-import { formatDate } from '@/lib/dateUtils'
+import { useMapasList } from '@/hooks/useMapas'
+import { useAuditLog, MODULO_STYLES } from '@/hooks/useAuditLog'
+import { ROLES } from '@/lib/constants/roles'
 
 const fadeUp = fadeUpSm
 
-const KPI_ICONS = [Users, ClipboardList, FileText, Eye]
-
-// ── KPI Cards — 3D tilt ──
-const KPI_GLOW = [
-  'rgba(26,86,50,0.22)',
-  'rgba(249,115,22,0.20)',
-  'rgba(247,172,66,0.22)',
-  'rgba(0,152,70,0.20)',
-  'rgba(56,189,248,0.18)',
-]
+const KPI_ICONS = [Users, ClipboardList, FileText, MapIcon]
 
 interface DashboardStats {
   documentos: number
@@ -39,12 +33,19 @@ interface DashboardStats {
   [key: string]: unknown
 }
 
-function KPICards({ stats, isLoading }: { stats: DashboardStats | undefined; isLoading: boolean }) {
+function KPICards({
+  stats, isLoading, mapasTotal, mapasLoading,
+}: {
+  stats: DashboardStats | undefined
+  isLoading: boolean
+  mapasTotal: number | undefined
+  mapasLoading: boolean
+}) {
   const kpis = [
-    { label: 'Usuarios Registrados',   value: (stats?.usuarios as number | undefined) ?? '—',            trendUp: true  },
-    { label: 'Solicitudes Pendientes', value: stats?.solicitudesPendientes ?? '—', trendUp: false },
-    { label: 'Documentos Activos',     value: stats?.documentos ?? '—',            trendUp: true  },
-    { label: 'Visitantes (30 días)',   value: (stats?.visitantesUltimos30d as number | undefined) ?? '—', trendUp: true  },
+    { label: 'Usuarios Registrados',   value: (stats?.usuarios as number | undefined) ?? '—', loading: isLoading,    trendUp: true  },
+    { label: 'Solicitudes Pendientes', value: stats?.solicitudesPendientes ?? '—',             loading: isLoading,    trendUp: false },
+    { label: 'Documentos Activos',     value: stats?.documentos ?? '—',                        loading: isLoading,    trendUp: true  },
+    { label: 'Mapas Publicados',       value: mapasTotal ?? '—',                               loading: mapasLoading, trendUp: true  },
   ]
   return (
     <motion.div
@@ -58,25 +59,25 @@ function KPICards({ stats, isLoading }: { stats: DashboardStats | undefined; isL
         return (
           <motion.div key={kpi.label} variants={staggerItem3D}>
             <Card3D
-              glow={KPI_GLOW[i]}
+              glow="var(--stats-border)"
               intensity={4}
               className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5 relative overflow-hidden"
               whileHover={{ y: -3 }}
             >
-              {/* Subtle corner glow */}
-              <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full opacity-30 pointer-events-none"
-                style={{ background: `radial-gradient(circle, ${KPI_GLOW[i]} 0%, transparent 70%)` }} />
+              {/* Subtle corner glow — tono único de la identidad de stats */}
+              <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full pointer-events-none"
+                style={{ background: 'radial-gradient(circle, var(--stats-bg) 0%, transparent 70%)' }} />
 
               <div className="flex items-start justify-between mb-3 relative">
-                <div className="w-9 h-9 bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-primary-700" aria-hidden="true" />
+                <div className="w-9 h-9 bg-[var(--stats-bg)] border border-[var(--stats-border)] rounded-xl flex items-center justify-center">
+                  <Icon className="w-4 h-4 text-[var(--stats-value)]" aria-hidden="true" />
                 </div>
                 <span className={`inline-flex items-center gap-1 text-[0.65rem] font-semibold ${kpi.trendUp ? 'text-green-600' : 'text-orange-500'}`}>
                   {kpi.trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                 </span>
               </div>
               <div className="tabular font-display text-3xl font-bold text-text relative">
-                {isLoading
+                {kpi.loading
                   ? <span className="inline-block w-10 h-7 bg-bg-alt rounded animate-pulse" />
                   : kpi.value}
               </div>
@@ -90,13 +91,22 @@ function KPICards({ stats, isLoading }: { stats: DashboardStats | undefined; isL
 }
 
 // ── Gráfico de Solicitudes por Estado ──
-function SolicitudesChart({ solicitudes }: { solicitudes: SolicitudData[] }) {
-  const estados = [
-    { label: 'Pendiente',   color: 'bg-gold-500',    textColor: 'text-gold-500'    },
-    { label: 'En Revisión', color: 'bg-primary-500', textColor: 'text-primary-500' },
-    { label: 'Aprobado',    color: 'bg-primary-700', textColor: 'text-primary-700' },
-    { label: 'Rechazado',   color: 'bg-red',         textColor: 'text-red-dark'    },
-  ]
+// Colores por clave semántica — misma paleta que StatusBadge (src/pages/solicitudes/StatusBadge.tsx)
+const ESTADO_BAR_STYLE: Record<string, { bar: string; text: string }> = {
+  orange: { bar: 'bg-gold-500',    text: 'text-gold-500'    },
+  blue:   { bar: 'bg-primary-500', text: 'text-primary-500' },
+  green:  { bar: 'bg-primary-700', text: 'text-primary-700' },
+  red:    { bar: 'bg-red',         text: 'text-red-dark'    },
+  teal:   { bar: 'bg-accent',      text: 'text-primary-800' },
+  yellow: { bar: 'bg-gold-400',    text: 'text-gold-400'    },
+}
+
+function SolicitudesChart({ solicitudes, isError, onRetry }: { solicitudes: SolicitudData[]; isError: boolean; onRetry: () => void }) {
+  // Estados derivados de ESTADO_LABEL (fuente de verdad) — así las barras siempre suman el total mostrado
+  const estados = Array.from(new Set(Object.values(ESTADO_LABEL))).map((label) => {
+    const colorKey = ESTADO_COLOR[label] ?? 'yellow'
+    return { label, ...(ESTADO_BAR_STYLE[colorKey] ?? ESTADO_BAR_STYLE.yellow) }
+  })
   const total = solicitudes.length
   const bars = estados.map((e) => ({
     ...e,
@@ -119,24 +129,37 @@ function SolicitudesChart({ solicitudes }: { solicitudes: SolicitudData[] }) {
   })
   const weeklyMax = Math.max(...weeklyData, 1)
 
+  if (isError) {
+    return (
+      <motion.div {...fadeUp(0.28)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5 text-center">
+        <h3 className="text-sm font-bold text-text mb-3">Solicitudes por Estado</h3>
+        <p className="text-xs text-red-500 mb-2">No se pudo cargar la información.</p>
+        <button onClick={onRetry} className="text-xs font-semibold text-primary-700 hover:text-primary-900 transition-colors">
+          Reintentar
+        </button>
+      </motion.div>
+    )
+  }
+
   return (
     <motion.div {...fadeUp(0.28)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5">
       <h3 className="text-sm font-bold text-text mb-4">Solicitudes por Estado</h3>
 
       {/* Bar chart */}
-      <div className="flex items-end gap-3 mb-4 h-24">
+      <div className="flex items-end gap-2 mb-4 h-24">
         {bars.map((b) => (
           <div key={b.label} className="flex-1 flex flex-col items-center gap-1">
-            <span className={`text-xs font-bold ${b.textColor}`}>{b.count}</span>
+            <span className={`text-xs font-bold ${b.text}`}>{b.count}</span>
             <div className="w-full flex items-end justify-center" style={{ height: '60px' }}>
               <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: `${(b.count / maxCount) * 60}px` }}
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: b.count / maxCount }}
                 transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className={`w-full rounded-t-lg ${b.color}`}
+                style={{ transformOrigin: 'bottom', height: '60px' }}
+                className={`w-full rounded-t-lg ${b.bar}`}
               />
             </div>
-            <span className="text-[0.55rem] font-semibold text-text-muted text-center leading-tight">{b.label}</span>
+            <span className="text-[0.52rem] font-semibold text-text-muted text-center leading-tight">{b.label}</span>
           </div>
         ))}
       </div>
@@ -150,9 +173,10 @@ function SolicitudesChart({ solicitudes }: { solicitudes: SolicitudData[] }) {
           {weeklyData.map((v, i) => (
             <div key={i} className="flex-1 flex items-end" style={{ height: '40px' }}>
               <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: `${(v / weeklyMax) * 40}px` }}
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: v / weeklyMax }}
                 transition={{ duration: 0.6, delay: 0.4 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+                style={{ transformOrigin: 'bottom', height: '40px' }}
                 className={`w-full rounded-sm ${i === weeklyData.length - 1 ? 'bg-primary-800' : 'bg-primary-200'}`}
               />
             </div>
@@ -170,7 +194,15 @@ function SolicitudesChart({ solicitudes }: { solicitudes: SolicitudData[] }) {
 }
 
 // ── Alertas — solicitudes sin atender ──
-function AlertasSolicitudes({ solicitudes }: { solicitudes: SolicitudData[] }) {
+function AlertasSolicitudes({ solicitudes, isError, onRetry }: { solicitudes: SolicitudData[]; isError: boolean; onRetry: () => void }) {
+  if (isError) {
+    return (
+      <motion.div {...fadeUp(0.15)} className="flex items-center justify-between gap-3 px-4 py-3 bg-red/10 border border-red/25 rounded-xl text-sm text-red-dark">
+        <span>No se pudieron cargar las solicitudes pendientes.</span>
+        <button onClick={onRetry} className="text-xs font-semibold underline shrink-0">Reintentar</button>
+      </motion.div>
+    )
+  }
   const pendientes = solicitudes.filter((s) => s.estado === 'Pendiente' || s.estado === 'En Revisión')
   if (pendientes.length === 0) return null
   return (
@@ -190,38 +222,65 @@ function AlertasSolicitudes({ solicitudes }: { solicitudes: SolicitudData[] }) {
 }
 
 // ── Distribución de roles ──
-function RolesChart({ usuarios }: { usuarios: { rol: string }[] }) {
+// Mismo subconjunto asignable que Usuarios.tsx (excluye Super Admin y Visitante,
+// que no aparecen como filas gestionables en esa página) — así el total siempre cuadra.
+const ROLES_CHART_ORDER = [ROLES.ADMIN, ROLES.INVESTIGADOR, ROLES.TECNICO, ROLES.INSTITUCIONAL, ROLES.PUBLICO]
+const ROLE_BAR_COLOR: Record<string, string> = {
+  [ROLES.ADMIN]:         'bg-primary-800',
+  [ROLES.INVESTIGADOR]:  'bg-primary-500',
+  [ROLES.TECNICO]:       'bg-gold-400',
+  [ROLES.INSTITUCIONAL]: 'bg-magenta',
+  [ROLES.PUBLICO]:       'bg-primary-200',
+}
+
+function RolesChart({ usuarios, isError, onRetry }: { usuarios: { rol: string }[]; isError: boolean; onRetry: () => void }) {
   const counts = usuarios.reduce<Record<string, number>>((acc, u) => {
     acc[u.rol] = (acc[u.rol] || 0) + 1
     return acc
   }, {})
   const total = usuarios.length
-  const items = [
-    { label: 'Administrador SIG', count: counts['Administrador SIG'] || 0, color: 'bg-primary-800' },
-    { label: 'Investigador',      count: counts['Investigador'] || 0,      color: 'bg-primary-500' },
-    { label: 'Público',           count: counts['Público'] || 0,           color: 'bg-primary-200' },
-  ]
+  const items = ROLES_CHART_ORDER.map((label) => ({
+    label,
+    count: counts[label] || 0,
+    color: ROLE_BAR_COLOR[label],
+  }))
+
+  if (isError) {
+    return (
+      <motion.div {...fadeUp(0.3)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5 text-center">
+        <h3 className="text-sm font-bold text-text mb-3">Distribución de Roles</h3>
+        <p className="text-xs text-red-500 mb-2">No se pudo cargar la información.</p>
+        <button onClick={onRetry} className="text-xs font-semibold text-primary-700 hover:text-primary-900 transition-colors">
+          Reintentar
+        </button>
+      </motion.div>
+    )
+  }
 
   return (
     <motion.div {...fadeUp(0.3)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5">
       <h3 className="text-sm font-bold text-text mb-4">Distribución de Roles</h3>
       <div className="space-y-3">
-        {items.map((item) => (
-          <div key={item.label}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-text-muted">{item.label}</span>
-              <span className="text-xs font-bold text-text">{item.count}</span>
+        {items.map((item) => {
+          const pct = total > 0 ? item.count / total : 0
+          return (
+            <div key={item.label}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-text-muted">{item.label}</span>
+                <span className="text-xs font-bold text-text">{item.count}</span>
+              </div>
+              <div className="w-full h-2 bg-bg-alt rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: pct }}
+                  transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ transformOrigin: 'left', width: '100%' }}
+                  className={`h-full rounded-full ${item.color}`}
+                />
+              </div>
             </div>
-            <div className="w-full h-2 bg-bg-alt rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(item.count / total) * 100}%` }}
-                transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className={`h-full rounded-full ${item.color}`}
-              />
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
       <p className="text-xs text-text-muted mt-3 text-right">{total} usuarios registrados</p>
     </motion.div>
@@ -229,7 +288,7 @@ function RolesChart({ usuarios }: { usuarios: { rol: string }[] }) {
 }
 
 // ── Solicitudes pendientes ──
-function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }) {
+function SolicitudesPendientes({ solicitudes, isError, onRetry }: { solicitudes: SolicitudData[]; isError: boolean; onRetry: () => void }) {
   const pendientes   = solicitudes.filter((s) => s.estado === 'Pendiente' || s.estado === 'En Revisión')
   const updateEstado = useUpdateEstadoSolicitud()
   const [confirm, setConfirm] = useState<{ _id: string; accion: 'Aprobado' | 'Rechazado' } | null>(null)
@@ -248,16 +307,32 @@ function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }
         </Link>
       </div>
       <div className="divide-y divide-border">
-        {pendientes.length === 0 && (
+        {isError && (
+          <div className="px-5 py-6 text-center">
+            <p className="text-xs text-red-500 mb-2">No se pudieron cargar las solicitudes.</p>
+            <button onClick={onRetry} className="text-xs font-semibold text-primary-700 hover:text-primary-900 transition-colors">
+              Reintentar
+            </button>
+          </div>
+        )}
+        {!isError && pendientes.length === 0 && (
           <p className="px-5 py-6 text-sm text-text-muted text-center">Sin solicitudes pendientes</p>
         )}
-        {pendientes.map((sol) => {
+        {!isError && pendientes.map((sol) => {
           const isConfirming = confirm?._id === sol._id
           const isPending    = updateEstado.isPending && isConfirming
+          const dias        = sol.diasPendiente
+          const diasLabel   = dias <= 0 ? 'Hoy' : `Hace ${dias} día${dias === 1 ? '' : 's'}`
+          const diasUrgent  = dias >= 7
           return (
             <div key={sol.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-bg-alt/40 transition-colors">
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-primary-800">{sol.id}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-bold text-primary-800">{sol.id}</p>
+                  <span className={`text-[0.6rem] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${diasUrgent ? 'bg-red/10 text-red-dark' : 'bg-bg-alt text-text-muted'}`}>
+                    {diasLabel}
+                  </span>
+                </div>
                 <p className="text-sm font-semibold text-text truncate">{sol.tipo}</p>
                 <p className="text-xs text-text-muted">{sol.subtipo} · {sol.fecha}</p>
               </div>
@@ -309,36 +384,10 @@ function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }
   )
 }
 
-// ── Actividad reciente ──
-interface AuditLogRaw {
-  id: string
-  usuario_email?: string | null
-  descripcion?: string | null
-  accion?: string | null
-  modulo: string
-  creado_en: string
-}
-type AuditListResult = { data: AuditLogRaw[] }
-
+// ── Actividad reciente — reusa src/hooks/useAuditLog.ts, mismo hook que Actividad.tsx ──
 function ActividadReciente() {
-  const { data, isLoading, isError, refetch } = useQuery<AuditListResult, Error, AuditLogRaw[]>({
-    queryKey: ['audit', 'recent'],
-    queryFn: () => api.get('/admin/audit', { params: { limit: 7, page: 1 } }) as Promise<AuditListResult>,
-    select: (res) => res.data ?? [],
-    staleTime: 30_000,
-  })
-  const logs = data ?? []
-
-  const moduloBadge = (modulo: string) => {
-    const map = {
-      auth: 'bg-primary-500/12 text-primary-500',
-      admin: 'bg-primary-700/10 text-primary-700',
-      solicitudes: 'bg-gold-400/12 text-gold-400',
-      mapas: 'bg-primary-700/10 text-primary-700',
-      documentos: 'bg-gold-500/12 text-gold-500',
-    }
-    return (map as Record<string, string>)[modulo] ?? 'bg-bg-alt text-text-muted'
-  }
+  const { data, isLoading, isError, refetch } = useAuditLog({ limit: 7, page: 1 })
+  const logs = data?.data ?? []
 
   return (
     <motion.div {...fadeUp(0.25)} className="bg-[var(--card-bg)] border border-border rounded-xl overflow-hidden">
@@ -364,19 +413,19 @@ function ActividadReciente() {
           <p className="px-5 py-6 text-xs text-text-muted text-center italic">Sin actividad registrada</p>
         )}
         {logs.map((log) => {
-          const initials = (log.usuario_email ?? '?').slice(0, 2).toUpperCase()
+          const initials = (log.email !== '—' ? log.email : '?').slice(0, 2).toUpperCase()
           return (
             <div key={log.id} className="flex items-start gap-3 px-5 py-3 hover:bg-bg-alt/40 transition-colors">
               <div className="w-7 h-7 bg-gradient-to-br from-primary-600 to-primary-900 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
                 <span className="text-white text-[0.6rem] font-bold">{initials}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-text truncate">{log.descripcion ?? log.accion}</p>
+                <p className="text-xs font-semibold text-text truncate">{log.descripcion || log.accionLabel}</p>
                 <p className="text-[0.65rem] text-text-muted mt-0.5">
-                  {log.usuario_email ?? '—'} · {formatDate(log.creado_en)}
+                  {log.email} · {log.fecha}
                 </p>
               </div>
-              <span className={`text-[0.55rem] font-bold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${moduloBadge(log.modulo)}`}>
+              <span className={`text-[0.55rem] font-bold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${MODULO_STYLES[log.modulo] ?? 'bg-bg-alt text-text-muted'}`}>
                 {log.modulo}
               </span>
             </div>
@@ -435,8 +484,9 @@ function QuickActions() {
 export default function Dashboard() {
   const { user } = useAuth()
   const { data: stats, isLoading: loadingStats, isError: statsError, refetch: refetchStats } = useAdminStats()
-  const { data: solData } = useSolicitudesAdmin({ limit: 100 })
-  const { data: usrData } = useUsuariosList({ limit: 100 })
+  const { data: solData, isError: solError, refetch: refetchSol } = useSolicitudesAdmin({ limit: 100 })
+  const { data: usrData, isError: usrError, refetch: refetchUsr } = useUsuariosList({ limit: 100 })
+  const { data: mapasData, isLoading: loadingMapas } = useMapasList({ limit: 1 })
   const solicitudes = solData?.data ?? []
   const usuarios    = usrData?.data ?? []
 
@@ -462,10 +512,15 @@ export default function Dashboard() {
           <button onClick={() => refetchStats()} className="text-xs font-semibold underline shrink-0">Reintentar</button>
         </div>
       )}
-      <KPICards stats={stats} isLoading={loadingStats} />
+      <KPICards
+        stats={stats}
+        isLoading={loadingStats}
+        mapasTotal={mapasData?.meta?.total}
+        mapasLoading={loadingMapas}
+      />
 
       {/* Alerta solicitudes */}
-      <AlertasSolicitudes solicitudes={solicitudes} />
+      <AlertasSolicitudes solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />
 
       {/* Quick Actions */}
       <QuickActions />
@@ -473,12 +528,12 @@ export default function Dashboard() {
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         <div className="space-y-6">
-          <SolicitudesPendientes solicitudes={solicitudes} />
+          <SolicitudesPendientes solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />
           <ActividadReciente />
         </div>
         <div className="space-y-6">
-          <RolesChart usuarios={usuarios} />
-          <SolicitudesChart solicitudes={solicitudes} />
+          <RolesChart usuarios={usuarios} isError={usrError} onRetry={refetchUsr} />
+          <SolicitudesChart solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />
         </div>
       </div>
     </div>
