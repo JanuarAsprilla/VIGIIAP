@@ -131,6 +131,16 @@ export function useUpdatePerfil() {
   })
 }
 
+export function useUpdateAvatar() {
+  return useMutation<{ avatar_url: string }, Error, File>({
+    mutationFn: (file) => {
+      const formData = new FormData()
+      formData.append('avatar', file)
+      return api.patch('/usuarios/me/avatar', formData) as Promise<{ avatar_url: string }>
+    },
+  })
+}
+
 export function useUpdatePassword() {
   return useMutation<unknown, Error, { currentPassword: string; newPassword: string }>({
     mutationFn: ({ currentPassword, newPassword }) =>

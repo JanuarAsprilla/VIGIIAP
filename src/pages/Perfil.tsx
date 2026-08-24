@@ -1,21 +1,22 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import type { FormErrors } from '@/types/forms'
 import { validatePasswordStrength, validatePasswordMatch, passwordCriteria } from '@/lib/validators'
 import { motion, AnimatePresence } from 'framer-motion'
-import { EASE_OUT_EXPO } from '@/lib/animations'
-import Card3D from '@/components/ui/Card3D'
+import { fadeUpSm } from '@/lib/animations'
 import {
   User, Building2, Shield,
   Lock, Eye, EyeOff, CheckCircle, AlertCircle,
   Camera, LogOut, ChevronRight, Layers, Monitor, Sun,
-  Smartphone, Laptop, Trash2, RefreshCw,
+  Smartphone, Laptop, Trash2, RefreshCw, Loader2,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUI, type NotifPrefs } from '@/contexts/UIContext'
 import { useNavigate, Link } from 'react-router-dom'
-import { useUpdatePassword, useUpdatePerfil } from '@/hooks/useUsuarios'
+import { useUpdatePassword, useUpdatePerfil, useUpdateAvatar } from '@/hooks/useUsuarios'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+
+const fadeUp = fadeUpSm
 
 // ── Section wrapper ──
 interface SectionProps { title: string; description?: string; children: React.ReactNode }
@@ -487,6 +488,74 @@ function Apariencia() {
   )
 }
 
+// ── Avatar uploader ──
+function AvatarUploader({ avatarUrl, initials, onUploaded }: { avatarUrl: string | null; initials?: string; onUploaded: () => Promise<unknown> }) {
+  const updateAvatar = useUpdateAvatar()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const previewUrlRef = useRef<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => () => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
+  }, [])
+
+  const handleFile = async (file: File | null | undefined) => {
+    if (!file) return
+    setError(null)
+    if (!file.type.startsWith('image/')) { setError('Selecciona una imagen JPG, PNG o WebP'); return }
+    if (file.size > 5 * 1024 * 1024) { setError('La imagen no puede superar 5 MB'); return }
+
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
+    const url = URL.createObjectURL(file)
+    previewUrlRef.current = url
+    setPreview(url)
+
+    try {
+      await updateAvatar.mutateAsync(file)
+      await onUploaded()
+    } catch (err) {
+      setError((err as Error)?.message ?? 'No se pudo actualizar la foto de perfil')
+      setPreview(null)
+    }
+  }
+
+  const avatarSrc = preview || avatarUrl
+
+  return (
+    <div className="relative shrink-0">
+      {avatarSrc ? (
+        <img src={avatarSrc} alt="Foto de perfil" className="w-20 h-20 rounded-2xl object-cover shadow-md" />
+      ) : (
+        <div className="w-20 h-20 bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl flex items-center justify-center shadow-md">
+          <span className="text-white text-2xl font-bold font-display">{initials}</span>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={updateAvatar.isPending}
+        className="absolute -bottom-1 -right-1 w-7 h-7 bg-[var(--card-bg)] border border-border rounded-full flex items-center justify-center hover:bg-bg-alt transition-colors shadow-sm disabled:opacity-60"
+        title="Cambiar foto"
+      >
+        {updateAvatar.isPending
+          ? <Loader2 className="w-3.5 h-3.5 text-text-muted animate-spin" />
+          : <Camera className="w-3.5 h-3.5 text-text-muted" />}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = '' }}
+        className="sr-only"
+      />
+      {error && (
+        <p className="absolute top-full left-0 mt-1.5 w-40 text-[0.65rem] text-red-500 leading-snug">{error}</p>
+      )}
+    </div>
+  )
+}
+
 // ── Inline field editor ──
 interface InlineEditorProps {
   value: string; onSave: (val: string) => void; onCancel: () => void
@@ -585,28 +654,11 @@ export default function Perfil() {
       </div>
 
       {/* Avatar card */}
-      <Card3D
-        initial={{ opacity: 0, y: 20, rotateX: 5, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
-        transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
-        glow="rgba(26,86,50,0.18)"
-        intensity={4}
-        className="bg-[var(--card-bg)] border border-border/70 rounded-2xl p-6 flex items-center gap-5"
-        whileHover={{ y: -3 }}
+      <motion.div
+        {...fadeUp(0)}
+        className="relative bg-[var(--card-bg)] border border-border/70 rounded-2xl p-6 flex items-center gap-5"
       >
-        {/* Avatar */}
-        <div className="relative shrink-0">
-          <div className="w-20 h-20 bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl flex items-center justify-center shadow-md">
-            <span className="text-white text-2xl font-bold font-display">{user?.initials}</span>
-          </div>
-          <button
-            className="absolute -bottom-1 -right-1 w-7 h-7 bg-[var(--card-bg)] border border-border rounded-full flex items-center justify-center hover:bg-bg-alt transition-colors shadow-sm"
-            title="Cambiar foto"
-          >
-            <Camera className="w-3.5 h-3.5 text-text-muted" />
-          </button>
-        </div>
+        <AvatarUploader avatarUrl={user?.avatarUrl ?? null} initials={user?.initials} onUploaded={refreshProfile} />
 
         {/* Info */}
         <div className="flex-1 min-w-0">
@@ -622,14 +674,11 @@ export default function Perfil() {
           <span className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">Vista</span>
           <span className="text-xs font-semibold text-text capitalize">{density}</span>
         </div>
-      </Card3D>
+      </motion.div>
 
       {/* Información personal */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.08, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.08)}
         whileHover={{ y: -3 }}
       >
         <Section
@@ -698,10 +747,7 @@ export default function Perfil() {
 
       {/* Seguridad */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.14, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.14)}
         whileHover={{ y: -3 }}
       >
         <Section
@@ -720,10 +766,7 @@ export default function Perfil() {
 
       {/* 2FA */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.17, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.17)}
         whileHover={{ y: -3 }}
       >
         <Section
@@ -736,10 +779,7 @@ export default function Perfil() {
 
       {/* Sesiones activas */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.19, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.19)}
         whileHover={{ y: -3 }}
       >
         <Section
@@ -752,10 +792,7 @@ export default function Perfil() {
 
       {/* Notificaciones */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.20, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.20)}
         whileHover={{ y: -3 }}
       >
         <Section
@@ -768,10 +805,7 @@ export default function Perfil() {
 
       {/* Apariencia */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.26, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.26)}
         whileHover={{ y: -3 }}
       >
         <Section
@@ -784,10 +818,7 @@ export default function Perfil() {
 
       {/* Acciones de cuenta */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.32, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.32)}
         whileHover={{ y: -3 }}
         className="bg-[var(--card-bg)] border border-border/70 rounded-2xl overflow-hidden"
       >
