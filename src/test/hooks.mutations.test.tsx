@@ -35,7 +35,7 @@ import { useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa, useMa
 import { useCreateDocumento, useUpdateDocumento, useDeleteDocumento, useDocumentoBySlug, useToggleActivoDocumento } from '@/hooks/useDocumentos'
 import {
   useCreateUsuario, useUpdateUsuarioRol, useToggleActivo,
-  useDeleteUsuario, useUpdatePerfil, useUpdatePassword,
+  useDeleteUsuario, useUpdatePerfil, useUpdatePassword, useUpdateAvatar,
 } from '@/hooks/useUsuarios'
 import { useCreateCategoria, useDeleteCategoria, useUploadCategoriaThumbnail } from '@/hooks/useCategorias'
 
@@ -407,6 +407,24 @@ describe('useUpdatePassword', () => {
       currentPassword: 'old123',
       newPassword: 'New@123',
     })
+  })
+})
+
+describe('useUpdateAvatar', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls PATCH /usuarios/me/avatar with the file as FormData', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ avatar_url: 'https://files.test.local/avatars/x.jpg' })
+    const { result } = renderHook(() => useUpdateAvatar(), { wrapper: makeWrapper() })
+    const file = new File(['img'], 'foto.jpg', { type: 'image/jpeg' })
+
+    await act(async () => {
+      await result.current.mutateAsync(file)
+    })
+
+    expect(api.patch).toHaveBeenCalledWith('/usuarios/me/avatar', expect.any(FormData))
+    const formData = vi.mocked(api.patch).mock.calls[0][1] as FormData
+    expect(formData.get('avatar')).toBe(file)
   })
 })
 

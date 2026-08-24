@@ -14,7 +14,6 @@ import {
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
-import Card3D from '@/components/ui/Card3D'
 import { useMapasList, useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa } from '@/hooks/useMapas'
 
 const fadeUp = fadeUpSm
@@ -43,15 +42,6 @@ const EMPTY_FORM = {
   nombre: '', tematica: '',
   descripcion: '', anio: String(new Date().getFullYear()),
   visible: true, formato: 'PDF', url: '', visibilidad: 'publico',
-}
-
-const TEMATICA_COLORS = {
-  'Hidrología':       'bg-primary-500/12 text-primary-500',
-  'Cartografía Base': 'bg-primary-700/10 text-primary-700',
-  'Biodiversidad':    'bg-accent/15 text-primary-800',
-  'Zonificación':     'bg-magenta/12 text-magenta',
-  'Infraestructura':  'bg-gold-500/12 text-gold-500',
-  'Riesgo':           'bg-red/8 text-red-dark',
 }
 
 function useClickOutside(ref: React.RefObject<HTMLElement | null>, handler: () => void) {
@@ -336,6 +326,126 @@ function FileDropzone({ formato, onFile, onFormatDetect, currentFile, editing, o
   )
 }
 
+// ── Tarjeta de mapa — imagen de fondo con hover-reveal, clic para ver info y acciones ──
+function MapaCard({
+  m, expanded, onToggleExpand, onToggleVisible, onView, onEdit, onDelete,
+}: {
+  m: MapaData
+  expanded: boolean
+  onToggleExpand: () => void
+  onToggleVisible: () => void
+  onView: (() => void) | null
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const vis = visMap[m.visibilidad] ?? visMap.publico
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
+      aria-label={`${m.nombre}, ${m.tematica}. Clic para ver detalles y acciones.`}
+      onClick={onToggleExpand}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleExpand() } }}
+      className={`group/card relative h-64 rounded-xl overflow-hidden cursor-pointer border transition-all duration-500 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-background ${
+        m.visible ? 'border-border/70' : 'border-border/50'
+      } group-hover:scale-[0.98] group-hover:opacity-60 group-hover:blur-[1.5px] hover:!scale-100 hover:!opacity-100 hover:!blur-none focus-visible:!scale-100 focus-visible:!opacity-100 focus-visible:!blur-none`}
+    >
+      {/* Fondo — miniatura o gradiente de respaldo */}
+      {m.thumbnail_url ? (
+        <img
+          src={m.thumbnail_url}
+          alt=""
+          loading="lazy"
+          className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 ${!m.visible ? 'grayscale-[0.5]' : ''} group-hover/card:scale-105`}
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary-800 to-primary-950">
+          <MapPin className="w-10 h-10 text-white/25" aria-hidden="true" />
+        </div>
+      )}
+
+      {/* Overlay degradado permanente — legibilidad del texto */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10 pointer-events-none" />
+
+      {/* Badges superiores */}
+      <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+          <span className="text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white bg-black/40 backdrop-blur-sm">{m.tematica}</span>
+          <span className="text-[0.6rem] font-semibold px-1.5 py-0.5 rounded border border-white/30 text-white bg-black/30 backdrop-blur-sm">{m.formato}</span>
+          {!m.visible && (
+            <span className="text-[0.6rem] font-semibold px-1.5 py-0.5 rounded bg-white/90 text-text-muted">Oculto</span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onToggleVisible() }}
+          className="shrink-0 p-1.5 rounded-lg bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 transition-colors"
+          title={m.visible ? 'Visible — clic para ocultar' : 'Oculto — clic para publicar'}
+        >
+          {m.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+
+      {/* Título / subtítulo — siempre visibles */}
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        <p className="text-sm font-bold text-white leading-tight line-clamp-2">{m.nombre}</p>
+        <p className="text-xs text-white/70 mt-1">{m.autor || 'IIAP'} · {m.fecha}</p>
+      </div>
+
+      {/* Panel de detalle y acciones — revelado al hacer clic */}
+      <div
+        className={`absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col justify-end p-4 transition-opacity duration-250 ${
+          expanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onToggleExpand() }}
+          className="absolute top-3 right-3 p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+          aria-label="Cerrar detalle"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        <span className={`self-start text-[0.6rem] font-semibold px-1.5 py-0.5 rounded mb-2 ${vis.pill}`}>{vis.label}</span>
+        <p className="text-sm font-bold text-white leading-tight">{m.nombre}</p>
+        <p className="text-xs text-white/60 mt-0.5">{m.autor || 'IIAP'} · {m.fecha}</p>
+        {m.descripcion && (
+          <p className="text-xs text-white/75 mt-2 line-clamp-3">{m.descripcion}</p>
+        )}
+
+        <div className="flex items-center gap-2 mt-3">
+          {onView && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onView() }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-white hover:bg-white/20 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Ver archivo
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onEdit() }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-white hover:bg-white/20 transition-colors"
+          >
+            <Edit2 className="w-3.5 h-3.5" /> Editar
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDelete() }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-600/80 text-white hover:bg-red-600 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function GestionMapas() {
   const { data, isLoading, isError, refetch } = useMapasList({ limit: 100, admin: 'true' })
   const mapas = data?.data ?? []
@@ -357,6 +467,7 @@ export default function GestionMapas() {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<MapaData | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const isSubmitting = createMapa.isPending || updateMapa.isPending
 
@@ -394,7 +505,7 @@ export default function GestionMapas() {
   /* eslint-disable react-hooks/refs */
   const virtualizer = useWindowVirtualizer({
     count: rows.length,
-    estimateSize: () => 224,
+    estimateSize: () => 272,
     overscan: 4,
     scrollMargin: listRef.current?.offsetTop ?? 0,
   })
@@ -590,7 +701,7 @@ export default function GestionMapas() {
         </div>
       )}
       {mapas.length > 0 && filtered.length > 0 && (
-        <div ref={listRef}>
+        <div ref={listRef} className="group" role="list">
           <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
             {virtualizer.getVirtualItems().map((vRow) => {
               const rowItems = rows[vRow.index]
@@ -610,72 +721,17 @@ export default function GestionMapas() {
                 >
                   {rowItems.map((m) => (
                     <motion.div key={m.id} {...fadeUpSm()}>
-                      <Card3D
-                        disabled
-                        glow="rgba(26,86,50,0.14)"
-                        intensity={4}
-                        className={`bg-[var(--card-bg)] border rounded-xl p-5 transition-all h-full ${m.visible ? 'border-border/70' : 'border-border/50 opacity-55'}`}
-                        whileHover={{ y: -3 }}
-                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${(TEMATICA_COLORS as Record<string, string>)[m.tematica] ?? 'bg-bg-alt text-text-muted'}`}>{m.tematica}</span>
-                              <span className={`text-[0.6rem] font-semibold px-1.5 py-0.5 rounded border ${
-                                m.formato === 'PDF' ? 'border-red/30 text-red-500' :
-                                m.formato === 'IMG' ? 'border-gold-400/40 text-gold-400' :
-                                'border-primary-500/30 text-primary-700'
-                              }`}>{m.formato}</span>
-                              {!m.visible && (
-                                <span className="text-[0.6rem] font-semibold px-1.5 py-0.5 rounded bg-bg-alt text-text-muted">Oculto</span>
-                              )}
-                            </div>
-                            <p className="text-sm font-bold text-text">{m.nombre}</p>
-                            <p className="text-xs text-text-muted mt-0.5">{m.autor || 'IIAP'} · {m.fecha}</p>
-                            {m.descripcion && <p className="text-xs text-text-muted mt-1 line-clamp-1">{m.descripcion}</p>}
-                          </div>
-                          <button
-                            onClick={() => toggleVisible(m.id)}
-                            className={`shrink-0 p-1.5 rounded-lg transition-colors ${m.visible ? 'text-primary-700 hover:bg-primary-500/10' : 'text-text-muted hover:bg-bg-alt'}`}
-                            title={m.visible ? 'Visible — clic para ocultar' : 'Oculto — clic para publicar'}
-                          >
-                            {m.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                          </button>
-                        </div>
-                        <div className="flex items-center justify-between pt-1 border-t border-border/50">
-                          <div className="flex items-center gap-2">
-                            {(() => {
-                              const vis = visMap[m.visibilidad] ?? visMap.publico
-                              return (
-                                <span className={`text-[0.6rem] font-semibold px-1.5 py-0.5 rounded ${vis.pill}`}>
-                                  {vis.label}
-                                </span>
-                              )
-                            })()}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {(m.archivo_pdf_url || m.archivo_img_url || m.geovisor_url) && (
-                              <button
-                                onClick={() => window.open(m.archivo_img_url || m.archivo_pdf_url || m.geovisor_url || undefined, '_blank', 'noopener,noreferrer')}
-                                className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors"
-                                title="Ver archivo">
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            <button onClick={() => openEdit(m)}
-                              className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors"
-                              title="Editar mapa">
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => setDeleteTarget(m)}
-                              className="p-1.5 rounded-lg text-text-muted hover:text-red-dark hover:bg-red/10 transition-colors"
-                              title="Eliminar mapa">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      </Card3D>
+                      <MapaCard
+                        m={m}
+                        expanded={expandedId === m.id}
+                        onToggleExpand={() => setExpandedId((id) => (id === m.id ? null : m.id))}
+                        onToggleVisible={() => toggleVisible(m.id)}
+                        onView={(m.archivo_pdf_url || m.archivo_img_url || m.geovisor_url)
+                          ? () => window.open(m.archivo_img_url || m.archivo_pdf_url || m.geovisor_url || undefined, '_blank', 'noopener,noreferrer')
+                          : null}
+                        onEdit={() => openEdit(m)}
+                        onDelete={() => setDeleteTarget(m)}
+                      />
                     </motion.div>
                   ))}
                 </div>

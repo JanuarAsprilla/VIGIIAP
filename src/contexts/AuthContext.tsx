@@ -17,6 +17,7 @@ export interface AuthUser {
   initials: string
   institucion: string | null
   twoFactorEnabled?: boolean
+  avatarUrl: string | null
 }
 
 interface RawAuthUser {
@@ -27,6 +28,7 @@ interface RawAuthUser {
   tipo?: string | null
   institucion?: string | null
   twoFactorEnabled?: boolean
+  avatar_url?: string | null
   [key: string]: unknown
 }
 
@@ -74,6 +76,7 @@ function normalizeUser(raw: RawAuthUser): AuthUser {
       .toUpperCase(),
     institucion:       raw.institucion ?? null,
     twoFactorEnabled:  raw.twoFactorEnabled ?? false,
+    avatarUrl:         raw.avatar_url ?? null,
   }
 }
 
