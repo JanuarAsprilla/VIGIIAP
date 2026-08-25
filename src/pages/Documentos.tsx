@@ -70,6 +70,7 @@ export default function Documentos() {
         updated: d.fecha,
         dateISO: d.creado_en ?? '',
         url:     d.url,
+        resumen: d.resumen ?? '',
       })
     })
     return Object.values(map)

@@ -14,6 +14,7 @@ export interface DocItem {
   updated: string
   dateISO: string
   url: string | null
+  resumen: string
 }
 
 /** Categoría de documentos agrupados por nombre. */
