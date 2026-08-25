@@ -12,6 +12,7 @@ import { useMapasList } from '@/hooks/useMapas'
 import type { MapaData } from '@/hooks/useMapas'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
+import { isTrustedUrl } from '@/lib/trustedUrl'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { cardEnter3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
@@ -107,25 +108,8 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
   )
 }
 
-// H-02: allowlist de orígenes confiables para descargas.
-const ALLOWED_ORIGINS = [
-  window.location.origin,
-  import.meta.env.VITE_R2_PUBLIC_URL || '',
-  import.meta.env.VITE_API_URL        || '',
-].filter(Boolean)
-
-function isTrustedUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url)
-    return ALLOWED_ORIGINS.some((o) => {
-      try { return parsed.origin === new URL(o).origin } catch { return false }
-    })
-  } catch { return false }
-}
-
 async function forceDownload(url: string): Promise<void> {
   if (!url) return
-  // H-02: bloquear URLs de orígenes no confiables.
   if (!isTrustedUrl(url)) {
     if (import.meta.env.DEV) console.error('[VIGIIAP] Descarga bloqueada — origen no permitido:', url)
     return
