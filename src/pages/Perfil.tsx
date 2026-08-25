@@ -218,18 +218,20 @@ function TwoFactor() {
   const [qr, setQr]                       = useState<string | null>(null)
   const [secret, setSecret]               = useState<string | null>(null)
   const [code, setCode]                   = useState('')
+  const [backupCodes, setBackupCodes]     = useState<string[]>([])
   const [error, setError]                 = useState<string | null>(null)
   const [loading, setLoading]             = useState(false)
   const [showDisableConfirm, setShowDisableConfirm] = useState(false)
-  const { user } = useAuth()
+  const [disableCode, setDisableCode]     = useState('')
+  const { user, refreshProfile } = useAuth()
   const has2fa = user?.twoFactorEnabled
 
   const startSetup = async () => {
     setError(null)
     setLoading(true)
     try {
-      const res = await api.post('/auth/2fa/setup') as { qrCodeUrl: string; secret: string }
-      setQr(res.qrCodeUrl)
+      const res = await api.post('/auth/2fa/setup') as { qrDataUrl: string; secret: string }
+      setQr(res.qrDataUrl)
       setSecret(res.secret)
       setStep('setup')
     } catch (e) { setError((e as Error).message) }
@@ -241,20 +243,24 @@ function TwoFactor() {
     setError(null)
     setLoading(true)
     try {
-      await api.post('/auth/2fa/enable', { token: code })
+      const res = await api.post('/auth/2fa/verify', { code }) as { backupCodes?: string[] }
+      setBackupCodes(res.backupCodes ?? [])
       setStep('done')
       setCode('')
+      await refreshProfile()
     } catch (e) { setError((e as Error).message) }
     finally { setLoading(false) }
   }
 
   const disable = async () => {
-    setShowDisableConfirm(false)
     setError(null)
     setLoading(true)
     try {
-      await api.delete('/auth/2fa/disable')
+      await api.post('/auth/2fa/disable', { code: disableCode })
+      setShowDisableConfirm(false)
+      setDisableCode('')
       setStep('idle')
+      await refreshProfile()
     } catch (e) { setError((e as Error).message) }
     finally { setLoading(false) }
   }
@@ -301,9 +307,26 @@ function TwoFactor() {
       )}
 
       {step === 'done' && (
-        <div className="flex items-center gap-2 text-primary-600 bg-primary-500/10 px-4 py-3 rounded-xl text-sm">
-          <CheckCircle className="w-4 h-4 flex-shrink-0" />
-          ¡2FA activado exitosamente! Su cuenta está protegida.
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-primary-600 bg-primary-500/10 px-4 py-3 rounded-xl text-sm">
+            <CheckCircle className="w-4 h-4 flex-shrink-0" />
+            ¡2FA activado exitosamente! Su cuenta está protegida.
+          </div>
+          {backupCodes.length > 0 && (
+            <div className="border border-gold-500/30 bg-gold-500/8 rounded-xl p-4 space-y-2">
+              <p className="text-xs font-bold text-gold-500 uppercase tracking-wider">
+                Guarda estos códigos de emergencia
+              </p>
+              <p className="text-xs text-text-muted">
+                Cada uno funciona una sola vez para entrar si pierdes el acceso a tu app de autenticación. No se volverán a mostrar.
+              </p>
+              <div className="grid grid-cols-2 gap-1.5 font-mono text-xs">
+                {backupCodes.map((c) => (
+                  <span key={c} className="px-2 py-1.5 bg-[var(--card-bg)] border border-border rounded-lg text-center tabular">{c}</span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
       {error && <p className="text-sm text-red-dark bg-red/10 px-4 py-3 rounded-xl">{error}</p>}
@@ -319,20 +342,31 @@ function TwoFactor() {
                 <Trash2 className="w-5 h-5 text-red-600" aria-hidden="true" />
               </div>
               <h3 className="text-base font-bold text-text mb-2">Desactivar 2FA</h3>
-              <p className="text-sm text-text-muted mb-6 leading-relaxed">
-                ¿Desea desactivar la autenticación en dos pasos? Su cuenta tendrá menor protección.
+              <p className="text-sm text-text-muted mb-4 leading-relaxed">
+                Su cuenta tendrá menor protección. Ingrese el código de 6 dígitos de su app de autenticación (o un código de emergencia) para confirmar.
               </p>
+              <input
+                value={disableCode}
+                onChange={(e) => setDisableCode(e.target.value)}
+                placeholder="Código de 6 dígitos"
+                maxLength={8}
+                autoFocus
+                className="w-full px-3 py-2.5 mb-4 text-sm text-center border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
+              />
+              {error && (
+                <p className="text-xs text-red-dark mb-4 -mt-2">{error}</p>
+              )}
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowDisableConfirm(false)}
+                  onClick={() => { setShowDisableConfirm(false); setDisableCode(''); setError(null) }}
                   className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={disable}
-                  disabled={loading}
-                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors"
+                  disabled={loading || disableCode.length < 6}
+                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
                 >
                   {loading ? 'Desactivando…' : 'Desactivar'}
                 </button>
