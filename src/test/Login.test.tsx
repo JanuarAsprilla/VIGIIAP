@@ -94,6 +94,15 @@ describe('Login — protección contra open redirect (C-02)', () => {
 
     await waitFor(() => expect(navigateSpy).toHaveBeenCalledWith('/', { replace: true }))
   })
+
+  test('un admin siempre entra directo a /admin, sin importar el from', async () => {
+    locationState = { from: { pathname: '/perfil' } }
+    authMock.login.mockResolvedValue({ id: '1', role: 'Administrador SIG' })
+
+    await fillLogin('admin@iiap.gov.co', 'secret123')
+
+    await waitFor(() => expect(navigateSpy).toHaveBeenCalledWith('/admin', { replace: true }))
+  })
 })
 
 describe('Login — validación', () => {
