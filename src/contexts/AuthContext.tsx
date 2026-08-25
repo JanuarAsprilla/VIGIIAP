@@ -42,6 +42,7 @@ export interface AuthContextValue {
   initializing: boolean
   login: (email: string, password: string) => Promise<AuthUser | { passwordExpired: true } | { requiresTwoFactor: true }>
   loginVisitante: (nombre?: string) => Promise<AuthUser>
+  confirmTwoFactor: (code: string) => Promise<AuthUser>
   logout: () => Promise<void>
   register: (data: Record<string, unknown>) => Promise<unknown>
   refreshProfile: () => Promise<AuthUser | undefined>
@@ -156,33 +157,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { requiresTwoFactor: true as const }
       }
 
-      const { token, user: raw } = res as { token: string; user: Record<string, unknown> }
-      // Token no se escribe en localStorage; lo gestiona la cookie HttpOnly.
-      void token
-      const normalized = normalizeUser(raw as RawAuthUser)
-      persistUser(normalized)
-      Sentry.setUser({ id: normalized.id, role: normalized.rol })
-      return normalized
+      // Token no se escribe en localStorage; cookie HttpOnly. El login devuelve
+      // un usuario mínimo (id, nombre, email, rol) — sin avatarUrl, institucion
+      // ni twoFactorEnabled. Se pide el perfil completo de inmediato, mismo
+      // patrón que confirmTwoFactor(), para que la UI no muestre esos campos
+      // "perdidos" hasta el próximo reload de página.
+      const full = await refreshProfile()
+      if (!full) throw new Error('No se pudo cargar el perfil tras iniciar sesión')
+      Sentry.setUser({ id: full.id, role: full.rol })
+      return full
     } finally {
       setLoading(false)
     }
-  }, [persistUser])
+  }, [refreshProfile])
 
   // ── Login visitante (acceso rápido sin credenciales) ──
   const loginVisitante = useCallback(async (nombre = '') => {
     setLoading(true)
     try {
-      const { token, user: raw } = (await api.post('/auth/visitante', { nombre: nombre || undefined })) as { token: string; user: Record<string, unknown> }
       // Token no se escribe en localStorage; gestionado por cookie HttpOnly.
-      void token
-      const normalized = normalizeUser(raw as RawAuthUser)
-      persistUser(normalized)
-      Sentry.setUser({ id: normalized.id, role: normalized.rol })
-      return normalized
+      // Mismo patrón que login(): se pide el perfil vía /auth/me tras el POST
+      // en vez de confiar en el `user` parcial de la respuesta.
+      await api.post('/auth/visitante', { nombre: nombre || undefined })
+      const full = await refreshProfile()
+      if (!full) throw new Error('No se pudo cargar el perfil tras iniciar sesión')
+      Sentry.setUser({ id: full.id, role: full.rol })
+      return full
     } finally {
       setLoading(false)
     }
-  }, [persistUser])
+  }, [refreshProfile])
+
+  // ── Confirmar segundo factor (2FA) — completa el login tras requiresTwoFactor ──
+  const confirmTwoFactor = useCallback(async (code: string) => {
+    setLoading(true)
+    try {
+      // El backend valida el código contra la cookie temporal vigiiap_2fa_temp
+      // y, si es válido, emite las cookies de sesión reales.
+      await api.post('/auth/2fa/confirm', { code })
+      const full = await refreshProfile()
+      if (!full) throw new Error('No se pudo cargar el perfil tras verificar el código')
+      Sentry.setUser({ id: full.id, role: full.rol })
+      return full
+    } finally {
+      setLoading(false)
+    }
+  }, [refreshProfile])
 
   // ── Registro ──
   const register = useCallback(async (data: Record<string, unknown>) => {
@@ -212,6 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       initializing,
       login,
       loginVisitante,
+      confirmTwoFactor,
       logout,
       register,
       refreshProfile,
