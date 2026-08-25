@@ -164,6 +164,19 @@ function MapCard({ map, index }: MapCardProps) {
   const hasImg     = map.formats.includes('IMG')
   const hasGeovisor = map.formats.includes('GEOVISOR')
 
+  // Chaos testing (clics de frustración): sin esta guarda, clics rápidos repetidos
+  // durante un cold start de Render disparaban múltiples fetch() + descargas simultáneas.
+  const [downloadingField, setDownloadingField] = useState<'pdf' | 'img' | null>(null)
+  const handleDownload = async (campo: 'archivo_pdf' | 'archivo_img', field: 'pdf' | 'img') => {
+    if (downloadingField) return
+    setDownloadingField(field)
+    try {
+      await forceDownload(`${import.meta.env.VITE_API_URL ?? '/api'}/descargar/mapa/${map.id}?campo=${campo}`)
+    } finally {
+      setDownloadingField(null)
+    }
+  }
+
   return (
     <Card3D
       {...cardEnter3D(index)}
@@ -229,9 +242,12 @@ function MapCard({ map, index }: MapCardProps) {
         {/* Actions */}
         <div className="flex items-center gap-2 pt-3 border-t border-border/60 mt-auto">
           {hasPdf && (
-            <button onClick={() => forceDownload(`${import.meta.env.VITE_API_URL ?? '/api'}/descargar/mapa/${map.id}?campo=archivo_pdf`)}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-colors">
-              <Download className="w-3.5 h-3.5" />
+            <button onClick={() => handleDownload('archivo_pdf', 'pdf')}
+              disabled={downloadingField !== null}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:pointer-events-none">
+              {downloadingField === 'pdf'
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Download className="w-3.5 h-3.5" />}
               Descargar PDF
             </button>
           )}
@@ -243,9 +259,12 @@ function MapCard({ map, index }: MapCardProps) {
             </a>
           )}
           {hasImg && (
-            <button onClick={() => forceDownload(`${import.meta.env.VITE_API_URL ?? '/api'}/descargar/mapa/${map.id}?campo=archivo_img`)}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-gold-400/40 hover:text-gold-400 hover:bg-gold-400/10 transition-colors">
-              <Download className="w-3.5 h-3.5" />
+            <button onClick={() => handleDownload('archivo_img', 'img')}
+              disabled={downloadingField !== null}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-gold-400/40 hover:text-gold-400 hover:bg-gold-400/10 transition-colors disabled:opacity-50 disabled:pointer-events-none">
+              {downloadingField === 'img'
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Download className="w-3.5 h-3.5" />}
               Descargar
             </button>
           )}
