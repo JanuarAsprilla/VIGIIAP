@@ -24,10 +24,10 @@ export default defineConfig({
       ],
       // Ratchet: solo subir, nunca bajar para que un PR pase.
       thresholds: {
-        statements: 26,
-        branches: 22,
-        functions: 22,
-        lines: 28,
+        statements: 28,
+        branches: 24,
+        functions: 24,
+        lines: 30,
       },
     },
     globals: true,
