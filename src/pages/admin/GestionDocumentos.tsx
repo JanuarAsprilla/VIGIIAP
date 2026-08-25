@@ -51,7 +51,7 @@ const VISIBILIDAD = [
 
 const EMPTY_FORM = {
   nombre: '', categoria: '', tipo: TIPOS[0],
-  autor: '', anio: '', visibilidad: 'publico',
+  autor: '', anio: '', visibilidad: 'publico', resumen: '',
 }
 
 function typeToTipo(type: string | null | undefined) {
@@ -365,6 +365,7 @@ export default function GestionDocumentos() {
       autor:       d.autores ?? '',
       anio:        d.anio != null ? String(d.anio) : '',
       visibilidad: d.visibilidad ?? 'publico',
+      resumen:     d.resumen ?? '',
     })
     setFormErrors({}); setUploadedFile(null); setUploadError(null)
     setSubmitError(null); setUploadProgress(null); setShowModal(true)
@@ -391,6 +392,7 @@ export default function GestionDocumentos() {
     payload.append('visibilidad', form.visibilidad)
     if (form.autor.trim()) payload.append('autores', form.autor)
     if (form.anio) payload.append('anio', form.anio)
+    if (form.resumen.trim()) payload.append('resumen', form.resumen)
     if (uploadedFile) payload.append('archivo', uploadedFile)
 
     const onUploadProgress = uploadedFile
@@ -682,6 +684,17 @@ export default function GestionDocumentos() {
                     placeholder="Nombre del autor o institución responsable"
                     onChange={(e) => setForm((f) => ({ ...f, autor: e.target.value }))}
                     className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition" />
+                </div>
+
+                {/* Resumen */}
+                <div>
+                  <label htmlFor="gd-resumen" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Resumen <span className="text-text-muted font-normal normal-case tracking-normal">(opcional)</span>
+                  </label>
+                  <textarea id="gd-resumen" rows={2} value={form.resumen}
+                    placeholder="Breve descripción del contenido y alcance del documento…"
+                    onChange={(e) => setForm((f) => ({ ...f, resumen: e.target.value }))}
+                    className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition resize-none" />
                 </div>
 
                 {/* Categoría + portada + Año */}

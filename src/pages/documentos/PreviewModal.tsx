@@ -79,6 +79,10 @@ export function PreviewModal({ doc, categoryTitle, onClose }: PreviewModalProps)
           </button>
         </div>
 
+        {doc.resumen && (
+          <p className="px-6 pt-4 text-sm text-text-muted leading-relaxed">{doc.resumen}</p>
+        )}
+
         {doc.url ? (
           <div className="w-full">
             {isImage ? (
