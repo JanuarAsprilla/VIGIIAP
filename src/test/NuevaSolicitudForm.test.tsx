@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, createRef, type ReactNode } from 'react'
 import { NuevaSolicitudForm } from '@/pages/solicitudes/NuevaSolicitudForm'
@@ -144,5 +144,147 @@ describe('NuevaSolicitudForm — usuario autenticado', () => {
     expect(screen.getByLabelText(/Nombre Completo/i)).toHaveValue('Ana Restrepo')
     expect(screen.getByLabelText(/Correo Electrónico/i)).toHaveValue('ana@iiap.gov.co')
     expect(screen.getByLabelText(/Nombre Completo/i)).toHaveAttribute('readonly')
+  })
+})
+
+describe('NuevaSolicitudForm — archivos adjuntos', () => {
+  function getFileInput(container: HTMLElement) {
+    return container.querySelector('input[type="file"]') as HTMLInputElement
+  }
+
+  test('adjuntar un archivo lo muestra en la lista con su nombre y tamaño', async () => {
+    const { container } = renderForm()
+    const file = new File(['contenido'], 'plano.pdf', { type: 'application/pdf' })
+    await userEvent.upload(getFileInput(container), file)
+
+    expect(screen.getByText('plano.pdf')).toBeInTheDocument()
+    expect(screen.getByText('9 B')).toBeInTheDocument()
+  })
+
+  test('quitar un archivo lo elimina de la lista', async () => {
+    const { container } = renderForm()
+    const file = new File(['contenido'], 'plano.pdf', { type: 'application/pdf' })
+    const user = userEvent.setup()
+    await user.upload(getFileInput(container), file)
+    await user.click(screen.getByLabelText('Quitar archivo'))
+
+    expect(screen.queryByText('plano.pdf')).not.toBeInTheDocument()
+  })
+
+  test('más de 5 archivos a la vez muestra el error de máximo permitido', async () => {
+    const { container } = renderForm()
+    const files = Array.from({ length: 6 }, (_, i) => new File(['x'], `doc${i}.pdf`, { type: 'application/pdf' }))
+    await userEvent.upload(getFileInput(container), files)
+
+    expect(screen.getByText('Máximo 5 archivos')).toBeInTheDocument()
+    expect(screen.queryByText('doc0.pdf')).not.toBeInTheDocument()
+  })
+
+  test('un archivo mayor a 10 MB muestra el error con su nombre', async () => {
+    const { container } = renderForm()
+    const big = new File(['x'], 'grande.pdf', { type: 'application/pdf' })
+    Object.defineProperty(big, 'size', { value: 11 * 1024 * 1024 })
+    await userEvent.upload(getFileInput(container), big)
+
+    expect(screen.getByText('"grande.pdf" supera los 10 MB')).toBeInTheDocument()
+  })
+
+  test('al enviar con archivos adjuntos, los sube secuencialmente tras crear la solicitud', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ id: 'sol-1' })
+    const uploadMutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useCreateSolicitud).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useCreateSolicitud>)
+    vi.mocked(useUploadSolicitudArchivo).mockReturnValue({
+      mutateAsync: uploadMutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useUploadSolicitudArchivo>)
+
+    const { container } = renderForm()
+    const file = new File(['contenido'], 'plano.pdf', { type: 'application/pdf' })
+    const user = userEvent.setup()
+    await user.upload(getFileInput(container), file)
+    await user.type(screen.getByLabelText(/Nombre Completo/i), 'Ana Restrepo')
+    await user.type(screen.getByLabelText(/Correo Electrónico/i), 'ana@iiap.gov.co')
+    await user.selectOptions(screen.getByLabelText(/Tipo de Trámite/i), 'uso-suelo')
+    await user.type(screen.getByLabelText(/Descripción/i), DESC_VALIDA)
+    await user.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
+
+    expect(await screen.findByText('¡Solicitud enviada!')).toBeInTheDocument()
+    expect(uploadMutateAsync).toHaveBeenCalledWith({ solicitudId: 'sol-1', file })
+  })
+
+  test('si la subida de un archivo falla, igual muestra éxito (no bloquea el flujo)', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ id: 'sol-1' })
+    const uploadMutateAsync = vi.fn().mockRejectedValue(new Error('upload failed'))
+    vi.mocked(useCreateSolicitud).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useCreateSolicitud>)
+    vi.mocked(useUploadSolicitudArchivo).mockReturnValue({
+      mutateAsync: uploadMutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useUploadSolicitudArchivo>)
+
+    const { container } = renderForm()
+    const file = new File(['contenido'], 'plano.pdf', { type: 'application/pdf' })
+    const user = userEvent.setup()
+    await user.upload(getFileInput(container), file)
+    await user.type(screen.getByLabelText(/Nombre Completo/i), 'Ana Restrepo')
+    await user.type(screen.getByLabelText(/Correo Electrónico/i), 'ana@iiap.gov.co')
+    await user.selectOptions(screen.getByLabelText(/Tipo de Trámite/i), 'uso-suelo')
+    await user.type(screen.getByLabelText(/Descripción/i), DESC_VALIDA)
+    await user.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
+
+    expect(await screen.findByText('¡Solicitud enviada!')).toBeInTheDocument()
+  })
+})
+
+describe('NuevaSolicitudForm — modal de éxito', () => {
+  test('"Entendido" cierra el modal de confirmación', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ id: 'sol-1' })
+    vi.mocked(useCreateSolicitud).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useCreateSolicitud>)
+
+    const user = userEvent.setup()
+    renderForm()
+    await user.type(screen.getByLabelText(/Nombre Completo/i), 'Ana Restrepo')
+    await user.type(screen.getByLabelText(/Correo Electrónico/i), 'ana@iiap.gov.co')
+    await user.selectOptions(screen.getByLabelText(/Tipo de Trámite/i), 'uso-suelo')
+    await user.type(screen.getByLabelText(/Descripción/i), DESC_VALIDA)
+    await user.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
+    await screen.findByText('¡Solicitud enviada!')
+
+    await user.click(screen.getByText('Entendido'))
+    expect(screen.queryByText('¡Solicitud enviada!')).not.toBeInTheDocument()
+  })
+
+  test('tras el éxito, el formulario se limpia', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ id: 'sol-1' })
+    vi.mocked(useCreateSolicitud).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useCreateSolicitud>)
+
+    const user = userEvent.setup()
+    renderForm()
+    await user.type(screen.getByLabelText(/Nombre Completo/i), 'Ana Restrepo')
+    await user.type(screen.getByLabelText(/Correo Electrónico/i), 'ana@iiap.gov.co')
+    await user.selectOptions(screen.getByLabelText(/Tipo de Trámite/i), 'uso-suelo')
+    await user.type(screen.getByLabelText(/Descripción/i), DESC_VALIDA)
+    await user.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
+    await screen.findByText('¡Solicitud enviada!')
+
+    expect(screen.getByLabelText(/Nombre Completo/i)).toHaveValue('')
+    expect(screen.getByLabelText(/Descripción/i)).toHaveValue('')
+  })
+})
+
+describe('NuevaSolicitudForm — límite de descripción', () => {
+  test('una descripción que exceda el máximo permitido muestra el error de longitud', async () => {
+    const user = userEvent.setup()
+    renderForm()
+    const textarea = screen.getByLabelText(/Descripción/i)
+    fireEvent.change(textarea, { target: { value: 'x'.repeat(1001) } })
+    await user.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
+
+    expect(await screen.findByText('Máximo 1000 caracteres')).toBeInTheDocument()
   })
 })
