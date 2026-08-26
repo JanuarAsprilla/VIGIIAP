@@ -13,7 +13,8 @@ const TABS = [
 
 export default function BottomTabs() {
   const { isAuthenticated, user } = useAuth()
-  const canAccess = isAuthenticated && user?.role !== ROLES.PUBLICO
+  const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE
+  const canAccess = isAuthenticated && !isUnverified
 
   return (
     <nav
