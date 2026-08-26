@@ -103,6 +103,40 @@ describe('GestionMapas — validación del formulario', () => {
     expect(await screen.findByText('El nombre del mapa es obligatorio')).toBeInTheDocument()
     expect(mutateAsync).not.toHaveBeenCalled()
   })
+
+  test('con nombre, temática y URL válidos, el envío llega a la mutación con un año dentro de rango', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useCreateMapa).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useCreateMapa>)
+
+    const user = await openCreateModal()
+    await user.click(screen.getByRole('button', { name: 'Geovisor' }))
+    await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa geovisor de prueba')
+    await user.type(screen.getByPlaceholderText('Selecciona o crea una temática…'), 'Cartografía')
+    await user.type(screen.getByLabelText(/URL del Geovisor/i), 'https://geovisor.iiap.org.co/mapa')
+    await user.click(screen.getByRole('button', { name: /Registrar mapa/i }))
+
+    expect(mutateAsync).toHaveBeenCalled()
+  })
+
+  test('con datos por lo demás válidos, un año fuera del rango 1900–2100 no debe bloquear el envío en silencio', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useCreateMapa).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useCreateMapa>)
+
+    const user = await openCreateModal()
+    await user.click(screen.getByRole('button', { name: 'Geovisor' }))
+    await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa geovisor de prueba')
+    await user.type(screen.getByPlaceholderText('Selecciona o crea una temática…'), 'Cartografía')
+    await user.type(screen.getByLabelText(/URL del Geovisor/i), 'https://geovisor.iiap.org.co/mapa')
+    await user.clear(screen.getByLabelText('Año'))
+    await user.type(screen.getByLabelText('Año'), '1500')
+    await user.click(screen.getByRole('button', { name: /Registrar mapa/i }))
+
+    expect(mutateAsync).toHaveBeenCalled()
+  })
 })
 
 describe('GestionMapas — guarda de doble envío', () => {

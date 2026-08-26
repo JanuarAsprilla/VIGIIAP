@@ -150,3 +150,36 @@ describe('Usuarios (admin) — cambio de rol', () => {
     expect(mutateAsync).toHaveBeenCalledWith({ id: 'u2', rol: 'Técnico SIG' })
   })
 })
+
+describe('Usuarios (admin) — invitar usuario', () => {
+  test('un correo con formato inválido muestra el mensaje de validación en vez de bloquearse en silencio', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useCreateUsuario).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateUsuario>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Crear Usuario/i }))
+    await user.type(screen.getByPlaceholderText('Ej. María García'), 'Ana Restrepo')
+    await user.type(screen.getByPlaceholderText('usuario@iiap.org.co'), 'correo-invalido')
+    const crearButtons = screen.getAllByRole('button', { name: /Crear Usuario/i })
+    await user.click(crearButtons[crearButtons.length - 1])
+
+    expect(screen.getByText('Nombre y correo válido son requeridos')).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('con datos válidos, invita al usuario con los datos del formulario', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useCreateUsuario).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateUsuario>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Crear Usuario/i }))
+    await user.type(screen.getByPlaceholderText('Ej. María García'), 'Ana Restrepo')
+    await user.type(screen.getByPlaceholderText('usuario@iiap.org.co'), 'ana@iiap.org.co')
+    const crearButtons = screen.getAllByRole('button', { name: /Crear Usuario/i })
+    await user.click(crearButtons[crearButtons.length - 1])
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ nombre: 'Ana Restrepo', email: 'ana@iiap.org.co' }))
+  })
+})

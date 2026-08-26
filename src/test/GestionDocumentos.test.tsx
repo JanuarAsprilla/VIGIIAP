@@ -75,6 +75,16 @@ describe('GestionDocumentos — validación del formulario', () => {
     expect(await screen.findByText('El nombre del documento es obligatorio')).toBeInTheDocument()
     expect(mutateAsync).not.toHaveBeenCalled()
   })
+
+  test('un año de publicación fuera de rango no debe silenciar los demás errores de validación', async () => {
+    const user = await openCreateModal()
+    await user.clear(screen.getByLabelText(/Año de publicación/i))
+    await user.type(screen.getByLabelText(/Año de publicación/i), '1500')
+    await user.click(screen.getByRole('button', { name: /Registrar documento/i }))
+
+    expect(await screen.findByText('El nombre del documento es obligatorio')).toBeInTheDocument()
+    expect(screen.getByText('Selecciona o escribe una categoría')).toBeInTheDocument()
+  })
 })
 
 describe('GestionDocumentos — guarda de doble envío', () => {
