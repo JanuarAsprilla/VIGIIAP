@@ -19,6 +19,7 @@ import { useSolicitudesAdmin, useUpdateEstadoSolicitud } from '@/hooks/useSolici
 import { useUsuariosList } from '@/hooks/useUsuarios'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
+import { ROLES } from '@/lib/constants/roles'
 
 const fadeUp = fadeUpSm
 
@@ -190,17 +191,21 @@ function AlertasSolicitudes({ solicitudes }: { solicitudes: SolicitudData[] }) {
 }
 
 // ── Distribución de roles ──
+const ROLE_CHART_ITEMS: { label: string; color: string }[] = [
+  { label: ROLES.ADMIN,         color: 'bg-primary-800' },
+  { label: ROLES.INVESTIGADOR,  color: 'bg-primary-500' },
+  { label: ROLES.TECNICO,       color: 'bg-gold-500'    },
+  { label: ROLES.INSTITUCIONAL, color: 'bg-primary-300' },
+  { label: ROLES.PUBLICO,       color: 'bg-primary-200' },
+]
+
 function RolesChart({ usuarios }: { usuarios: { rol: string }[] }) {
   const counts = usuarios.reduce<Record<string, number>>((acc, u) => {
     acc[u.rol] = (acc[u.rol] || 0) + 1
     return acc
   }, {})
   const total = usuarios.length
-  const items = [
-    { label: 'Administrador SIG', count: counts['Administrador SIG'] || 0, color: 'bg-primary-800' },
-    { label: 'Investigador',      count: counts['Investigador'] || 0,      color: 'bg-primary-500' },
-    { label: 'Público',           count: counts['Público'] || 0,           color: 'bg-primary-200' },
-  ]
+  const items = ROLE_CHART_ITEMS.map((r) => ({ ...r, count: counts[r.label] || 0 }))
 
   return (
     <motion.div {...fadeUp(0.3)} className="bg-white border border-border rounded-xl p-5">
