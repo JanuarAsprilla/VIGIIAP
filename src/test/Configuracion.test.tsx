@@ -87,4 +87,64 @@ describe('Configuracion — modo mantenimiento', () => {
 
     await waitFor(() => expect(screen.getByLabelText('Mensaje de mantenimiento')).toBeInTheDocument())
   })
+
+  test('desactivarlo de nuevo oculta el campo de mensaje', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const section = screen.getByText('Activar modo mantenimiento').closest('.flex.items-center.justify-between')!
+    const toggle = section.querySelector('div[class*="w-10"]') as HTMLElement
+    await user.click(toggle)
+    await waitFor(() => expect(screen.getByLabelText('Mensaje de mantenimiento')).toBeInTheDocument())
+
+    await user.click(toggle)
+    await waitFor(() => expect(screen.queryByLabelText('Mensaje de mantenimiento')).not.toBeInTheDocument())
+  })
+})
+
+describe('Configuracion — edición de campos generales', () => {
+  test('editar el nombre del sistema y guardarlo envía el valor actualizado', async () => {
+    vi.mocked(api.put).mockResolvedValue({})
+    const user = userEvent.setup()
+    renderPage()
+
+    const input = await screen.findByDisplayValue('VIGIA-IIAP')
+    await user.clear(input)
+    await user.type(input, 'Portal Ambiental')
+    await user.click(screen.getByRole('button', { name: /Guardar Cambios/i }))
+
+    expect(api.put).toHaveBeenCalledWith('/admin/configuracion', expect.objectContaining({ siteName: 'Portal Ambiental' }))
+  })
+})
+
+describe('Configuracion — notificaciones y roles', () => {
+  test('los switches de notificaciones se pueden activar y desactivar', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const row = screen.getByText('Notificar nuevos inicios de sesión').closest('.flex.items-center.justify-between')!
+    const toggle = row.querySelector('div[class*="w-10"]') as HTMLElement
+    expect(toggle.className).not.toContain('bg-primary-800')
+
+    await user.click(toggle)
+    expect(toggle.className).toContain('bg-primary-800')
+  })
+
+  test('los switches de roles y permisos se pueden desactivar', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const row = screen.getByText('Requerir aprobación de administrador para nuevos usuarios').closest('.flex.items-center.justify-between')!
+    const toggle = row.querySelector('div[class*="w-10"]') as HTMLElement
+    expect(toggle.className).toContain('bg-primary-800')
+
+    await user.click(toggle)
+    expect(toggle.className).not.toContain('bg-primary-800')
+  })
+
+  test('describe los tres roles del sistema', () => {
+    renderPage()
+    expect(screen.getByText(/Acceso completo al panel de administración/)).toBeInTheDocument()
+    expect(screen.getByText(/Solo acceso al inicio de sesión y módulos públicos/)).toBeInTheDocument()
+  })
 })
