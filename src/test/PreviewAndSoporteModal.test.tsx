@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PreviewModal } from '@/pages/documentos/PreviewModal'
 import { SoporteDocumentalModal } from '@/pages/documentos/SoporteModal'
@@ -61,6 +61,39 @@ describe('PreviewModal — tipos de archivo', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
     await user.click(screen.getByRole('dialog'))
     expect(onClose).toHaveBeenCalledTimes(2)
+  })
+
+  test('docx: muestra el aviso de no-previsualizable con el ícono de Word y permite descargar', async () => {
+    const doc: DocItem = { id: 'd4', name: 'Memoria.docx', type: 'docx', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/memoria.docx' }
+    const user = userEvent.setup()
+    render(<PreviewModal doc={doc} categoryTitle="Cartografía" onClose={onClose} />)
+    expect(screen.getByText(/no se pueden previsualizar en el navegador/)).toBeInTheDocument()
+    await user.click(screen.getByText('Descargar Word'))
+    expect(forceDownload).toHaveBeenCalledWith(expect.stringContaining('/descargar/documento/d4'), 'Memoria.docx.docx')
+  })
+
+  test('tipo no reconocido: no renderiza ninguna vista previa ni acciones de descarga', () => {
+    const doc: DocItem = { id: 'd5', name: 'Archivo.zip', type: 'zip', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/archivo.zip' }
+    render(<PreviewModal doc={doc} categoryTitle="Cartografía" onClose={onClose} />)
+    expect(screen.queryByText('Descargar')).not.toBeInTheDocument()
+    expect(screen.queryByText(/no se pueden previsualizar/)).not.toBeInTheDocument()
+    expect(screen.getByText('Archivo.zip')).toBeInTheDocument()
+  })
+
+  test('trampa de foco: Tab en el último elemento regresa al primero y Shift+Tab hace lo inverso', () => {
+    const doc: DocItem = { id: 'd1', name: 'Informe.pdf', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/informe.pdf' }
+    render(<PreviewModal doc={doc} categoryTitle="Cartografía" onClose={onClose} />)
+
+    const first = screen.getByLabelText('Cerrar')
+    const last = screen.getByText('Cerrar')
+
+    last.focus()
+    fireEvent.keyDown(last, { key: 'Tab' })
+    expect(document.activeElement).toBe(first)
+
+    first.focus()
+    fireEvent.keyDown(first, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(last)
   })
 })
 

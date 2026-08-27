@@ -43,6 +43,16 @@ describe('CategoryCard', () => {
     await user.click(screen.getByRole('button'))
     expect(onOpen).toHaveBeenCalled()
   })
+
+  test('con thumbnail definido, renderiza la imagen en lugar del degradado', () => {
+    const { container } = render(<CategoryCard category={makeCategory({ thumbnail: '/thumb.jpg' })} filteredCount={null} onOpen={vi.fn()} index={0} />)
+    expect(container.querySelector('img')).toHaveAttribute('src', '/thumb.jpg')
+  })
+
+  test('categoría con ícono y título desconocidos usa el ícono y color por defecto sin romper', () => {
+    render(<CategoryCard category={makeCategory({ title: 'Rara', icon: 'Inexistente' })} filteredCount={null} onOpen={vi.fn()} index={0} />)
+    expect(screen.getByText('Rara')).toBeInTheDocument()
+  })
 })
 
 describe('SupportCTA', () => {

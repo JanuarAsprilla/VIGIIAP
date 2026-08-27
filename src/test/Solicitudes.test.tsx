@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode, type RefObject } from 'react'
 import Solicitudes from '@/pages/Solicitudes'
@@ -80,7 +80,10 @@ vi.mock('@/pages/solicitudes/SolicitudesTable', () => ({
 }))
 vi.mock('@/pages/solicitudes/NuevaSolicitudForm', () => ({
   NuevaSolicitudForm: ({ formRef }: { formRef: RefObject<HTMLDivElement | null> }) => (
-    <div ref={formRef}>Formulario Nueva Solicitud</div>
+    <div ref={formRef}>
+      Formulario Nueva Solicitud
+      <input placeholder="Campo de prueba" />
+    </div>
   ),
 }))
 vi.mock('@/pages/solicitudes/MisSolicitudes', () => ({
@@ -150,5 +153,39 @@ describe('Solicitudes — orquestación de página', () => {
     render(<Solicitudes />)
     await user.click(screen.getByText('Nueva Solicitud'))
     expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+  })
+
+  test('Nueva Solicitud enfoca el primer campo del formulario 400ms después del scroll', () => {
+    vi.useFakeTimers()
+    HTMLElement.prototype.scrollIntoView = vi.fn()
+    render(<Solicitudes />)
+
+    fireEvent.click(screen.getByText('Nueva Solicitud'))
+    expect(document.activeElement).not.toBe(screen.getByPlaceholderText('Campo de prueba'))
+
+    act(() => { vi.advanceTimersByTime(400) })
+    expect(document.activeElement).toBe(screen.getByPlaceholderText('Campo de prueba'))
+
+    vi.useRealTimers()
+  })
+
+  test('Prev/Next avanzan y retroceden de página respetando los límites', async () => {
+    rows.push(
+      makeRow({ id: '#AAA3' }),
+      makeRow({ id: '#AAA4' }),
+      makeRow({ id: '#AAA5' }),
+    )
+    const user = userEvent.setup()
+    render(<Solicitudes />)
+    expect(screen.getByText('Página: 1 / 2')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Prev'))
+    expect(screen.getByText('Página: 1 / 2')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Next'))
+    expect(screen.getByText('Página: 2 / 2')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Next'))
+    expect(screen.getByText('Página: 2 / 2')).toBeInTheDocument()
   })
 })
