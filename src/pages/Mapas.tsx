@@ -142,7 +142,7 @@ const CATEGORY_COLORS = {
 }
 
 interface MapCardProps { map: MapaData; index: number; onPreview?: (map: MapaData, format: string) => void }
-function MapCard({ map, index }: MapCardProps) {
+function MapCard({ map, index, onPreview }: MapCardProps) {
   const colors = CATEGORY_COLORS[map.category as keyof typeof CATEGORY_COLORS] ?? { pill: 'bg-primary-100 text-primary-700', accent: '#1B4332' }
   const hasPdf     = map.formats.includes('PDF')
   const hasImg     = map.formats.includes('IMG')
@@ -236,11 +236,11 @@ function MapCard({ map, index }: MapCardProps) {
             </button>
           )}
           {hasPdf && (
-            <a href={map.archivo_pdf_url ?? undefined} target="_blank" rel="noopener noreferrer"
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors no-underline">
+            <button onClick={() => onPreview?.(map, 'PDF')}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors">
               <Eye className="w-3.5 h-3.5" />
               Visualizar
-            </a>
+            </button>
           )}
           {hasImg && (
             <button onClick={() => handleDownload('archivo_img', 'img')}
@@ -253,11 +253,11 @@ function MapCard({ map, index }: MapCardProps) {
             </button>
           )}
           {hasImg && (
-            <a href={map.archivo_img_url ?? undefined} target="_blank" rel="noopener noreferrer"
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors no-underline">
+            <button onClick={() => onPreview?.(map, 'IMG')}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors">
               <Eye className="w-3.5 h-3.5" />
               Visualizar
-            </a>
+            </button>
           )}
           {hasGeovisor && (
             <a href={map.geovisorLink || '/geovisor'} target="_blank" rel="noopener noreferrer"
@@ -315,7 +315,7 @@ export default function Mapas() {
   // Filtrado local (búsqueda global + filtros que el backend aún no tiene)
   const filteredMaps = allMaps.filter((m) => {
     if (!matches([m.title, m.category, m.excerpt], query)) return false
-    if (filters.format && !m.formats.some((f) => f.toLowerCase() === filters.format)) return false
+    if (filters.format && !m.formats.some((f) => f.toLowerCase() === filters.format.toLowerCase())) return false
     return true
   })
 

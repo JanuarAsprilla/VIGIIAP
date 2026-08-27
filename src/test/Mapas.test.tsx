@@ -76,6 +76,145 @@ describe('Mapas — descarga de archivos', () => {
   })
 })
 
+describe('Mapas — filtro de formato', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('filtrar por PDF sigue mostrando los mapas en formato PDF', async () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMap({ id: '1', titulo: 'Mapa PDF', title: 'Mapa PDF', formats: ['PDF'] })], meta: { total: 1 } },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<Mapas />)
+    const formatoSelect = screen.getAllByRole('combobox')[1]
+    await user.selectOptions(formatoSelect, 'PDF')
+
+    expect(screen.getByText('Mapa PDF')).toBeInTheDocument()
+  })
+})
+
+describe('Mapas — modal de vista previa', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('"Visualizar" en un mapa PDF abre el modal con la opción de abrir y descargar', async () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMap({ archivo_pdf_url: 'https://r2.example.com/mapa.pdf', formats: ['PDF'] })], meta: { total: 1 } },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<Mapas />)
+    await user.click(screen.getByRole('button', { name: /Visualizar/i }))
+
+    expect(screen.getByRole('link', { name: /Abrir PDF/i })).toHaveAttribute('href', 'https://r2.example.com/mapa.pdf')
+  })
+
+  test('"Visualizar" en un mapa con imagen abre el modal con la imagen embebida', async () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: {
+        data: [makeMap({
+          archivo_pdf_url: null, archivo_img_url: 'https://r2.example.com/mapa.png', formats: ['IMG'],
+        })],
+        meta: { total: 1 },
+      },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<Mapas />)
+    await user.click(screen.getByRole('button', { name: /Visualizar/i }))
+
+    expect(screen.getByAltText('Mapa de prueba')).toHaveAttribute('src', 'https://r2.example.com/mapa.png')
+  })
+
+  test('Escape cierra el modal de vista previa', async () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMap()], meta: { total: 1 } },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<Mapas />)
+    await user.click(screen.getByRole('button', { name: /Visualizar/i }))
+    expect(screen.getByRole('link', { name: /Abrir PDF/i })).toBeInTheDocument()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('link', { name: /Abrir PDF/i })).not.toBeInTheDocument()
+  })
+})
+
+describe('Mapas — filtros de categoría y año, chips', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('elegir una categoría añade un chip y "Limpiar todos los filtros" lo quita', async () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMap()], meta: { total: 1 } },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<Mapas />)
+    const categoriaSelect = screen.getAllByRole('combobox')[0]
+    await user.selectOptions(categoriaSelect, 'Hidrología')
+
+    expect(screen.getByText('Limpiar todos los filtros')).toBeInTheDocument()
+    await user.click(screen.getByText('Limpiar todos los filtros'))
+    expect(screen.queryByText('Limpiar todos los filtros')).not.toBeInTheDocument()
+  })
+
+  test('quitar un chip individual restablece solo ese filtro', async () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMap()], meta: { total: 1 } },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<Mapas />)
+    const anioSelect = screen.getAllByRole('combobox')[2]
+    await user.selectOptions(anioSelect, '2024')
+    expect(screen.getByText('Limpiar todos los filtros')).toBeInTheDocument()
+
+    const chip = screen.getByText('Limpiar todos los filtros').previousElementSibling as HTMLElement
+    await user.click(chip.querySelector('button')!)
+    expect(screen.queryByText('Limpiar todos los filtros')).not.toBeInTheDocument()
+  })
+})
+
+describe('Mapas — geovisor y paginación', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('un mapa con formato Geovisor ofrece el enlace correspondiente', () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: {
+        data: [makeMap({ formats: ['GEOVISOR'], geovisorLink: '/geovisor?capa=hidro' })],
+        meta: { total: 1 },
+      },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    render(<Mapas />)
+    expect(screen.getByRole('link', { name: /Geovisor/i })).toHaveAttribute('href', '/geovisor?capa=hidro')
+  })
+
+  test('con más de 6 mapas, pagina de a 6 y navega correctamente', async () => {
+    const maps = Array.from({ length: 8 }, (_, i) => makeMap({ id: String(i), titulo: `Mapa ${i}`, title: `Mapa ${i}` }))
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: maps, meta: { total: 8 } },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<Mapas />)
+    expect(screen.getByText('Mapa 0')).toBeInTheDocument()
+    expect(screen.queryByText('Mapa 6')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '2' }))
+    expect(screen.getByText('Mapa 6')).toBeInTheDocument()
+    expect(screen.queryByText('Mapa 0')).not.toBeInTheDocument()
+  })
+})
+
 describe('Mapas — estados de carga y error', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
