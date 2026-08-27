@@ -183,7 +183,7 @@ export function NuevaSolicitudForm({ formRef }: NuevaSolicitudFormProps) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div>
           <label htmlFor="nsf-nombre" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
             Nombre Completo <span className="text-orange-500" aria-hidden="true">*</span>
