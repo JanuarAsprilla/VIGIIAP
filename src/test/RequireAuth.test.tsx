@@ -80,6 +80,12 @@ describe('RequireAuth', () => {
 })
 
 describe('RequireAdmin', () => {
+  test('redirects to /login when there is no session', () => {
+    mockAuth({ isAuthenticated: false })
+    renderGuard(RequireAdmin)
+    expect(screen.getByText('Pantalla de login')).toBeInTheDocument()
+  })
+
   test('redirects to / when the user is not admin_sig/super_admin', () => {
     mockAuth({ isAuthenticated: true, isAdmin: false, user: makeUser('investigador') })
     renderGuard(RequireAdmin)
@@ -94,6 +100,12 @@ describe('RequireAdmin', () => {
 })
 
 describe('RequireSuperAdmin', () => {
+  test('redirects to /login when there is no session', () => {
+    mockAuth({ isAuthenticated: false })
+    renderGuard(RequireSuperAdmin)
+    expect(screen.getByText('Pantalla de login')).toBeInTheDocument()
+  })
+
   test('redirects to / for a plain admin_sig (not super_admin)', () => {
     mockAuth({ isAuthenticated: true, isAdmin: true, isSuperAdmin: false, user: makeUser('admin_sig') })
     renderGuard(RequireSuperAdmin)
@@ -108,6 +120,12 @@ describe('RequireSuperAdmin', () => {
 })
 
 describe('RequireVerified — gates /perfil y /solicitudes', () => {
+  test('redirects to /login when there is no session', () => {
+    mockAuth({ isAuthenticated: false })
+    renderGuard(RequireVerified)
+    expect(screen.getByText('Pantalla de login')).toBeInTheDocument()
+  })
+
   test.each(['visitante', 'publico'] as const)('redirects %s to /solicitar-acceso', (rol) => {
     mockAuth({ isAuthenticated: true, user: makeUser(rol) })
     renderGuard(RequireVerified)
@@ -124,6 +142,12 @@ describe('RequireVerified — gates /perfil y /solicitudes', () => {
 })
 
 describe('RequireInvestigador — gates /geovisor y /herramientas', () => {
+  test('redirects to /login when there is no session', () => {
+    mockAuth({ isAuthenticated: false })
+    renderGuard(RequireInvestigador)
+    expect(screen.getByText('Pantalla de login')).toBeInTheDocument()
+  })
+
   test.each(['visitante', 'publico'] as const)('redirects %s to /', (rol) => {
     mockAuth({ isAuthenticated: true, user: makeUser(rol) })
     renderGuard(RequireInvestigador)
