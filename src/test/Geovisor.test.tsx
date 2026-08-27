@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, forwardRef, useImperativeHandle, type ReactNode } from 'react'
 import Geovisor from '@/pages/Geovisor'
@@ -102,6 +102,90 @@ describe('Geovisor — geolocalización', () => {
     await user.click(screen.getByTitle('Mi ubicación'))
 
     expect(await screen.findByText('No se pudo obtener la ubicación')).toBeInTheDocument()
+  })
+})
+
+describe('Geovisor — panel de capas', () => {
+  test('activar una capa la marca como activa en el panel', async () => {
+    const user = userEvent.setup()
+    render(<Geovisor />)
+    await user.click(screen.getByText('Colectivos'))
+    expect(screen.getByText('3 de 4 activas')).toBeInTheDocument()
+  })
+
+  test('cerrar el panel lo oculta y muestra el botón para reabrirlo con el conteo', async () => {
+    const user = userEvent.setup()
+    render(<Geovisor />)
+    const header = screen.getByText('Capas de Información').closest('div')!.parentElement!
+    await user.click(header.querySelector('button')!)
+
+    const reopen = screen.getByTitle('Abrir capas')
+    expect(reopen).toBeInTheDocument()
+    expect(within(reopen).getByText('2')).toBeInTheDocument()
+
+    await user.click(reopen)
+    expect(screen.getByText('Capas de Información')).toBeInTheDocument()
+  })
+})
+
+describe('Geovisor — herramientas', () => {
+  test('seleccionar una herramienta muestra el aviso de herramienta activa', async () => {
+    const user = userEvent.setup()
+    render(<Geovisor />)
+    await user.click(screen.getByTitle('Medir'))
+
+    expect(screen.getByText(/Herramienta activa:/)).toBeInTheDocument()
+    expect(screen.getByText('medir')).toBeInTheDocument()
+  })
+
+  test('seleccionar la misma herramienta de nuevo la desactiva', async () => {
+    const user = userEvent.setup()
+    render(<Geovisor />)
+    await user.click(screen.getByTitle('Medir'))
+    await user.click(screen.getByTitle('Medir'))
+
+    expect(screen.queryByText(/Herramienta activa:/)).not.toBeInTheDocument()
+  })
+
+  test('el botón de cerrar en el aviso desactiva la herramienta', async () => {
+    const user = userEvent.setup()
+    render(<Geovisor />)
+    await user.click(screen.getByTitle('Dibujar'))
+    const banner = screen.getByText(/Herramienta activa:/).closest('div')!
+    await user.click(banner.querySelector('button')!)
+
+    expect(screen.queryByText(/Herramienta activa:/)).not.toBeInTheDocument()
+  })
+})
+
+describe('Geovisor — leyenda', () => {
+  test('sin capas activas, muestra el mensaje "Sin capas activas"', async () => {
+    const user = userEvent.setup()
+    render(<Geovisor />)
+    await user.click(screen.getByText('Colectivos'))
+    await user.click(screen.getByText('Límites Políticos'))
+    await user.click(screen.getByText('Ecosistemas'))
+
+    await user.click(screen.getByText('Colectivos'))
+    await user.click(screen.getByText('Leyenda'))
+    expect(screen.getByText('Sin capas activas')).toBeInTheDocument()
+  })
+
+  test('con capas activas, la leyenda lista sus títulos', async () => {
+    const user = userEvent.setup()
+    render(<Geovisor />)
+    await user.click(screen.getByText('Leyenda'))
+    expect(screen.getAllByText('Límites Políticos').length).toBeGreaterThan(1)
+    expect(screen.getAllByText('Ecosistemas').length).toBeGreaterThan(1)
+  })
+})
+
+describe('Geovisor — exportar mapa', () => {
+  test('exportar mapa muestra el toast informativo', async () => {
+    const user = userEvent.setup()
+    render(<Geovisor />)
+    await user.click(screen.getByTitle('Exportar mapa'))
+    expect(await screen.findByText('Exportando mapa como PNG...')).toBeInTheDocument()
   })
 })
 
