@@ -182,4 +182,223 @@ describe('Usuarios (admin) — invitar usuario', () => {
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ nombre: 'Ana Restrepo', email: 'ana@iiap.org.co' }))
   })
+
+  test('tras crear el usuario, muestra la pantalla de confirmación con el correo y rol', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useCreateUsuario).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateUsuario>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Crear Usuario/i }))
+    await user.type(screen.getByPlaceholderText('Ej. María García'), 'Ana Restrepo')
+    await user.type(screen.getByPlaceholderText('usuario@iiap.org.co'), 'ana@iiap.org.co')
+    const crearButtons = screen.getAllByRole('button', { name: /Crear Usuario/i })
+    await user.click(crearButtons[crearButtons.length - 1])
+
+    expect(await screen.findByText('¡Usuario creado!')).toBeInTheDocument()
+    expect(screen.getByText('ana@iiap.org.co')).toBeInTheDocument()
+  })
+})
+
+describe('Usuarios (admin) — activar/desactivar', () => {
+  test('desactivar un usuario activo llama a la mutación con el estado invertido', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useToggleActivo).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useToggleActivo>)
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo', activo: true, estado: 'Activo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByTitle('Clic para desactivar'))
+
+    expect(mutateAsync).toHaveBeenCalledWith({ id: 'u2', activo: false })
+    expect(await screen.findByText('Ana Restrepo desactivado')).toBeInTheDocument()
+  })
+
+  test('si falla el cambio de estado, muestra un toast de error', async () => {
+    const mutateAsync = vi.fn().mockRejectedValue(new Error('fail'))
+    vi.mocked(useToggleActivo).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useToggleActivo>)
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo', activo: true, estado: 'Activo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByTitle('Clic para desactivar'))
+
+    expect(await screen.findByText('Error al cambiar el estado')).toBeInTheDocument()
+  })
+
+  test('un usuario protegido (no manejable) muestra su estado sin botón de acción', () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'me', nombre: 'Yo Mismo', activo: true, estado: 'Activo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    render(<Usuarios />)
+    expect(screen.queryByTitle('Clic para desactivar')).not.toBeInTheDocument()
+    expect(screen.getByText('Protegido')).toBeInTheDocument()
+  })
+})
+
+describe('Usuarios (admin) — eliminar usuario', () => {
+  test('confirmar la eliminación llama a la mutación y notifica', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useDeleteUsuario).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useDeleteUsuario>)
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Eliminar usuario Ana Restrepo/i }))
+    await user.click(screen.getByRole('button', { name: /^Eliminar$/i }))
+
+    expect(mutateAsync).toHaveBeenCalledWith('u2')
+    expect(await screen.findByText('Ana Restrepo eliminado correctamente')).toBeInTheDocument()
+  })
+
+  test('cancelar la eliminación no llama a la mutación', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useDeleteUsuario).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useDeleteUsuario>)
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Eliminar usuario Ana Restrepo/i }))
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('si falla la eliminación, muestra un toast de error', async () => {
+    const mutateAsync = vi.fn().mockRejectedValue(new Error('fail'))
+    vi.mocked(useDeleteUsuario).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useDeleteUsuario>)
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Eliminar usuario Ana Restrepo/i }))
+    await user.click(screen.getByRole('button', { name: /^Eliminar$/i }))
+
+    expect(await screen.findByText('Error al eliminar el usuario')).toBeInTheDocument()
+  })
+})
+
+describe('Usuarios (admin) — cambio de rol: errores y cierre', () => {
+  test('si falla la mutación de rol, muestra un toast de error y no cierra el modal', async () => {
+    const mutateAsync = vi.fn().mockRejectedValue(new Error('fail'))
+    vi.mocked(useUpdateUsuarioRol).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useUpdateUsuarioRol>)
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Editar rol de Ana Restrepo/i }))
+    await user.click(screen.getByRole('button', { name: /Guardar/i }))
+
+    expect(await screen.findByText('Error al actualizar el rol')).toBeInTheDocument()
+  })
+
+  test('cancelar el modal de rol no llama a la mutación', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useUpdateUsuarioRol).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useUpdateUsuarioRol>)
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Editar rol de Ana Restrepo/i }))
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+})
+
+describe('Usuarios (admin) — panel de detalle', () => {
+  test('abrir el detalle muestra el correo, rol y estado del usuario', async () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo', correo: 'ana@iiap.gov.co' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByText('Ana Restrepo'))
+
+    expect(screen.getAllByText('ana@iiap.gov.co').length).toBeGreaterThan(0)
+  })
+
+  test('un investigador ve sus permisos y que no tiene acceso al panel admin', async () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo', rol: 'Investigador' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByText('Ana Restrepo'))
+
+    expect(screen.getByText('Geovisor')).toBeInTheDocument()
+    expect(screen.getByText('Panel de Administración')).toBeInTheDocument()
+  })
+
+  test('un usuario Público ve la nota de cuenta no verificada', async () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Visitante X', rol: 'Público' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByText('Visitante X'))
+
+    expect(screen.getByText(/Cuenta no verificada/)).toBeInTheDocument()
+  })
+
+  test('cerrar el detalle con la X lo oculta', async () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo', correo: 'ana@iiap.gov.co' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByText('Ana Restrepo'))
+    expect(screen.getAllByText('ana@iiap.gov.co')).toHaveLength(2)
+
+    const closeButtons = screen.getAllByRole('button').filter((b) => b.querySelector('.lucide-x'))
+    await user.click(closeButtons[0])
+    expect(screen.getAllByText('ana@iiap.gov.co')).toHaveLength(1)
+  })
+})
+
+describe('Usuarios (admin) — listado y filtros', () => {
+  test('sin usuarios, muestra "Sin resultados"', () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    render(<Usuarios />)
+    expect(screen.getByText('Sin resultados')).toBeInTheDocument()
+  })
+
+  test('un usuario no verificado por correo muestra la etiqueta "Pendiente"', () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo', emailVerified: false })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    render(<Usuarios />)
+    expect(screen.getByText('Pendiente')).toBeInTheDocument()
+  })
+
+  test('el buscador actualiza el input controlado', async () => {
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    const input = screen.getByPlaceholderText('Buscar por nombre o correo...')
+    await user.type(input, 'ana')
+    expect(input).toHaveValue('ana')
+  })
 })
