@@ -36,6 +36,13 @@ vi.mock('@/lib/api', () => ({
     delete: vi.fn(),
   },
 }))
+import api from '@/lib/api'
+
+const navigateSpy = vi.fn()
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>()
+  return { ...actual, useNavigate: () => navigateSpy }
+})
 
 vi.mock('@/hooks/useUsuarios', () => ({
   useUpdatePerfil: vi.fn(),
@@ -63,6 +70,7 @@ function renderPerfil() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  authMock.user = { id: 'u1', name: 'Ana Restrepo', email: 'ana@iiap.gov.co', rol: 'investigador', role: 'Investigador', institucion: 'IIAP' }
   vi.mocked(useUpdatePerfil).mockReturnValue({
     mutateAsync: vi.fn(), isPending: false,
   } as unknown as ReturnType<typeof useUpdatePerfil>)
@@ -168,5 +176,177 @@ describe('Perfil — cambiar contraseña', () => {
     await user.click(screen.getByRole('button', { name: /Actualizar contraseña/i }))
 
     expect(await screen.findByText(/no coinciden/i)).toBeInTheDocument()
+  })
+})
+
+describe('Perfil — edición de institución y cancelar', () => {
+  test('cancelar la edición del nombre descarta los cambios sin llamar a la mutación', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useUpdatePerfil).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useUpdatePerfil>)
+
+    const user = userEvent.setup()
+    renderPerfil()
+    await user.click(screen.getAllByRole('button', { name: 'Editar' })[0])
+    await user.type(screen.getByPlaceholderText('Tu nombre completo'), ' cambiado')
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(mutateAsync).not.toHaveBeenCalled()
+    expect(screen.queryByPlaceholderText('Tu nombre completo')).not.toBeInTheDocument()
+  })
+
+  test('editar la institución llama a la mutación con el campo correcto', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useUpdatePerfil).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useUpdatePerfil>)
+
+    const user = userEvent.setup()
+    renderPerfil()
+    await user.click(screen.getAllByRole('button', { name: 'Editar' })[1])
+    const input = screen.getByPlaceholderText('Nombre de tu institución')
+    await user.clear(input)
+    await user.type(input, 'Universidad Tecnológica del Chocó')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith({ institucion: 'Universidad Tecnológica del Chocó' }))
+  })
+})
+
+describe('Perfil — usuario no verificado', () => {
+  test('no ofrece edición de campos ni cambio de contraseña', () => {
+    authMock.user = { id: 'u2', name: 'Invitado', email: 'invitado@example.com', rol: 'publico', role: 'Público', institucion: '' }
+    renderPerfil()
+
+    expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument()
+    expect(screen.getByText(/La gestión de contraseña está disponible para cuentas verificadas/)).toBeInTheDocument()
+  })
+})
+
+describe('Perfil — cerrar sesión', () => {
+  test('cerrar sesión llama a logout() y navega a "/"', async () => {
+    const user = userEvent.setup()
+    renderPerfil()
+    await user.click(screen.getByRole('button', { name: /Cerrar Sesión/i }))
+
+    expect(authMock.logout).toHaveBeenCalled()
+    expect(navigateSpy).toHaveBeenCalledWith('/')
+  })
+})
+
+describe('Perfil — autenticación en dos pasos', () => {
+  test('activar 2FA solicita el QR y permite verificar el código', async () => {
+    vi.mocked(api.post).mockImplementation((url: string) => {
+      if (url === '/auth/2fa/setup') return Promise.resolve({ qrCodeUrl: 'data:image/png;base64,abc', secret: 'SECRET123' })
+      return Promise.resolve({})
+    })
+
+    const user = userEvent.setup()
+    renderPerfil()
+    await user.click(screen.getByRole('button', { name: 'Activar' }))
+
+    expect(await screen.findByAltText('QR 2FA')).toHaveAttribute('src', 'data:image/png;base64,abc')
+    expect(screen.getByText(/SECRET123/)).toBeInTheDocument()
+
+    await user.type(screen.getByPlaceholderText('Código de 6 dígitos'), '123456')
+    await user.click(screen.getByRole('button', { name: 'Verificar' }))
+
+    expect(await screen.findByText(/2FA activado exitosamente/)).toBeInTheDocument()
+    expect(api.post).toHaveBeenCalledWith('/auth/2fa/enable', { token: '123456' })
+  })
+
+  test('si falla activar el 2FA, muestra el mensaje de error', async () => {
+    vi.mocked(api.post).mockRejectedValue(new Error('No se pudo generar el código'))
+
+    const user = userEvent.setup()
+    renderPerfil()
+    await user.click(screen.getByRole('button', { name: 'Activar' }))
+
+    expect(await screen.findByText('No se pudo generar el código')).toBeInTheDocument()
+  })
+
+  test('con 2FA activo, desactivar pide confirmación antes de llamar al endpoint', async () => {
+    authMock.user = { ...authMock.user, twoFactorEnabled: true } as typeof authMock.user & { twoFactorEnabled: boolean }
+    vi.mocked(api.delete).mockResolvedValue({})
+
+    const user = userEvent.setup()
+    renderPerfil()
+    await user.click(screen.getByRole('button', { name: 'Desactivar' }))
+    expect(screen.getByText('¿Desea desactivar la autenticación en dos pasos? Su cuenta tendrá menor protección.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(api.delete).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Desactivar' }))
+    const confirmButtons = screen.getAllByRole('button', { name: 'Desactivar' })
+    await user.click(confirmButtons[confirmButtons.length - 1])
+    expect(api.delete).toHaveBeenCalledWith('/auth/2fa/disable')
+  })
+})
+
+describe('Perfil — sesiones activas', () => {
+  test('sin sesiones, muestra el mensaje vacío', async () => {
+    vi.mocked(api.get).mockImplementation((url: string) =>
+      url === '/auth/sessions' ? Promise.resolve([]) : Promise.resolve({}))
+
+    renderPerfil()
+    expect(await screen.findByText('No hay sesiones activas')).toBeInTheDocument()
+  })
+
+  test('con sesiones, distingue la actual y permite revocar las demás', async () => {
+    vi.mocked(api.get).mockImplementation((url: string) =>
+      url === '/auth/sessions'
+        ? Promise.resolve([
+            { id: 's1', ip: '10.0.0.1', userAgent: 'Mozilla/5.0 (iPhone)', createdAt: '2026-01-01T00:00:00Z', current: true },
+            { id: 's2', ip: '10.0.0.2', userAgent: 'Mozilla/5.0 (Windows)', createdAt: '2026-01-02T00:00:00Z', current: false },
+          ])
+        : Promise.resolve({}))
+    vi.mocked(api.delete).mockResolvedValue({})
+
+    const user = userEvent.setup()
+    renderPerfil()
+    expect(await screen.findByText('Esta sesión')).toBeInTheDocument()
+    expect(screen.getByText(/^2 sesi.{1,3}nes activas$/)).toBeInTheDocument()
+
+    const revokeButtons = screen.getAllByRole('button').filter((b) => b.querySelector('.lucide-trash2'))
+    await user.click(revokeButtons[0])
+    expect(api.delete).toHaveBeenCalledWith('/auth/sessions/s2')
+  })
+
+  test('"Cerrar todas" aparece solo con más de una sesión y llama al endpoint masivo', async () => {
+    vi.mocked(api.get).mockImplementation((url: string) =>
+      url === '/auth/sessions'
+        ? Promise.resolve([
+            { id: 's1', ip: '10.0.0.1', userAgent: 'Mozilla/5.0', createdAt: '2026-01-01T00:00:00Z', current: true },
+            { id: 's2', ip: '10.0.0.2', userAgent: 'Mozilla/5.0', createdAt: '2026-01-02T00:00:00Z', current: false },
+          ])
+        : Promise.resolve({}))
+    vi.mocked(api.delete).mockResolvedValue({})
+
+    const user = userEvent.setup()
+    renderPerfil()
+    await user.click(await screen.findByText('Cerrar todas'))
+    expect(api.delete).toHaveBeenCalledWith('/auth/sessions')
+  })
+})
+
+describe('Perfil — notificaciones y apariencia', () => {
+  test('activar/desactivar una preferencia de notificación cambia su estado', async () => {
+    const user = userEvent.setup()
+    renderPerfil()
+    const toggle = screen.getByText('Estado de solicitudes').closest('div')!.parentElement!.querySelector('button[aria-pressed]') as HTMLElement
+    const before = toggle.getAttribute('aria-pressed')
+
+    await user.click(toggle)
+    expect(toggle.getAttribute('aria-pressed')).not.toBe(before)
+  })
+
+  test('elegir una densidad distinta la marca como activa', async () => {
+    const user = userEvent.setup()
+    renderPerfil()
+    const comodo = screen.getByRole('button', { name: /Cómodo/i })
+    await user.click(comodo)
+    expect(comodo.className).toContain('bg-primary-50')
   })
 })
