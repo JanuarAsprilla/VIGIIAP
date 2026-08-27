@@ -113,3 +113,26 @@ describe('GestionAdmins — estadísticas', () => {
     expect(screen.getByText('2')).toBeInTheDocument()
   })
 })
+
+describe('GestionAdmins — tabla de administradores', () => {
+  test('lista los admin_sig existentes con institución y estado activo/inactivo', async () => {
+    vi.mocked(api.get).mockImplementation((url: string) =>
+      url.includes('super/stats')
+        ? Promise.resolve({ total_usuarios: 10, admins: 2, activos: 8, pendientes_verificacion: 1 })
+        : Promise.resolve({
+            usuarios: [
+              { id: 'a1', nombre: 'Ana Restrepo', email: 'ana@iiap.gov.co', institucion: 'IIAP', activo: true },
+              { id: 'a2', nombre: 'Carlos Mena', email: 'carlos@iiap.gov.co', institucion: null, activo: false },
+            ],
+          }),
+    )
+
+    renderPage()
+    expect(await screen.findByText('Ana Restrepo')).toBeInTheDocument()
+    expect(screen.getByText('Carlos Mena')).toBeInTheDocument()
+    expect(screen.getByText('IIAP')).toBeInTheDocument()
+    expect(screen.getByText('—')).toBeInTheDocument()
+    expect(screen.getByText('Activo')).toBeInTheDocument()
+    expect(screen.getByText('Inactivo')).toBeInTheDocument()
+  })
+})

@@ -19,8 +19,22 @@ vi.mock('framer-motion', () => {
 })
 
 vi.mock('@/hooks/useLenis', () => ({ useLenis: () => {} }))
-vi.mock('@/components/Sidebar', () => ({ default: () => <div>Sidebar</div> }))
-vi.mock('@/components/TopBar', () => ({ default: () => <div>TopBar</div> }))
+vi.mock('@/components/Sidebar', () => ({
+  default: ({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) => (
+    <div>
+      Sidebar ({mobileOpen ? 'abierto' : 'cerrado'})
+      <button onClick={onClose}>Cerrar sidebar móvil</button>
+    </div>
+  ),
+}))
+vi.mock('@/components/TopBar', () => ({
+  default: ({ onMenuToggle }: { onMenuToggle: () => void }) => (
+    <div>
+      TopBar
+      <button onClick={onMenuToggle}>Abrir menú móvil</button>
+    </div>
+  ),
+}))
 vi.mock('@/components/FooterBar', () => ({ default: () => <div>FooterBar</div> }))
 vi.mock('@/components/BottomTabs', () => ({ default: () => <div>BottomTabs</div> }))
 vi.mock('@/components/CommandPalette', () => ({ default: () => <div>CommandPalette</div> }))
@@ -49,7 +63,7 @@ function renderMainLayout(path = '/') {
 describe('MainLayout — orquestación del shell principal', () => {
   test('renderiza sidebar, topbar, contenido, footer, bottom tabs y command palette', () => {
     renderMainLayout()
-    expect(screen.getByText('Sidebar')).toBeInTheDocument()
+    expect(screen.getByText(/Sidebar \(/)).toBeInTheDocument()
     expect(screen.getByText('TopBar')).toBeInTheDocument()
     expect(screen.getByText('Contenido de la página')).toBeInTheDocument()
     expect(screen.getByText('FooterBar')).toBeInTheDocument()
@@ -67,5 +81,17 @@ describe('MainLayout — orquestación del shell principal', () => {
   test('en /geovisor oculta el footer para dejar el mapa a pantalla completa', () => {
     renderMainLayout('/geovisor')
     expect(screen.queryByText('FooterBar')).not.toBeInTheDocument()
+  })
+
+  test('abrir el menú móvil desde TopBar y cerrarlo desde Sidebar alternan el mismo estado', async () => {
+    const user = userEvent.setup()
+    renderMainLayout()
+    expect(screen.getByText(/Sidebar \(cerrado\)/)).toBeInTheDocument()
+
+    await user.click(screen.getByText('Abrir menú móvil'))
+    expect(screen.getByText(/Sidebar \(abierto\)/)).toBeInTheDocument()
+
+    await user.click(screen.getByText('Cerrar sidebar móvil'))
+    expect(screen.getByText(/Sidebar \(cerrado\)/)).toBeInTheDocument()
   })
 })
