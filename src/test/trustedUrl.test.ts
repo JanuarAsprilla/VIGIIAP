@@ -22,4 +22,8 @@ describe('isTrustedUrl', () => {
   test('rechaza una URL protocol-relative que apunta a otro host', () => {
     expect(isTrustedUrl('//evil.example.com/malware.exe')).toBe(false)
   })
+
+  test('rechaza sin lanzar una URL malformada que ni siquiera el origen propio puede resolver', () => {
+    expect(isTrustedUrl('http://[invalid')).toBe(false)
+  })
 })
