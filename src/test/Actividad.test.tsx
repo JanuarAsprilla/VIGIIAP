@@ -88,4 +88,67 @@ describe('Actividad — estados', () => {
     renderPage()
     expect(await screen.findByRole('button', { name: /Exportar CSV/i })).toBeDisabled()
   })
+
+  test('muestra un spinner de carga mientras isLoading', () => {
+    vi.mocked(api.get).mockReturnValue(new Promise(() => {}))
+    renderPage()
+    expect(document.querySelector('.animate-spin')).not.toBeNull()
+  })
+})
+
+describe('Actividad — filtro de módulo', () => {
+  test('cambiar el módulo reinicia a la página 1', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 25 } })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Login')
+
+    const select = screen.getByRole('combobox') as HTMLSelectElement
+    await user.selectOptions(select, 'usuarios')
+    expect(select).toHaveValue('usuarios')
+  })
+})
+
+describe('Actividad — paginación', () => {
+  test('anterior está deshabilitado en la página 1, siguiente habilitado con más páginas', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 25 } })
+    renderPage()
+    await screen.findByText('Login')
+
+    const [prev, next] = screen.getAllByRole('button').filter((b) =>
+      b.querySelector('.lucide-chevron-left, .lucide-chevron-right'))
+    expect(prev).toBeDisabled()
+    expect(next).not.toBeDisabled()
+  })
+
+  test('avanzar de página solicita el siguiente offset a la API', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 25 } })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Login')
+
+    const next = screen.getAllByRole('button').find((b) => b.querySelector('.lucide-chevron-right'))!
+    await user.click(next)
+
+    expect(screen.getByText('Página 2 de 3 · 25 eventos total')).toBeInTheDocument()
+    expect(api.get).toHaveBeenCalledWith('/admin/audit', { params: expect.objectContaining({ offset: 10 }) })
+  })
+})
+
+describe('Actividad — exportar CSV', () => {
+  test('genera y libera un Object URL al exportar', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
+    const createObjectURL = vi.fn().mockReturnValue('blob:mock-url')
+    const revokeObjectURL = vi.fn()
+    vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL })
+
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Login')
+    await user.click(screen.getByRole('button', { name: /Exportar CSV/i }))
+
+    expect(createObjectURL).toHaveBeenCalled()
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url')
+    vi.unstubAllGlobals()
+  })
 })
