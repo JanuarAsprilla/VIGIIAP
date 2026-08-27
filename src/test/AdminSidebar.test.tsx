@@ -25,8 +25,15 @@ const authMock = {
 }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 
-function renderSidebar(mobileOpen: boolean, onClose = vi.fn()) {
-  return { onClose, ...render(<MemoryRouter><AdminSidebar mobileOpen={mobileOpen} onClose={onClose} /></MemoryRouter>) }
+function renderSidebar(mobileOpen: boolean, onClose = vi.fn(), initialPath = '/') {
+  return {
+    onClose,
+    ...render(
+      <MemoryRouter initialEntries={[initialPath]}>
+        <AdminSidebar mobileOpen={mobileOpen} onClose={onClose} />
+      </MemoryRouter>,
+    ),
+  }
 }
 
 beforeEach(() => {
@@ -62,6 +69,24 @@ describe('AdminSidebar — navegación', () => {
     authMock.user = { name: 'Root', role: ROLES.SUPER_ADMIN, initials: 'RT' }
     renderSidebar(false)
     expect(screen.getByText('Gestión de Admins')).toBeInTheDocument()
+  })
+
+  test('el enlace de la ruta activa muestra el indicador de activo; los demás no', () => {
+    renderSidebar(false, vi.fn(), '/admin/usuarios')
+    const usuariosLink = screen.getByText('Usuarios').closest('a')!
+    const dashboardLink = screen.getByText('Dashboard').closest('a')!
+
+    expect(usuariosLink.querySelector('.bg-primary-300')).not.toBeNull()
+    expect(dashboardLink.querySelector('.bg-primary-300')).toBeNull()
+  })
+
+  test('en la ruta raíz del panel (/admin), el Dashboard es la única ruta activa (end: true)', () => {
+    renderSidebar(false, vi.fn(), '/admin')
+    const dashboardLink = screen.getByText('Dashboard').closest('a')!
+    const usuariosLink = screen.getByText('Usuarios').closest('a')!
+
+    expect(dashboardLink.querySelector('.bg-primary-300')).not.toBeNull()
+    expect(usuariosLink.querySelector('.bg-primary-300')).toBeNull()
   })
 })
 
