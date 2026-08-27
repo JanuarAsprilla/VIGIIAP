@@ -40,6 +40,7 @@ vi.mock('@/hooks/useUsuarios', () => ({ useUsuariosList: vi.fn() }))
 import { useUsuariosList } from '@/hooks/useUsuarios'
 
 vi.mock('@/lib/api', () => ({ default: { get: vi.fn().mockResolvedValue({ data: [] }) } }))
+import api from '@/lib/api'
 
 function makeSolicitud(overrides: Record<string, unknown> = {}) {
   return {
@@ -119,6 +120,60 @@ describe('Dashboard — Solicitudes Pendientes', () => {
     expect(mutateAsync).toHaveBeenCalledWith({ id: 'mongo-1', estado: 'Aprobado' })
   })
 
+  test('rechazar una solicitud pendiente llama a la mutación con estado Rechazado', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useUpdateEstadoSolicitud).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useUpdateEstadoSolicitud>)
+    vi.mocked(useSolicitudesAdmin).mockReturnValue({
+      data: { data: [makeSolicitud({ estado: 'Pendiente' })] },
+    } as unknown as ReturnType<typeof useSolicitudesAdmin>)
+
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByTitle('Rechazar'))
+    expect(screen.getByText('¿Rechazar?')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Sí' }))
+
+    expect(mutateAsync).toHaveBeenCalledWith({ id: 'mongo-1', estado: 'Rechazado' })
+  })
+
+  test('el botón "No" cancela la confirmación sin llamar a la mutación', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useUpdateEstadoSolicitud).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useUpdateEstadoSolicitud>)
+    vi.mocked(useSolicitudesAdmin).mockReturnValue({
+      data: { data: [makeSolicitud({ estado: 'Pendiente' })] },
+    } as unknown as ReturnType<typeof useSolicitudesAdmin>)
+
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByTitle('Aprobar'))
+    await user.click(screen.getByRole('button', { name: 'No' }))
+
+    expect(screen.queryByText('¿Aprobar?')).not.toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('mientras la mutación está pendiente, deshabilita los botones y muestra "…"', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useUpdateEstadoSolicitud).mockReturnValue({
+      mutateAsync, isPending: true,
+    } as unknown as ReturnType<typeof useUpdateEstadoSolicitud>)
+    vi.mocked(useSolicitudesAdmin).mockReturnValue({
+      data: { data: [makeSolicitud({ estado: 'Pendiente' })] },
+    } as unknown as ReturnType<typeof useSolicitudesAdmin>)
+
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(screen.getByTitle('Aprobar'))
+
+    expect(screen.getByText('…')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '…' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'No' })).toBeDisabled()
+  })
+
   test('sin solicitudes pendientes muestra el mensaje vacío', async () => {
     renderPage()
     expect(await screen.findByText('Sin solicitudes pendientes')).toBeInTheDocument()
@@ -138,5 +193,60 @@ describe('Dashboard — Alerta de solicitudes', () => {
   test('sin solicitudes pendientes, no muestra la alerta', () => {
     renderPage()
     expect(screen.queryByText(/pendientes de respuesta/i)).not.toBeInTheDocument()
+  })
+
+  test('con una sola solicitud pendiente, usa el singular "solicitud pendiente"', async () => {
+    vi.mocked(useSolicitudesAdmin).mockReturnValue({
+      data: { data: [makeSolicitud({ estado: 'Pendiente' })] },
+    } as unknown as ReturnType<typeof useSolicitudesAdmin>)
+
+    renderPage()
+    expect(await screen.findByText('1 solicitud pendiente de respuesta')).toBeInTheDocument()
+  })
+})
+
+describe('Dashboard — Actividad Reciente', () => {
+  test('sin actividad, muestra el mensaje vacío', async () => {
+    renderPage()
+    expect(await screen.findByText('Sin actividad registrada')).toBeInTheDocument()
+  })
+
+  test('lista los registros reales con iniciales, módulo conocido y descripción', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: [
+        { id: 'log-1', usuario_email: 'ana@example.com', descripcion: 'Actualizó un documento', modulo: 'documentos', creado_en: '2026-01-01T00:00:00Z' },
+      ],
+    })
+
+    renderPage()
+    expect(await screen.findByText('Actualizó un documento')).toBeInTheDocument()
+    expect(screen.getByText('AN')).toBeInTheDocument()
+    expect(screen.getByText('documentos')).toBeInTheDocument()
+    expect(screen.getByText(/ana@example.com/)).toBeInTheDocument()
+  })
+
+  test('con módulo desconocido usa el badge gris por defecto', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: [
+        { id: 'log-2', usuario_email: 'ana@example.com', descripcion: 'Evento raro', modulo: 'modulo-inexistente', creado_en: '2026-01-01T00:00:00Z' },
+      ],
+    })
+
+    renderPage()
+    const badge = await screen.findByText('modulo-inexistente')
+    expect(badge).toHaveClass('bg-gray-100', 'text-gray-600')
+  })
+
+  test('sin usuario_email ni descripción, usa los valores de respaldo', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: [
+        { id: 'log-3', usuario_email: null, descripcion: null, accion: 'Acción de sistema', modulo: 'admin', creado_en: '2026-01-01T00:00:00Z' },
+      ],
+    })
+
+    renderPage()
+    const descripcion = await screen.findByText('Acción de sistema')
+    expect(screen.getByText('?')).toBeInTheDocument()
+    expect(descripcion.nextElementSibling).toHaveTextContent('—')
   })
 })

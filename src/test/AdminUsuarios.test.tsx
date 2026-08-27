@@ -401,4 +401,202 @@ describe('Usuarios (admin) — listado y filtros', () => {
     await user.type(input, 'ana')
     expect(input).toHaveValue('ana')
   })
+
+  test('escribir en el buscador envía "q" al hook de listado', async () => {
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.type(screen.getByPlaceholderText('Buscar por nombre o correo...'), 'ana')
+    expect(useUsuariosList).toHaveBeenLastCalledWith(expect.objectContaining({ q: 'ana' }))
+  })
+
+  test('filtrar por rol envía el rol mapeado al backend', async () => {
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.selectOptions(screen.getByDisplayValue('Todos los roles'), 'Técnico SIG')
+    expect(useUsuariosList).toHaveBeenLastCalledWith(expect.objectContaining({ rol: 'tecnico' }))
+  })
+
+  test('filtrar por estado Activo envía activo="true"', async () => {
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.selectOptions(screen.getByDisplayValue('Todos los estados'), 'Activo')
+    expect(useUsuariosList).toHaveBeenLastCalledWith(expect.objectContaining({ activo: 'true' }))
+  })
+
+  test('filtrar por estado Inactivo envía activo="false"', async () => {
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.selectOptions(screen.getByDisplayValue('Todos los estados'), 'Inactivo')
+    expect(useUsuariosList).toHaveBeenLastCalledWith(expect.objectContaining({ activo: 'false' }))
+  })
+})
+
+describe('Usuarios (admin) — panel de detalle: ramas adicionales', () => {
+  test('un usuario inactivo muestra el badge rojo "Inactivo" en el detalle', async () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo', activo: false, estado: 'Inactivo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByText('Ana Restrepo'))
+
+    const badges = screen.getAllByText('Inactivo')
+    expect(badges.some((b) => b.className.includes('bg-red-100'))).toBe(true)
+  })
+
+  test('con motivo de acceso, lo muestra en el detalle', async () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo', motivoAcceso: 'Investigación de biodiversidad' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByText('Ana Restrepo'))
+
+    expect(screen.getByText('Investigación de biodiversidad')).toBeInTheDocument()
+  })
+
+  test('sin institución, no muestra la sección de institución', async () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo', institucion: '' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByText('Ana Restrepo'))
+
+    expect(screen.queryByText('Institución')).not.toBeInTheDocument()
+  })
+})
+
+describe('Usuarios (admin) — invitar usuario: ramas adicionales', () => {
+  test('el clic en el fondo cierra el modal de invitación', async () => {
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Crear Usuario/i }))
+    expect(screen.getByPlaceholderText('Ej. María García')).toBeInTheDocument()
+
+    const backdrop = screen.getByText('El usuario recibirá un correo con sus credenciales de acceso.').closest('form')!.parentElement!.parentElement!
+    await user.click(backdrop)
+    expect(screen.queryByPlaceholderText('Ej. María García')).not.toBeInTheDocument()
+  })
+
+  test('si la creación falla, muestra el mensaje de error de la API', async () => {
+    const mutateAsync = vi.fn().mockRejectedValue(new Error('El correo ya está registrado'))
+    vi.mocked(useCreateUsuario).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateUsuario>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Crear Usuario/i }))
+    await user.type(screen.getByPlaceholderText('Ej. María García'), 'Ana Restrepo')
+    await user.type(screen.getByPlaceholderText('usuario@iiap.org.co'), 'ana@iiap.org.co')
+    const crearButtons = screen.getAllByRole('button', { name: /Crear Usuario/i })
+    await user.click(crearButtons[crearButtons.length - 1])
+
+    expect(await screen.findByText('El correo ya está registrado')).toBeInTheDocument()
+  })
+
+  test('mientras se crea el usuario, el botón queda deshabilitado y muestra "Creando..."', async () => {
+    vi.mocked(useCreateUsuario).mockReturnValue({ mutateAsync: vi.fn(), isPending: true } as unknown as ReturnType<typeof useCreateUsuario>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Crear Usuario/i }))
+
+    expect(screen.getByRole('button', { name: /Creando.../i })).toBeDisabled()
+  })
+})
+
+describe('Usuarios (admin) — activar/desactivar: ramas adicionales', () => {
+  test('activar un usuario inactivo llama a la mutación con activo=true', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useToggleActivo).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useToggleActivo>)
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo', activo: false, estado: 'Inactivo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByTitle('Clic para activar'))
+
+    expect(mutateAsync).toHaveBeenCalledWith({ id: 'u2', activo: true })
+    expect(await screen.findByText('Ana Restrepo activado')).toBeInTheDocument()
+  })
+
+  test('mientras cambia el estado, el botón de estado se deshabilita', () => {
+    vi.mocked(useToggleActivo).mockReturnValue({ mutateAsync: vi.fn(), isPending: true } as unknown as ReturnType<typeof useToggleActivo>)
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo', activo: true, estado: 'Activo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    render(<Usuarios />)
+    expect(screen.getByTitle('Clic para desactivar')).toBeDisabled()
+  })
+
+  test('un usuario protegido e inactivo muestra el badge rojo sin botón de acción', () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'me', nombre: 'Yo Mismo', activo: false, estado: 'Inactivo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    render(<Usuarios />)
+    const badges = screen.getAllByText('Inactivo').filter((b) => b.tagName === 'SPAN')
+    expect(badges.some((b) => b.className.includes('bg-red-100'))).toBe(true)
+    expect(screen.queryByTitle('Clic para activar')).not.toBeInTheDocument()
+  })
+})
+
+describe('Usuarios (admin) — eliminar usuario: ramas adicionales', () => {
+  test('mientras se elimina, el botón de esa fila se deshabilita', () => {
+    vi.mocked(useDeleteUsuario).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useDeleteUsuario>)
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    render(<Usuarios />)
+    expect(screen.getByRole('button', { name: /Eliminar usuario Ana Restrepo/i })).not.toBeDisabled()
+  })
+
+  test('mientras confirma la eliminación, el diálogo muestra "Eliminando..." y deshabilita los botones', async () => {
+    vi.mocked(useDeleteUsuario).mockReturnValue({ mutateAsync: vi.fn(), isPending: true } as unknown as ReturnType<typeof useDeleteUsuario>)
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Eliminar usuario Ana Restrepo/i }))
+
+    expect(screen.getByText('Eliminando...')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled()
+  })
+})
+
+describe('Usuarios (admin) — cambio de rol: ramas adicionales', () => {
+  test('el clic en el fondo del modal de rol lo cierra', async () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Editar rol de Ana Restrepo/i }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('dialog'))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  test('mientras se guarda el rol, el botón muestra "Guardando…" y se deshabilita', async () => {
+    vi.mocked(useUpdateUsuarioRol).mockReturnValue({ mutateAsync: vi.fn(), isPending: true } as unknown as ReturnType<typeof useUpdateUsuarioRol>)
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    const user = userEvent.setup()
+    render(<Usuarios />)
+    await user.click(screen.getByRole('button', { name: /Editar rol de Ana Restrepo/i }))
+
+    expect(screen.getByRole('button', { name: /Guardando…/i })).toBeDisabled()
+  })
 })
