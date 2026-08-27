@@ -26,11 +26,39 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// ─── Refresh silencioso de sesión ──────────────────────────────────────────────
+// El backend rota el access token (15 min) contra un refresh token de 30 días
+// (cookie HttpOnly vigiiap_refresh, ver auth.service.js). Sin esto, cualquier
+// usuario activo era deslogueado a la fuerza cada 15 minutos aunque su sesión
+// real siguiera vigente. Un solo refresh en vuelo se comparte entre todas las
+// peticiones 401 concurrentes: el backend rota/invalida el refresh token en
+// cada uso, así que dispararlo varias veces en paralelo haría que solo una
+// petición ganara y el resto fallara con "token ya usado".
+let refreshPromise: Promise<unknown> | null = null
+function refreshSession() {
+  refreshPromise ??= api.post('/auth/refresh').finally(() => { refreshPromise = null })
+  return refreshPromise
+}
+
+const AUTH_ENDPOINTS_NO_RETRY = /\/auth\/(login|refresh|visitante|registro)(\?|$)/
+
 // ─── Response interceptor — normaliza errores ─────────────────────────────────
 api.interceptors.response.use(
   (res) => res.data,
-  (err) => {
+  async (err) => {
     const status  = err.response?.status
+    const original = err.config as (typeof err.config & { _retried?: boolean }) | undefined
+
+    if (status === 401 && original && !original._retried && !AUTH_ENDPOINTS_NO_RETRY.test(original.url ?? '')) {
+      original._retried = true
+      try {
+        await refreshSession()
+        return api(original)
+      } catch {
+        // El refresh también falló — sigue al manejo de 401 normal abajo.
+      }
+    }
+
     const rawMsg  = err.response?.data?.error ?? err.message ?? 'Error inesperado'
     const message = typeof rawMsg === 'string' ? rawMsg : 'Error inesperado'
 
