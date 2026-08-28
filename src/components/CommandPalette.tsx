@@ -1,16 +1,6 @@
-/**
- * CommandPalette — búsqueda global estilo enterprise
- *
- * Accesibilidad:
- *   - role="dialog" + aria-modal + aria-label en overlay
- *   - role="combobox" en input con aria-expanded / aria-controls / aria-autocomplete
- *   - role="listbox" en lista de resultados
- *   - role="option" + aria-selected en cada ítem
- *   - aria-activedescendant en input apunta al ítem activo
- *   - Focus trap: Tab/Shift+Tab no salen del diálogo
- *   - Escape cierra
- *   - ArrowUp/ArrowDown navegan, Enter activa
- */
+// Command palette de búsqueda global. Sigue el patrón combobox de ARIA
+// (dialog + listbox + option con aria-activedescendant) para que el foco
+// nunca salga del input mientras se navega con teclado.
 
 import { useEffect, useRef, useCallback, useState, useMemo, useId, type KeyboardEvent, type ReactNode } from 'react'
 import type { CatalogueEntry } from '@/types'

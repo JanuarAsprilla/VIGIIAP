@@ -1,9 +1,5 @@
-/**
- * VIGIA-IIAP — PlatformIntroSection v-final
- * Geometría: polígono del Chocó Biogeográfico digitalizado desde cartografía oficial.
- * No hay shapefile en el proyecto; se usa el contorno verificado contra el mapa oficial IIAP.
- * Renderer: partículas circulares nítidas, corte duro, sin blur.
- */
+// No hay shapefile del Chocó Biogeográfico en el proyecto — el contorno de
+// abajo se digitalizó a mano contra el mapa oficial IIAP/IGAC.
 import { useRef, useState, useMemo, useEffect } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
