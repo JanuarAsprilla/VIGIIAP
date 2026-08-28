@@ -6,7 +6,6 @@
  * - Tolerancia a errores tipográficos leves (palabras >= 5 chars)
  */
 
-/** Quita acentos y pasa a minúsculas */
 export function normalize(str: string | null | undefined): string {
   if (!str) return ''
   return str
@@ -16,7 +15,6 @@ export function normalize(str: string | null | undefined): string {
     .trim()
 }
 
-/** Distancia de Levenshtein entre dos strings cortos */
 function levenshtein(a: string, b: string): number {
   if (a === b) return 0
   if (a.length === 0) return b.length
