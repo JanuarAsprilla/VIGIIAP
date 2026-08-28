@@ -5,7 +5,7 @@ import { KeyRound, Eye, EyeOff, ShieldCheck, AlertCircle, Loader2, ArrowLeft } f
 import AuthLayout from '@/components/AuthLayout'
 import api from '@/lib/api'
 
-// M-05: formato mínimo de token — al menos 20 caracteres alfanuméricos/guiones.
+// Formato mínimo de token — al menos 20 caracteres alfanuméricos/guiones.
 const TOKEN_RE = /^[A-Za-z0-9_-]{20,}$/
 
 export default function ResetPassword() {
@@ -18,7 +18,7 @@ export default function ResetPassword() {
   const [success, setSuccess]       = useState(false)
   const [error, setError]           = useState('')
 
-  // M-05: validar formato del token al montar; redirigir si no es válido.
+  // Valida el formato del token al montar; redirige si no es válido.
   useEffect(() => {
     if (!token || !TOKEN_RE.test(token)) {
       navigate('/recuperar-password?error=token-invalido', { replace: true })

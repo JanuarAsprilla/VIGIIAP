@@ -3,7 +3,6 @@
  * Usa `aria-hidden="true"` porque es puramente decorativo.
  */
 
-/** @param {{ className?: string }} props */
 export function Skeleton({ className = '' }) {
   return (
     <div
@@ -13,7 +12,6 @@ export function Skeleton({ className = '' }) {
   )
 }
 
-/** Grupo de skeletons de texto con anchos variables */
 export function SkeletonText({ lines = 3, className = '' }) {
   const widths = ['w-full', 'w-5/6', 'w-4/5', 'w-3/4', 'w-2/3', 'w-1/2']
   return (
@@ -25,7 +23,6 @@ export function SkeletonText({ lines = 3, className = '' }) {
   )
 }
 
-/** Tarjeta skeleton genérica */
 export function SkeletonCard({ className = '' }) {
   return (
     <div className={`bg-white border border-border rounded-2xl p-5 space-y-3 ${className}`} aria-hidden="true">

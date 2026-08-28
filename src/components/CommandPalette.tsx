@@ -1,16 +1,6 @@
-/**
- * CommandPalette — búsqueda global estilo enterprise
- *
- * Accesibilidad:
- *   - role="dialog" + aria-modal + aria-label en overlay
- *   - role="combobox" en input con aria-expanded / aria-controls / aria-autocomplete
- *   - role="listbox" en lista de resultados
- *   - role="option" + aria-selected en cada ítem
- *   - aria-activedescendant en input apunta al ítem activo
- *   - Focus trap: Tab/Shift+Tab no salen del diálogo
- *   - Escape cierra
- *   - ArrowUp/ArrowDown navegan, Enter activa
- */
+// Command palette de búsqueda global. Sigue el patrón combobox de ARIA
+// (dialog + listbox + option con aria-activedescendant) para que el foco
+// nunca salga del input mientras se navega con teclado.
 
 import { useEffect, useRef, useCallback, useState, useMemo, useId, type KeyboardEvent, type ReactNode } from 'react'
 import type { CatalogueEntry } from '@/types'
@@ -116,17 +106,14 @@ export default function CommandPalette() {
   const listboxId = `${baseId}-listbox`
   const itemId    = (i: number) => `${baseId}-item-${i}`
 
-  // Catálogo provisto por el hook — desacoplado de la presentación
   const catalogue = useCatalogue()
 
-  // Filter results — reset active index on each change
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return catalogue
     return catalogue.filter((item) => item.keywords.includes(q) || item.label.toLowerCase().includes(q))
   }, [query, catalogue])
 
-  // Group results for display
   const groups = useMemo(() => {
     const map = new Map()
     for (const item of results) {
@@ -136,25 +123,21 @@ export default function CommandPalette() {
     return map
   }, [results])
 
-  // Flat index for keyboard navigation
   const flatResults = useMemo(() => results, [results])
 
-  // Reset state when opening
   useEffect(() => {
     if (paletteOpen) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reset intencional al abrir el palette
       setQuery('')
       setActiveIndex(0)
-      // Defer focus so AnimatePresence can mount the element
+      // Difiere el foco para que AnimatePresence termine de montar el elemento.
       requestAnimationFrame(() => inputRef.current?.focus())
     }
   }, [paletteOpen])
 
-  // Reset active index when results change
   // eslint-disable-next-line react-hooks/set-state-in-effect -- reset intencional al cambiar la búsqueda
   useEffect(() => { setActiveIndex(0) }, [query])
 
-  // Scroll active item into view
   useEffect(() => {
     if (!listRef.current) return
     const el = listRef.current.querySelector(`[id="${itemId(activeIndex)}"]`)
@@ -189,7 +172,6 @@ export default function CommandPalette() {
     }
   }, [activeIndex, flatResults, handleSelect, closePalette])
 
-  // Focus trap — keep Tab/Shift+Tab inside the panel
   const handleFocusTrap = useCallback((e: KeyboardEvent) => {
     if (e.key !== 'Tab' || !panelRef.current) return
     const focusable = panelRef.current.querySelectorAll(
