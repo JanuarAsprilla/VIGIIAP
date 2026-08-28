@@ -26,6 +26,14 @@ export default defineConfig({
         },
       },
     },
+    modulePreload: {
+      // three-vendor (Three.js, solo lo usa el hero WebGL de Home) y map-vendor
+      // (Leaflet, solo Mapas/Geovisor) ya se cargan bajo demanda vía React.lazy().
+      // Sin este filtro, Vite igual los precarga en <link rel="modulepreload">
+      // del index.html en TODAS las páginas, anulando el beneficio del lazy().
+      resolveDependencies: (_filename, deps) =>
+        deps.filter((dep) => !dep.includes('three-vendor') && !dep.includes('map-vendor')),
+    },
   },
   server: {
     headers: {
