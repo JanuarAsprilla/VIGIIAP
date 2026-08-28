@@ -92,9 +92,18 @@ jobs:
       # rama propia del repo) no debe tener sesión admin real contra producción
       # ni acceso a estos secrets; en PRs, authenticated.spec.ts simplemente
       # hace skip vía su propio test.skip() por falta de credenciales.
-      - run: npm run build
-        env:
-          VITE_API_URL: ${{ github.event_name == 'push' && 'https://vigiiap-backend.onrender.com/api/v1' || '' }}
+      #
+      # IMPORTANTE: en PR, VITE_API_URL debe quedar sin definir (no ""). api.ts
+      # usa `?? '/api/v1'`, y `??` solo cae al fallback con null/undefined —
+      # un string vacío pasa de largo y rompe la rehidratación de sesión contra
+      # una ruta que no existe en el preview server (visto en CI: los 4 tests
+      # de redirección de auth.spec.ts quedaban colgados hasta timeout).
+      - name: Build
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            export VITE_API_URL="https://vigiiap-backend.onrender.com/api/v1"
+          fi
+          npm run build
       - name: Servir build y ejecutar tests E2E
         run: npx playwright test e2e/public.spec.ts e2e/auth.spec.ts e2e/authenticated.spec.ts
         env:
