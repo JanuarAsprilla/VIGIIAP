@@ -1,6 +1,3 @@
-/* Hallmark · macrostructure: Workbench · genre: data-catalog
- * tokens: design.md · stamp: 2026-05-25
- */
 import { useState, useEffect } from 'react'
 import PaginationBar from '@/components/ui/PaginationBar'
 import { motion, AnimatePresence } from 'framer-motion'

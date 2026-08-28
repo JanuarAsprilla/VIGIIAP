@@ -1,9 +1,5 @@
-/**
- * VIGIA-IIAP — PlatformIntroSection v-final
- * Geometría: polígono del Chocó Biogeográfico digitalizado desde cartografía oficial.
- * No hay shapefile en el proyecto; se usa el contorno verificado contra el mapa oficial IIAP.
- * Renderer: partículas circulares nítidas, corte duro, sin blur.
- */
+// No hay shapefile del Chocó Biogeográfico en el proyecto — el contorno de
+// abajo se digitalizó a mano contra el mapa oficial IIAP/IGAC.
 import { useRef, useState, useMemo, useEffect } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
@@ -248,7 +244,7 @@ function ChocoMapCloud({ isDark, prefersReduced }: { isDark: boolean; prefersRed
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // A2: dispose ShaderMaterial cuando el componente se desmonte
+  // Libera el ShaderMaterial cuando el componente se desmonte.
   useEffect(()=>{ return ()=>{ matRef.current?.dispose() } }, [])
 
   useEffect(()=>{
@@ -320,7 +316,7 @@ function AmbientDust({ isDark, prefersReduced }: { isDark: boolean; prefersReduc
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[])
 
-  // A2: dispose geometry + material al desmontar
+  // Libera geometry + material al desmontar.
   useEffect(()=>{ return ()=>{ geo.dispose(); matRef.current?.dispose() } }, [geo])
 
   useEffect(()=>{
@@ -458,7 +454,7 @@ export default function PlatformIntroSection(){
   const { isDark } = useTheme()
   const prefersReduced = useReducedMotion()
 
-  // A1: IntersectionObserver — pausa el canvas cuando no es visible en el viewport
+  // Pausa el canvas cuando no es visible en el viewport.
   useEffect(()=>{
     const el = containerRef.current
     if (!el) return

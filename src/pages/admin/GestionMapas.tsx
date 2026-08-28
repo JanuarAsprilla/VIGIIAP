@@ -1,6 +1,3 @@
-/* Hallmark · macrostructure: Workbench · genre: admin-crud
- * tokens: design.md · stamp: 2026-05-25
- */
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type { MapaData } from '@/hooks/useMapas'
 import { getApiErrorMessage } from '@/lib/apiError'

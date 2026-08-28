@@ -262,22 +262,6 @@ body {
   animation: pulse-glow 2.4s ease-in-out infinite;
 }
 
-/* ── Gradient text — Verdes IIAP ── */
-.text-gradient {
-  background: linear-gradient(135deg, #1A5632 0%, #218842 50%, #009846 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ── Gold gradient text — Cultura / Fauna ── */
-.text-gradient-gold {
-  background: linear-gradient(135deg, #F08143 0%, #F7AC42 60%, #FECC00 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
 /* ── Glassmorphism ── */
 .glass-card {
   background: rgba(255, 255, 255, 0.72);
@@ -432,14 +416,6 @@ body {
   border-radius: var(--radius-full);
   display: inline-flex;
   align-items: center;
-}
-
-/* ── Preloader progress bar ── */
-.preloader-progress {
-  background: linear-gradient(90deg, #B0CB1F, #F7AC42);
-  border-radius: var(--radius-full);
-  height: 3px;
-  transition: width 0.3s ease;
 }
 
 /* ── Accent lima — biodiversidad ── */

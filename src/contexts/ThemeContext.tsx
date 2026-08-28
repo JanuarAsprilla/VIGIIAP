@@ -10,7 +10,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
-// M-04: solo valores conocidos son aceptados desde localStorage.
+// Solo valores conocidos son aceptados desde localStorage.
 const VALID_THEMES = ['light', 'dark']
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

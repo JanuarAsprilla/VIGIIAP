@@ -1,12 +1,6 @@
-/**
- * Búsqueda dinámica para VIGIA-IIAP
- * - Normaliza acentos: "hidrología" == "hidrologia"
- * - Tokens independientes: "mapa hidro" busca ambas palabras (AND)
- * - Coincidencia parcial: "hidro" encuentra "Hidrología"
- * - Tolerancia a errores tipográficos leves (palabras >= 5 chars)
- */
+// Ignora acentos y mayúsculas, separa la consulta en palabras (todas deben
+// aparecer, AND) y tolera errores de tipeo leves en palabras de 5+ letras.
 
-/** Quita acentos y pasa a minúsculas */
 export function normalize(str: string | null | undefined): string {
   if (!str) return ''
   return str
@@ -16,7 +10,6 @@ export function normalize(str: string | null | undefined): string {
     .trim()
 }
 
-/** Distancia de Levenshtein entre dos strings cortos */
 function levenshtein(a: string, b: string): number {
   if (a === b) return 0
   if (a.length === 0) return b.length
@@ -33,14 +26,9 @@ function levenshtein(a: string, b: string): number {
   return dp[a.length][b.length]
 }
 
-/**
- * Verifica si un token coincide dentro de un texto.
- * - Substring: "hidro" → "hidrología" ✅
- * - Fuzzy (palabras completas, >= 5 chars, 1 error): "analisi" → "analisis" ✅
- */
 function tokenMatches(haystack: string, token: string): boolean {
   if (haystack.includes(token)) return true
-  // Comparar contra cada palabra del haystack con tolerancia de 1 error
+  // Fuzzy: compara contra cada palabra con tolerancia de 1 error de tipeo.
   if (token.length >= 5) {
     const words = haystack.split(/\s+/)
     return words.some((word) => {
@@ -51,12 +39,6 @@ function tokenMatches(haystack: string, token: string): boolean {
   return false
 }
 
-/**
- * Función principal de búsqueda.
- * @param {string[]} fields - Textos del ítem a evaluar (title, excerpt, tag, etc.)
- * @param {string} query    - Texto buscado por el usuario
- * @returns {boolean}
- */
 export function matches(fields: (string | null | undefined)[], query: string): boolean {
   if (!query || !query.trim()) return true
   const haystack = fields.filter(Boolean).map(normalize).join(' ')

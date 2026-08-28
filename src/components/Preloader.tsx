@@ -351,12 +351,12 @@ export default function Preloader() {
               {/* Bar track */}
               <div className="h-px bg-primary-900/60 rounded-full overflow-hidden mb-2">
                 <motion.div
-                  className="h-full rounded-full"
+                  className="h-full w-full rounded-full origin-left"
                   style={{
-                    width: `${progress}%`,
+                    transform: `scaleX(${progress / 100})`,
                     background: 'linear-gradient(90deg, #1A5632, #218842, #B0CB1F)',
                     boxShadow: '0 0 14px rgba(176,203,31,0.55)',
-                    transition: 'width 0.08s linear',
+                    transition: 'transform 0.08s linear',
                   }}
                 />
               </div>
