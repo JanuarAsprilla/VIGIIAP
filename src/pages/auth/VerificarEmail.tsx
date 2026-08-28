@@ -5,7 +5,7 @@ import { CheckCircle, XCircle, Loader2, ArrowLeft, RefreshCw } from 'lucide-reac
 import AuthLayout from '@/components/AuthLayout'
 import api from '@/lib/api'
 
-// M-05: formato mínimo de token — al menos 20 caracteres alfanuméricos/guiones.
+// Formato mínimo de token — al menos 20 caracteres alfanuméricos/guiones.
 const TOKEN_RE = /^[A-Za-z0-9_-]{20,}$/
 
 export default function VerificarEmail() {
@@ -17,7 +17,7 @@ export default function VerificarEmail() {
   const [email, setEmail] = useState('')
 
   useEffect(() => {
-    // M-05: validar formato del token antes de enviarlo a la API.
+    // Valida el formato del token antes de enviarlo a la API.
     if (!token || !TOKEN_RE.test(token)) {
       navigate('/login?error=token-invalido', { replace: true })
       return

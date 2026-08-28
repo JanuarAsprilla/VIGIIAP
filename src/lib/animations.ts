@@ -1,8 +1,6 @@
 /**
  * Helpers de animación compartidos — Framer Motion.
  * Funciones puras — sin dependencias React.
- *
- * Hallmark · tokens: design.md · stamp: 2026-05-25
  */
 import type { MotionProps, Variants } from 'framer-motion'
 

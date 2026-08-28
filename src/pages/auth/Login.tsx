@@ -73,7 +73,7 @@ export default function Login() {
   const location  = useLocation()
   const { login, loginVisitante, loading } = useAuth()
   const rawFrom = location.state?.from?.pathname || '/'
-  // C-02: solo permitir redirects internos (evitar open redirect).
+  // Solo permitir redirects internos (evita open redirect).
   const from = rawFrom.startsWith('/') && !rawFrom.startsWith('//') ? rawFrom : '/'
 
   const [modo, setModo]               = useState('institucional')
@@ -122,7 +122,6 @@ export default function Login() {
           return
         }
         const user = result
-        // C-02: comparar contra constante ROLES (evita hardcoding y cubre super_admin).
         const isAdmin = user.role === ROLES.ADMIN || user.role === ROLES.SUPER_ADMIN
         const safeTo  = from === '/admin' && !isAdmin ? '/' : from
         navigate(isAdmin ? '/admin' : safeTo, { replace: true })

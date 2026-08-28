@@ -162,4 +162,4 @@ git merge hotfix/VIG-NNN-descripcion
 - [ ] No hay `console.log` de debug en el código
 - [ ] Los datos del dominio están en `constants.ts`, no hardcodeados en componentes
 - [ ] Los nuevos componentes tienen `aria-label` si son botones de icono
-- [ ] Se actualizó `CLAUDE.md` si cambió la arquitectura
+- [ ] Se actualizó `README.md` si cambió la arquitectura o el stack

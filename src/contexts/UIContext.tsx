@@ -22,7 +22,7 @@ interface UIContextValue {
 
 const UIContext = createContext<UIContextValue | null>(null)
 
-// M-04: allowlists para valores leídos desde localStorage.
+// Allowlist para valores leídos desde localStorage.
 const VALID_DENSITIES: Density[] = ['compact', 'normal', 'comfortable']
 
 function isValidDensity(v: string): v is Density {
@@ -55,14 +55,12 @@ function useLocalStorage<T>(key: string, defaultValue: T): [T, (v: T) => void] {
 
 export function UIProvider({ children }: { children: ReactNode }) {
   const [densityRaw, setDensity]            = useLocalStorage<string>('vigiiap_density_v1', 'normal')
-  // M-04: validar que el valor leído sea uno de los permitidos.
   const density = isValidDensity(densityRaw) ? densityRaw : 'normal'
 
   const [notifications, setNotifications]   = useLocalStorage('vigiiap_notif_enabled_v1', true)
   const [notifPrefsRaw, setNotifPrefs]       = useLocalStorage('vigiiap_notif_prefs_v1', {
     solicitudes: true, mapas: false, email: true,
   })
-  // M-04: validar shape de notifPrefs; usar defaults si es inválido.
   const DEFAULT_NOTIF_PREFS = { solicitudes: true, mapas: false, email: true }
   const notifPrefs = isValidNotifPrefs(notifPrefsRaw) ? notifPrefsRaw : DEFAULT_NOTIF_PREFS
 
