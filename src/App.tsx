@@ -150,7 +150,9 @@ function AppRoutes() {
               } />
             </Route>
 
-            {/* Requiere Investigador o Admin (bloquea Público y Visitante) */}
+            {/* Bloquea Público y Visitante — en la práctica deja pasar a cualquier
+                otro rol verificado (investigador/tecnico/institucional/admin),
+                no solo Investigador/Admin. Ver nota en RequireAuth.tsx. */}
             <Route element={<RequireInvestigador />}>
               <Route path="/geovisor" element={
                 <Suspense fallback={<GeovisorLoader />}><Geovisor /></Suspense>

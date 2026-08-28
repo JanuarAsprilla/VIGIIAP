@@ -171,7 +171,7 @@ function InviteModal({ onClose, assignableRoles }: { onClose: () => void; assign
         </div>
 
         {step === 'form' ? (
-          <form onSubmit={handleSend} className="p-6 space-y-4">
+          <form onSubmit={handleSend} noValidate className="p-6 space-y-4">
             <div>
               <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                 Nombre completo <span className="text-orange-500">*</span>

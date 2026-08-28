@@ -491,7 +491,7 @@ function Apariencia() {
   const densityOptions = [
     { value: 'compact', label: 'Compacto', Icon: Layers,  desc: 'Más contenido en pantalla' },
     { value: 'normal',  label: 'Normal',   Icon: Monitor, desc: 'Espaciado equilibrado'    },
-    { value: 'comodo',  label: 'Cómodo',   Icon: Sun,     desc: 'Mayor legibilidad'         },
+    { value: 'comfortable', label: 'Cómodo', Icon: Sun,   desc: 'Mayor legibilidad'         },
   ]
 
   return (
