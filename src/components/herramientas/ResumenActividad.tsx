@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 
 export default function ResumenActividad() {
   const { user }  = useAuth()
-  const isAdmin   = user?.rol === 'admin_sig'
+  const isAdmin   = user?.rol === 'admin_sig' || user?.rol === 'super_admin'
   const { data: stats, isLoading } = useAdminStats()
 
   const items = isAdmin && stats

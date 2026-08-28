@@ -27,7 +27,13 @@ export default function RequireAuth() {
   return <Outlet />
 }
 
-/** Protege rutas que requieren rol Investigador o Administrador SIG. Bloquea Público y Visitante. */
+/**
+ * Protege /geovisor y /herramientas. Bloquea Público y Visitante.
+ * NOTA (decisión de producto pendiente): a pesar del nombre, deja pasar a
+ * CUALQUIER rol verificado (investigador, tecnico, institucional, admin_sig,
+ * super_admin) — no solo Investigador/Admin. Si el acceso a estas dos rutas
+ * debe ser más restrictivo, hay que decidir la regla real y ajustar aquí.
+ */
 export function RequireInvestigador() {
   const { isAuthenticated, initializing, user } = useAuth()
   const location = useLocation()
