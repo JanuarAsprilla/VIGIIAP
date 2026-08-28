@@ -28,6 +28,7 @@ Closes #<!-- número del issue -->
 - [ ] Botones de solo icono tienen `aria-label`
 - [ ] Probado en desktop y móvil
 - [ ] Se actualizó `README.md` si cambió la arquitectura o el stack
+- [ ] Se agregó una línea a `CHANGELOG.md` bajo `[Unreleased]` si el cambio es notable
 
 ## Capturas de pantalla
 
