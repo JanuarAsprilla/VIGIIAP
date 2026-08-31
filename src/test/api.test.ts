@@ -8,7 +8,8 @@
  * The module is re-imported fresh in each test so the module-scoped
  * `refreshPromise` singleton never leaks state between tests.
  */
-import { describe, test, expect, vi, beforeEach } from 'vitest'
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
+import axios from 'axios'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 
 type FakeAdapter = (config: AxiosRequestConfig) => Promise<AxiosResponse>
@@ -33,9 +34,19 @@ async function loadApi() {
 
 describe('api.ts — response interceptor', () => {
   let dispatchSpy: ReturnType<typeof vi.spyOn>
+  const originalGlobalAdapter = axios.defaults.adapter
 
   beforeEach(() => {
     dispatchSpy = vi.spyOn(window, 'dispatchEvent')
+  })
+
+  afterEach(() => {
+    // attemptRefresh() en api.ts llama a axios.post() directo (no a la
+    // instancia `api`), para evitar reentrar el propio interceptor de
+    // respuesta durante un refresh — así que los tests que necesitan
+    // interceptar ese POST /auth/refresh pisan también el adapter global.
+    // Se restaura acá para no filtrar el fake adapter a otros archivos de test.
+    axios.defaults.adapter = originalGlobalAdapter
   })
 
   test('unwraps res.data on a successful response', async () => {
@@ -48,22 +59,26 @@ describe('api.ts — response interceptor', () => {
   test('on a 401 from a protected endpoint, silently refreshes and retries once', async () => {
     const api = await loadApi()
     const calls: string[] = []
-    api.defaults.adapter = (async (config: AxiosRequestConfig) => {
+    const fakeAdapter = (async (config: AxiosRequestConfig) => {
       calls.push(config.url ?? '')
-      if (config.url === '/auth/refresh') return ok(config, { token: 'new-access-token' })
+      if (config.url?.includes('/auth/refresh')) return ok(config, { token: 'new-access-token' })
       if (!(config as { _retried?: boolean })._retried) throw unauthorized(config)
       return ok(config, { secret: 42 })
     }) as FakeAdapter
+    api.defaults.adapter = fakeAdapter
+    // attemptRefresh() usa axios.post() directo, no la instancia `api` — hay
+    // que interceptar también el adapter global para que ese POST se resuelva.
+    axios.defaults.adapter = fakeAdapter
 
     await expect(api.get('/protegido')).resolves.toEqual({ secret: 42 })
-    expect(calls).toEqual(['/protegido', '/auth/refresh', '/protegido'])
+    expect(calls).toEqual(['/protegido', expect.stringContaining('/auth/refresh'), '/protegido'])
   })
 
   test('shares a single in-flight refresh across concurrent 401s (no duplicate /auth/refresh calls)', async () => {
     const api = await loadApi()
     let refreshCalls = 0
-    api.defaults.adapter = (async (config: AxiosRequestConfig) => {
-      if (config.url === '/auth/refresh') {
+    const fakeAdapter = (async (config: AxiosRequestConfig) => {
+      if (config.url?.includes('/auth/refresh')) {
         refreshCalls++
         await new Promise((r) => setTimeout(r, 5))
         return ok(config, { token: 'new' })
@@ -71,6 +86,8 @@ describe('api.ts — response interceptor', () => {
       if (!(config as { _retried?: boolean })._retried) throw unauthorized(config)
       return ok(config, { ok: true })
     }) as FakeAdapter
+    api.defaults.adapter = fakeAdapter
+    axios.defaults.adapter = fakeAdapter
 
     await Promise.all([api.get('/a'), api.get('/b'), api.get('/c')])
     expect(refreshCalls).toBe(1)

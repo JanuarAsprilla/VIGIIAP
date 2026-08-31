@@ -28,7 +28,7 @@ vi.mock('@/lib/api', () => ({
     get: vi.fn((url: string) =>
       url.includes('super/stats')
         ? Promise.resolve({ total_usuarios: 10, admins: 2, activos: 8, pendientes_verificacion: 1 })
-        : Promise.resolve({ usuarios: [] }),
+        : Promise.resolve({ data: [] }),
     ),
     post: vi.fn(),
   },
@@ -120,7 +120,7 @@ describe('GestionAdmins — tabla de administradores', () => {
       url.includes('super/stats')
         ? Promise.resolve({ total_usuarios: 10, admins: 2, activos: 8, pendientes_verificacion: 1 })
         : Promise.resolve({
-            usuarios: [
+            data: [
               { id: 'a1', nombre: 'Ana Restrepo', email: 'ana@iiap.gov.co', institucion: 'IIAP', activo: true },
               { id: 'a2', nombre: 'Carlos Mena', email: 'carlos@iiap.gov.co', institucion: null, activo: false },
             ],

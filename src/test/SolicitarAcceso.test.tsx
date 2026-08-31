@@ -23,6 +23,7 @@ vi.mock('framer-motion', () => {
 
 const authMock = { register: vi.fn() }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
+vi.mock('@/hooks/usePlatformStats', () => ({ usePlatformStats: () => [] }))
 
 function renderPage() {
   return render(<SolicitarAcceso />, { wrapper: MemoryRouter })

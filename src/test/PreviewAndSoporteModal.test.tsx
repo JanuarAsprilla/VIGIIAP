@@ -24,13 +24,13 @@ beforeEach(() => {
 
 describe('PreviewModal — tipos de archivo', () => {
   test('imagen: renderiza la vista previa embebida', () => {
-    const doc: DocItem = { id: 'd1', name: 'Foto.jpg', type: 'jpg', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/foto.jpg' }
+    const doc: DocItem = { id: 'd1', name: 'Foto.jpg', type: 'jpg', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/foto.jpg', resumen: '' }
     render(<PreviewModal doc={doc} categoryTitle="Cartografía" onClose={onClose} />)
     expect(screen.getByAltText('Foto.jpg')).toHaveAttribute('src', '/foto.jpg')
   })
 
   test('PDF: ofrece visualizar en pestaña nueva y descargar', async () => {
-    const doc: DocItem = { id: 'd1', name: 'Informe.pdf', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/informe.pdf' }
+    const doc: DocItem = { id: 'd1', name: 'Informe.pdf', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/informe.pdf', resumen: '' }
     const user = userEvent.setup()
     render(<PreviewModal doc={doc} categoryTitle="Cartografía" onClose={onClose} />)
     expect(screen.getByText('Visualizar PDF')).toHaveAttribute('href', '/informe.pdf')
@@ -39,7 +39,7 @@ describe('PreviewModal — tipos de archivo', () => {
   })
 
   test('office (xlsx): muestra el aviso de no-previsualizable y permite descargar', async () => {
-    const doc: DocItem = { id: 'd2', name: 'Datos.xlsx', type: 'xlsx', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/datos.xlsx' }
+    const doc: DocItem = { id: 'd2', name: 'Datos.xlsx', type: 'xlsx', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/datos.xlsx', resumen: '' }
     const user = userEvent.setup()
     render(<PreviewModal doc={doc} categoryTitle="Cartografía" onClose={onClose} />)
     expect(screen.getByText(/no se pueden previsualizar en el navegador/)).toBeInTheDocument()
@@ -48,13 +48,13 @@ describe('PreviewModal — tipos de archivo', () => {
   })
 
   test('sin URL, muestra el estado "archivo no disponible"', () => {
-    const doc: DocItem = { id: 'd3', name: 'Perdido.pdf', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: null }
+    const doc: DocItem = { id: 'd3', name: 'Perdido.pdf', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: null, resumen: '' }
     render(<PreviewModal doc={doc} categoryTitle="Cartografía" onClose={onClose} />)
     expect(screen.getByText('Archivo no disponible')).toBeInTheDocument()
   })
 
   test('Escape y el backdrop cierran el modal', async () => {
-    const doc: DocItem = { id: 'd1', name: 'Informe.pdf', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/informe.pdf' }
+    const doc: DocItem = { id: 'd1', name: 'Informe.pdf', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/informe.pdf', resumen: '' }
     const user = userEvent.setup()
     render(<PreviewModal doc={doc} categoryTitle="Cartografía" onClose={onClose} />)
     await user.keyboard('{Escape}')
@@ -64,7 +64,7 @@ describe('PreviewModal — tipos de archivo', () => {
   })
 
   test('docx: muestra el aviso de no-previsualizable con el ícono de Word y permite descargar', async () => {
-    const doc: DocItem = { id: 'd4', name: 'Memoria.docx', type: 'docx', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/memoria.docx' }
+    const doc: DocItem = { id: 'd4', name: 'Memoria.docx', type: 'docx', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/memoria.docx', resumen: '' }
     const user = userEvent.setup()
     render(<PreviewModal doc={doc} categoryTitle="Cartografía" onClose={onClose} />)
     expect(screen.getByText(/no se pueden previsualizar en el navegador/)).toBeInTheDocument()
@@ -73,7 +73,7 @@ describe('PreviewModal — tipos de archivo', () => {
   })
 
   test('tipo no reconocido: no renderiza ninguna vista previa ni acciones de descarga', () => {
-    const doc: DocItem = { id: 'd5', name: 'Archivo.zip', type: 'zip', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/archivo.zip' }
+    const doc: DocItem = { id: 'd5', name: 'Archivo.zip', type: 'zip', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/archivo.zip', resumen: '' }
     render(<PreviewModal doc={doc} categoryTitle="Cartografía" onClose={onClose} />)
     expect(screen.queryByText('Descargar')).not.toBeInTheDocument()
     expect(screen.queryByText(/no se pueden previsualizar/)).not.toBeInTheDocument()
@@ -81,7 +81,7 @@ describe('PreviewModal — tipos de archivo', () => {
   })
 
   test('trampa de foco: Tab en el último elemento regresa al primero y Shift+Tab hace lo inverso', () => {
-    const doc: DocItem = { id: 'd1', name: 'Informe.pdf', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/informe.pdf' }
+    const doc: DocItem = { id: 'd1', name: 'Informe.pdf', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/informe.pdf', resumen: '' }
     render(<PreviewModal doc={doc} categoryTitle="Cartografía" onClose={onClose} />)
 
     const first = screen.getByLabelText('Cerrar')

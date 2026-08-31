@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -25,6 +25,9 @@ vi.mock('@/components/ui/Card3D', () => ({
 
 vi.mock('@/lib/api', () => ({ default: { get: vi.fn(), put: vi.fn() } }))
 import api from '@/lib/api'
+
+const authMock = { user: { name: 'Root', role: 'Super Administrador', rol: 'super_admin' } }
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
@@ -81,8 +84,8 @@ describe('Configuracion — modo mantenimiento', () => {
 
     expect(screen.queryByLabelText('Mensaje de mantenimiento')).not.toBeInTheDocument()
 
-    const section = screen.getByText('Activar modo mantenimiento').closest('.flex.items-center.justify-between')!
-    const toggle = section.querySelector('div[class*="w-10"]') as HTMLElement
+    const section = screen.getByText('Activar modo mantenimiento').closest('.flex.items-center.justify-between')! as HTMLElement
+    const toggle = within(section).getByRole('switch')
     await user.click(toggle)
 
     await waitFor(() => expect(screen.getByLabelText('Mensaje de mantenimiento')).toBeInTheDocument())
@@ -92,8 +95,8 @@ describe('Configuracion — modo mantenimiento', () => {
     const user = userEvent.setup()
     renderPage()
 
-    const section = screen.getByText('Activar modo mantenimiento').closest('.flex.items-center.justify-between')!
-    const toggle = section.querySelector('div[class*="w-10"]') as HTMLElement
+    const section = screen.getByText('Activar modo mantenimiento').closest('.flex.items-center.justify-between')! as HTMLElement
+    const toggle = within(section).getByRole('switch')
     await user.click(toggle)
     await waitFor(() => expect(screen.getByLabelText('Mensaje de mantenimiento')).toBeInTheDocument())
 
@@ -122,24 +125,24 @@ describe('Configuracion — notificaciones y roles', () => {
     const user = userEvent.setup()
     renderPage()
 
-    const row = screen.getByText('Notificar nuevos inicios de sesión').closest('.flex.items-center.justify-between')!
-    const toggle = row.querySelector('div[class*="w-10"]') as HTMLElement
-    expect(toggle.className).not.toContain('bg-primary-800')
+    const row = screen.getByText('Notificar nuevos inicios de sesión').closest('.flex.items-center.justify-between')! as HTMLElement
+    const toggle = within(row).getByRole('switch')
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
 
     await user.click(toggle)
-    expect(toggle.className).toContain('bg-primary-800')
+    expect(toggle).toHaveAttribute('aria-checked', 'true')
   })
 
   test('los switches de roles y permisos se pueden desactivar', async () => {
     const user = userEvent.setup()
     renderPage()
 
-    const row = screen.getByText('Requerir aprobación de administrador para nuevos usuarios').closest('.flex.items-center.justify-between')!
-    const toggle = row.querySelector('div[class*="w-10"]') as HTMLElement
-    expect(toggle.className).toContain('bg-primary-800')
+    const row = screen.getByText('Requerir aprobación de administrador para nuevos usuarios').closest('.flex.items-center.justify-between')! as HTMLElement
+    const toggle = within(row).getByRole('switch')
+    expect(toggle).toHaveAttribute('aria-checked', 'true')
 
     await user.click(toggle)
-    expect(toggle.className).not.toContain('bg-primary-800')
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
   })
 
   test('describe los tres roles del sistema', () => {

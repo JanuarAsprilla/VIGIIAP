@@ -19,15 +19,6 @@ vi.mock('framer-motion', () => {
   return { motion, AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</> }
 })
 
-vi.mock('@/components/NuevoAnalisisModal', () => ({
-  default: ({ onClose }: { onClose: () => void }) => (
-    <div>
-      <span>Modal Nuevo Análisis</span>
-      <button onClick={onClose}>Cerrar modal análisis</button>
-    </div>
-  ),
-}))
-
 type MockUser = { name: string; role: string; initials: string; isVisitante?: boolean }
 const authMock: { isAuthenticated: boolean; user: MockUser | null; logout: () => void } = {
   isAuthenticated: false,
@@ -72,17 +63,15 @@ describe('Sidebar — visitante autenticado (no verificado)', () => {
     renderSidebar()
     expect(screen.queryByRole('link', { name: /Solicitudes/i })).not.toBeInTheDocument()
     expect(screen.getByText('Solicitar acceso')).toBeInTheDocument()
-    expect(screen.queryByText('Nuevo Análisis')).not.toBeInTheDocument()
   })
 })
 
 describe('Sidebar — usuario verificado', () => {
-  test('desbloquea los módulos restringidos y ofrece "Nuevo Análisis"', () => {
+  test('desbloquea los módulos restringidos', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Ana Restrepo', role: ROLES.INVESTIGADOR, initials: 'AR' }
     renderSidebar()
     expect(screen.getByRole('link', { name: /Geovisor/i })).toHaveAttribute('href', '/geovisor')
-    expect(screen.getByText('Nuevo Análisis')).toBeInTheDocument()
     expect(screen.queryByText('Panel Admin')).not.toBeInTheDocument()
   })
 
@@ -91,15 +80,6 @@ describe('Sidebar — usuario verificado', () => {
     authMock.user = { name: 'Root', role: ROLES.ADMIN, initials: 'RT' }
     renderSidebar()
     expect(screen.getByText('Panel Admin')).toBeInTheDocument()
-  })
-
-  test('"Nuevo Análisis" abre el modal correspondiente', async () => {
-    authMock.isAuthenticated = true
-    authMock.user = { name: 'Ana Restrepo', role: ROLES.INVESTIGADOR, initials: 'AR' }
-    const user = userEvent.setup()
-    renderSidebar()
-    await user.click(screen.getByText('Nuevo Análisis'))
-    expect(screen.getByText('Modal Nuevo Análisis')).toBeInTheDocument()
   })
 
   test('cerrar sesión llama a logout() y a onClose()', async () => {
@@ -117,7 +97,7 @@ describe('Sidebar — drawer móvil', () => {
   test('clic en el overlay llama a onClose', async () => {
     const user = userEvent.setup()
     const { onClose, container } = renderSidebar(true)
-    const overlay = container.querySelector('.fixed.inset-0.z-50.backdrop-blur-\\[3px\\]')
+    const overlay = container.querySelector('.fixed.inset-0.z-50.backdrop-blur-md')
     expect(overlay).not.toBeNull()
     await user.click(overlay as Element)
     expect(onClose).toHaveBeenCalled()

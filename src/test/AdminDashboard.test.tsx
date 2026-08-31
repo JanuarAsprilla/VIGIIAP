@@ -30,17 +30,23 @@ vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 vi.mock('@/hooks/useStats', () => ({ useAdminStats: vi.fn() }))
 import { useAdminStats } from '@/hooks/useStats'
 
-vi.mock('@/hooks/useSolicitudes', () => ({
-  useSolicitudesAdmin: vi.fn(),
-  useUpdateEstadoSolicitud: vi.fn(),
-}))
+vi.mock('@/hooks/useSolicitudes', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useSolicitudes')>()
+  return { ...actual, useSolicitudesAdmin: vi.fn(), useUpdateEstadoSolicitud: vi.fn() }
+})
 import { useSolicitudesAdmin, useUpdateEstadoSolicitud } from '@/hooks/useSolicitudes'
 
 vi.mock('@/hooks/useUsuarios', () => ({ useUsuariosList: vi.fn() }))
 import { useUsuariosList } from '@/hooks/useUsuarios'
 
-vi.mock('@/lib/api', () => ({ default: { get: vi.fn().mockResolvedValue({ data: [] }) } }))
-import api from '@/lib/api'
+vi.mock('@/hooks/useMapas', () => ({ useMapasList: vi.fn() }))
+import { useMapasList } from '@/hooks/useMapas'
+
+vi.mock('@/hooks/useAuditLog', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useAuditLog')>()
+  return { ...actual, useAuditLog: vi.fn() }
+})
+import { useAuditLog } from '@/hooks/useAuditLog'
 
 function makeSolicitud(overrides: Record<string, unknown> = {}) {
   return {
@@ -75,6 +81,12 @@ beforeEach(() => {
   vi.mocked(useUsuariosList).mockReturnValue({
     data: { data: [] },
   } as unknown as ReturnType<typeof useUsuariosList>)
+  vi.mocked(useMapasList).mockReturnValue({
+    data: { meta: { total: 12 } }, isLoading: false,
+  } as unknown as ReturnType<typeof useMapasList>)
+  vi.mocked(useAuditLog).mockReturnValue({
+    data: { data: [] }, isLoading: false, isError: false, refetch: vi.fn(),
+  } as unknown as ReturnType<typeof useAuditLog>)
 })
 
 describe('Dashboard — Distribución de Roles (regresión del fix de Módulo 4)', () => {
@@ -205,6 +217,14 @@ describe('Dashboard — Alerta de solicitudes', () => {
   })
 })
 
+function makeLog(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'log-1', accion: 'update_documento', accionLabel: 'Editar documento', badge: 'bg-gold-500/12 text-gold-500',
+    modulo: 'documentos', descripcion: 'Actualizó un documento', email: 'ana@example.com', fecha: '01/01/2026 00:00',
+    creado_en: '2026-01-01T00:00:00Z', ...overrides,
+  }
+}
+
 describe('Dashboard — Actividad Reciente', () => {
   test('sin actividad, muestra el mensaje vacío', async () => {
     renderPage()
@@ -212,11 +232,9 @@ describe('Dashboard — Actividad Reciente', () => {
   })
 
   test('lista los registros reales con iniciales, módulo conocido y descripción', async () => {
-    vi.mocked(api.get).mockResolvedValueOnce({
-      data: [
-        { id: 'log-1', usuario_email: 'ana@example.com', descripcion: 'Actualizó un documento', modulo: 'documentos', creado_en: '2026-01-01T00:00:00Z' },
-      ],
-    })
+    vi.mocked(useAuditLog).mockReturnValue({
+      data: { data: [makeLog()] }, isLoading: false, isError: false, refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useAuditLog>)
 
     renderPage()
     expect(await screen.findByText('Actualizó un documento')).toBeInTheDocument()
@@ -226,23 +244,21 @@ describe('Dashboard — Actividad Reciente', () => {
   })
 
   test('con módulo desconocido usa el badge gris por defecto', async () => {
-    vi.mocked(api.get).mockResolvedValueOnce({
-      data: [
-        { id: 'log-2', usuario_email: 'ana@example.com', descripcion: 'Evento raro', modulo: 'modulo-inexistente', creado_en: '2026-01-01T00:00:00Z' },
-      ],
-    })
+    vi.mocked(useAuditLog).mockReturnValue({
+      data: { data: [makeLog({ id: 'log-2', modulo: 'modulo-inexistente', descripcion: 'Evento raro' })] },
+      isLoading: false, isError: false, refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useAuditLog>)
 
     renderPage()
     const badge = await screen.findByText('modulo-inexistente')
-    expect(badge).toHaveClass('bg-gray-100', 'text-gray-600')
+    expect(badge).toHaveClass('bg-bg-alt', 'text-text-muted')
   })
 
-  test('sin usuario_email ni descripción, usa los valores de respaldo', async () => {
-    vi.mocked(api.get).mockResolvedValueOnce({
-      data: [
-        { id: 'log-3', usuario_email: null, descripcion: null, accion: 'Acción de sistema', modulo: 'admin', creado_en: '2026-01-01T00:00:00Z' },
-      ],
-    })
+  test('sin email ni descripción, usa los valores de respaldo', async () => {
+    vi.mocked(useAuditLog).mockReturnValue({
+      data: { data: [makeLog({ id: 'log-3', email: '—', descripcion: '', accionLabel: 'Acción de sistema', modulo: 'admin' })] },
+      isLoading: false, isError: false, refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useAuditLog>)
 
     renderPage()
     const descripcion = await screen.findByText('Acción de sistema')

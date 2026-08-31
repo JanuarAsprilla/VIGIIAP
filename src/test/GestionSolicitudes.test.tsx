@@ -311,6 +311,7 @@ describe('GestionSolicitudes — archivos adjuntos', () => {
     render(<GestionSolicitudes />)
     await user.click(screen.getByTitle('Ver detalle'))
     await user.click(screen.getByText('Eliminar'))
+    await user.click(screen.getByRole('button', { name: 'Sí, eliminar' }))
 
     expect(mutateAsync).toHaveBeenCalledWith({ solicitudId: 'mongo-1', archivoId: 'a1' })
     expect(await screen.findByText('Archivo "plano.pdf" eliminado')).toBeInTheDocument()

@@ -76,7 +76,7 @@ describe('NotificacionesPanel — acciones', () => {
 
   test('una notificación sin leer muestra el punto indicador; una leída no', () => {
     const { container } = renderPanel({ items: [makeItem({ id: 'n1' })], readIds: [] })
-    expect(container.querySelector('.bg-orange-500.rounded-full.w-2')).not.toBeNull()
+    expect(container.querySelector('.bg-gold-500.rounded-full.w-2')).not.toBeNull()
   })
 })
 

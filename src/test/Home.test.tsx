@@ -19,7 +19,9 @@ vi.mock('framer-motion', () => {
 })
 
 vi.mock('@/components/PlatformIntroSection', () => ({ default: () => null }))
-vi.mock('@/components/NuevoAnalisisModal', () => ({ default: () => <div>Nuevo Análisis Modal</div> }))
+vi.mock('@/components/InstitutionalRevealSection', () => ({ default: () => null }))
+vi.mock('@/hooks/usePlatformStats', () => ({ usePlatformStats: () => [] }))
+vi.mock('@/contexts/ThemeContext', () => ({ useTheme: () => ({ isDark: false, theme: 'light', toggleTheme: vi.fn() }) }))
 
 const authMock = {
   isAuthenticated: false,
@@ -42,27 +44,6 @@ beforeEach(() => {
   authMock.isAuthenticated = false
   authMock.user = null
   authMock.isVisitante = false
-})
-
-describe('Home — FAB de nuevo análisis', () => {
-  test('no aparece para un visitante no autenticado', () => {
-    renderHome()
-    expect(screen.queryByRole('button', { name: /Nuevo análisis/i })).not.toBeInTheDocument()
-  })
-
-  test('no aparece para un visitante autenticado (rol visitante)', () => {
-    authMock.isAuthenticated = true
-    authMock.user = { role: 'Visitante', isVisitante: true }
-    renderHome()
-    expect(screen.queryByRole('button', { name: /Nuevo análisis/i })).not.toBeInTheDocument()
-  })
-
-  test('sí aparece para un usuario autenticado no-visitante', () => {
-    authMock.isAuthenticated = true
-    authMock.user = { role: 'Investigador', isVisitante: false }
-    renderHome()
-    expect(screen.getByRole('button', { name: /Nuevo análisis/i })).toBeInTheDocument()
-  })
 })
 
 describe('Home — CTA institucional', () => {

@@ -47,8 +47,9 @@ vi.mock('react-router-dom', async (importOriginal) => {
 vi.mock('@/hooks/useUsuarios', () => ({
   useUpdatePerfil: vi.fn(),
   useUpdatePassword: vi.fn(),
+  useUpdateAvatar: vi.fn(),
 }))
-import { useUpdatePerfil, useUpdatePassword } from '@/hooks/useUsuarios'
+import { useUpdatePerfil, useUpdatePassword, useUpdateAvatar } from '@/hooks/useUsuarios'
 
 const authMock = {
   user: { id: 'u1', name: 'Ana Restrepo', email: 'ana@iiap.gov.co', rol: 'investigador', role: 'Investigador', institucion: 'IIAP' },
@@ -77,6 +78,9 @@ beforeEach(() => {
   vi.mocked(useUpdatePassword).mockReturnValue({
     mutateAsync: vi.fn(), isPending: false,
   } as unknown as ReturnType<typeof useUpdatePassword>)
+  vi.mocked(useUpdateAvatar).mockReturnValue({
+    mutateAsync: vi.fn(), isPending: false,
+  } as unknown as ReturnType<typeof useUpdateAvatar>)
 })
 
 describe('Perfil — edición inline del nombre', () => {
@@ -238,7 +242,7 @@ describe('Perfil — cerrar sesión', () => {
 describe('Perfil — autenticación en dos pasos', () => {
   test('activar 2FA solicita el QR y permite verificar el código', async () => {
     vi.mocked(api.post).mockImplementation((url: string) => {
-      if (url === '/auth/2fa/setup') return Promise.resolve({ qrCodeUrl: 'data:image/png;base64,abc', secret: 'SECRET123' })
+      if (url === '/auth/2fa/setup') return Promise.resolve({ qrDataUrl: 'data:image/png;base64,abc', secret: 'SECRET123' })
       return Promise.resolve({})
     })
 
@@ -253,7 +257,7 @@ describe('Perfil — autenticación en dos pasos', () => {
     await user.click(screen.getByRole('button', { name: 'Verificar' }))
 
     expect(await screen.findByText(/2FA activado exitosamente/)).toBeInTheDocument()
-    expect(api.post).toHaveBeenCalledWith('/auth/2fa/enable', { token: '123456' })
+    expect(api.post).toHaveBeenCalledWith('/auth/2fa/verify', { code: '123456' })
   })
 
   test('si falla activar el 2FA, muestra el mensaje de error', async () => {
@@ -266,22 +270,26 @@ describe('Perfil — autenticación en dos pasos', () => {
     expect(await screen.findByText('No se pudo generar el código')).toBeInTheDocument()
   })
 
-  test('con 2FA activo, desactivar pide confirmación antes de llamar al endpoint', async () => {
+  test('con 2FA activo, desactivar pide un código de confirmación antes de llamar al endpoint', async () => {
     authMock.user = { ...authMock.user, twoFactorEnabled: true } as typeof authMock.user & { twoFactorEnabled: boolean }
-    vi.mocked(api.delete).mockResolvedValue({})
+    vi.mocked(api.post).mockResolvedValue({})
 
     const user = userEvent.setup()
     renderPerfil()
     await user.click(screen.getByRole('button', { name: 'Desactivar' }))
-    expect(screen.getByText('¿Desea desactivar la autenticación en dos pasos? Su cuenta tendrá menor protección.')).toBeInTheDocument()
+    expect(screen.getByText('Desactivar 2FA')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Código de 6 dígitos')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Cancelar' }))
-    expect(api.delete).not.toHaveBeenCalled()
+    expect(api.post).not.toHaveBeenCalledWith('/auth/2fa/disable', expect.anything())
 
     await user.click(screen.getByRole('button', { name: 'Desactivar' }))
     const confirmButtons = screen.getAllByRole('button', { name: 'Desactivar' })
+    expect(confirmButtons[confirmButtons.length - 1]).toBeDisabled()
+
+    await user.type(screen.getByPlaceholderText('Código de 6 dígitos'), '123456')
     await user.click(confirmButtons[confirmButtons.length - 1])
-    expect(api.delete).toHaveBeenCalledWith('/auth/2fa/disable')
+    expect(api.post).toHaveBeenCalledWith('/auth/2fa/disable', { code: '123456' })
   })
 })
 

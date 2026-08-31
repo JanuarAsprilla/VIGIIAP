@@ -42,6 +42,7 @@ const authMock = {
   loading: false,
 }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
+vi.mock('@/hooks/usePlatformStats', () => ({ usePlatformStats: () => [] }))
 
 beforeEach(() => {
   vi.clearAllMocks()

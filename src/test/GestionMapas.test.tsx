@@ -173,9 +173,11 @@ describe('GestionMapas — tarjetas y filtros', () => {
     } as unknown as ReturnType<typeof useMapasList>)
 
     render(<GestionMapas />)
-    expect(screen.getByText('Zonificación Chocó')).toBeInTheDocument()
+    // El nombre aparece dos veces: en el título siempre-visible de la tarjeta
+    // y dentro del panel de detalle (oculto por opacidad, no desmontado).
+    expect(screen.getAllByText('Zonificación Chocó').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Zonificación').length).toBeGreaterThan(0)
-    expect(screen.getByText(/IIAP · 01\/01\/2025/)).toBeInTheDocument()
+    expect(screen.getAllByText(/IIAP · 01\/01\/2025/).length).toBeGreaterThan(0)
   })
 
   test('un mapa oculto muestra la etiqueta "Oculto"', () => {
@@ -218,7 +220,7 @@ describe('GestionMapas — tarjetas y filtros', () => {
     render(<GestionMapas />)
     await user.type(screen.getByLabelText('Buscar mapas por nombre o autor'), 'cvc')
 
-    expect(screen.getByText('Cobertura Nariño')).toBeInTheDocument()
+    expect(screen.getAllByText('Cobertura Nariño').length).toBeGreaterThan(0)
     expect(screen.queryByText('Zonificación Chocó')).not.toBeInTheDocument()
   })
 
@@ -237,7 +239,7 @@ describe('GestionMapas — tarjetas y filtros', () => {
     render(<GestionMapas />)
     await user.click(screen.getByRole('button', { name: 'Zonificación' }))
 
-    expect(screen.getByText('Zonificación Chocó')).toBeInTheDocument()
+    expect(screen.getAllByText('Zonificación Chocó').length).toBeGreaterThan(0)
     expect(screen.queryByText('Cobertura Nariño')).not.toBeInTheDocument()
   })
 
@@ -249,7 +251,8 @@ describe('GestionMapas — tarjetas y filtros', () => {
 
     const user = userEvent.setup()
     render(<GestionMapas />)
-    await user.click(screen.getByTitle('Ver archivo'))
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Ver archivo'))
 
     expect(openSpy).toHaveBeenCalledWith('/m1.pdf', '_blank', 'noopener,noreferrer')
     openSpy.mockRestore()
@@ -281,7 +284,8 @@ describe('GestionMapas — edición y eliminación', () => {
 
     const user = userEvent.setup()
     render(<GestionMapas />)
-    await user.click(screen.getByTitle('Editar mapa'))
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Editar'))
 
     expect(screen.getByText('Editar mapa')).toBeInTheDocument()
     expect(screen.getByLabelText(/Nombre del mapa/i)).toHaveValue('Zonificación Chocó')
@@ -298,7 +302,8 @@ describe('GestionMapas — edición y eliminación', () => {
 
     const user = userEvent.setup()
     render(<GestionMapas />)
-    await user.click(screen.getByTitle('Editar mapa'))
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Editar'))
     await user.click(screen.getByRole('button', { name: /^Guardar cambios$/i }))
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ id: 'm1' }))
@@ -315,7 +320,8 @@ describe('GestionMapas — edición y eliminación', () => {
 
     const user = userEvent.setup()
     render(<GestionMapas />)
-    await user.click(screen.getByTitle('Eliminar mapa'))
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Eliminar'))
     await user.click(screen.getByRole('button', { name: 'Sí, eliminar' }))
 
     expect(mutateAsync).toHaveBeenCalledWith('m1')
@@ -333,7 +339,8 @@ describe('GestionMapas — edición y eliminación', () => {
 
     const user = userEvent.setup()
     render(<GestionMapas />)
-    await user.click(screen.getByTitle('Eliminar mapa'))
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Eliminar'))
     await user.click(screen.getByRole('button', { name: 'Cancelar' }))
 
     expect(mutateAsync).not.toHaveBeenCalled()

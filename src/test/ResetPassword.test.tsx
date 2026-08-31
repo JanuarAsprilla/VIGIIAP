@@ -5,6 +5,8 @@ import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import ResetPassword from '@/pages/auth/ResetPassword'
 
+vi.mock('@/hooks/usePlatformStats', () => ({ usePlatformStats: () => [] }))
+
 vi.mock('framer-motion', () => {
   const cache = new Map<string, (p: Record<string, unknown>) => ReactNode>()
   const motion = new Proxy({}, {

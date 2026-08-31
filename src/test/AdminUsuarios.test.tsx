@@ -442,7 +442,7 @@ describe('Usuarios (admin) — panel de detalle: ramas adicionales', () => {
     await user.click(screen.getByText('Ana Restrepo'))
 
     const badges = screen.getAllByText('Inactivo')
-    expect(badges.some((b) => b.className.includes('bg-red-100'))).toBe(true)
+    expect(badges.some((b) => b.className.includes('bg-red/10'))).toBe(true)
   })
 
   test('con motivo de acceso, lo muestra en el detalle', async () => {
@@ -541,7 +541,7 @@ describe('Usuarios (admin) — activar/desactivar: ramas adicionales', () => {
 
     render(<Usuarios />)
     const badges = screen.getAllByText('Inactivo').filter((b) => b.tagName === 'SPAN')
-    expect(badges.some((b) => b.className.includes('bg-red-100'))).toBe(true)
+    expect(badges.some((b) => b.className.includes('bg-red/10'))).toBe(true)
     expect(screen.queryByTitle('Clic para activar')).not.toBeInTheDocument()
   })
 })

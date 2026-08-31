@@ -12,8 +12,8 @@ function makeCategory(overrides: Partial<CategoryItem> = {}): CategoryItem {
     icon: 'MapIcon',
     thumbnail: null,
     docs: [
-      { id: 'd1', name: 'Mapa 1', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/f1.pdf' },
-      { id: 'd2', name: 'Mapa 2', type: 'pdf', size: '2MB', updated: '02/01/2026', dateISO: '2026-01-02', url: '/f2.pdf' },
+      { id: 'd1', name: 'Mapa 1', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/f1.pdf', resumen: '' },
+      { id: 'd2', name: 'Mapa 2', type: 'pdf', size: '2MB', updated: '02/01/2026', dateISO: '2026-01-02', url: '/f2.pdf', resumen: '' },
     ],
     ...overrides,
   }
@@ -32,7 +32,7 @@ describe('CategoryCard', () => {
   })
 
   test('un solo documento usa el singular "doc"', () => {
-    render(<CategoryCard category={makeCategory({ docs: [{ id: 'd1', name: 'Mapa 1', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/f1.pdf' }] })} filteredCount={null} onOpen={vi.fn()} index={0} />)
+    render(<CategoryCard category={makeCategory({ docs: [{ id: 'd1', name: 'Mapa 1', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/f1.pdf', resumen: '' }] })} filteredCount={null} onOpen={vi.fn()} index={0} />)
     expect(screen.getByText('1 doc')).toBeInTheDocument()
   })
 
