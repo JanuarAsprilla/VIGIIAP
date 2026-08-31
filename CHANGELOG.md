@@ -33,7 +33,7 @@ archivo empieza a trackear desde acá en adelante.
 ### Tests
 - Cobertura de tests real corregida: `vitest.config.ts` no instrumentaba
   la mayoría del código fuente, así que el 98.84% reportado medía casi
-  nada. Cobertura real actual: ~84% statements / ~82% branches.
+  nada. Cobertura real actual: ~80% statements / ~78% branches / ~82% líneas.
 - `e2e/authenticated.spec.ts` (flujos con sesión iniciada: dashboard,
   panel admin, mapas, documentos, solicitudes) conectado al pipeline de
   CI — antes solo corrían los tests públicos y de login.
