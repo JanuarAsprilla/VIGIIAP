@@ -139,6 +139,12 @@ jobs:
   secrets-scan:
     name: Escaneo de secretos
     runs-on: ubuntu-latest
+    # gitleaks-action lista los commits de la PR vía API para decidir qué
+    # rango escanear — sin este permiso la llamada devuelve 403 y el job
+    # falla aunque no haya ningún secreto real en el diff.
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
