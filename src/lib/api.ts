@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // Auth via HttpOnly cookie — el navegador la adjunta automáticamente.
-// Backend (PR #10) implementa Set-Cookie: vigiiap_token=<jwt>; HttpOnly; Secure; SameSite=None
+// Backend implementa Set-Cookie: vigiiap_token=<jwt>; HttpOnly; Secure; SameSite=None
 // (frontend y backend en subdominios distintos). Para logout: Set-Cookie: vigiiap_token=; Max-Age=0.
 // SameSite=None expone a CSRF vía formularios cross-site — por eso toda petición
 // mutante autenticada por cookie exige el header X-CSRF-Token (ver más abajo).

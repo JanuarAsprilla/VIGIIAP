@@ -1,6 +1,3 @@
-/* Hallmark · macrostructure: Long Document · genre: form-workflow
- * tokens: design.md · stamp: 2026-05-25
- */
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Download, PlusCircle } from 'lucide-react'

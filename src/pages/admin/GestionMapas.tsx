@@ -1,6 +1,3 @@
-/* Hallmark · macrostructure: Workbench · genre: admin-crud
- * tokens: design.md · stamp: 2026-05-25
- */
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type { MapaData } from '@/hooks/useMapas'
 import { getApiErrorMessage } from '@/lib/apiError'
@@ -766,7 +763,7 @@ export default function GestionMapas() {
                 </button>
               </div>
 
-              <form onSubmit={handleSave} className="p-6 space-y-5">
+              <form onSubmit={handleSave} noValidate className="p-6 space-y-5">
 
                 {/* Formato */}
                 <div>

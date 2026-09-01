@@ -1,7 +1,3 @@
-/* Hallmark · macrostructure: Scrollytelling Landing · genre: institutional-cinematic
- * tokens: index.css · stamp: 2026-07-02
- * VIGIA-IIAP landing — Chocó Biogeográfico
- */
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'

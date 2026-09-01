@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import type { RefObject } from 'react'
+import { isTrustedUrl } from '@/lib/trustedUrl'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api/v1'
 
@@ -30,21 +31,6 @@ export interface CategoryItem {
 export function descargarUrl(tipo: 'mapa' | 'documento', id: string, campo?: string): string {
   const base = `${API_BASE}/descargar/${tipo}/${id}`
   return campo ? `${base}?campo=${campo}` : base
-}
-
-export const ALLOWED_ORIGINS = [
-  window.location.origin,
-  import.meta.env.VITE_R2_PUBLIC_URL || '',
-  import.meta.env.VITE_API_URL        || '',
-].filter(Boolean)
-
-export function isTrustedUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url)
-    return ALLOWED_ORIGINS.some((o) => {
-      try { return parsed.origin === new URL(o).origin } catch { return false }
-    })
-  } catch { return false }
 }
 
 export async function forceDownload(url: string | null | undefined, filename?: string): Promise<void> {

@@ -91,11 +91,32 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run build
+      # authenticated.spec.ts necesita un backend real (no hay staging), así que
+      # las credenciales y la URL de producción SOLO se pasan en push a
+      # develop/main (post-merge) — nunca en pull_request. Un PR (incluso de una
+      # rama propia del repo) no debe tener sesión admin real contra producción
+      # ni acceso a estos secrets; en PRs, authenticated.spec.ts simplemente
+      # hace skip vía su propio test.skip() por falta de credenciales.
+      #
+      # IMPORTANTE: en PR, VITE_API_URL debe quedar sin definir (no ""). api.ts
+      # usa `?? '/api/v1'`, y `??` solo cae al fallback con null/undefined —
+      # un string vacío pasa de largo y rompe la rehidratación de sesión contra
+      # una ruta que no existe en el preview server (visto en CI: los 4 tests
+      # de redirección de auth.spec.ts quedaban colgados hasta timeout).
+      - name: Build
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            export VITE_API_URL="https://vigiiap-backend.onrender.com/api/v1"
+          fi
+          npm run build
       - name: Servir build y ejecutar tests E2E
-        run: npx playwright test e2e/public.spec.ts e2e/auth.spec.ts
+        run: npx playwright test e2e/public.spec.ts e2e/auth.spec.ts e2e/authenticated.spec.ts
         env:
           CI: true
+          E2E_ADMIN_EMAIL: ${{ github.event_name == 'push' && secrets.E2E_ADMIN_EMAIL || '' }}
+          E2E_ADMIN_PASSWORD: ${{ github.event_name == 'push' && secrets.E2E_ADMIN_PASSWORD || '' }}
+          E2E_USER_EMAIL: ${{ github.event_name == 'push' && secrets.E2E_USER_EMAIL || '' }}
+          E2E_USER_PASSWORD: ${{ github.event_name == 'push' && secrets.E2E_USER_PASSWORD || '' }}
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -118,6 +139,12 @@ jobs:
   secrets-scan:
     name: Escaneo de secretos
     runs-on: ubuntu-latest
+    # gitleaks-action lista los commits de la PR vía API para decidir qué
+    # rango escanear — sin este permiso la llamada devuelve 403 y el job
+    # falla aunque no haya ningún secreto real en el diff.
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:

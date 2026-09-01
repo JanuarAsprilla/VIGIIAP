@@ -1,6 +1,3 @@
-/* Hallmark · macrostructure: Workbench · genre: admin-crud
- * tokens: design.md · stamp: 2026-05-25
- */
 import { useState, useEffect } from 'react'
 import type { ArchivoSolicitud, SolicitudData } from '@/hooks/useSolicitudes'
 import { motion, AnimatePresence } from 'framer-motion'

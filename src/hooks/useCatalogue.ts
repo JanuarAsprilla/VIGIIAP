@@ -92,9 +92,6 @@ function buildActionEntries(isAuthenticated: boolean): CatalogueEntry[] {
   return entries
 }
 
-/**
- * Devuelve el catálogo completo de entradas buscables.
- */
 export function useCatalogue() {
   const { isAuthenticated } = useAuth()
 

@@ -19,8 +19,8 @@ export default function ConversorCoordenadas() {
     setResult(null)
     try {
       if (modo === 'wgs2magna') {
-        const lat = parseFloat(latInput)
-        const lon = parseFloat(lonInput)
+        const lat = parseFloat(latInput.replace(',', '.'))
+        const lon = parseFloat(lonInput.replace(',', '.'))
         if (isNaN(lat) || isNaN(lon))     throw new Error('Ingresa valores numéricos válidos')
         if (lat < -4 || lat > 14)         throw new Error('Latitud fuera del territorio colombiano')
         if (lon < -82 || lon > -66)       throw new Error('Longitud fuera del territorio colombiano')

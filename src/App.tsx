@@ -67,7 +67,7 @@ function GeovisorLoader() {
 function AppLoader() {
   const [appReady, setAppReady] = useState(false)
   useEffect(() => {
-    // A3: detectar carga real en vez de timeout mínimo hardcodeado (era 2200ms fijo)
+    // Detecta la carga real del documento en vez de un timeout fijo.
     if (document.readyState === 'complete') {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- estado del document ya resuelto al montar
       setAppReady(true)
@@ -150,7 +150,9 @@ function AppRoutes() {
               } />
             </Route>
 
-            {/* Requiere Investigador o Admin (bloquea Público y Visitante) */}
+            {/* Bloquea Público y Visitante — en la práctica deja pasar a cualquier
+                otro rol verificado (investigador/tecnico/institucional/admin),
+                no solo Investigador/Admin. Ver nota en RequireAuth.tsx. */}
             <Route element={<RequireInvestigador />}>
               <Route path="/geovisor" element={
                 <Suspense fallback={<GeovisorLoader />}><Geovisor /></Suspense>

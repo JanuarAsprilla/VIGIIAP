@@ -2,8 +2,9 @@ import type { SolicitudData } from '@/hooks/useSolicitudes'
 
 export const PAGE_SIZE = 4
 
-function csvField(val: unknown) {
-  const s = String(val ?? '').replace(/\r\n|\n|\r/g, ' ')
+export function csvField(val: unknown) {
+  let s = String(val ?? '').replace(/\r\n|\n|\r/g, ' ')
+  if (/^[=+\-@\t]/.test(s)) s = `'${s}`
   return `"${s.replace(/"/g, '""')}"`
 }
 

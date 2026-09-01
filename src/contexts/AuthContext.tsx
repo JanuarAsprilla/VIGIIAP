@@ -84,16 +84,16 @@ function normalizeUser(raw: RawAuthUser): AuthUser {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // C-01: estado de usuario solo en memoria (no localStorage).
-  // La sesión persiste a través de la cookie HttpOnly vigiiap_token;
-  // refreshProfile() rehidrata desde /auth/me al montar.
+  // Estado de usuario solo en memoria (no localStorage): la sesión persiste
+  // a través de la cookie HttpOnly vigiiap_token; refreshProfile() rehidrata
+  // desde /auth/me al montar.
   const [user, setUser]               = useState<AuthUser | null>(null)
   const [loading, setLoading]         = useState(false)
   const [initializing, setInitializing] = useState(true)
 
   const persistUser = useCallback((normalized: AuthUser) => {
-    // C-01: No escribir datos de usuario en localStorage (XSS risk).
-    // El token JWT lo gestiona el backend con cookie HttpOnly (PR #10).
+    // No escribir datos de usuario en localStorage (riesgo de XSS) — el
+    // token JWT lo gestiona el backend con cookie HttpOnly.
     setUser(normalized)
   }, [])
 
@@ -157,7 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       const { token, user: raw } = res as { token: string; user: Record<string, unknown> }
-      // C-01: token no se escribe en localStorage; cookie HttpOnly.
+      // Token no se escribe en localStorage; lo gestiona la cookie HttpOnly.
       void token
       const normalized = normalizeUser(raw as RawAuthUser)
       persistUser(normalized)
@@ -173,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true)
     try {
       const { token, user: raw } = (await api.post('/auth/visitante', { nombre: nombre || undefined })) as { token: string; user: Record<string, unknown> }
-      // C-01: token no se escribe en localStorage; gestionado por cookie HttpOnly.
+      // Token no se escribe en localStorage; gestionado por cookie HttpOnly.
       void token
       const normalized = normalizeUser(raw as RawAuthUser)
       persistUser(normalized)

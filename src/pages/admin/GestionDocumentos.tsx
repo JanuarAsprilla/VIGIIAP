@@ -624,7 +624,7 @@ export default function GestionDocumentos() {
                 </button>
               </div>
 
-              <form onSubmit={handleSave} className="p-6 space-y-5">
+              <form onSubmit={handleSave} noValidate className="p-6 space-y-5">
 
                 {/* Tipo selector */}
                 <div>

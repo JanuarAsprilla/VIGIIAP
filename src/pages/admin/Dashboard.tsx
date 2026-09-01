@@ -1,6 +1,3 @@
-/* Hallmark · macrostructure: Workbench · genre: admin-dashboard
- * tokens: design.md · stamp: 2026-08-24
- */
 import { useState } from 'react'
 import type { SolicitudData } from '@/hooks/useSolicitudes'
 import { Link } from 'react-router-dom'

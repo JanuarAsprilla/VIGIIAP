@@ -1,6 +1,3 @@
-/* Hallmark · macrostructure: Workbench · genre: data-catalog
- * tokens: design.md · stamp: 2026-05-25
- */
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -12,6 +9,7 @@ import { useMapasList } from '@/hooks/useMapas'
 import type { MapaData } from '@/hooks/useMapas'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
+import { isTrustedUrl } from '@/lib/trustedUrl'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { cardEnter3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
@@ -107,25 +105,8 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
   )
 }
 
-// H-02: allowlist de orígenes confiables para descargas.
-const ALLOWED_ORIGINS = [
-  window.location.origin,
-  import.meta.env.VITE_R2_PUBLIC_URL || '',
-  import.meta.env.VITE_API_URL        || '',
-].filter(Boolean)
-
-function isTrustedUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url)
-    return ALLOWED_ORIGINS.some((o) => {
-      try { return parsed.origin === new URL(o).origin } catch { return false }
-    })
-  } catch { return false }
-}
-
 async function forceDownload(url: string): Promise<void> {
   if (!url) return
-  // H-02: bloquear URLs de orígenes no confiables.
   if (!isTrustedUrl(url)) {
     if (import.meta.env.DEV) console.error('[VIGIIAP] Descarga bloqueada — origen no permitido:', url)
     return
@@ -158,11 +139,24 @@ const CATEGORY_COLORS = {
 }
 
 interface MapCardProps { map: MapaData; index: number; onPreview?: (map: MapaData, format: string) => void }
-function MapCard({ map, index }: MapCardProps) {
+function MapCard({ map, index, onPreview }: MapCardProps) {
   const colors = CATEGORY_COLORS[map.category as keyof typeof CATEGORY_COLORS] ?? { pill: 'bg-primary-100 text-primary-700', accent: '#1B4332' }
   const hasPdf     = map.formats.includes('PDF')
   const hasImg     = map.formats.includes('IMG')
   const hasGeovisor = map.formats.includes('GEOVISOR')
+
+  // Chaos testing (clics de frustración): sin esta guarda, clics rápidos repetidos
+  // durante un cold start de Render disparaban múltiples fetch() + descargas simultáneas.
+  const [downloadingField, setDownloadingField] = useState<'pdf' | 'img' | null>(null)
+  const handleDownload = async (campo: 'archivo_pdf' | 'archivo_img', field: 'pdf' | 'img') => {
+    if (downloadingField) return
+    setDownloadingField(field)
+    try {
+      await forceDownload(`${import.meta.env.VITE_API_URL ?? '/api'}/descargar/mapa/${map.id}?campo=${campo}`)
+    } finally {
+      setDownloadingField(null)
+    }
+  }
 
   return (
     <Card3D
@@ -229,32 +223,38 @@ function MapCard({ map, index }: MapCardProps) {
         {/* Actions */}
         <div className="flex items-center gap-2 pt-3 border-t border-border/60 mt-auto">
           {hasPdf && (
-            <button onClick={() => forceDownload(`${import.meta.env.VITE_API_URL ?? '/api'}/descargar/mapa/${map.id}?campo=archivo_pdf`)}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-colors">
-              <Download className="w-3.5 h-3.5" />
+            <button onClick={() => handleDownload('archivo_pdf', 'pdf')}
+              disabled={downloadingField !== null}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:pointer-events-none">
+              {downloadingField === 'pdf'
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Download className="w-3.5 h-3.5" />}
               Descargar PDF
             </button>
           )}
           {hasPdf && (
-            <a href={map.archivo_pdf_url ?? undefined} target="_blank" rel="noopener noreferrer"
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors no-underline">
+            <button onClick={() => onPreview?.(map, 'PDF')}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors">
               <Eye className="w-3.5 h-3.5" />
               Visualizar
-            </a>
+            </button>
           )}
           {hasImg && (
-            <button onClick={() => forceDownload(`${import.meta.env.VITE_API_URL ?? '/api'}/descargar/mapa/${map.id}?campo=archivo_img`)}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-gold-400/40 hover:text-gold-400 hover:bg-gold-400/10 transition-colors">
-              <Download className="w-3.5 h-3.5" />
+            <button onClick={() => handleDownload('archivo_img', 'img')}
+              disabled={downloadingField !== null}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-gold-400/40 hover:text-gold-400 hover:bg-gold-400/10 transition-colors disabled:opacity-50 disabled:pointer-events-none">
+              {downloadingField === 'img'
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Download className="w-3.5 h-3.5" />}
               Descargar
             </button>
           )}
           {hasImg && (
-            <a href={map.archivo_img_url ?? undefined} target="_blank" rel="noopener noreferrer"
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors no-underline">
+            <button onClick={() => onPreview?.(map, 'IMG')}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors">
               <Eye className="w-3.5 h-3.5" />
               Visualizar
-            </a>
+            </button>
           )}
           {hasGeovisor && (
             <a href={map.geovisorLink || '/geovisor'} target="_blank" rel="noopener noreferrer"
@@ -312,7 +312,7 @@ export default function Mapas() {
   // Filtrado local (búsqueda global + filtros que el backend aún no tiene)
   const filteredMaps = allMaps.filter((m) => {
     if (!matches([m.title, m.category, m.excerpt], query)) return false
-    if (filters.format && !m.formats.some((f) => f.toLowerCase() === filters.format)) return false
+    if (filters.format && !m.formats.some((f) => f.toLowerCase() === filters.format.toLowerCase())) return false
     return true
   })
 

@@ -27,7 +27,8 @@ Closes #<!-- número del issue -->
 - [ ] Datos del dominio en `constants.js`, no hardcodeados en componentes
 - [ ] Botones de solo icono tienen `aria-label`
 - [ ] Probado en desktop y móvil
-- [ ] Se actualizó `CLAUDE.md` si cambió la arquitectura o el stack
+- [ ] Se actualizó `README.md` si cambió la arquitectura o el stack
+- [ ] Se agregó una línea a `CHANGELOG.md` bajo `[Unreleased]` si el cambio es notable
 
 ## Capturas de pantalla
 
