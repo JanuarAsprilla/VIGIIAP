@@ -163,3 +163,4 @@ git merge hotfix/VIG-NNN-descripcion
 - [ ] Los datos del dominio están en `constants.ts`, no hardcodeados en componentes
 - [ ] Los nuevos componentes tienen `aria-label` si son botones de icono
 - [ ] Se actualizó `README.md` si cambió la arquitectura o el stack
+- [ ] Se agregó una línea a `CHANGELOG.md` bajo `[Unreleased]` si el cambio es notable (fix, feature, breaking change)
