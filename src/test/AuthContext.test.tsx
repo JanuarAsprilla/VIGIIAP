@@ -82,7 +82,10 @@ describe('AuthProvider — login()', () => {
 
   test('a normal login sets the user and returns the normalized profile', async () => {
     const result = await mountReady()
-    vi.mocked(api.post).mockResolvedValue({ token: 'jwt', user: rawInvestigador })
+    // El POST de login solo confirma que no hay passwordExpired/requiresTwoFactor —
+    // el perfil real se pide después vía /auth/me (refreshProfile).
+    vi.mocked(api.post).mockResolvedValue({ token: 'jwt', user: { id: 'u1', rol: 'investigador' } })
+    vi.mocked(api.get).mockResolvedValueOnce(rawInvestigador)
 
     let outcome: unknown
     await act(async () => { outcome = await result.current.login('ana@iiap.gov.co', 'secret123') })
@@ -118,6 +121,7 @@ describe('AuthProvider — login()', () => {
     const result = await mountReady()
     let resolveLogin!: (v: unknown) => void
     vi.mocked(api.post).mockReturnValue(new Promise((resolve) => { resolveLogin = resolve }))
+    vi.mocked(api.get).mockResolvedValueOnce(rawInvestigador)
 
     let pending!: Promise<unknown>
     act(() => { pending = result.current.login('ana@iiap.gov.co', 'secret123') })
@@ -132,13 +136,14 @@ describe('AuthProvider — loginVisitante() / logout()', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('loginVisitante authenticates with isVisitante=true', async () => {
-    vi.mocked(api.get).mockResolvedValue(null)
+    vi.mocked(api.get).mockResolvedValueOnce(null)
     const { result } = renderHook(() => useAuth(), { wrapper })
     await waitFor(() => expect(result.current.initializing).toBe(false))
 
     vi.mocked(api.post).mockResolvedValue({
       token: 'jwt', user: { id: 'v1', rol: 'visitante', tipo: 'visitante' },
     })
+    vi.mocked(api.get).mockResolvedValueOnce({ id: 'v1', rol: 'visitante', tipo: 'visitante' })
     await act(async () => { await result.current.loginVisitante('Invitado') })
 
     expect(api.post).toHaveBeenCalledWith('/auth/visitante', { nombre: 'Invitado' })

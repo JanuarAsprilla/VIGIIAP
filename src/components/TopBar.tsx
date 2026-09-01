@@ -26,6 +26,7 @@ import NotificacionesPanel from './topbar/NotificacionesPanel'
 import AjustesPanel        from './topbar/AjustesPanel'
 import ProfileDropdown     from './topbar/ProfileDropdown'
 import AvatarBadge         from './ui/AvatarBadge'
+import Avatar               from './ui/Avatar'
 
 // ── Constantes de configuración ──
 
@@ -409,8 +410,8 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
                   <span className="block text-sm font-medium leading-tight" style={{color:"var(--topbar-text)"}}>{user?.name}</span>
                   <span className="block text-[0.7rem] uppercase tracking-wider" style={{color:"var(--topbar-icon-on)"}}>{user?.role}</span>
                 </div>
-                <div className="relative w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-800 rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-white text-sm font-bold">{user?.initials}</span>
+                <div className="relative shrink-0">
+                  <Avatar avatarUrl={user?.avatarUrl} initials={user?.initials} size="w-9 h-9" />
                   <AvatarBadge variant="dot" ringColor="var(--color-bg)" label="Sesión activa" />
                 </div>
                 <ChevronDown

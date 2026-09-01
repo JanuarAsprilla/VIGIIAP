@@ -15,6 +15,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useUpdatePassword, useUpdatePerfil, useUpdateAvatar } from '@/hooks/useUsuarios'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import Avatar from '@/components/ui/Avatar'
 
 const fadeUp = fadeUpSm
 
@@ -558,13 +559,7 @@ function AvatarUploader({ avatarUrl, initials, onUploaded }: { avatarUrl: string
 
   return (
     <div className="relative shrink-0">
-      {avatarSrc ? (
-        <img src={avatarSrc} alt="Foto de perfil" className="w-20 h-20 rounded-2xl object-cover shadow-md" />
-      ) : (
-        <div className="w-20 h-20 bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl flex items-center justify-center shadow-md">
-          <span className="text-white text-2xl font-bold font-display">{initials}</span>
-        </div>
-      )}
+      <Avatar avatarUrl={avatarSrc} initials={initials} size="w-20 h-20" shape="squircle" textSize="text-2xl font-display" className="shadow-md" />
       <button
         type="button"
         onClick={() => inputRef.current?.click()}

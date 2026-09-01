@@ -39,6 +39,7 @@ const RecuperarPassword = lazy(() => import('./pages/auth/RecuperarPassword'))
 const VerificarEmail    = lazy(() => import('./pages/auth/VerificarEmail'))
 const ResetPassword           = lazy(() => import('./pages/auth/ResetPassword'))
 const CambiarPasswordExpirada = lazy(() => import('./pages/auth/CambiarPasswordExpirada'))
+const VerificarDosFactor      = lazy(() => import('./pages/auth/VerificarDosFactor'))
 
 // ── Admin panel ──
 const AdminDashboard   = lazy(() => import('./pages/admin/Dashboard'))
@@ -115,6 +116,7 @@ function AppRoutes() {
           <Route path="/verificar-email/:token"      element={<Suspense fallback={<PageSpinner />}><VerificarEmail /></Suspense>} />
           <Route path="/reset-password/:token"        element={<Suspense fallback={<PageSpinner />}><ResetPassword /></Suspense>} />
           <Route path="/cambiar-password-expirada"   element={<Suspense fallback={null}><CambiarPasswordExpirada /></Suspense>} />
+          <Route path="/verificar-2fa"                element={<Suspense fallback={null}><VerificarDosFactor /></Suspense>} />
 
           {/* ── Sitio público (MainLayout) — skeletons por ruta ── */}
           <Route element={<MainLayout />}>
