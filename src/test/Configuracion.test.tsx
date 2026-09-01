@@ -2,6 +2,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Configuracion from '@/pages/admin/Configuracion'
 
@@ -31,7 +32,11 @@ vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
-  return render(<QueryClientProvider client={qc}><Configuracion /></QueryClientProvider>)
+  return render(
+    <MemoryRouter>
+      <QueryClientProvider client={qc}><Configuracion /></QueryClientProvider>
+    </MemoryRouter>,
+  )
 }
 
 beforeEach(() => {
@@ -149,5 +154,16 @@ describe('Configuracion — notificaciones y roles', () => {
     renderPage()
     expect(screen.getByText(/Acceso completo al panel de administración/)).toBeInTheDocument()
     expect(screen.getByText(/Solo acceso al inicio de sesión y módulos públicos/)).toBeInTheDocument()
+  })
+
+  test('ya no expone el toggle de reporte semanal — ese flujo se movió a un reporte bajo demanda', () => {
+    renderPage()
+    expect(screen.queryByText('Reporte semanal de actividad')).not.toBeInTheDocument()
+  })
+
+  test('enlaza a /admin/reportes para generar el reporte de actividad', () => {
+    renderPage()
+    const link = screen.getByRole('link', { name: /Generar reporte de actividad/i })
+    expect(link).toHaveAttribute('href', '/admin/reportes')
   })
 })

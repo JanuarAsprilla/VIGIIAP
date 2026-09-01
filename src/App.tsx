@@ -49,6 +49,7 @@ const AdminMapas       = lazy(() => import('./pages/admin/GestionMapas'))
 const AdminConfig      = lazy(() => import('./pages/admin/Configuracion'))
 const AdminActividad   = lazy(() => import('./pages/admin/Actividad'))
 const AdminCategorias  = lazy(() => import('./pages/admin/GestionCategorias'))
+const AdminReportes    = lazy(() => import('./pages/admin/Reportes'))
 const AdminGestionAdmins = lazy(() => import('./pages/admin/GestionAdmins'))
 const AdminPapelera      = lazy(() => import('./pages/admin/Papelera'))
 
@@ -174,6 +175,7 @@ function AppRoutes() {
               <Route path="/admin/configuracion" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConfig /></Suspense>} />
               <Route path="/admin/actividad"     element={<Suspense fallback={<GenericPageSkeleton />}><AdminActividad /></Suspense>} />
               <Route path="/admin/categorias"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminCategorias /></Suspense>} />
+              <Route path="/admin/reportes"      element={<Suspense fallback={<GenericPageSkeleton />}><AdminReportes /></Suspense>} />
 
               {/* ── Rutas exclusivas Super Admin ── */}
               <Route element={<RequireSuperAdmin />}>

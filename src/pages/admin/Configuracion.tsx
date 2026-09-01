@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   Save, Globe, Bell, Shield, AlertTriangle, Scale,
-  Mail, Phone, MapPin, CheckCircle, AlertCircle,
+  Mail, Phone, MapPin, CheckCircle, AlertCircle, ArrowRight,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -102,7 +103,6 @@ export default function Configuracion() {
     emailNotifs: true,
     solicitudNotifs: true,
     loginNotifs: false,
-    reportesSemanal: true,
   })
 
   const [roles, setRoles] = useState({
@@ -143,7 +143,6 @@ export default function Configuracion() {
       emailNotifs:      remoteConfig.emailNotifs      === undefined ? n.emailNotifs      : remoteConfig.emailNotifs      === 'true',
       solicitudNotifs:  remoteConfig.solicitudNotifs  === undefined ? n.solicitudNotifs  : remoteConfig.solicitudNotifs  === 'true',
       loginNotifs:      remoteConfig.loginNotifs      === undefined ? n.loginNotifs      : remoteConfig.loginNotifs      === 'true',
-      reportesSemanal:  remoteConfig.reportesSemanal  === undefined ? n.reportesSemanal  : remoteConfig.reportesSemanal  === 'true',
     }))
     setRoles((r) => ({
       publicoCanSolicitar:   remoteConfig.publicoCanSolicitar   === undefined ? r.publicoCanSolicitar   : remoteConfig.publicoCanSolicitar   === 'true',
@@ -178,7 +177,6 @@ export default function Configuracion() {
       emailNotifs:           String(notifs.emailNotifs),
       solicitudNotifs:       String(notifs.solicitudNotifs),
       loginNotifs:           String(notifs.loginNotifs),
-      reportesSemanal:       String(notifs.reportesSemanal),
       publicoCanSolicitar:   String(roles.publicoCanSolicitar),
       investigadorCanUpload: String(roles.investigadorCanUpload),
       requireApproval:       String(roles.requireApproval),
@@ -280,17 +278,39 @@ export default function Configuracion() {
       <SectionCard title="Notificaciones" icon={Bell} delay={0.14}>
         <div className="space-y-3">
           {([
-            { key: 'emailNotifs', label: 'Notificaciones por correo electrónico' },
-            { key: 'solicitudNotifs', label: 'Alertas de nuevas solicitudes' },
-            { key: 'loginNotifs', label: 'Notificar nuevos inicios de sesión' },
-            { key: 'reportesSemanal', label: 'Reporte semanal de actividad' },
-          ] as { key: keyof typeof notifs; label: string }[]).map(({ key, label }) => (
-            <div key={key} className="flex items-center justify-between py-1">
-              <span className="text-sm text-text">{label}</span>
+            {
+              key: 'emailNotifs',
+              label: 'Notificaciones por correo electrónico',
+              hint: 'Interruptor general de las alertas operativas al equipo admin. Los correos que necesita el propio usuario para completar una acción (verificar su correo, recuperar contraseña, estado de su solicitud) nunca se apagan con esto.',
+            },
+            {
+              key: 'solicitudNotifs',
+              label: 'Alertas de nuevas solicitudes',
+              hint: 'Avisa por correo al equipo admin cada vez que llega una solicitud nueva.',
+            },
+            {
+              key: 'loginNotifs',
+              label: 'Notificar nuevos inicios de sesión',
+              hint: 'Cada usuario recibe un correo de seguridad cuando su propia cuenta inicia sesión (con IP y navegador), como en Gmail o GitHub.',
+            },
+          ] as { key: keyof typeof notifs; label: string; hint: string }[]).map(({ key, label, hint }) => (
+            <div key={key} className="flex items-center justify-between gap-4 py-1">
+              <div>
+                <span className="text-sm text-text">{label}</span>
+                <p className="text-xs text-text-muted mt-0.5">{hint}</p>
+              </div>
               <Toggle checked={notifs[key]} onChange={() => setNotifs((n) => ({ ...n, [key]: !n[key] }))} label="" />
             </div>
           ))}
         </div>
+        <hr className="border-border" />
+        <Link
+          to="/admin/reportes"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-800 hover:text-primary-600 transition-colors no-underline"
+        >
+          Generar reporte de actividad (día, semana, mes o año)
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
       </SectionCard>
 
       {/* Roles & Permisos */}
