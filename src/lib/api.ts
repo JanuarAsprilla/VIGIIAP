@@ -60,14 +60,11 @@ api.interceptors.request.use(async (config) => {
 
 // ─── Renovación silenciosa de sesión ───────────────────────────────────────────
 // El token de acceso expira en minutos (JWT_EXPIRES_IN, 15m por defecto si no
-// está configurado en el backend). Sin esto, cualquier usuario que quede
-// inactivo más tiempo que eso — leyendo un documento largo, llenando un
-// formulario — recibía un 401 en su siguiente petición y se le cerraba la
-// sesión de golpe, aunque el backend ya expone POST /auth/refresh (cookie
-// HttpOnly propia) para renovar sin pedir credenciales de nuevo.
-// Antes de rendirse en un 401, se intenta refrescar una sola vez; las
-// peticiones que lleguen mientras el refresh está en vuelo esperan ese mismo
-// intento en lugar de disparar cada una su propio POST /auth/refresh.
+// está configurado en el backend), así que antes de rendirse en un 401 se
+// intenta refrescar una sola vez contra POST /auth/refresh (cookie HttpOnly
+// propia, sin pedir credenciales de nuevo). Las peticiones que lleguen
+// mientras el refresh está en vuelo esperan ese mismo intento en lugar de
+// disparar cada una su propio POST /auth/refresh.
 let refreshPromise: Promise<boolean> | null = null
 
 async function attemptRefresh(): Promise<boolean> {
@@ -104,12 +101,11 @@ api.interceptors.response.use(
       }
 
       // Todo lo demás — sin config, ya reintentado, es el propio refresh,
-      // o el refresh falló — es una sesión muerta de verdad. Antes esta
-      // rama solo se ejecutaba en el primer 401: si el reintento posterior
-      // al refresh volvía a dar 401 (refresh "exitoso" pero sesión igual
-      // inválida), el cliente se quedaba con isAuthenticated=true para
-      // siempre mientras el servidor seguía rechazando cada petición —
-      // estado inconsistente que nunca se autocorregía.
+      // o el refresh falló — es una sesión muerta de verdad. Cubre también
+      // el reintento posterior al refresh: si vuelve a dar 401 (refresh
+      // "exitoso" pero sesión igual inválida), esta rama también se ejecuta
+      // gracias a `_retried`, así que isAuthenticated nunca se queda
+      // inconsistente con lo que realmente acepta el servidor.
       clearLocalSession()
       window.dispatchEvent(new Event('vigiiap:logout'))
     }

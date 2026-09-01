@@ -326,10 +326,9 @@ function SidebarInner({ onClose, onLogout, user, isAuthenticated }: {
 }
 
 // ── Textura de vidrio — solo dot-grid grabado en la superficie ───────────────
-// El orbe propio del sidebar se retiró: era redundante con los orbes de
-// MainLayout (AmbientBackground, z-0), que ahora se filtran de verdad a
-// través del vidrio translúcido del sidebar — antes ninguno de los dos
-// sistemas se veía porque --nav-bg era 100% opaco.
+// Sin orbe propio: los orbes de MainLayout (AmbientBackground, z-0) ya se
+// filtran a través del vidrio translúcido del sidebar; uno propio aquí sería
+// redundante.
 function SidebarGrain() {
   return (
     <div
