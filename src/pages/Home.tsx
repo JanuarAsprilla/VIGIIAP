@@ -208,17 +208,22 @@ function HeroSection() {
 }
 
 // ── Sección 2: Data Platform ────────────────────────────────────────────────────
-const DATA_PILLARS = [
-  {
-    icon: Map, number: '+1,248', unit: 'mapas temáticos',
+// Los dos primeros pilares (mapas/documentos) usan conteos reales de usePlatformStats —
+// antes eran cifras fijas ('+1,248' / '+3,400') desincronizadas del catálogo real.
+const DYNAMIC_PILLAR_META: Record<'mapas' | 'documentos', { icon: typeof Map; unit: string; desc: string; accent: string; bg: string }> = {
+  mapas: {
+    icon: Map, unit: 'mapas temáticos',
     desc: 'Cartografía de biodiversidad, hidrología, suelos, cobertura vegetal y zonificación del territorio.',
     accent: '#1A5632', bg: 'rgba(26,86,50,0.06)',
   },
-  {
-    icon: FileText, number: '+3,400', unit: 'documentos técnicos',
+  documentos: {
+    icon: FileText, unit: 'documentos técnicos',
     desc: 'Informes científicos, protocolos ambientales, estudios de impacto y publicaciones institucionales del IIAP.',
     accent: '#C45A1A', bg: 'rgba(247,172,66,0.06)',
   },
+}
+
+const STATIC_PILLARS = [
   {
     icon: Globe, number: 'Capas SIG', unit: 'interactivas',
     desc: 'Geovisor con capas temáticas superpuestas para análisis espacial sin instalación de software.',
@@ -231,7 +236,16 @@ const DATA_PILLARS = [
   },
 ]
 
+function useDataPillars() {
+  const dynamic = usePlatformStats().map((s) => ({
+    ...DYNAMIC_PILLAR_META[s.key],
+    number: s.loading ? '···' : formatStat(s.value),
+  }))
+  return [...dynamic, ...STATIC_PILLARS]
+}
+
 function DataPlatformSection() {
+  const pillars = useDataPillars()
   return (
     <section className="py-20 px-6" style={{ background: 'var(--color-bg)' }}>
       <div className="max-w-6xl mx-auto">
@@ -251,7 +265,7 @@ function DataPlatformSection() {
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {DATA_PILLARS.map((item, i) => (
+          {pillars.map((item, i) => (
             <motion.div
               key={item.unit}
               whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 32 }}

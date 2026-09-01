@@ -380,7 +380,7 @@ function TwoFactor() {
 }
 
 // ── Sesiones activas section ──
-interface SessionItem { id: string; ip: string; userAgent: string; createdAt: string; current?: boolean }
+interface SessionItem { id: string; ip: string; userAgent: string; creadoEn: string; esSesionActual?: boolean }
 function SesionesActivas() {
   const qc = useQueryClient()
   const { data, isLoading, refetch } = useQuery<SessionItem[]>({
@@ -427,17 +427,17 @@ function SesionesActivas() {
       ) : (
         <div className="space-y-2">
           {sessions.map((s) => (
-            <div key={s.id} className={`flex items-center justify-between px-4 py-3 rounded-xl border ${s.current ? 'border-primary-500/30 bg-primary-500/8' : 'border-border bg-surface'}`}>
+            <div key={s.id} className={`flex items-center justify-between px-4 py-3 rounded-xl border ${s.esSesionActual ? 'border-primary-500/30 bg-primary-500/8' : 'border-border bg-surface'}`}>
               <div className="flex items-center gap-3">
                 <div className="text-text-muted">{deviceIcon(s.userAgent)}</div>
                 <div>
                   <p className="text-xs font-medium text-text truncate max-w-[180px]">
-                    {s.current ? 'Esta sesión' : (s.userAgent.split('(')[0].trim() || 'Dispositivo')}
+                    {s.esSesionActual ? 'Esta sesión' : (s.userAgent.split('(')[0].trim() || 'Dispositivo')}
                   </p>
-                  <p className="text-[10px] text-text-muted">{s.ip} · {new Date(s.createdAt).toLocaleDateString('es-CO')}</p>
+                  <p className="text-[10px] text-text-muted">{s.ip} · {new Date(s.creadoEn).toLocaleDateString('es-CO')}</p>
                 </div>
               </div>
-              {!s.current && (
+              {!s.esSesionActual && (
                 <button onClick={() => revoke.mutate(s.id)} disabled={revoke.isPending}
                   className="p-1.5 text-text-muted hover:text-red-dark hover:bg-red/10 rounded-lg transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />
