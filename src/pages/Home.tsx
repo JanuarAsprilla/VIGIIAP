@@ -208,8 +208,7 @@ function HeroSection() {
 }
 
 // ── Sección 2: Data Platform ────────────────────────────────────────────────────
-// Los dos primeros pilares (mapas/documentos) usan conteos reales de usePlatformStats —
-// antes eran cifras fijas ('+1,248' / '+3,400') desincronizadas del catálogo real.
+// Los dos primeros pilares (mapas/documentos) usan conteos reales de usePlatformStats.
 const DYNAMIC_PILLAR_META: Record<'mapas' | 'documentos', { icon: typeof Map; unit: string; desc: string; accent: string; bg: string }> = {
   mapas: {
     icon: Map, unit: 'mapas temáticos',

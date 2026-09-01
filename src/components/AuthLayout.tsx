@@ -99,10 +99,9 @@ function GlobeDecor() {
   )
 }
 
-// Conteos reales — antes eran fijos y falsos (1,248 / 3,400 / 320 "investigadores").
-// No hay endpoint público de conteo de investigadores (listar usuarios es
-// admin-only, correctamente) — se omite en vez de simularlo, igual que en el
-// hero de Home (ver usePlatformStats).
+// Sin conteo de investigadores: listar usuarios es admin-only, correctamente,
+// así que no hay endpoint público del que sacarlo (igual que en el hero de
+// Home — ver usePlatformStats).
 const PANEL_STAT_META: Record<string, { icon: LucideIcon; label: string }> = {
   mapas:      { icon: Map,      label: 'Mapas temáticos' },
   documentos: { icon: FileText, label: 'Documentos técnicos' },

@@ -1,8 +1,6 @@
 /**
- * usePlatformStats tenía 0% de cobertura — encontrado en la auditoría post-QA
- * que motivó los fixes de ResumenActividad/Perfil/Home (PR #78). El hook
- * alimenta las cifras reales de mapas/documentos en Home y AuthLayout, que
- * antes eran valores hardcodeados desincronizados del catálogo real.
+ * Tests de usePlatformStats — alimenta las cifras reales de mapas/documentos
+ * en Home y AuthLayout.
  */
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'

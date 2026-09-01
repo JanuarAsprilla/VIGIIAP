@@ -160,13 +160,10 @@ describe('RequireInvestigador — gates /geovisor y /herramientas', () => {
     expect(screen.getByText('Contenido protegido')).toBeInTheDocument()
   })
 
-  // El docstring del componente y el comentario en App.tsx dicen ambos
-  // "Requiere Investigador o Admin (bloquea Público y Visitante)" — pero el
+  // El docstring del componente dice "Requiere Investigador o Admin" pero el
   // código solo bloquea publico/visitante, así que tecnico/institucional
-  // también pasan hoy. Este test documenta el comportamiento REAL (no lo
-  // que dice el comentario) para que un cambio futuro sea intencional, no
-  // accidental. Ver nota en el PR: es una decisión de producto pendiente,
-  // no algo que este PR deba decidir unilateralmente.
+  // también pasan hoy. Este test documenta el comportamiento real para que
+  // un cambio futuro sea intencional, no accidental.
   test.each(['tecnico', 'institucional'] as const)(
     'el código actual también deja pasar a %s, aunque el comentario del guard dice "Investigador o Admin"',
     (rol) => {
