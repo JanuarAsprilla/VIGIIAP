@@ -97,7 +97,7 @@ describe('useMapasList', () => {
   }
 
   test('fetches and normalizes maps list', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [rawMap], total: 1 })
+    vi.mocked(api.get).mockResolvedValue({ data: [rawMap], meta: { total: 1 } })
 
     const { result } = renderHook(() => useMapasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -109,7 +109,7 @@ describe('useMapasList', () => {
   })
 
   test('derived formats includes PDF when archivo_pdf_url is present', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [rawMap], total: 1 })
+    vi.mocked(api.get).mockResolvedValue({ data: [rawMap], meta: { total: 1 } })
 
     const { result } = renderHook(() => useMapasList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -132,7 +132,7 @@ describe('useDocumentosList', () => {
   }
 
   test('fetches and normalizes documents list', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [rawDoc], total: 1 })
+    vi.mocked(api.get).mockResolvedValue({ data: [rawDoc], meta: { total: 1 } })
 
     const { result } = renderHook(() => useDocumentosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -149,7 +149,7 @@ describe('useSolicitudesAdmin', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('fetches admin solicitudes list', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [], total: 0 })
+    vi.mocked(api.get).mockResolvedValue({ data: [], meta: { total: 0 } })
 
     const { result } = renderHook(() => useSolicitudesAdmin(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -169,7 +169,7 @@ describe('useMisSolicitudes', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('fetches current user solicitudes', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [], total: 0 })
+    vi.mocked(api.get).mockResolvedValue({ data: [], meta: { total: 0 } })
 
     const { result } = renderHook(() => useMisSolicitudes(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -189,7 +189,7 @@ describe('useUsuariosList', () => {
   }
 
   test('fetches users from /admin/usuarios', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [rawUser], total: 1 })
+    vi.mocked(api.get).mockResolvedValue({ data: [rawUser], meta: { total: 1 } })
 
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -198,7 +198,7 @@ describe('useUsuariosList', () => {
   })
 
   test('normalizes user rol to display label', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [rawUser], total: 1 })
+    vi.mocked(api.get).mockResolvedValue({ data: [rawUser], meta: { total: 1 } })
 
     const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
@@ -258,7 +258,7 @@ describe('useCatalogue', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('returns an array of catalogue entries', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [], total: 0 })
+    vi.mocked(api.get).mockResolvedValue({ data: [], meta: { total: 0 } })
 
     const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
     await waitFor(() => expect(Array.isArray(result.current)).toBe(true))
@@ -267,7 +267,7 @@ describe('useCatalogue', () => {
   })
 
   test('each entry has required shape', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [], total: 0 })
+    vi.mocked(api.get).mockResolvedValue({ data: [], meta: { total: 0 } })
 
     const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
     await waitFor(() => expect(Array.isArray(result.current)).toBe(true))
@@ -281,7 +281,7 @@ describe('useCatalogue', () => {
   })
 
   test('includes static Módulos entries regardless of API', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [], total: 0 })
+    vi.mocked(api.get).mockResolvedValue({ data: [], meta: { total: 0 } })
 
     const { result } = renderHook(() => useCatalogue(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.length).toBeGreaterThan(0))

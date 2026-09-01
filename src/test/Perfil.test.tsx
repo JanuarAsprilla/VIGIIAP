@@ -306,8 +306,8 @@ describe('Perfil — sesiones activas', () => {
     vi.mocked(api.get).mockImplementation((url: string) =>
       url === '/auth/sessions'
         ? Promise.resolve([
-            { id: 's1', ip: '10.0.0.1', userAgent: 'Mozilla/5.0 (iPhone)', createdAt: '2026-01-01T00:00:00Z', current: true },
-            { id: 's2', ip: '10.0.0.2', userAgent: 'Mozilla/5.0 (Windows)', createdAt: '2026-01-02T00:00:00Z', current: false },
+            { id: 's1', ip: '10.0.0.1', userAgent: 'Mozilla/5.0 (iPhone)', creadoEn: '2026-01-01T00:00:00Z', esSesionActual: true },
+            { id: 's2', ip: '10.0.0.2', userAgent: 'Mozilla/5.0 (Windows)', creadoEn: '2026-01-02T00:00:00Z', esSesionActual: false },
           ])
         : Promise.resolve({}))
     vi.mocked(api.delete).mockResolvedValue({})
@@ -326,8 +326,8 @@ describe('Perfil — sesiones activas', () => {
     vi.mocked(api.get).mockImplementation((url: string) =>
       url === '/auth/sessions'
         ? Promise.resolve([
-            { id: 's1', ip: '10.0.0.1', userAgent: 'Mozilla/5.0', createdAt: '2026-01-01T00:00:00Z', current: true },
-            { id: 's2', ip: '10.0.0.2', userAgent: 'Mozilla/5.0', createdAt: '2026-01-02T00:00:00Z', current: false },
+            { id: 's1', ip: '10.0.0.1', userAgent: 'Mozilla/5.0', creadoEn: '2026-01-01T00:00:00Z', esSesionActual: true },
+            { id: 's2', ip: '10.0.0.2', userAgent: 'Mozilla/5.0', creadoEn: '2026-01-02T00:00:00Z', esSesionActual: false },
           ])
         : Promise.resolve({}))
     vi.mocked(api.delete).mockResolvedValue({})
