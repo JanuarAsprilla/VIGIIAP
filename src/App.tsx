@@ -49,6 +49,7 @@ const AdminDocumentos  = lazy(() => import('./pages/admin/GestionDocumentos'))
 const AdminMapas       = lazy(() => import('./pages/admin/GestionMapas'))
 const AdminConfig      = lazy(() => import('./pages/admin/Configuracion'))
 const AdminActividad   = lazy(() => import('./pages/admin/Actividad'))
+const AdminErrores     = lazy(() => import('./pages/admin/Errores'))
 const AdminCategorias  = lazy(() => import('./pages/admin/GestionCategorias'))
 const AdminReportes    = lazy(() => import('./pages/admin/Reportes'))
 const AdminGestionAdmins = lazy(() => import('./pages/admin/GestionAdmins'))
@@ -176,6 +177,7 @@ function AppRoutes() {
               <Route path="/admin/mapas"         element={<Suspense fallback={<GenericPageSkeleton />}><AdminMapas /></Suspense>} />
               <Route path="/admin/configuracion" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConfig /></Suspense>} />
               <Route path="/admin/actividad"     element={<Suspense fallback={<GenericPageSkeleton />}><AdminActividad /></Suspense>} />
+              <Route path="/admin/errores"       element={<Suspense fallback={<GenericPageSkeleton />}><AdminErrores /></Suspense>} />
               <Route path="/admin/categorias"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminCategorias /></Suspense>} />
               <Route path="/admin/reportes"      element={<Suspense fallback={<GenericPageSkeleton />}><AdminReportes /></Suspense>} />
 
