@@ -109,6 +109,24 @@ jobs:
             export VITE_API_URL="https://vigiiap-backend.onrender.com/api/v1"
           fi
           npm run build
+      # En push, auth.spec.ts y authenticated.spec.ts dependen del backend real
+      # de Render (free tier, se duerme sin tráfico). Sin esto, la primera
+      # request de la suite paga el cold-start completo y puede superar el
+      # timeout de la aserción en vez del de la request.
+      - name: Despertar backend (solo push)
+        if: github.event_name == 'push'
+        run: |
+          ping_once() {
+            curl -s -o /dev/null -w "%{http_code}" --max-time 55 \
+              https://vigiiap-backend.onrender.com/health
+          }
+          STATUS=$(ping_once) || STATUS="000"
+          if [ "$STATUS" != "200" ] && [ "$STATUS" != "503" ]; then
+            echo "Primer intento: HTTP $STATUS — reintentando en 10s..."
+            sleep 10
+            STATUS=$(ping_once) || STATUS="000"
+          fi
+          echo "Backend respondió HTTP $STATUS antes de arrancar Playwright"
       - name: Servir build y ejecutar tests E2E
         run: npx playwright test e2e/public.spec.ts e2e/auth.spec.ts e2e/authenticated.spec.ts
         env:

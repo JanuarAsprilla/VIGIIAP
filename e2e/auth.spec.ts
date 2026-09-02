@@ -17,9 +17,10 @@ test.describe('Página de Login', () => {
     await page.fill('input[type="email"], input[name="email"]', 'noexiste@test.com');
     await page.fill('input[type="password"], input[name="password"]', 'ClaveInvalida1!');
     await page.click('button[type="submit"]');
-    // Espera mensaje de error
+    // Espera mensaje de error — timeout generoso porque en push el login pega
+    // contra el backend real de Render (client timeout: 15s, ver api.ts).
     const error = page.locator('[role="alert"], .error, [class*="error"], [class*="alert"]').first();
-    await expect(error).toBeVisible({ timeout: 5000 });
+    await expect(error).toBeVisible({ timeout: 20_000 });
   });
 
   test('validación de email requerido antes de enviar', async ({ page }) => {
@@ -39,25 +40,31 @@ test.describe('Página de Login', () => {
 
 // ─── Protección de rutas ──────────────────────────────────────────────────────
 
+// RequireAuth (src/components/RequireAuth.tsx) espera a que AuthContext
+// resuelva GET /auth/me antes de decidir si redirige — en push eso pega
+// contra el backend real de Render (client timeout: 15s, ver api.ts), así
+// que estas aserciones necesitan más margen que el default de Playwright.
+const REDIRECT_TIMEOUT = 20_000;
+
 test.describe('Redirección de rutas protegidas', () => {
   test('/perfil redirige a login sin autenticación', async ({ page }) => {
     await page.goto('/perfil');
-    await expect(page).toHaveURL(/login/);
+    await expect(page).toHaveURL(/login/, { timeout: REDIRECT_TIMEOUT });
   });
 
   test('/admin redirige a login sin autenticación', async ({ page }) => {
     await page.goto('/admin');
-    await expect(page).toHaveURL(/login/);
+    await expect(page).toHaveURL(/login/, { timeout: REDIRECT_TIMEOUT });
   });
 
   test('/mapas redirige a login sin autenticación', async ({ page }) => {
     await page.goto('/mapas');
-    await expect(page).toHaveURL(/login/);
+    await expect(page).toHaveURL(/login/, { timeout: REDIRECT_TIMEOUT });
   });
 
   test('/solicitudes redirige a login sin autenticación', async ({ page }) => {
     await page.goto('/solicitudes');
-    await expect(page).toHaveURL(/login/);
+    await expect(page).toHaveURL(/login/, { timeout: REDIRECT_TIMEOUT });
   });
 });
 
