@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Users, ClipboardList,
   FileText, Map, Settings, Activity, X,
-  LogOut, Globe, Shield, Tag, ShieldCheck, Trash2, FileBarChart,
+  LogOut, Globe, Shield, Tag, ShieldCheck, Trash2, FileBarChart, AlertTriangle,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/lib/constants/roles'
@@ -33,6 +33,7 @@ const NAV_SECTIONS = [
     links: [
       { label: 'Configuración', path: '/admin/configuracion', icon: Settings },
       { label: 'Actividad',     path: '/admin/actividad',     icon: Activity },
+      { label: 'Errores',       path: '/admin/errores',       icon: AlertTriangle },
       { label: 'Reportes',      path: '/admin/reportes',      icon: FileBarChart },
     ],
   },
