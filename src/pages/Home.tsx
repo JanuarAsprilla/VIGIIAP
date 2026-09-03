@@ -15,6 +15,7 @@ import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { usePlatformStats } from '@/hooks/usePlatformStats'
 import InstitutionalRevealSection from '@/components/InstitutionalRevealSection'
+import HeroBackdrop from '@/components/HeroBackdrop'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -124,39 +125,9 @@ function HeroSection() {
       ref={sectionRef}
       className="relative min-h-[80vh] lg:min-h-[78vh] flex flex-col items-center justify-center overflow-hidden py-16"
     >
-      {/* ── Fondo atmosférico CSS — dual-tema vía var(--hero-*) ── */}
-      {/* Grid perspectiva suelo */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ perspective: '500px' }}>
-        <div className="absolute bottom-0 left-0 right-0 h-[40%]" style={{
-          transform: 'rotateX(60deg)',
-          transformOrigin: 'bottom center',
-          backgroundImage: 'linear-gradient(var(--hero-dot-color) 1px,transparent 1px),linear-gradient(90deg,var(--hero-dot-color) 1px,transparent 1px)',
-          backgroundSize: '60px 60px',
-          maskImage: 'linear-gradient(to top,rgba(0,0,0,0.4) 0%,transparent 100%)',
-        }} />
-      </div>
-
-      {/* HUD corners */}
-      {(['top-5 left-5 border-t border-l','top-5 right-5 border-t border-r',
-         'bottom-5 left-5 border-b border-l','bottom-5 right-5 border-b border-r'] as const).map((cls) => (
-        <div key={cls} className={`absolute w-8 h-8 border-primary-700/30 pointer-events-none ${cls}`} />
-      ))}
-
-      {/* Scanline */}
-      <motion.div className="absolute inset-x-0 h-px pointer-events-none"
-        style={{ background: 'var(--hero-top-line)' }}
-        animate={{ top: ['0%', '100%'] }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'linear' }} />
-
-      {/* Orbs ambientales */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle,var(--hero-orb-1) 0%,transparent 70%)', filter: 'blur(40px)' }} />
-      <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle,var(--hero-orb-2) 0%,transparent 70%)', filter: 'blur(50px)' }} />
-
-      {/* Dot grid */}
-      <div className="absolute inset-0 opacity-[0.5] pointer-events-none"
-        style={{ backgroundImage: 'radial-gradient(circle,var(--hero-dot-color) 1px,transparent 1px)', backgroundSize: '32px 32px' }} />
+      {/* Fondo propio eliminado — comparte HeroBackdrop con InstitutionalRevealSection
+          (ver el wrapper en Home()), así la escena de fondo no cambia entre las dos
+          primeras secciones: solo el texto se mueve. */}
 
       {/* Overlay gradient bottom — funde con la sección siguiente (siempre var(--color-bg)) */}
       <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none"
@@ -618,11 +589,14 @@ export default function Home() {
         <SearchResults isVisitante={isVisitante} isPublico={isPublico} />
       ) : (
         <>
-          {/* Un solo fondo (var(--hero-grad)) detrás de ambas secciones — repintado
-              por separado en cada una creaba una costura visible en el degradado
-              135deg justo en el borde entre secciones. Una sola capa detrás de las
-              dos hace que el scroll se sienta continuo en vez de dos bloques. */}
-          <div style={{ background: 'var(--hero-grad)' }}>
+          {/* Un solo fondo (degradado + HeroBackdrop) detrás de ambas secciones —
+              repintar el degradado por separado en cada una creaba una costura
+              visible en el borde entre secciones, y cada una tenía su propia
+              versión de los orbes/patrón, así que la escena "cambiaba" al pasar
+              de una a otra. Una sola capa fija detrás de las dos hace que el
+              scroll se sienta continuo — solo el texto se mueve, no el fondo. */}
+          <div className="relative" style={{ background: 'var(--hero-grad)' }}>
+            <HeroBackdrop />
             {/* Antes de la sigla, qué significa VIGIA-IIAP */}
             <InstitutionalRevealSection />
             <HeroSection />
