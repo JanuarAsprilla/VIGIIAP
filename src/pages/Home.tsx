@@ -1,6 +1,8 @@
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense, type RefObject } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import {
   Map, FileText, Globe, Shield, Lock,
   ArrowRight, ChevronDown, Users, Building2, ArrowUp,
@@ -13,6 +15,8 @@ import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { usePlatformStats } from '@/hooks/usePlatformStats'
 import InstitutionalRevealSection from '@/components/InstitutionalRevealSection'
+
+gsap.registerPlugin(ScrollTrigger)
 
 const PlatformIntroSection = lazy(() => import('@/components/PlatformIntroSection'))
 
@@ -74,12 +78,51 @@ function formatStat(n: number | undefined) {
   return typeof n === 'number' ? `+${n.toLocaleString('es-CO')}` : '—'
 }
 
+// Continúa, en la sección 2, el mismo lenguaje de scroll-parallax que
+// InstitutionalRevealSection ya usa en la sección 1 (capas a distinta
+// velocidad vía GSAP ScrollTrigger) — el título se desplaza mientras el
+// usuario entra a la sección, en vez de aparecer ya asentado. Mismo gating
+// que la sección 1: solo desktop, solo sin prefers-reduced-motion.
+function useHeroTitleParallax(sectionRef: RefObject<HTMLElement | null>, titleRef: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const section = sectionRef.current
+    const title = titleRef.current
+    if (!section || !title) return
+
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia()
+      mm.add(
+        { isDesktop: '(min-width: 1024px) and (prefers-reduced-motion: no-preference)' },
+        () => {
+          const tween = gsap.fromTo(
+            title,
+            { yPercent: 16 },
+            {
+              yPercent: 0,
+              ease: 'none',
+              scrollTrigger: { trigger: section, start: 'top bottom', end: 'top 25%', scrub: 0 },
+            },
+          )
+          return () => tween.scrollTrigger?.kill()
+        },
+      )
+      return () => mm.revert()
+    }, section)
+
+    return () => ctx.revert()
+  }, [sectionRef, titleRef])
+}
+
 function HeroSection() {
   const heroStats = useHeroStats()
+  const sectionRef = useRef<HTMLElement>(null)
+  const titleWrapRef = useRef<HTMLDivElement>(null)
+  useHeroTitleParallax(sectionRef, titleWrapRef)
+
   return (
     <section
+      ref={sectionRef}
       className="relative min-h-[80vh] lg:min-h-[78vh] flex flex-col items-center justify-center overflow-hidden py-16"
-      style={{ background: 'var(--hero-grad)' }}
     >
       {/* ── Fondo atmosférico CSS — dual-tema vía var(--hero-*) ── */}
       {/* Grid perspectiva suelo */}
@@ -122,7 +165,7 @@ function HeroSection() {
       {/* Content */}
       <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: -16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.6, ease: EASE }}
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-5 text-xs font-bold uppercase tracking-[0.25em]"
           style={{ background: 'var(--hero-eyebrow-bg)', border: '1px solid var(--hero-eyebrow-border)', color: 'var(--hero-eyebrow-text)' }}
@@ -131,19 +174,24 @@ function HeroSection() {
           IIAP · Información Ambiental
         </motion.div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
-          className="font-display font-bold mb-4 leading-[1.08]"
-          style={{ fontSize: 'clamp(1.8rem, 3.2vw, 3rem)', color: 'var(--hero-title-color)' }}
-        >
-          El conocimiento ambiental
-          <span className="block" style={{ color: 'var(--hero-title-accent)' }}>del Chocó Biogeográfico,</span>
-          custodiado y disponible.
-        </motion.h1>
+        {/* Wrapper propio para el parallax de scroll (GSAP, ver useHeroTitleParallax) —
+            separado del fade-up de framer-motion en el h1 para que ambos sistemas no
+            se disputen el mismo transform en el mismo nodo. */}
+        <div ref={titleWrapRef}>
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }}
+            transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
+            className="font-display font-bold mb-4 leading-[1.08]"
+            style={{ fontSize: 'clamp(1.8rem, 3.2vw, 3rem)', color: 'var(--hero-title-color)' }}
+          >
+            El conocimiento ambiental
+            <span className="block" style={{ color: 'var(--hero-title-accent)' }}>del Chocó Biogeográfico,</span>
+            custodiado y disponible.
+          </motion.h1>
+        </div>
 
         <motion.p
-          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-sm max-w-xl mx-auto mb-7 leading-relaxed"
           style={{ color: 'var(--hero-sub-color)' }}
@@ -153,7 +201,7 @@ function HeroSection() {
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.5, delay: 0.3 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-3"
         >
@@ -176,8 +224,8 @@ function HeroSection() {
 
         {heroStats.length > 0 && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
+            initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, margin: '-100px' }}
+            transition={{ delay: 0.4, duration: 0.6 }}
             className="glass-panel mt-8 inline-flex items-center gap-6 px-6 py-3 rounded-2xl"
             style={{ background: 'var(--stats-bg)', borderColor: 'var(--stats-border)' }}
           >
@@ -570,9 +618,15 @@ export default function Home() {
         <SearchResults isVisitante={isVisitante} isPublico={isPublico} />
       ) : (
         <>
-          {/* Antes de la sigla, qué significa VIGIA-IIAP */}
-          <InstitutionalRevealSection />
-          <HeroSection />
+          {/* Un solo fondo (var(--hero-grad)) detrás de ambas secciones — repintado
+              por separado en cada una creaba una costura visible en el degradado
+              135deg justo en el borde entre secciones. Una sola capa detrás de las
+              dos hace que el scroll se sienta continuo en vez de dos bloques. */}
+          <div style={{ background: 'var(--hero-grad)' }}>
+            {/* Antes de la sigla, qué significa VIGIA-IIAP */}
+            <InstitutionalRevealSection />
+            <HeroSection />
+          </div>
           {/* PlatformIntroSection: scrollytelling del territorio Chocó */}
           <Suspense fallback={null}><PlatformIntroSection /></Suspense>
           <DataPlatformSection />

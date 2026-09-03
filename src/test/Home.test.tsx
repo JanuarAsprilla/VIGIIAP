@@ -20,6 +20,19 @@ vi.mock('framer-motion', () => {
 
 vi.mock('@/components/PlatformIntroSection', () => ({ default: () => null }))
 vi.mock('@/components/InstitutionalRevealSection', () => ({ default: () => null }))
+
+// jsdom no implementa matchMedia — gsap.registerPlugin(ScrollTrigger) lo llama
+// al importar el módulo. El comportamiento real del scroll-parallax es
+// territorio de regresión visual/E2E (ver web/testing.md), no de este test.
+vi.mock('gsap', () => ({
+  gsap: {
+    registerPlugin: vi.fn(),
+    context: vi.fn((fn: () => void) => { fn(); return { revert: vi.fn() } }),
+    fromTo: vi.fn(() => ({ scrollTrigger: { kill: vi.fn() } })),
+    matchMedia: vi.fn(() => ({ add: vi.fn(), revert: vi.fn() })),
+  },
+}))
+vi.mock('gsap/ScrollTrigger', () => ({ ScrollTrigger: {} }))
 vi.mock('@/hooks/usePlatformStats', () => ({ usePlatformStats: () => [] }))
 vi.mock('@/contexts/ThemeContext', () => ({ useTheme: () => ({ isDark: false, theme: 'light', toggleTheme: vi.fn() }) }))
 
