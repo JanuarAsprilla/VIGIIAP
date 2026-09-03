@@ -59,7 +59,7 @@ export default function InstitutionalRevealSection() {
   }, [])
 
   return (
-    <div ref={rootRef} className="relative" style={{ background: 'var(--hero-grad)' }}>
+    <div ref={rootRef} className="relative">
       <div
         data-parallax-layers
         className="relative h-auto lg:h-[95vh] overflow-hidden"
