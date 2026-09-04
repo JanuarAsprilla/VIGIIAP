@@ -491,7 +491,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Header */}
       <motion.div {...fadeUp(0)}>
-        <span className="text-[0.7rem] font-bold uppercase tracking-widest text-primary-700">
+        <span className="text-[0.7rem] font-bold uppercase tracking-widest" style={{ color: 'var(--hero-eyebrow-text)' }}>
           Panel de Control
         </span>
         <h1 className="font-display text-3xl font-bold text-text mt-1">

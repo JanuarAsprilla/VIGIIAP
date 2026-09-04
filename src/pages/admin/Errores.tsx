@@ -25,7 +25,7 @@ export default function Errores() {
     <div className="space-y-6">
       {/* Header */}
       <motion.div {...fadeUp(0)}>
-        <span className="text-[0.7rem] font-bold uppercase tracking-widest text-primary-700">Administración</span>
+        <span className="text-[0.7rem] font-bold uppercase tracking-widest" style={{ color: 'var(--hero-eyebrow-text)' }}>Administración</span>
         <h1 className="font-display text-2xl font-bold text-text mt-0.5">Registro de Errores</h1>
         <p className="text-sm text-text-muted mt-1">
           {isLoading ? '...' : total === 0

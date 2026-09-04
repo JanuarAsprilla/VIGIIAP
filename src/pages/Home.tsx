@@ -55,7 +55,7 @@ function ModuleCard({ mod, index, isVisitante, isPublico }: { mod: ModuleItem; i
         <h3 className="text-[0.95rem] font-bold text-text mb-2 leading-snug">{mod.title}</h3>
         <p className="text-sm text-text-muted leading-relaxed mb-5 flex-1">{mod.description}</p>
         {blocked ? (
-          <Link to="/solicitar-acceso" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-700 no-underline hover:text-primary-900 transition-colors">
+          <Link to="/solicitar-acceso" className="inline-flex items-center gap-1.5 text-xs font-semibold no-underline transition-colors" style={{ color: 'var(--hero-eyebrow-text)' }}>
             <Lock className="w-3 h-3" />Solicitar acceso
           </Link>
         ) : (
@@ -272,7 +272,7 @@ function DataPlatformSection() {
           viewport={{ once: true }} transition={{ duration: 0.5 }}
           className="mb-16 text-center"
         >
-          <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] text-primary-700 block mb-3">
+          <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] block mb-3" style={{ color: 'var(--hero-eyebrow-text)' }}>
             Repositorio digital
           </span>
           <h2 className="font-display text-4xl font-bold text-text">Lo que VIGIA-IIAP custodia</h2>
@@ -358,7 +358,7 @@ function ModuleShowcaseSection() {
   return (
     <section style={{ background: 'var(--color-bg)' }}>
       <div className="max-w-6xl mx-auto px-6 pt-16 pb-10 text-center">
-        <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] text-primary-700 block mb-3">
+        <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] block mb-3" style={{ color: 'var(--hero-eyebrow-text)' }}>
           Módulos de la plataforma
         </span>
         <h2 className="font-display text-4xl font-bold text-text">Cinco herramientas. Un territorio.</h2>
@@ -385,7 +385,7 @@ function ModuleShowcaseSection() {
               </div>
 
               <div className="flex-1">
-                <span className="text-[0.65rem] font-bold uppercase tracking-[0.25em] block mb-3 text-primary-700">
+                <span className="text-[0.65rem] font-bold uppercase tracking-[0.25em] block mb-3" style={{ color: 'var(--hero-eyebrow-text)' }}>
                   {mod.tag}
                 </span>
                 <h3 className="font-display text-3xl font-bold mb-4 leading-tight text-text">
@@ -438,7 +438,7 @@ function ForWhomSection() {
           whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 20 }} viewport={{ once: true }}
           transition={{ duration: 0.5 }} className="text-center mb-16"
         >
-          <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] block mb-3 text-primary-700">
+          <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] block mb-3" style={{ color: 'var(--hero-eyebrow-text)' }}>
             Para todos
           </span>
           <h2 className="font-display text-4xl font-bold text-text">¿Quién usa VIGIA-IIAP?</h2>
@@ -495,7 +495,7 @@ function InstitutionalCTASection({ onVisitante }: { onVisitante: () => void }) {
             <Link
               to="/solicitar-acceso"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm no-underline transition-all hover:scale-[1.03]"
-              style={{ background: '#009846', color: '#fff' }}
+              style={{ background: '#1A5632', color: '#fff' }}
             >
               Crear cuenta gratuita <ArrowRight className="w-4 h-4" />
             </Link>
