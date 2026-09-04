@@ -595,7 +595,7 @@ export default function Home() {
               versión de los orbes/patrón, así que la escena "cambiaba" al pasar
               de una a otra. Una sola capa fija detrás de las dos hace que el
               scroll se sienta continuo — solo el texto se mueve, no el fondo. */}
-          <div className="relative" style={{ background: 'var(--hero-grad)' }}>
+          <div className="relative overflow-x-hidden" style={{ background: 'var(--hero-grad)' }}>
             <HeroBackdrop />
             {/* Antes de la sigla, qué significa VIGIA-IIAP */}
             <InstitutionalRevealSection />
