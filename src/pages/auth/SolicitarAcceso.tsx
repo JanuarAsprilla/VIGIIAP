@@ -77,7 +77,7 @@ function PasswordStrengthMeter({ value }: { value: string }) {
     met === 2 ? { text: 'Débil',     color: 'text-amber-500' } :
     met === 3 ? { text: 'Moderada',  color: 'text-amber-600' } :
     met === 4 ? { text: 'Fuerte',    color: 'text-green-500' } :
-               { text: 'Muy fuerte', color: 'text-green-700' }
+               { text: 'Muy fuerte', color: 'text-primary-500' }
 
   return (
     <motion.div
@@ -107,7 +107,7 @@ function PasswordStrengthMeter({ value }: { value: string }) {
           const ok = criteria[key]
           return (
             <li key={key} className={`flex items-center gap-1.5 text-[0.68rem] transition-colors ${
-              ok ? 'text-green-600' : 'text-text-muted'
+              ok ? 'text-primary-500' : 'text-text-muted'
             }`}>
               {ok
                 ? <CheckCircle2 className="w-3 h-3 shrink-0 text-green-500" />
@@ -123,7 +123,7 @@ function PasswordStrengthMeter({ value }: { value: string }) {
 }
 
 const inputCls = (err: string | undefined) =>
-  `w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm text-text placeholder:text-text-muted bg-white focus:outline-none focus:ring-2 transition ${
+  `w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm text-text placeholder:text-text-muted bg-[var(--card-bg)] focus:outline-none focus:ring-2 transition ${
     err ? 'border-red-400 focus:border-red-400 focus:ring-red-400/10'
         : 'border-border focus:border-primary-800 focus:ring-primary-800/10'
   }`
@@ -205,7 +205,7 @@ export default function SolicitarAcceso() {
             <motion.div
               initial={{ scale: 0 }} animate={{ scale: 1 }}
               transition={{ delay: 0.1, type: 'spring', stiffness: 260, damping: 20 }}
-              className="w-20 h-20 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5 border-4 border-primary-100"
+              className="w-20 h-20 bg-primary-800/10 rounded-full flex items-center justify-center mx-auto mb-5 border-4 border-primary-800/15"
             >
               <Send className="w-9 h-9 text-primary-700" />
             </motion.div>
@@ -221,15 +221,15 @@ export default function SolicitarAcceso() {
 
             <div className="space-y-2 text-sm text-text-muted leading-relaxed mb-5 text-left">
               <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-primary-100 text-primary-800 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                <span className="w-5 h-5 rounded-full bg-primary-800/15 text-primary-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
                 <p>Revisa tu bandeja de entrada (y la carpeta de spam).</p>
               </div>
               <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-primary-100 text-primary-800 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                <span className="w-5 h-5 rounded-full bg-primary-800/15 text-primary-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
                 <p>Haz clic en el botón <strong className="text-text">"Verificar mi correo"</strong> del mensaje que te enviamos.</p>
               </div>
               <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-primary-100 text-primary-800 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+                <span className="w-5 h-5 rounded-full bg-primary-800/15 text-primary-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
                 <p>Una vez verificado, un administrador revisará y activará tu acceso.</p>
               </div>
             </div>
@@ -265,7 +265,7 @@ export default function SolicitarAcceso() {
               {serverError && (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-4 text-sm"
+                  className="flex items-start gap-2.5 bg-red/10 border border-red/20 text-red-dark rounded-xl px-4 py-3 mb-4 text-sm"
                 >
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{serverError}</span>
