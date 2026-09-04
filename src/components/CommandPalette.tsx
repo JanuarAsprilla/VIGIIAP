@@ -204,7 +204,7 @@ export default function CommandPalette() {
         <motion.div
           {...PANEL_ANIM}
           ref={panelRef}
-          className="w-full max-w-xl bg-white border border-border rounded-2xl shadow-float overflow-hidden flex flex-col"
+          className="w-full max-w-xl bg-[var(--card-bg)] border border-border rounded-2xl shadow-float overflow-hidden flex flex-col"
           style={{ maxHeight: '70vh' }}
         >
           {/* Search input */}
@@ -291,15 +291,15 @@ export default function CommandPalette() {
           {/* Footer hints */}
           <div className="flex items-center gap-4 px-4 py-2.5 border-t border-border bg-bg-alt shrink-0">
             <span className="flex items-center gap-1.5 text-[0.65rem] text-text-muted">
-              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-white border border-border rounded text-[0.6rem] font-mono">↑↓</kbd>
+              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-[var(--card-bg)] border border-border rounded text-[0.6rem] font-mono">↑↓</kbd>
               Navegar
             </span>
             <span className="flex items-center gap-1.5 text-[0.65rem] text-text-muted">
-              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-white border border-border rounded text-[0.6rem] font-mono">↵</kbd>
+              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-[var(--card-bg)] border border-border rounded text-[0.6rem] font-mono">↵</kbd>
               Abrir
             </span>
             <span className="flex items-center gap-1.5 text-[0.65rem] text-text-muted">
-              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-white border border-border rounded text-[0.6rem] font-mono">ESC</kbd>
+              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-[var(--card-bg)] border border-border rounded text-[0.6rem] font-mono">ESC</kbd>
               Cerrar
             </span>
             <span className="ml-auto flex items-center gap-1 text-[0.65rem] text-text-muted">

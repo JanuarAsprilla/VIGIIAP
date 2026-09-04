@@ -61,7 +61,7 @@ export default function ConversorCoordenadas() {
             key={m.id}
             onClick={() => switchModo(m.id)}
             className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-              modo === m.id ? 'bg-white text-primary-800 shadow-sm' : 'text-text-muted hover:text-text'
+              modo === m.id ? 'bg-[var(--card-bg)] text-primary-800 shadow-sm' : 'text-text-muted hover:text-text'
             }`}
           >
             {m.label}
@@ -85,7 +85,7 @@ export default function ConversorCoordenadas() {
                   value={val}
                   onChange={(e) => { set(e.target.value); setResult(null) }}
                   placeholder={ph}
-                  className="w-full px-3 py-2 bg-white border border-border rounded-lg text-sm font-mono focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                  className="w-full px-3 py-2 bg-[var(--card-bg)] border border-border rounded-lg text-sm font-mono focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
                 />
               </div>
             ))}
@@ -104,7 +104,7 @@ export default function ConversorCoordenadas() {
                   value={val}
                   onChange={(e) => { set(e.target.value); setResult(null) }}
                   placeholder={ph}
-                  className="w-full px-3 py-2 bg-white border border-border rounded-lg text-sm font-mono focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                  className="w-full px-3 py-2 bg-[var(--card-bg)] border border-border rounded-lg text-sm font-mono focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
                 />
               </div>
             ))}

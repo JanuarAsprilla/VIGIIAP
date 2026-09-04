@@ -65,7 +65,7 @@ export default function Solicitudes() {
         <div className="flex gap-3 shrink-0">
           <button
             onClick={() => exportCSV(allFiltered)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-lg text-sm font-semibold text-text hover:border-primary-800 hover:text-primary-800 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm font-semibold text-text hover:border-primary-800 hover:text-primary-800 transition-colors"
           >
             <Download className="w-4 h-4" aria-hidden="true" />
             Exportar Reporte

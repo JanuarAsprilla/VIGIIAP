@@ -33,7 +33,7 @@ export default function GuiaUsuario() {
             style={{ transformPerspective: 900 }}
             glow="rgba(26,86,50,0.14)"
             intensity={4}
-            className="bg-white border border-border/70 rounded-xl p-5 flex items-center gap-4 cursor-pointer"
+            className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5 flex items-center gap-4 cursor-pointer"
             whileHover={{ y: -3 }}
           >
             <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center shrink-0">

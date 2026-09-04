@@ -29,7 +29,7 @@ export function BottomStats({ rows }: BottomStatsProps) {
           <Card3D
             glow={kpi.glow}
             intensity={4}
-            className="bg-white border border-border/70 rounded-xl px-5 py-4 text-center"
+            className="bg-[var(--card-bg)] border border-border/70 rounded-xl px-5 py-4 text-center"
             whileHover={{ y: -3 }}
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >

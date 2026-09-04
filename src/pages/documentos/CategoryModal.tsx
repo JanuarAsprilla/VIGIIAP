@@ -45,14 +45,14 @@ function DocRow({ doc, onPreview, onDownload }: DocRowProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => onPreview(doc)}
-            className="w-8 h-8 rounded-lg border border-border bg-white flex items-center justify-center text-text-muted hover:bg-primary-800 hover:border-primary-800 hover:text-white transition-colors"
+            className="w-8 h-8 rounded-lg border border-border bg-[var(--card-bg)] flex items-center justify-center text-text-muted hover:bg-primary-800 hover:border-primary-800 hover:text-white transition-colors"
             title="Vista previa"
           >
             <Eye className="w-4 h-4" />
           </button>
           <button
             onClick={() => onDownload(doc)}
-            className="w-8 h-8 rounded-lg border border-border bg-white flex items-center justify-center text-text-muted hover:bg-primary-800 hover:border-primary-800 hover:text-white transition-colors"
+            className="w-8 h-8 rounded-lg border border-border bg-[var(--card-bg)] flex items-center justify-center text-text-muted hover:bg-primary-800 hover:border-primary-800 hover:text-white transition-colors"
             title="Descargar"
           >
             <Download className="w-4 h-4" />
@@ -138,7 +138,7 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }: Cate
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 40, scale: 0.98 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-white w-full sm:rounded-2xl sm:max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+        className="bg-[var(--card-bg)] w-full sm:rounded-2xl sm:max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
       >
         <div
           className="px-6 py-5 shrink-0"
@@ -164,7 +164,7 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }: Cate
           </div>
         </div>
 
-        <div className="px-6 py-3 border-b border-border flex items-center gap-3 shrink-0 bg-white">
+        <div className="px-6 py-3 border-b border-border flex items-center gap-3 shrink-0 bg-[var(--card-bg)]">
           <div className="flex items-center gap-2 bg-bg-alt border border-border rounded-lg px-3 py-2 flex-1 min-w-0">
             <Search className="w-3.5 h-3.5 text-text-muted shrink-0" />
             <input
@@ -201,7 +201,7 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }: Cate
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 4, scale: 0.97 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full mt-2 w-44 bg-white border border-border rounded-xl shadow-lg z-20 py-1"
+                  className="absolute right-0 top-full mt-2 w-44 bg-[var(--card-bg)] border border-border rounded-xl shadow-lg z-20 py-1"
                 >
                   {SORT_OPTIONS.map((opt) => (
                     <button
