@@ -56,9 +56,9 @@ export default function ResetPassword() {
           <motion.div
             initial={{ scale: 0 }} animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-            className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto border-4 border-green-200"
+            className="w-20 h-20 bg-primary-500/12 rounded-full flex items-center justify-center mx-auto border-4 border-primary-500/15"
           >
-            <ShieldCheck className="w-10 h-10 text-green-600" />
+            <ShieldCheck className="w-10 h-10 text-primary-500" />
           </motion.div>
           <div>
             <h2 className="font-display text-2xl font-bold text-text mb-2">¡Contraseña actualizada!</h2>
@@ -78,7 +78,7 @@ export default function ResetPassword() {
   return (
     <AuthLayout>
       <div className="mb-7">
-        <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center mb-4 border border-primary-100">
+        <div className="w-12 h-12 bg-primary-800/10 rounded-2xl flex items-center justify-center mb-4 border border-primary-800/15">
           <KeyRound className="w-6 h-6 text-primary-700" />
         </div>
         <h2 className="font-display text-2xl font-bold text-text mb-1">Nueva Contraseña</h2>
@@ -98,7 +98,7 @@ export default function ResetPassword() {
               onChange={(e) => { setPassword(e.target.value); setError('') }}
               placeholder="Mínimo 8 caracteres"
               autoComplete="new-password"
-              className="w-full px-4 pr-10 py-3 border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+              className="w-full px-4 pr-10 py-3 border border-border rounded-xl text-sm bg-[var(--card-bg)] focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
             />
             <button
               type="button"
@@ -119,7 +119,7 @@ export default function ResetPassword() {
             onChange={(e) => { setConfirm(e.target.value); setError('') }}
             placeholder="Repite la contraseña"
             autoComplete="new-password"
-            className="w-full px-4 py-3 border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+            className="w-full px-4 py-3 border border-border rounded-xl text-sm bg-[var(--card-bg)] focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
           />
         </div>
 

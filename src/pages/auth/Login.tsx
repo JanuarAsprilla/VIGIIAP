@@ -20,8 +20,8 @@ const MODOS = [
     icon:   Building2,
     label:  'Soy del Instituto / Institución',
     desc:   'Investigadores, personal IIAP y aliados',
-    color:  'border-primary-800 bg-primary-50 text-primary-900',
-    active: 'border-primary-800 ring-2 ring-primary-800/20 bg-primary-50',
+    color:  'border-primary-800 bg-primary-800/10 text-primary-900',
+    active: 'border-primary-800 ring-2 ring-primary-800/20 bg-primary-800/10',
   },
   {
     id:    'visitante',
@@ -29,7 +29,7 @@ const MODOS = [
     label: 'Solo quiero consultar información',
     desc:  'Acceso público a información del IIAP',
     color: 'border-border bg-bg-alt text-text',
-    active: 'border-gold-400 ring-2 ring-gold-400/20 bg-amber-50/40',
+    active: 'border-gold-400 ring-2 ring-gold-400/20 bg-gold-400/10',
   },
 ]
 
@@ -45,7 +45,7 @@ function InputField({ id, label, icon: Icon, error, right = null, ...props }: { 
           aria-describedby={error && errorId ? errorId : undefined}
           aria-invalid={error ? true : undefined}
           {...props}
-          className={`w-full pl-10 ${right ? 'pr-11' : 'pr-4'} py-3 border rounded-xl text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 transition bg-white ${
+          className={`w-full pl-10 ${right ? 'pr-11' : 'pr-4'} py-3 border rounded-xl text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 transition bg-[var(--card-bg)] ${
             error
               ? 'border-red-400 focus:border-red-400 focus:ring-red-400/10'
               : 'border-border focus:border-primary-800 focus:ring-primary-800/10'
@@ -163,9 +163,9 @@ export default function Login() {
               key={m.id}
               type="button"
               onClick={() => { setModo(m.id); setServerError(''); setErrorCode(null); setResendSent(false); setErrors({}) }}
-              className={`flex flex-col items-start gap-1.5 p-3.5 rounded-xl border-2 text-left transition-all ${isActive ? m.active : 'border-border bg-white hover:border-primary-300'}`}
+              className={`flex flex-col items-start gap-1.5 p-3.5 rounded-xl border-2 text-left transition-all ${isActive ? m.active : 'border-border bg-[var(--card-bg)] hover:border-primary-300'}`}
             >
-              <Icon className={`w-5 h-5 ${isActive && m.id === 'institucional' ? 'text-primary-800' : isActive ? 'text-amber-600' : 'text-text-muted'}`} />
+              <Icon className={`w-5 h-5 ${isActive && m.id === 'institucional' ? 'text-primary-800' : isActive ? 'text-gold-500' : 'text-text-muted'}`} />
               <span className="text-[0.78rem] font-bold text-text leading-tight">{m.label}</span>
               <span className="text-[0.65rem] text-text-muted leading-snug">{m.desc}</span>
             </button>
@@ -177,15 +177,15 @@ export default function Login() {
       <AnimatePresence>
         {serverError && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-5 space-y-2">
-            <div className="flex items-start gap-2.5 text-red-700 text-sm">
+            className="bg-red/10 border border-red/20 rounded-xl px-4 py-3 mb-5 space-y-2">
+            <div className="flex items-start gap-2.5 text-red-dark text-sm">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{serverError}</span>
             </div>
             {errorCode === 'EMAIL_NOT_VERIFIED' && (
               <div className="pl-6">
                 {resendSent ? (
-                  <p className="text-xs text-green-700 font-semibold">
+                  <p className="text-xs text-primary-500 font-semibold">
                     Correo de verificación reenviado. Revisa tu bandeja de entrada.
                   </p>
                 ) : (
@@ -280,8 +280,8 @@ export default function Login() {
             initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}
             onSubmit={handleSubmit} className="space-y-5"
           >
-            <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-4">
-              <p className="text-sm text-amber-800 leading-relaxed">
+            <div className="bg-gold-400/10 border border-gold-400/30 rounded-xl p-4">
+              <p className="text-sm text-text leading-relaxed">
                 Accede como <strong>visitante</strong> para consultar mapas, documentos,
                 información pública del IIAP sin necesidad de registrarte.
               </p>

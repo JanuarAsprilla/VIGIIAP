@@ -208,7 +208,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       {/* ══ Right panel — form ══ */}
       <div className="flex-1 flex flex-col bg-bg relative">
         {/* Mobile top bar */}
-        <div className="flex items-center justify-between px-6 py-5 lg:hidden border-b border-border bg-white">
+        <div className="flex items-center justify-between px-6 py-5 lg:hidden border-b border-border bg-[var(--card-bg)]">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 bg-primary-800 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xs">V</span>

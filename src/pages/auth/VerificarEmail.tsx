@@ -66,9 +66,9 @@ export default function VerificarEmail() {
             <motion.div
               initial={{ scale: 0 }} animate={{ scale: 1 }}
               transition={{ delay: 0.1, type: 'spring', stiffness: 260, damping: 20 }}
-              className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto border-4 border-green-200"
+              className="w-20 h-20 bg-primary-500/12 rounded-full flex items-center justify-center mx-auto border-4 border-primary-500/15"
             >
-              <CheckCircle className="w-10 h-10 text-green-600" />
+              <CheckCircle className="w-10 h-10 text-primary-500" />
             </motion.div>
             <div>
               <h2 className="font-display text-2xl font-bold text-text mb-2">¡Correo verificado!</h2>
@@ -89,7 +89,7 @@ export default function VerificarEmail() {
 
         {status === 'already' && (
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-5">
-            <div className="w-20 h-20 bg-primary-50 rounded-full flex items-center justify-center mx-auto border-4 border-primary-100">
+            <div className="w-20 h-20 bg-primary-800/10 rounded-full flex items-center justify-center mx-auto border-4 border-primary-800/15">
               <CheckCircle className="w-10 h-10 text-primary-700" />
             </div>
             <div>
@@ -107,7 +107,7 @@ export default function VerificarEmail() {
 
         {(status === 'expired' || status === 'error') && (
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-5">
-            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto border-4 border-red-100">
+            <div className="w-20 h-20 bg-red/10 rounded-full flex items-center justify-center mx-auto border-4 border-red/15">
               <XCircle className="w-10 h-10 text-red-500" />
             </div>
             <div>
@@ -128,7 +128,7 @@ export default function VerificarEmail() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@correo.com"
-                  className="w-full px-4 py-2.5 border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                  className="w-full px-4 py-2.5 border border-border rounded-xl text-sm bg-[var(--card-bg)] focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
                 />
                 <button
                   type="submit"
@@ -142,7 +142,7 @@ export default function VerificarEmail() {
                 </button>
               </form>
             ) : (
-              <p className="text-sm text-green-600 font-semibold">
+              <p className="text-sm text-primary-500 font-semibold">
                 Si el correo existe, recibirás el enlace en breve.
               </p>
             )}

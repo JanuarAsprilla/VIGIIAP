@@ -35,12 +35,12 @@ export default function CambiarPasswordExpirada() {
 
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-border p-8 space-y-6">
+      <div className="w-full max-w-md bg-[var(--card-bg)] rounded-2xl shadow-xl border border-border p-8 space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center">
-            <ShieldAlert className="w-7 h-7 text-amber-600" />
+          <div className="w-14 h-14 bg-gold-400/12 rounded-2xl flex items-center justify-center">
+            <ShieldAlert className="w-7 h-7 text-gold-500" />
           </div>
-          <h1 className="text-xl font-bold text-text-primary">Contraseña expirada</h1>
+          <h1 className="text-xl font-bold text-text">Contraseña expirada</h1>
           <p className="text-sm text-text-muted">
             Su contraseña ha expirado. Debe establecer una nueva contraseña para continuar.
           </p>
@@ -49,7 +49,7 @@ export default function CambiarPasswordExpirada() {
         {done ? (
           <div className="flex flex-col items-center gap-3 py-6 text-center">
             <CheckCircle2 className="w-12 h-12 text-green-500" />
-            <p className="font-semibold text-text-primary">¡Contraseña actualizada!</p>
+            <p className="font-semibold text-text">¡Contraseña actualizada!</p>
             <p className="text-sm text-text-muted">Redirigiendo al inicio de sesión…</p>
           </div>
         ) : (
@@ -63,12 +63,12 @@ export default function CambiarPasswordExpirada() {
                   type={showNueva ? 'text' : 'password'}
                   value={nueva}
                   onChange={(e) => setNueva(e.target.value)}
-                  className="w-full px-4 py-3 pr-11 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm"
+                  className="w-full px-4 py-3 pr-11 rounded-xl border border-border bg-[var(--card-bg)] focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm"
                   placeholder="Mínimo 8 caracteres"
                   required
                 />
                 <button type="button" onClick={() => setShowNueva(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text">
                   {showNueva ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -84,12 +84,12 @@ export default function CambiarPasswordExpirada() {
                   type={showConf ? 'text' : 'password'}
                   value={confirmar}
                   onChange={(e) => setConfirmar(e.target.value)}
-                  className="w-full px-4 py-3 pr-11 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm"
+                  className="w-full px-4 py-3 pr-11 rounded-xl border border-border bg-[var(--card-bg)] focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm"
                   placeholder="Repita la contraseña"
                   required
                 />
                 <button type="button" onClick={() => setShowConf(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text">
                   {showConf ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -97,7 +97,7 @@ export default function CambiarPasswordExpirada() {
             </div>
 
             {error && (
-              <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">{error}</p>
+              <p className="text-sm text-red-dark bg-red/10 px-4 py-3 rounded-xl">{error}</p>
             )}
 
             <button

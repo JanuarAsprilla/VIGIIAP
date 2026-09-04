@@ -853,6 +853,10 @@ h1, h2, h3, .font-display {
 
 /* ── DARK FOREST overrides ─────────────────────────── */
 .dark {
+  /* Controles nativos (checkbox, radio, scrollbar) sin esto renderizan
+     con el estilo claro del navegador sin importar el tema de la app. */
+  color-scheme: dark;
+
   /* ── Liquid Glass — variante oscura ── */
   --glass-shell-bg:        rgba(9,26,14,0.70);
   --glass-shell-border:    rgba(0,152,70,0.16);
