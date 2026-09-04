@@ -49,7 +49,7 @@ export default function Solicitudes() {
         className="flex flex-col md:flex-row md:items-start md:justify-between gap-4"
       >
         <div>
-          <span className="inline-block text-[0.7rem] font-bold uppercase tracking-widest text-primary-700 mb-2">
+          <span className="inline-block text-[0.7rem] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--hero-eyebrow-text)' }}>
             Módulo Administrativo
           </span>
           <h1 className="font-display text-3xl md:text-4xl font-bold text-text leading-tight mb-3">

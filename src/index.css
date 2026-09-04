@@ -48,7 +48,10 @@
   --color-border:     #E2E8F0;
   --color-text:       #1A1A2E;
   --color-text-light: #4A5568;
-  --color-text-muted: #718096;
+  /* #718096 original daba 3.26–4.01:1 sobre fondos claros (falla WCAG AA,
+     que exige 4.5:1) — verificado con axe-core en toda la plataforma.
+     #5A6675 da ~5.8:1 sobre blanco, con margen. */
+  --color-text-muted: #5A6675;
 
   /* ── Typography ────────────────────────────────────── */
   --font-display: 'Playfair Display', Georgia, serif;
@@ -820,7 +823,9 @@ h1, h2, h3, .font-display {
   /* ── Marquee ───────────────────────────────────── */
   --marquee-bg:            rgba(242,247,243,0.96);
   --marquee-border:        rgba(26,86,50,0.12);
-  --marquee-text:          rgba(26,46,34,0.28);
+  /* 0.28 daba 1.74:1 (aria-hidden no exime del contraste — WCAG 1.4.3 es
+     sobre percepción visual, no lectores de pantalla). 0.70 da ~5.25:1. */
+  --marquee-text:          rgba(26,46,34,0.70);
   --marquee-dot:           rgba(26,86,50,0.38);
 
   /* ── Content cards ─────────────────────────────── */
@@ -873,7 +878,8 @@ h1, h2, h3, .font-display {
   --color-border:          rgba(0,152,70,0.12);
   --color-text:            rgba(255,255,255,0.85);
   --color-text-light:      rgba(255,255,255,0.65);
-  --color-text-muted:      rgba(255,255,255,0.40);
+  /* 0.40 daba ~3.7:1 sobre el fondo oscuro (falla WCAG AA) — 0.55 da ~5.7:1. */
+  --color-text-muted:      rgba(255,255,255,0.55);
 
   --shell-bg:              #060f09;
 
@@ -953,7 +959,7 @@ h1, h2, h3, .font-display {
 
   --marquee-bg:            rgba(6,15,9,0.90);
   --marquee-border:        rgba(0,152,70,0.12);
-  --marquee-text:          rgba(255,255,255,0.28);
+  --marquee-text:          rgba(255,255,255,0.55);
   --marquee-dot:           rgba(74,222,128,0.55);
 
   /* ── Content cards ─────────────────────────────── */

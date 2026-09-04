@@ -172,7 +172,7 @@ export default function GestionSolicitudes() {
       {/* Header */}
       <motion.div {...fadeUp(0)} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <span className="text-[0.7rem] font-bold uppercase tracking-widest text-primary-700">Administración</span>
+          <span className="text-[0.7rem] font-bold uppercase tracking-widest" style={{ color: 'var(--hero-eyebrow-text)' }}>Administración</span>
           <h1 className="font-display text-2xl font-bold text-text mt-0.5">Gestión de Solicitudes</h1>
           <p className="text-sm text-text-muted mt-1">{data?.meta?.total ?? pageItems.length} solicitudes en el sistema</p>
         </div>

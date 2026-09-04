@@ -229,7 +229,7 @@ export function CategoryModal({ category, onClose, onPreview, onDownload }: Cate
               <table className="w-full" aria-label={`Documentos en ${category?.title ?? 'esta categoría'}`}>
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-primary-700 pb-3 pr-4">Archivo</th>
+                    <th className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted pb-3 pr-4">Archivo</th>
                     <th className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted pb-3 pr-4 hidden sm:table-cell">Tamaño</th>
                     <th className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted pb-3 pr-4 hidden md:table-cell">Actualización</th>
                     <th className="text-left text-[0.65rem] font-bold uppercase tracking-wider text-text-muted pb-3">Acciones</th>
