@@ -25,7 +25,7 @@ function Highlight({ text, query }: { text: string; query: string }): ReactNode 
     <>
       {parts.map((part: string, i: number) =>
         regex.test(part)
-          ? <mark key={i} className="bg-primary-100 text-primary-900 rounded-sm not-italic">{part}</mark>
+          ? <mark key={i} className="bg-primary-800/15 text-text rounded-sm not-italic">{part}</mark>
           : part
       )}
     </>
@@ -45,7 +45,7 @@ function ResultItem({ item, isActive, query, onSelect, id }: { item: CatalogueEn
       aria-selected={isActive}
       onClick={onSelect}
       className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
-        isActive ? 'bg-primary-50' : 'hover:bg-bg-alt'
+        isActive ? 'bg-primary-800/10' : 'hover:bg-bg-alt'
       }`}
     >
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${

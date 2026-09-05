@@ -47,7 +47,7 @@ export function MisSolicitudes({ onVerDetalle }: MisSolicitudesProps) {
                 : 'bg-gold-500/12 text-gold-500'
               }`}>{s.estado}</span>
               <button onClick={() => onVerDetalle(s)}
-                className="p-1 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors">
+                className="p-1 rounded-lg text-text-muted hover:text-primary-600 hover:bg-primary-800/10 transition-colors">
                 <Eye className="w-3.5 h-3.5" />
               </button>
             </div>

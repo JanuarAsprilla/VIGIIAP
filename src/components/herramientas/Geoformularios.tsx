@@ -71,9 +71,9 @@ export default function Geoformularios() {
           <span className="text-sm">Adjuntar foto o evidencia de campo</span>
         </div>
 
-        <div className="flex items-start gap-2 bg-primary-50 border border-primary-200 rounded-lg px-3 py-2.5">
-          <Lock className="w-3.5 h-3.5 text-primary-700 shrink-0 mt-0.5" aria-hidden="true" />
-          <p className="text-xs text-primary-800 leading-relaxed">
+        <div className="flex items-start gap-2 bg-primary-800/10 border border-primary-800/20 rounded-lg px-3 py-2.5">
+          <Lock className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: 'var(--hero-eyebrow-text)' }} aria-hidden="true" />
+          <p className="text-xs text-text-muted leading-relaxed">
             Las plantillas personalizadas se gestionan desde el{' '}
             <span className="font-semibold">Módulo de Administración</span>.
           </p>

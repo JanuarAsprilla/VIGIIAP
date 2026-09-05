@@ -86,11 +86,11 @@ export default function CalculadoraAreas() {
           {result && (
             <motion.div
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="bg-primary-50 border border-primary-200 rounded-xl p-4 space-y-3"
+              className="bg-primary-800/10 border border-primary-800/20 rounded-xl p-4 space-y-3"
             >
               <div className="flex items-center gap-2 mb-1">
-                <CheckCircle className="w-4 h-4 text-primary-700" />
-                <span className="text-[0.6rem] font-bold uppercase tracking-wider text-primary-700">
+                <CheckCircle className="w-4 h-4" style={{ color: 'var(--hero-eyebrow-text)' }} />
+                <span className="text-[0.6rem] font-bold uppercase tracking-wider" style={{ color: 'var(--hero-eyebrow-text)' }}>
                   Resultado del Cálculo
                 </span>
               </div>

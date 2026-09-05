@@ -36,7 +36,7 @@ export default function GuiaUsuario() {
             className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5 flex items-center gap-4 cursor-pointer"
             whileHover={{ y: -3 }}
           >
-            <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 bg-primary-800/10 rounded-lg flex items-center justify-center shrink-0">
               <BookOpen className="w-5 h-5 text-primary-800" />
             </div>
             <div className="flex-1">

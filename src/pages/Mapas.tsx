@@ -79,7 +79,7 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
                     Abrir PDF
                   </a>
                   <a href={fileUrl} download
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-50 border border-primary-200 text-primary-800 rounded-lg text-sm font-semibold hover:bg-primary-100 transition-colors">
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800/10 border border-primary-800/20 text-primary-600 rounded-lg text-sm font-semibold hover:bg-primary-800/15 transition-colors">
                     <Download className="w-4 h-4" />
                     Descargar
                   </a>
@@ -140,7 +140,7 @@ const CATEGORY_COLORS = {
 
 interface MapCardProps { map: MapaData; index: number; onPreview?: (map: MapaData, format: string) => void }
 function MapCard({ map, index, onPreview }: MapCardProps) {
-  const colors = CATEGORY_COLORS[map.category as keyof typeof CATEGORY_COLORS] ?? { pill: 'bg-primary-100 text-primary-700', accent: '#1B4332' }
+  const colors = CATEGORY_COLORS[map.category as keyof typeof CATEGORY_COLORS] ?? { pill: 'bg-primary-800/10 text-primary-600', accent: '#1B4332' }
   const hasPdf     = map.formats.includes('PDF')
   const hasImg     = map.formats.includes('IMG')
   const hasGeovisor = map.formats.includes('GEOVISOR')
@@ -234,7 +234,7 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
           )}
           {hasPdf && (
             <button onClick={() => onPreview?.(map, 'PDF')}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors">
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-600 hover:bg-primary-800/10 transition-colors">
               <Eye className="w-3.5 h-3.5" />
               Visualizar
             </button>
@@ -251,14 +251,14 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
           )}
           {hasImg && (
             <button onClick={() => onPreview?.(map, 'IMG')}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors">
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-600 hover:bg-primary-800/10 transition-colors">
               <Eye className="w-3.5 h-3.5" />
               Visualizar
             </button>
           )}
           {hasGeovisor && (
             <a href={map.geovisorLink || '/geovisor'} target="_blank" rel="noopener noreferrer"
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-primary-800 border border-primary-200 rounded-lg bg-primary-50 hover:bg-primary-100 transition-colors no-underline">
+              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-primary-600 border border-primary-800/20 rounded-lg bg-primary-800/10 hover:bg-primary-800/15 transition-colors no-underline">
               <Globe className="w-3.5 h-3.5" />
               Geovisor
             </a>
@@ -354,7 +354,7 @@ export default function Mapas() {
           </p>
         </div>
         <div className="flex items-center gap-3 bg-[var(--card-bg)] border border-border rounded-xl px-5 py-4 shrink-0">
-          <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-primary-800/10 rounded-lg flex items-center justify-center">
             <Map className="w-5 h-5 text-primary-800" />
           </div>
           <div>
@@ -430,7 +430,8 @@ export default function Mapas() {
           </div>
           {(query || Object.values({}).some(Boolean)) && (
             <button onClick={clearAll}
-              className="text-xs font-semibold text-primary-800 hover:text-primary-600 transition-colors">
+              className="text-xs font-semibold transition-colors"
+              style={{ color: 'var(--hero-eyebrow-text)' }}>
               Limpiar filtros
             </button>
           )}

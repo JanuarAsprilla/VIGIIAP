@@ -62,7 +62,7 @@ export function SoporteDocumentalModal({ onClose }: { onClose: () => void }) {
       >
         {step === 'success' ? (
           <div className="p-10 text-center">
-            <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5">
+            <div className="w-16 h-16 bg-primary-800/10 rounded-full flex items-center justify-center mx-auto mb-5">
               <CheckCircle className="w-8 h-8 text-primary-800" />
             </div>
             <h3 className="font-display text-xl font-bold text-text mb-2">Solicitud Enviada</h3>

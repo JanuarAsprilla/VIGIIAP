@@ -122,7 +122,10 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--color-primary-700);
+  /* --color-primary-700 es un color de marca fijo (no cambia entre temas) —
+     daba 2.13:1 en oscuro. --hero-eyebrow-text ya tiene valores correctos
+     para ambos temas (verde oscuro en claro, verde-lima en oscuro). */
+  color: var(--hero-eyebrow-text);
 }
 
 .page-header-title {

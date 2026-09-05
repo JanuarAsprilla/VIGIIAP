@@ -106,7 +106,7 @@ export function PreviewModal({ doc, categoryTitle, onClose }: PreviewModalProps)
                     Visualizar PDF
                   </a>
                   <button onClick={() => forceDownload(descargarUrl('documento', doc.id), `${doc.name}.${doc.type}`)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-50 border border-primary-200 text-primary-800 rounded-lg text-sm font-semibold hover:bg-primary-100 transition-colors">
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800/10 border border-primary-800/20 text-primary-600 rounded-lg text-sm font-semibold hover:bg-primary-800/15 transition-colors">
                     <Download className="w-4 h-4" />
                     Descargar
                   </button>
