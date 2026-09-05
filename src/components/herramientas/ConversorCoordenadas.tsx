@@ -61,7 +61,7 @@ export default function ConversorCoordenadas() {
             key={m.id}
             onClick={() => switchModo(m.id)}
             className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-              modo === m.id ? 'bg-white text-primary-800 shadow-sm' : 'text-text-muted hover:text-text'
+              modo === m.id ? 'bg-[var(--card-bg)] text-primary-800 shadow-sm' : 'text-text-muted hover:text-text'
             }`}
           >
             {m.label}
@@ -85,7 +85,7 @@ export default function ConversorCoordenadas() {
                   value={val}
                   onChange={(e) => { set(e.target.value); setResult(null) }}
                   placeholder={ph}
-                  className="w-full px-3 py-2 bg-white border border-border rounded-lg text-sm font-mono focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                  className="w-full px-3 py-2 bg-[var(--card-bg)] border border-border rounded-lg text-sm font-mono focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
                 />
               </div>
             ))}
@@ -104,7 +104,7 @@ export default function ConversorCoordenadas() {
                   value={val}
                   onChange={(e) => { set(e.target.value); setResult(null) }}
                   placeholder={ph}
-                  className="w-full px-3 py-2 bg-white border border-border rounded-lg text-sm font-mono focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                  className="w-full px-3 py-2 bg-[var(--card-bg)] border border-border rounded-lg text-sm font-mono focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
                 />
               </div>
             ))}
@@ -130,15 +130,16 @@ export default function ConversorCoordenadas() {
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-primary-50 border border-primary-200 rounded-lg p-4"
+            className="bg-primary-800/10 border border-primary-800/20 rounded-lg p-4"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[0.6rem] font-bold uppercase tracking-wider text-primary-700">
+              <span className="text-[0.6rem] font-bold uppercase tracking-wider" style={{ color: 'var(--hero-eyebrow-text)' }}>
                 {modo === 'wgs2magna' ? 'Magna-Sirgas Colombia Oeste (EPSG:3115)' : 'WGS84 (EPSG:4326)'}
               </span>
               <button
                 onClick={copyResult}
-                className="text-[0.6rem] font-bold uppercase tracking-wider text-primary-700 hover:text-primary-900 transition-colors"
+                className="text-[0.6rem] font-bold uppercase tracking-wider transition-colors"
+                style={{ color: 'var(--hero-eyebrow-text)' }}
               >
                 {copied ? '✓ Copiado' : 'Copiar'}
               </button>

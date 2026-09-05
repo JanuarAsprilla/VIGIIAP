@@ -25,7 +25,7 @@ function Highlight({ text, query }: { text: string; query: string }): ReactNode 
     <>
       {parts.map((part: string, i: number) =>
         regex.test(part)
-          ? <mark key={i} className="bg-primary-100 text-primary-900 rounded-sm not-italic">{part}</mark>
+          ? <mark key={i} className="bg-primary-800/15 text-text rounded-sm not-italic">{part}</mark>
           : part
       )}
     </>
@@ -45,7 +45,7 @@ function ResultItem({ item, isActive, query, onSelect, id }: { item: CatalogueEn
       aria-selected={isActive}
       onClick={onSelect}
       className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
-        isActive ? 'bg-primary-50' : 'hover:bg-bg-alt'
+        isActive ? 'bg-primary-800/10' : 'hover:bg-bg-alt'
       }`}
     >
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
@@ -204,7 +204,7 @@ export default function CommandPalette() {
         <motion.div
           {...PANEL_ANIM}
           ref={panelRef}
-          className="w-full max-w-xl bg-white border border-border rounded-2xl shadow-float overflow-hidden flex flex-col"
+          className="w-full max-w-xl bg-[var(--card-bg)] border border-border rounded-2xl shadow-float overflow-hidden flex flex-col"
           style={{ maxHeight: '70vh' }}
         >
           {/* Search input */}
@@ -291,15 +291,15 @@ export default function CommandPalette() {
           {/* Footer hints */}
           <div className="flex items-center gap-4 px-4 py-2.5 border-t border-border bg-bg-alt shrink-0">
             <span className="flex items-center gap-1.5 text-[0.65rem] text-text-muted">
-              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-white border border-border rounded text-[0.6rem] font-mono">↑↓</kbd>
+              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-[var(--card-bg)] border border-border rounded text-[0.6rem] font-mono">↑↓</kbd>
               Navegar
             </span>
             <span className="flex items-center gap-1.5 text-[0.65rem] text-text-muted">
-              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-white border border-border rounded text-[0.6rem] font-mono">↵</kbd>
+              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-[var(--card-bg)] border border-border rounded text-[0.6rem] font-mono">↵</kbd>
               Abrir
             </span>
             <span className="flex items-center gap-1.5 text-[0.65rem] text-text-muted">
-              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-white border border-border rounded text-[0.6rem] font-mono">ESC</kbd>
+              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-[var(--card-bg)] border border-border rounded text-[0.6rem] font-mono">ESC</kbd>
               Cerrar
             </span>
             <span className="ml-auto flex items-center gap-1 text-[0.65rem] text-text-muted">

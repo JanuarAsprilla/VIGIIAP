@@ -64,7 +64,7 @@ export function PreviewModal({ doc, categoryTitle, onClose }: PreviewModalProps)
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
+        className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
@@ -106,7 +106,7 @@ export function PreviewModal({ doc, categoryTitle, onClose }: PreviewModalProps)
                     Visualizar PDF
                   </a>
                   <button onClick={() => forceDownload(descargarUrl('documento', doc.id), `${doc.name}.${doc.type}`)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-50 border border-primary-200 text-primary-800 rounded-lg text-sm font-semibold hover:bg-primary-100 transition-colors">
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800/10 border border-primary-800/20 text-primary-600 rounded-lg text-sm font-semibold hover:bg-primary-800/15 transition-colors">
                     <Download className="w-4 h-4" />
                     Descargar
                   </button>

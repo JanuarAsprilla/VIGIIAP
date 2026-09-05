@@ -50,7 +50,7 @@ export function FiltroDropdown({ filtro, onChange }: FiltroDropdownProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-44 bg-white border border-border rounded-xl shadow-lg z-20 py-1 overflow-hidden"
+            className="absolute right-0 mt-2 w-44 bg-[var(--card-bg)] border border-border rounded-xl shadow-lg z-20 py-1 overflow-hidden"
           >
             {ESTADOS_FILTRO.map((op) => (
               <button

@@ -52,7 +52,7 @@ export default function AplicacionesMoviles() {
                 {app.plataformas.map((p) => (
                   <span
                     key={p}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-border rounded text-[0.65rem] font-semibold text-text-muted"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-[var(--card-bg)] border border-border rounded text-[0.65rem] font-semibold text-text-muted"
                   >
                     <Download className="w-3 h-3" aria-hidden="true" />
                     {p}

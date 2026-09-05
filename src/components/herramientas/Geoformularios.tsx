@@ -22,7 +22,7 @@ export default function Geoformularios() {
               id="gf-tipo"
               value={tipoObservacion}
               onChange={(e) => setTipoObservacion(e.target.value)}
-              className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+              className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
             >
               <option value="">Seleccionar...</option>
               <option value="flora">Flora y Vegetación</option>
@@ -49,7 +49,7 @@ export default function Geoformularios() {
             <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
               Fecha de captura
             </label>
-            <div className="flex items-center gap-2 px-3 py-2.5 bg-white border border-border rounded-lg text-sm text-text">
+            <div className="flex items-center gap-2 px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm text-text">
               <Calendar className="w-4 h-4 text-text-muted shrink-0" aria-hidden="true" />
               <span>2026-04-07</span>
             </div>
@@ -71,9 +71,9 @@ export default function Geoformularios() {
           <span className="text-sm">Adjuntar foto o evidencia de campo</span>
         </div>
 
-        <div className="flex items-start gap-2 bg-primary-50 border border-primary-200 rounded-lg px-3 py-2.5">
-          <Lock className="w-3.5 h-3.5 text-primary-700 shrink-0 mt-0.5" aria-hidden="true" />
-          <p className="text-xs text-primary-800 leading-relaxed">
+        <div className="flex items-start gap-2 bg-primary-800/10 border border-primary-800/20 rounded-lg px-3 py-2.5">
+          <Lock className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: 'var(--hero-eyebrow-text)' }} aria-hidden="true" />
+          <p className="text-xs text-text-muted leading-relaxed">
             Las plantillas personalizadas se gestionan desde el{' '}
             <span className="font-semibold">Módulo de Administración</span>.
           </p>

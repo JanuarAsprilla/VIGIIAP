@@ -103,7 +103,7 @@ export default function Documentos() {
       </motion.div>
 
       <motion.div {...fadeUp(0.1)} className="flex items-center gap-3">
-        <div className="flex items-center gap-2 bg-white border border-border rounded-lg px-4 py-2.5 flex-1">
+        <div className="flex items-center gap-2 bg-[var(--card-bg)] border border-border rounded-lg px-4 py-2.5 flex-1">
           <Search className="w-4 h-4 text-text-muted shrink-0" />
           <input
             type="text"
@@ -125,13 +125,13 @@ export default function Documentos() {
             className={`inline-flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium transition-colors ${
               showFilter || activeTypes.length > 0
                 ? 'bg-primary-800 border-primary-800 text-white'
-                : 'bg-white border-border text-text hover:border-primary-800 hover:text-primary-800'
+                : 'bg-[var(--card-bg)] border-border text-text hover:border-primary-800 hover:text-primary-800'
             }`}
           >
             <SlidersHorizontal className="w-4 h-4" />
             <span className="hidden sm:inline">Filtros</span>
             {activeTypes.length > 0 && (
-              <span className="w-5 h-5 rounded-full bg-white text-primary-800 text-xs font-bold flex items-center justify-center">
+              <span className="w-5 h-5 rounded-full bg-[var(--card-bg)] text-primary-800 text-xs font-bold flex items-center justify-center">
                 {activeTypes.length}
               </span>
             )}
@@ -144,7 +144,7 @@ export default function Documentos() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 6, scale: 0.97 }}
                 transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-2 w-52 bg-white border border-border rounded-xl shadow-lg z-20 overflow-hidden"
+                className="absolute right-0 top-full mt-2 w-52 bg-[var(--card-bg)] border border-border rounded-xl shadow-lg z-20 overflow-hidden"
               >
                 <div className="px-4 pt-3 pb-1">
                   <span className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">

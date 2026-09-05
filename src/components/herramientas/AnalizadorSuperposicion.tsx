@@ -9,14 +9,14 @@ export default function AnalizadorSuperposicion() {
         para detectar conflictos de uso del suelo o áreas de traslape legal.
       </p>
       <div className="flex flex-col items-center justify-center py-6 gap-3 border border-dashed border-border rounded-xl bg-bg-alt/40">
-        <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center">
+        <div className="w-10 h-10 bg-primary-800/10 rounded-xl flex items-center justify-center">
           <Construction className="w-5 h-5 text-primary-600" aria-hidden="true" />
         </div>
         <div className="text-center">
           <p className="text-sm font-semibold text-text mb-0.5">En desarrollo</p>
           <p className="text-xs text-text-muted">Requiere integración con el servicio PostGIS</p>
         </div>
-        <span className="text-[0.6rem] font-bold uppercase tracking-widest text-primary-700 bg-primary-50 px-3 py-1 rounded-full border border-primary-200">
+        <span className="text-[0.6rem] font-bold uppercase tracking-widest bg-primary-800/10 px-3 py-1 rounded-full border border-primary-800/20" style={{ color: 'var(--hero-eyebrow-text)' }}>
           Próximamente
         </span>
       </div>
