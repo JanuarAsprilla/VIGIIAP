@@ -12,6 +12,7 @@ import {
 import { fadeUpSm, panelAnim } from '@/lib/animations'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { useMapasList, useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa } from '@/hooks/useMapas'
+import { isTrustedUrl } from '@/lib/trustedUrl'
 
 const fadeUp = fadeUpSm
 
@@ -536,8 +537,18 @@ export default function GestionMapas() {
     if (!form.tematica.trim()) e.tematica = 'Selecciona o escribe una temática'
     if (form.formato !== 'Geovisor' && !editing && !uploadedFile)
       e.archivo = 'Debes seleccionar el archivo del mapa para continuar'
-    if (form.formato === 'Geovisor' && !form.url.trim())
+    if (form.formato === 'Geovisor' && !form.url.trim()) {
       e.url = 'Debes ingresar la URL del Geovisor'
+    } else if (form.formato === 'Geovisor' && form.url.trim()) {
+      try {
+        const scheme = new URL(form.url.trim(), window.location.origin).protocol
+        if (scheme !== 'http:' && scheme !== 'https:') {
+          e.url = 'La URL del Geovisor debe usar http:// o https://'
+        }
+      } catch {
+        e.url = 'La URL del Geovisor no es válida'
+      }
+    }
     return e
   }
 
@@ -723,9 +734,12 @@ export default function GestionMapas() {
                         expanded={expandedId === m.id}
                         onToggleExpand={() => setExpandedId((id) => (id === m.id ? null : m.id))}
                         onToggleVisible={() => toggleVisible(m.id)}
-                        onView={(m.archivo_pdf_url || m.archivo_img_url || m.geovisor_url)
-                          ? () => window.open(m.archivo_img_url || m.archivo_pdf_url || m.geovisor_url || undefined, '_blank', 'noopener,noreferrer')
-                          : null}
+                        onView={(() => {
+                          const target = m.archivo_img_url || m.archivo_pdf_url || m.geovisor_url
+                          return target && isTrustedUrl(target)
+                            ? () => window.open(target, '_blank', 'noopener,noreferrer')
+                            : null
+                        })()}
                         onEdit={() => openEdit(m)}
                         onDelete={() => setDeleteTarget(m)}
                       />

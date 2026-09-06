@@ -11,6 +11,11 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Refleja el dominio real de R2 en producción para que isTrustedUrl()
+    // acepte las URLs de fixtures (https://r2.example.com/...) en los tests.
+    env: {
+      VITE_R2_PUBLIC_URL: 'https://r2.example.com',
+    },
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/test/**/*.{test,spec}.{js,jsx,ts,tsx}'],
     exclude: ['node_modules/**', 'dist/**', 'e2e/**'],

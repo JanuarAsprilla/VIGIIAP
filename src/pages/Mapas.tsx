@@ -23,6 +23,9 @@ const fadeUp = (delay = 0) => ({
 // ── Preview Modal para mapas ──────────────────────────────────────────────────
 function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: string; onClose: () => void }) {
   const fileUrl = format === 'IMG' ? map.archivo_img_url : map.archivo_pdf_url
+  // Solo se renderiza como enlace/imagen si el origen está en la allowlist —
+  // evita que un valor malicioso guardado en el backend (ej. javascript:) se ejecute al hacer clic.
+  const trustedFileUrl = fileUrl && isTrustedUrl(fileUrl) ? fileUrl : null
   const isImage = format === 'IMG' || (fileUrl && /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(fileUrl))
 
   useEffect(() => {
@@ -54,11 +57,11 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
           </button>
         </div>
 
-        {fileUrl ? (
+        {trustedFileUrl ? (
           <div className="w-full">
             {isImage ? (
               <div className="p-4 flex justify-center bg-bg-alt">
-                <img src={fileUrl} alt={map.title}
+                <img src={trustedFileUrl} alt={map.title}
                   width={1200} height={675}
                   loading="eager"
                   className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-sm" />
@@ -73,12 +76,12 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
                   <p className="text-xs text-text-muted">{map.category} · {map.year}</p>
                 </div>
                 <div className="flex gap-3">
-                  <a href={fileUrl} target="_blank" rel="noopener noreferrer"
+                  <a href={trustedFileUrl} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
                     <Eye className="w-4 h-4" />
                     Abrir PDF
                   </a>
-                  <a href={fileUrl} download
+                  <a href={trustedFileUrl} download
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800/10 border border-primary-800/20 text-primary-600 rounded-lg text-sm font-semibold hover:bg-primary-800/15 transition-colors">
                     <Download className="w-4 h-4" />
                     Descargar
@@ -91,9 +94,9 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
           <div className="p-10 text-center text-text-muted text-sm">Archivo no disponible</div>
         )}
 
-        {fileUrl && isImage && (
+        {trustedFileUrl && isImage && (
           <div className="px-6 py-4 border-t border-border flex justify-end gap-3">
-            <a href={fileUrl} download
+            <a href={trustedFileUrl} download
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
               <Download className="w-4 h-4" />
               Descargar imagen
@@ -144,6 +147,7 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
   const hasPdf     = map.formats.includes('PDF')
   const hasImg     = map.formats.includes('IMG')
   const hasGeovisor = map.formats.includes('GEOVISOR')
+  const geovisorHref = map.geovisorLink && isTrustedUrl(map.geovisorLink) ? map.geovisorLink : '/geovisor'
 
   // Chaos testing (clics de frustración): sin esta guarda, clics rápidos repetidos
   // durante un cold start de Render disparaban múltiples fetch() + descargas simultáneas.
@@ -257,7 +261,7 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
             </button>
           )}
           {hasGeovisor && (
-            <a href={map.geovisorLink || '/geovisor'} target="_blank" rel="noopener noreferrer"
+            <a href={geovisorHref} target="_blank" rel="noopener noreferrer"
               className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-primary-600 border border-primary-800/20 rounded-lg bg-primary-800/10 hover:bg-primary-800/15 transition-colors no-underline">
               <Globe className="w-3.5 h-3.5" />
               Geovisor
