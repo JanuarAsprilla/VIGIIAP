@@ -1,5 +1,4 @@
 import { QueryClient } from '@tanstack/react-query'
-import * as Sentry from '@sentry/react'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -14,11 +13,6 @@ const queryClient = new QueryClient({
       },
       retryDelay:  (attempt) => Math.min(1000 * 2 ** attempt, 15_000),
       refetchOnWindowFocus: false,
-    },
-    mutations: {
-      onError: (error) => {
-        Sentry.captureException(error, { level: 'error', tags: { source: 'mutation' } })
-      },
     },
   },
 })
