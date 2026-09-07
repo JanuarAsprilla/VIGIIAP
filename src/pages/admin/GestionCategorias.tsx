@@ -58,7 +58,7 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { 
   if (preview) {
     return (
       <div className="relative group rounded-xl overflow-hidden border border-border aspect-video w-full">
-        <img src={preview} alt="Portada" className="w-full h-full object-cover" loading="eager" />
+        <img src={preview} alt="Portada" className="w-full h-full object-cover" loading="lazy" />
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
           <button type="button" onClick={() => inputRef.current?.click()}
             className="px-3 py-1.5 bg-[var(--card-bg)] text-text text-xs font-semibold rounded-lg hover:bg-bg-alt transition-colors">
