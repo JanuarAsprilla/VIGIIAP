@@ -317,8 +317,7 @@ describe('Perfil — sesiones activas', () => {
     expect(await screen.findByText('Esta sesión')).toBeInTheDocument()
     expect(screen.getByText(/^2 sesi.{1,3}nes activas$/)).toBeInTheDocument()
 
-    const revokeButtons = screen.getAllByRole('button').filter((b) => b.querySelector('.lucide-trash2'))
-    await user.click(revokeButtons[0])
+    await user.click(screen.getByRole('button', { name: 'Revocar sesión' }))
     expect(api.delete).toHaveBeenCalledWith('/auth/sessions/s2')
   })
 

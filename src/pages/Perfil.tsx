@@ -440,8 +440,9 @@ function SesionesActivas() {
               </div>
               {!s.esSesionActual && (
                 <button onClick={() => revoke.mutate(s.id)} disabled={revoke.isPending}
+                  aria-label="Revocar sesión"
                   className="p-1.5 text-text-muted hover:text-red-dark hover:bg-red/10 rounded-lg transition-colors">
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
               )}
             </div>
