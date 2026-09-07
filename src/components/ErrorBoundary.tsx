@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/react'
 import React, { Component } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
@@ -26,14 +25,10 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    if (import.meta.env.DEV) {
-      console.error('[ErrorBoundary]', error, info.componentStack)
-    }
-    Sentry.captureException(error, {
-      contexts: {
-        react: { componentStack: info.componentStack },
-      },
-    })
+    // Sin servicio externo de monitoreo: se deja al menos en la consola del
+    // navegador, ya que un crash de render nunca llega al backend (no hay
+    // request HTTP que el error-tracking propio pueda capturar).
+    console.error('[ErrorBoundary]', error, info.componentStack)
   }
 
   handleReset = () => {

@@ -16,11 +16,6 @@ vi.mock('@/lib/api', () => ({
   },
 }))
 
-vi.mock('@sentry/react', () => ({
-  setUser:          vi.fn(),
-  captureException: vi.fn(),
-}))
-
 import api from '@/lib/api'
 
 const wrapper = ({ children }: { children: ReactNode }) => (

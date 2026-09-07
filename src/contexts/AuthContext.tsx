@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/react'
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import api from '@/lib/api'
 import queryClient from '@/lib/queryClient'
@@ -104,7 +103,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('vigiiap_user')
     setUser(null)
     queryClient.clear()
-    Sentry.setUser(null)
   }, [])
 
   // ── Refrescar perfil desde la API ──
@@ -164,7 +162,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // "perdidos" hasta el próximo reload de página.
       const full = await refreshProfile()
       if (!full) throw new Error('No se pudo cargar el perfil tras iniciar sesión')
-      Sentry.setUser({ id: full.id, role: full.rol })
       return full
     } finally {
       setLoading(false)
@@ -181,7 +178,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await api.post('/auth/visitante', { nombre: nombre || undefined })
       const full = await refreshProfile()
       if (!full) throw new Error('No se pudo cargar el perfil tras iniciar sesión')
-      Sentry.setUser({ id: full.id, role: full.rol })
       return full
     } finally {
       setLoading(false)
@@ -197,7 +193,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await api.post('/auth/2fa/confirm', { code })
       const full = await refreshProfile()
       if (!full) throw new Error('No se pudo cargar el perfil tras verificar el código')
-      Sentry.setUser({ id: full.id, role: full.rol })
       return full
     } finally {
       setLoading(false)

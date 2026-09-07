@@ -26,7 +26,7 @@ services:
         value: same-origin
       - path: /*
         name: Content-Security-Policy
-        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://pub-6c93d629c29246448421c3d6ef6a6132.r2.dev https://*.basemaps.cartocdn.com; connect-src 'self' https://vigiiap-backend.onrender.com https://o4511597449838592.ingest.us.sentry.io https://*.basemaps.cartocdn.com; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://pub-6c93d629c29246448421c3d6ef6a6132.r2.dev https://*.basemaps.cartocdn.com; connect-src 'self' https://vigiiap-backend.onrender.com https://*.basemaps.cartocdn.com; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
     routes:
       - type: rewrite
         source: /*
@@ -37,6 +37,4 @@ services:
       - key: VITE_API_URL
         sync: false
       - key: VITE_R2_PUBLIC_URL
-        sync: false
-      - key: VITE_SENTRY_DSN
         sync: false
