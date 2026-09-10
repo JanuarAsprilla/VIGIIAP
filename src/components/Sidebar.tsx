@@ -8,8 +8,11 @@ import { NavLink, Link } from 'react-router-dom'
 import { LogOut, X, Lock, Shield, ChevronRight, type LucideIcon } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import { ROLES } from '@/lib/constants/roles'
 import { motion, AnimatePresence } from 'framer-motion'
+import iiapIsotipoColor from '@/assets/iiap-isotipo-color.png'
+import iiapIsotipoBlanco from '@/assets/iiap-isotipo-blanco.png'
 
 
 const RESTRICTED_PATHS = ['/geovisor', '/herramientas', '/solicitudes']
@@ -130,6 +133,8 @@ function SidebarInner({ onClose, onLogout, user, isAuthenticated }: {
   user: AuthUser | null
   isAuthenticated: boolean
 }) {
+  const { isDark } = useTheme()
+
   return (
     <div className="flex flex-col h-full relative z-10">
 
@@ -160,17 +165,13 @@ function SidebarInner({ onClose, onLogout, user, isAuthenticated }: {
 
         <div className="relative flex items-center justify-between w-full">
           <Link to="/" onClick={onClose} className="flex items-center gap-2.5 no-underline group">
-            <motion.div
+            <motion.img
+              src={isDark ? iiapIsotipoBlanco : iiapIsotipoColor}
+              alt="IIAP — Instituto de Investigaciones Ambientales del Pacífico"
               whileHover={{ scale: 1.06, rotate: -3 }}
               transition={{ type: 'spring', stiffness: 420, damping: 18 }}
-              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shrink-0"
-              style={{
-                background: 'var(--brand-gradient)',
-                boxShadow: '0 0 16px var(--nav-logo-glow)',
-              }}
-            >
-              <span className="text-white font-black text-sm font-display">V</span>
-            </motion.div>
+              className="h-9 w-auto shrink-0 drop-shadow"
+            />
 
             <div className="leading-tight">
               <span
