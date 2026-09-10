@@ -38,6 +38,7 @@ vi.mock('@/components/TopBar', () => ({
 vi.mock('@/components/FooterBar', () => ({ default: () => <div>FooterBar</div> }))
 vi.mock('@/components/BottomTabs', () => ({ default: () => <div>BottomTabs</div> }))
 vi.mock('@/components/CommandPalette', () => ({ default: () => <div>CommandPalette</div> }))
+vi.mock('@/components/WelcomeGate', () => ({ default: () => <div>WelcomeGate</div> }))
 
 const openPaletteSpy = vi.fn()
 let density: 'compact' | 'normal' | 'comfortable' = 'normal'
@@ -69,6 +70,7 @@ describe('MainLayout — orquestación del shell principal', () => {
     expect(screen.getByText('FooterBar')).toBeInTheDocument()
     expect(screen.getByText('BottomTabs')).toBeInTheDocument()
     expect(screen.getByText('CommandPalette')).toBeInTheDocument()
+    expect(screen.getByText('WelcomeGate')).toBeInTheDocument()
   })
 
   test('Cmd+K llama a openPalette del contexto de UI', async () => {
