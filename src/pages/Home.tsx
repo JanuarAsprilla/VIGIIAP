@@ -431,8 +431,11 @@ const PROFILES = [
 ]
 
 function ForWhomSection() {
+  // Antes usaba --color-bg-alt: una diferencia de solo ~3% de luminosidad
+  // frente a las secciones vecinas (ambas en --color-bg) se leía como un
+  // error de fondo, no como una franja intencional — se unifica con el resto.
   return (
-    <section className="py-20 px-6" style={{ background: 'var(--color-bg-alt)' }}>
+    <section className="py-20 px-6" style={{ background: 'var(--color-bg)' }}>
       <div className="max-w-6xl mx-auto">
         <motion.div
           whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 20 }} viewport={{ once: true }}

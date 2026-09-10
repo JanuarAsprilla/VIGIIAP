@@ -92,6 +92,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Cursor de puntero en botones — los <Link>/<a> ya lo traen del navegador,
+   pero <button> no lo garantiza en todos los navegadores. Sin esto, el
+   topbar (que es casi todo <button>) se sentía menos "clicable" que el
+   sidebar (que es casi todo <Link>). */
+button:not(:disabled), [role="button"]:not(:disabled) {
+  cursor: pointer;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--color-bg-alt); }
