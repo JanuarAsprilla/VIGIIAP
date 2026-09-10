@@ -134,8 +134,11 @@ function SidebarInner({ onClose, onLogout, user, isAuthenticated }: {
     <div className="flex flex-col h-full relative z-10">
 
       {/* ── Logo area ── */}
+      {/* h-14 iguala la altura de la fila principal del TopBar (también h-14)
+          — antes este bloque medía ~72px por el padding vertical y quedaba
+          desalineado con la línea del topbar a su derecha. */}
       <div
-        className="relative px-4 pt-5 pb-4 overflow-hidden"
+        className="relative h-14 flex items-center px-4 overflow-hidden shrink-0"
         style={{ borderBottom: '1px solid var(--nav-separator)' }}
       >
         {/* SVG topo pattern — algo más visible en dark */}
@@ -155,7 +158,7 @@ function SidebarInner({ onClose, onLogout, user, isAuthenticated }: {
           <rect width="100%" height="100%" fill="url(#topo-nav)" />
         </svg>
 
-        <div className="relative flex items-center justify-between">
+        <div className="relative flex items-center justify-between w-full">
           <Link to="/" onClick={onClose} className="flex items-center gap-2.5 no-underline group">
             <motion.div
               whileHover={{ scale: 1.06, rotate: -3 }}
