@@ -26,6 +26,7 @@ const authMock: { isAuthenticated: boolean; user: MockUser | null; logout: () =>
   logout: vi.fn(),
 }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
+vi.mock('@/contexts/ThemeContext', () => ({ useTheme: () => ({ isDark: false, toggleTheme: vi.fn() }) }))
 
 function renderSidebar(mobileOpen = false, onClose = vi.fn()) {
   return { onClose, ...render(<MemoryRouter><Sidebar mobileOpen={mobileOpen} onClose={onClose} /></MemoryRouter>) }
