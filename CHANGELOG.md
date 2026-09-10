@@ -6,6 +6,19 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.1.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.0.0...v1.1.0) (2026-09-10)
+
+
+### Features
+
+* aviso de bienvenida antes de la primera interacción ([#106](https://github.com/JanuarAsprilla/VIGIIAP/issues/106)) ([488818c](https://github.com/JanuarAsprilla/VIGIIAP/commit/488818c9537253904f7bb4c38b1a93426ce34dde))
+* logo institucional real del IIAP en el sidebar ([#108](https://github.com/JanuarAsprilla/VIGIIAP/issues/108)) ([021639c](https://github.com/JanuarAsprilla/VIGIIAP/commit/021639cedb6459011905dd4545030a772a40e18a))
+
+
+### Bug Fixes
+
+* consistencia visual — altura sidebar/topbar, fondo Home, cursor botones ([#105](https://github.com/JanuarAsprilla/VIGIIAP/issues/105)) ([b55ffe6](https://github.com/JanuarAsprilla/VIGIIAP/commit/b55ffe655e2dfcd2f8b67fc0a1ced56ec4bfad7c))
+
 ## 1.0.0 (2026-09-10)
 
 
