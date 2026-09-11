@@ -249,3 +249,49 @@ describe('Configuracion — SMTP (solo super_admin)', () => {
     expect(await screen.findByText('SMTP no configurado')).toBeInTheDocument()
   })
 })
+
+describe('Configuracion — Ajustes Avanzados (solo super_admin)', () => {
+  test('admin_sig no ve la sección', () => {
+    authMock.user = { name: 'Admin', role: 'Administrador SIG', rol: 'admin_sig' }
+    renderPage()
+    expect(screen.queryByText('Ajustes Avanzados')).not.toBeInTheDocument()
+    authMock.user = { name: 'Root', role: 'Super Administrador', rol: 'super_admin' }
+  })
+
+  test('precarga los tres campos con la config remota', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { cors_extra_origins: 'https://staging.iiap.org.co', rate_limit_max: '250', admin_email_fallback: 'respaldo@iiap.org.co' },
+    })
+    renderPage()
+
+    expect(await screen.findByDisplayValue('https://staging.iiap.org.co')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('250')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('respaldo@iiap.org.co')).toBeInTheDocument()
+  })
+
+  test('el campo de límite de peticiones solo acepta dígitos', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const input = screen.getByPlaceholderText('100')
+    await user.type(input, 'a1b2c3')
+    expect(input).toHaveValue('123')
+  })
+
+  test('guardar incluye los tres ajustes en el payload', async () => {
+    vi.mocked(api.put).mockResolvedValue({})
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.type(screen.getByLabelText('Dominios adicionales permitidos (CORS)'), 'https://extra.co')
+    await user.type(screen.getByPlaceholderText('100'), '300')
+    await user.type(screen.getByLabelText('Correo de respaldo para alertas admin'), 'r@iiap.org.co')
+    await user.click(screen.getByRole('button', { name: /Guardar Cambios/i }))
+
+    expect(api.put).toHaveBeenCalledWith('/admin/configuracion', expect.objectContaining({
+      cors_extra_origins: 'https://extra.co',
+      rate_limit_max: '300',
+      admin_email_fallback: 'r@iiap.org.co',
+    }))
+  })
+})
