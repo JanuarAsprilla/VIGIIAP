@@ -5,6 +5,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   Save, Globe, Bell, Shield, AlertTriangle, Scale,
   Mail, Phone, MapPin, CheckCircle, AlertCircle, ArrowRight,
+  Server, Send, Loader2, Eye, EyeOff,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -116,6 +117,17 @@ export default function Configuracion() {
     mensaje: 'El sistema estará en mantenimiento programado. Disculpe las molestias.',
   })
 
+  // mail_pass nunca llega del backend (ver redactConfig en admin.controller.js) —
+  // arranca vacío siempre. Si la persona no escribe una nueva, no se manda en
+  // el guardado, para no pisar la que ya está guardada con un string vacío.
+  const [smtp, setSmtp] = useState({
+    mail_host: '', mail_port: '', mail_secure: false, mail_user: '', mail_pass: '',
+  })
+  const [mailPassConfigurado, setMailPassConfigurado] = useState(false)
+  const [showMailPass, setShowMailPass] = useState(false)
+  const [testEmailStatus, setTestEmailStatus] = useState<'ok' | 'error' | null>(null)
+  const [testEmailError, setTestEmailError] = useState('')
+
   const [politicaPrivacidad, setPoliticaPrivacidad] = useState('')
 
   const [saveStatus, setSaveStatus] = useState<'ok' | 'error' | null>(null)
@@ -156,6 +168,15 @@ export default function Configuracion() {
     if (remoteConfig.politicaPrivacidad !== undefined) {
       setPoliticaPrivacidad(remoteConfig.politicaPrivacidad ?? '')
     }
+    setSmtp((s) => ({
+      ...s,
+      mail_host:   remoteConfig.mail_host   ?? s.mail_host,
+      mail_port:   remoteConfig.mail_port   ?? s.mail_port,
+      mail_secure: remoteConfig.mail_secure === undefined ? s.mail_secure : remoteConfig.mail_secure === 'true',
+      mail_user:   remoteConfig.mail_user   ?? s.mail_user,
+      // mail_pass queda fuera a propósito — nunca llega del backend.
+    }))
+    setMailPassConfigurado(Boolean(remoteConfig.mail_pass_configurado))
   }, [remoteConfig])
 
   // ── Save mutation ──
@@ -180,7 +201,7 @@ export default function Configuracion() {
       publicoCanSolicitar:   String(roles.publicoCanSolicitar),
       investigadorCanUpload: String(roles.investigadorCanUpload),
       requireApproval:       String(roles.requireApproval),
-      // Modo mantenimiento y política de privacidad son exclusivos de
+      // Modo mantenimiento, política de privacidad y SMTP son exclusivos de
       // super_admin — el backend rechaza toda la petición si cualquiera de
       // estas claves llega de un admin_sig, así que ni siquiera se incluyen
       // en el payload para el resto de roles.
@@ -188,9 +209,29 @@ export default function Configuracion() {
         modoMantenimiento:    String(mantenimiento.modoMantenimiento),
         mensajeMantenimiento: mantenimiento.mensaje,
         politicaPrivacidad,
+        mail_host: smtp.mail_host,
+        mail_port: smtp.mail_port,
+        mail_secure: smtp.mail_secure,
+        mail_user: smtp.mail_user,
+        // Campo vacío = "no la estoy cambiando" — nunca se manda para no
+        // pisar la contraseña ya guardada con un string vacío.
+        ...(smtp.mail_pass ? { mail_pass: smtp.mail_pass } : {}),
       } : {}),
     })
   }
+
+  const testEmailMutation = useMutation<unknown, Error>({
+    mutationFn: () => api.post('/admin/configuracion/probar-correo'),
+    onSuccess: () => {
+      setTestEmailStatus('ok')
+      setTimeout(() => setTestEmailStatus(null), 4000)
+    },
+    onError: (err) => {
+      setTestEmailStatus('error')
+      setTestEmailError((err as Error)?.message || 'No se pudo enviar el correo de prueba.')
+      setTimeout(() => setTestEmailStatus(null), 6000)
+    },
+  })
 
   return (
     <div className="space-y-6">
@@ -345,6 +386,115 @@ export default function Configuracion() {
           ))}
         </div>
       </SectionCard>
+
+      {/* Correo (SMTP) — exclusivo super_admin: el instituto cambia de proveedor
+          de correo de vez en cuando; esto reemplaza tener que tocar variables
+          de entorno y redesplegar. */}
+      {isSuperAdmin && (
+        <SectionCard title="Correo (SMTP)" icon={Server} delay={0.26}>
+          <p className="text-xs text-text-muted">
+            Configura el servidor de correo que envía verificaciones, recuperación de contraseña,
+            alertas de solicitudes y demás notificaciones. Solo Super Administrador puede verlo y
+            cambiarlo.
+          </p>
+          <hr className="border-border" />
+          <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr] gap-4">
+            <div>
+              <label htmlFor="smtp-host" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Servidor (host)</label>
+              <input
+                id="smtp-host"
+                type="text"
+                placeholder="smtp.ejemplo.co"
+                value={smtp.mail_host}
+                onChange={(e) => setSmtp((s) => ({ ...s, mail_host: e.target.value }))}
+                className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+              />
+            </div>
+            <div>
+              <label htmlFor="smtp-port" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Puerto</label>
+              <input
+                id="smtp-port"
+                type="text"
+                inputMode="numeric"
+                placeholder="587"
+                value={smtp.mail_port}
+                onChange={(e) => setSmtp((s) => ({ ...s, mail_port: e.target.value.replace(/\D/g, '') }))}
+                className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="smtp-user" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Usuario</label>
+              <input
+                id="smtp-user"
+                type="text"
+                placeholder="notificaciones@iiap.org.co"
+                value={smtp.mail_user}
+                onChange={(e) => setSmtp((s) => ({ ...s, mail_user: e.target.value }))}
+                className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+              />
+            </div>
+            <div>
+              <label htmlFor="smtp-pass" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                Contraseña {mailPassConfigurado && <span className="normal-case font-normal text-text-muted">(ya hay una guardada)</span>}
+              </label>
+              <div className="relative">
+                <input
+                  id="smtp-pass"
+                  type={showMailPass ? 'text' : 'password'}
+                  placeholder={mailPassConfigurado ? '•••••••• (deja vacío para no cambiarla)' : 'Contraseña o clave de aplicación'}
+                  value={smtp.mail_pass}
+                  onChange={(e) => setSmtp((s) => ({ ...s, mail_pass: e.target.value }))}
+                  className="w-full px-3 py-2.5 pr-10 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowMailPass((v) => !v)}
+                  aria-label={showMailPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
+                >
+                  {showMailPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <span className="text-sm text-text">Conexión segura (TLS/SSL)</span>
+              <p className="text-xs text-text-muted mt-0.5">Actívalo si el proveedor usa el puerto 465. Para 587 (el más común), déjalo apagado.</p>
+            </div>
+            <Toggle checked={smtp.mail_secure} onChange={() => setSmtp((s) => ({ ...s, mail_secure: !s.mail_secure }))} label="" />
+          </div>
+          <hr className="border-border" />
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              type="button"
+              onClick={() => testEmailMutation.mutate()}
+              disabled={testEmailMutation.isPending}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-border text-text hover:border-primary-800 hover:text-primary-800 transition-colors disabled:opacity-60"
+            >
+              {testEmailMutation.isPending
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <Send className="w-4 h-4" />}
+              Enviar correo de prueba
+            </button>
+            {testEmailStatus === 'ok' && (
+              <span className="inline-flex items-center gap-1.5 text-sm text-green-700">
+                <CheckCircle className="w-4 h-4" />Enviado — revisa tu bandeja
+              </span>
+            )}
+            {testEmailStatus === 'error' && (
+              <span className="inline-flex items-center gap-1.5 text-sm text-red-600">
+                <AlertCircle className="w-4 h-4" />{testEmailError}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-text-muted">
+            Guarda primero los cambios de arriba — la prueba usa la configuración ya guardada, no lo que esté sin guardar en estos campos.
+          </p>
+        </SectionCard>
+      )}
 
       {/* Mantenimiento — exclusivo super_admin: apaga la plataforma para todos */}
       {isSuperAdmin && (
