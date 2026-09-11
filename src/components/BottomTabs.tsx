@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Map, FileText, Wrench, PenLine, Lock } from 'lucide-react'
+import { Home, Map, FileText, Wrench, PenLine, Lock, MoreHorizontal } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/lib/constants/roles'
 
@@ -11,14 +11,19 @@ const TABS = [
   { icon: PenLine,  label: 'Solicitudes',  path: '/solicitudes',  protected: true  },
 ]
 
-export default function BottomTabs() {
+// Única navegación primaria en teléfono — antes coexistía con la hamburguesa
+// del TopBar (mismos destinos, dos disparadores). "Más" reemplaza esa
+// hamburguesa: abre el mismo drawer del Sidebar (Geovisor, Perfil, Ayuda,
+// Panel Admin, etc. — todo lo que no cabe en 5 iconos), ahora como
+// navegación secundaria/overflow, no como una segunda primaria compitiendo.
+export default function BottomTabs({ onMore, moreOpen }: { onMore: () => void; moreOpen: boolean }) {
   const { isAuthenticated, user } = useAuth()
   const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE
   const canAccess = isAuthenticated && !isUnverified
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-50 lg:hidden"
+      className="tabs-glass fixed bottom-0 inset-x-0 z-50 md:hidden"
       style={{
         background: 'var(--tabs-bg)',
         backdropFilter: 'blur(28px) saturate(180%)',
@@ -83,6 +88,25 @@ export default function BottomTabs() {
             </NavLink>
           )
         })}
+
+        <button
+          type="button"
+          onClick={onMore}
+          aria-label="Más opciones"
+          aria-expanded={moreOpen}
+          className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl min-w-[60px] transition-all duration-200"
+          style={moreOpen
+            ? { background: 'var(--tabs-active-bg)', color: 'var(--tabs-active-text)' }
+            : { color: 'var(--tabs-text)' }
+          }
+        >
+          <MoreHorizontal
+            className="w-5 h-5 transition-transform duration-200"
+            style={moreOpen ? { transform: 'scale(1.15)' } : {}}
+            aria-hidden="true"
+          />
+          <span className="text-[0.6rem] font-bold uppercase tracking-wider">Más</span>
+        </button>
       </div>
     </nav>
   )

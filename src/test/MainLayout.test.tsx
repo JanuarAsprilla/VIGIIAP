@@ -28,15 +28,17 @@ vi.mock('@/components/Sidebar', () => ({
   ),
 }))
 vi.mock('@/components/TopBar', () => ({
-  default: ({ onMenuToggle }: { onMenuToggle: () => void }) => (
+  default: () => <div>TopBar</div>,
+}))
+vi.mock('@/components/FooterBar', () => ({ default: () => <div>FooterBar</div> }))
+vi.mock('@/components/BottomTabs', () => ({
+  default: ({ onMore, moreOpen }: { onMore: () => void; moreOpen: boolean }) => (
     <div>
-      TopBar
-      <button onClick={onMenuToggle}>Abrir menú móvil</button>
+      BottomTabs ({moreOpen ? 'abierto' : 'cerrado'})
+      <button onClick={onMore}>Más</button>
     </div>
   ),
 }))
-vi.mock('@/components/FooterBar', () => ({ default: () => <div>FooterBar</div> }))
-vi.mock('@/components/BottomTabs', () => ({ default: () => <div>BottomTabs</div> }))
 vi.mock('@/components/CommandPalette', () => ({ default: () => <div>CommandPalette</div> }))
 vi.mock('@/components/WelcomeGate', () => ({ default: () => <div>WelcomeGate</div> }))
 
@@ -68,7 +70,7 @@ describe('MainLayout — orquestación del shell principal', () => {
     expect(screen.getByText('TopBar')).toBeInTheDocument()
     expect(screen.getByText('Contenido de la página')).toBeInTheDocument()
     expect(screen.getByText('FooterBar')).toBeInTheDocument()
-    expect(screen.getByText('BottomTabs')).toBeInTheDocument()
+    expect(screen.getByText(/BottomTabs \(/)).toBeInTheDocument()
     expect(screen.getByText('CommandPalette')).toBeInTheDocument()
     expect(screen.getByText('WelcomeGate')).toBeInTheDocument()
   })
@@ -85,15 +87,18 @@ describe('MainLayout — orquestación del shell principal', () => {
     expect(screen.queryByText('FooterBar')).not.toBeInTheDocument()
   })
 
-  test('abrir el menú móvil desde TopBar y cerrarlo desde Sidebar alternan el mismo estado', async () => {
+  test('abrir el menú desde el botón "Más" de BottomTabs y cerrarlo desde Sidebar alternan el mismo estado', async () => {
     const user = userEvent.setup()
     renderMainLayout()
     expect(screen.getByText(/Sidebar \(cerrado\)/)).toBeInTheDocument()
+    expect(screen.getByText(/BottomTabs \(cerrado\)/)).toBeInTheDocument()
 
-    await user.click(screen.getByText('Abrir menú móvil'))
+    await user.click(screen.getByText('Más'))
     expect(screen.getByText(/Sidebar \(abierto\)/)).toBeInTheDocument()
+    expect(screen.getByText(/BottomTabs \(abierto\)/)).toBeInTheDocument()
 
     await user.click(screen.getByText('Cerrar sidebar móvil'))
     expect(screen.getByText(/Sidebar \(cerrado\)/)).toBeInTheDocument()
+    expect(screen.getByText(/BottomTabs \(cerrado\)/)).toBeInTheDocument()
   })
 })

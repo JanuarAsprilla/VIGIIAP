@@ -155,7 +155,11 @@ function TopBarSearchInput({ value, onChange, placeholder, autoFocus, onClear, s
 
 // ── Componente principal ──
 
-export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
+// onMenuToggle es opcional: en la app principal (MainLayout) la navegación en
+// teléfono ya vive completa en BottomTabs (tab "Más"), así que no hace falta
+// un segundo disparador de menú aquí — se elimina esa redundancia. AdminLayout
+// sí lo pasa: el panel admin no tiene una barra inferior propia.
+export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) {
   const location  = useLocation()
   const navigate  = useNavigate()
   const { isAuthenticated, user, logout, isAdmin } = useAuth()
@@ -240,22 +244,24 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
     >
 
       {/* ── Fila principal ── */}
-      <div className="flex items-center justify-between h-14 px-4 lg:px-6">
+      <div className="flex items-center justify-between h-14 px-4 md:px-6">
 
         {/* Izquierda: branding + búsqueda desktop */}
         <div className="flex items-center gap-3 flex-1">
-          <button
-            onClick={onMenuToggle}
-            aria-label="Abrir menú de navegación"
-            className="lg:hidden p-2 -ml-2 rounded-lg transition-colors" style={{color:"var(--topbar-icon-off)"}}
-          >
-            <Menu className="w-5 h-5" aria-hidden="true" />
-          </button>
+          {onMenuToggle && (
+            <button
+              onClick={onMenuToggle}
+              aria-label="Abrir menú de navegación"
+              className="md:hidden p-2 -ml-2 rounded-lg transition-colors" style={{color:"var(--topbar-icon-off)"}}
+            >
+              <Menu className="w-5 h-5" aria-hidden="true" />
+            </button>
+          )}
 
-          <span className="lg:hidden text-sm font-bold tracking-wide" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
+          <span className="md:hidden text-sm font-bold tracking-wide" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
 
           {/* Sin branding propio en desktop — el Sidebar ya lo muestra siempre visible; repetirlo aquí era redundante */}
-          <div className="hidden lg:flex items-center gap-3 flex-1">
+          <div className="hidden md:flex items-center gap-3 flex-1">
             {/* Búsqueda contextual por página */}
             <TopBarSearchInput
               className="flex-1 max-w-sm"
@@ -270,7 +276,7 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
         </div>
 
         {/* Derecha: acciones y perfil */}
-        <div className="flex items-center gap-1 lg:gap-2 ml-4" ref={panelRef}>
+        <div className="flex items-center gap-1 md:gap-2 ml-4" ref={panelRef}>
 
           {activeLabel && (
             <span className="hidden md:inline text-sm font-bold pb-0.5 mr-2" style={{color:"var(--topbar-text)",borderBottom:"2px solid var(--topbar-active-ul)"}}>
@@ -283,7 +289,7 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
             onClick={() => setShowMobileSearch((v) => !v)}
             aria-label="Buscar"
             aria-expanded={showMobileSearch}
-            className="lg:hidden p-2 rounded-lg transition-colors" style={{color: showMobileSearch ? "var(--topbar-icon-on)" : "var(--topbar-icon-off)"}}
+            className="md:hidden p-2 rounded-lg transition-colors" style={{color: showMobileSearch ? "var(--topbar-icon-on)" : "var(--topbar-icon-off)"}}
           >
             <Search className="w-5 h-5" aria-hidden="true" />
           </button>
@@ -380,7 +386,7 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
               </div>
 
               {/* Ajustes — solo desktop */}
-              <div className="hidden lg:block relative">
+              <div className="hidden md:block relative">
                 <TopBarIconButton
                   active={activePanel === 'ajustes'}
                   icon={Settings}
@@ -404,7 +410,7 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
                 aria-label="Menú de perfil"
                 aria-expanded={activePanel === 'dropdown'}
                 aria-haspopup="true"
-                className="flex items-center gap-2 pl-3 lg:pl-4" style={{borderLeft:"1px solid var(--topbar-sep)"}}
+                className="flex items-center gap-2 pl-3 md:pl-4" style={{borderLeft:"1px solid var(--topbar-sep)"}}
               >
                 <div className="text-right hidden sm:block">
                   <span className="block text-sm font-medium leading-tight" style={{color:"var(--topbar-text)"}}>{user?.name}</span>
@@ -432,7 +438,7 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
           ) : (
             <Link
               to="/login"
-              className="flex items-center gap-2 pl-3 lg:pl-4 no-underline"
+              className="flex items-center gap-2 pl-3 md:pl-4 no-underline"
               style={{borderLeft:"1px solid var(--topbar-sep)"}}
             >
               <span
@@ -455,7 +461,7 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:hidden overflow-hidden" style={{borderTop:"1px solid var(--topbar-border)"}}
+            className="md:hidden overflow-hidden" style={{borderTop:"1px solid var(--topbar-border)"}}
           >
             <div className="px-4 py-2.5">
               <TopBarSearchInput

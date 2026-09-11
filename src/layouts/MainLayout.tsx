@@ -10,10 +10,14 @@ import WelcomeGate from '@/components/WelcomeGate'
 import { useUI, type Density } from '@/contexts/UIContext'
 import { useLenis } from '@/hooks/useLenis'
 
+// pb-20 compensa la altura del BottomTabs fijo — solo hace falta por debajo
+// de md, que es donde BottomTabs sigue visible (ver breakpoint compartido
+// con Sidebar/TopBar: tablet en adelante usa el sidebar persistente, no la
+// barra inferior).
 const DENSITY_PADDING: Record<Density, string> = {
-  compact:     'p-2 lg:p-3 pb-20 lg:pb-3',
-  normal:      'p-4 lg:p-6 pb-20 lg:pb-6',
-  comfortable: 'p-6 lg:p-10 pb-20 lg:pb-10',
+  compact:     'p-2 md:p-3 pb-20 md:pb-3',
+  normal:      'p-4 md:p-6 pb-20 md:pb-6',
+  comfortable: 'p-6 md:p-10 pb-20 md:pb-10',
 }
 
 // ── Ambient background orbs (fixed, behind everything) ──
@@ -67,9 +71,9 @@ export default function MainLayout() {
         onClose={() => setMobileMenuOpen(false)}
       />
 
-      {/* Main area — offset by sidebar on desktop */}
-      <div className="relative z-10 lg:ml-[210px] min-h-screen flex flex-col">
-        <TopBar onMenuToggle={() => setMobileMenuOpen(true)} />
+      {/* Main area — offset by sidebar desde tablet (md) en adelante */}
+      <div className="relative z-10 md:ml-[210px] min-h-screen flex flex-col">
+        <TopBar />
 
         {/* Page transition wrapper — 3D perspective flip */}
         <AnimatePresence mode="sync" initial={false}>
@@ -88,13 +92,13 @@ export default function MainLayout() {
         </AnimatePresence>
 
         {!isGeovisor && (
-          <div className="hidden lg:block relative z-10">
+          <div className="hidden md:block relative z-10">
             <FooterBar />
           </div>
         )}
       </div>
 
-      <BottomTabs />
+      <BottomTabs onMore={() => setMobileMenuOpen(true)} moreOpen={mobileMenuOpen} />
       <CommandPalette />
       <WelcomeGate />
     </div>
