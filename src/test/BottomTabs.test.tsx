@@ -8,8 +8,9 @@ type MockUser = { role: string; isVisitante?: boolean } | null
 const authMock: { isAuthenticated: boolean; user: MockUser } = { isAuthenticated: false, user: null }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 
-function renderTabs() {
-  return render(<MemoryRouter><BottomTabs /></MemoryRouter>)
+function renderTabs(props: { onMore?: () => void; moreOpen?: boolean } = {}) {
+  const { onMore = vi.fn(), moreOpen = false } = props
+  return render(<MemoryRouter><BottomTabs onMore={onMore} moreOpen={moreOpen} /></MemoryRouter>)
 }
 
 beforeEach(() => {
@@ -58,5 +59,24 @@ describe('BottomTabs — usuario verificado', () => {
     renderTabs()
     expect(screen.getByRole('link', { name: /Mapas/i })).toHaveAttribute('href', '/mapas')
     expect(screen.getByRole('link', { name: /Solicitudes/i })).toHaveAttribute('href', '/solicitudes')
+  })
+})
+
+describe('BottomTabs — botón Más', () => {
+  test('invoca onMore al hacer clic', () => {
+    const onMore = vi.fn()
+    renderTabs({ onMore })
+    screen.getByRole('button', { name: /Más opciones/i }).click()
+    expect(onMore).toHaveBeenCalledTimes(1)
+  })
+
+  test('refleja el estado abierto vía aria-expanded', () => {
+    renderTabs({ moreOpen: true })
+    expect(screen.getByRole('button', { name: /Más opciones/i })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  test('refleja el estado cerrado vía aria-expanded', () => {
+    renderTabs({ moreOpen: false })
+    expect(screen.getByRole('button', { name: /Más opciones/i })).toHaveAttribute('aria-expanded', 'false')
   })
 })

@@ -133,7 +133,7 @@ function SidebarContent({ onClose, onLogout, user }: { onClose: () => void; onLo
 
           <button
             onClick={onClose}
-            className="lg:hidden p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"
+            className="md:hidden p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"
             aria-label="Cerrar menú"
           >
             <X className="w-5 h-5" />
@@ -225,12 +225,12 @@ export default function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: bool
 
   return (
     <>
-      {/* Desktop */}
-      <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[220px] bg-[var(--card-bg)] border-r border-border flex-col z-40">
+      {/* Tablet y desktop (md+): persistente */}
+      <aside className="hidden md:flex fixed top-0 left-0 bottom-0 w-[220px] bg-[var(--card-bg)] border-r border-border flex-col z-40">
         <SidebarContent {...props} />
       </aside>
 
-      {/* Mobile */}
+      {/* Teléfono (< md) */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -240,7 +240,7 @@ export default function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: bool
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] lg:hidden"
+              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] md:hidden"
               onClick={onClose}
             />
             <motion.aside
@@ -249,7 +249,7 @@ export default function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: bool
               animate={{ x: 0 }}
               exit={{ x: -260 }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="fixed top-0 left-0 bottom-0 w-[240px] bg-[var(--card-bg)] z-50 flex flex-col shadow-float lg:hidden"
+              className="fixed top-0 left-0 bottom-0 w-[240px] bg-[var(--card-bg)] z-50 flex flex-col shadow-float md:hidden"
             >
               <SidebarContent {...props} />
             </motion.aside>

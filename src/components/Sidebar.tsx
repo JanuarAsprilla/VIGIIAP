@@ -13,6 +13,7 @@ import { ROLES } from '@/lib/constants/roles'
 import { motion, AnimatePresence } from 'framer-motion'
 import iiapIsotipoColor from '@/assets/iiap-isotipo-color.png'
 import iiapIsotipoBlanco from '@/assets/iiap-isotipo-blanco.png'
+import { useReducedMotion } from '@/hooks/useReducedMotion'
 
 
 const RESTRICTED_PATHS = ['/geovisor', '/herramientas', '/solicitudes']
@@ -191,7 +192,7 @@ function SidebarInner({ onClose, onLogout, user, isAuthenticated }: {
 
           <button
             onClick={onClose}
-            className="lg:hidden p-1.5 rounded-lg transition-colors"
+            className="md:hidden p-1.5 rounded-lg transition-colors"
             style={{ color: 'var(--nav-close-text)' }}
             aria-label="Cerrar menú"
           >
@@ -349,6 +350,7 @@ function SidebarGrain() {
 // ── Export principal ──────────────────────────────────────────────────────────
 export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   const { isAuthenticated, user, logout } = useAuth()
+  const prefersReducedMotion = useReducedMotion()
 
   const handleLogout = () => {
     logout()
@@ -376,16 +378,22 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
 
   return (
     <>
-      {/* Desktop */}
+      {/* Tablet y desktop (md+): persistente, siempre visible — el mismo
+          patrón que usan las apps de iPad, no el tratamiento de teléfono
+          estirado a una pantalla más grande. */}
       <aside
-        className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[210px] flex-col z-40 overflow-hidden"
+        className="nav-glass hidden md:flex fixed top-0 left-0 bottom-0 w-[210px] flex-col z-40 overflow-hidden"
         style={sidebarStyle}
       >
         <SidebarGrain />
         <SidebarInner {...innerProps} />
       </aside>
 
-      {/* Mobile — mismo material, blur más fuerte al flotar sobre el contenido real */}
+      {/* Teléfono (< md): drawer de overflow, disparado desde el tab "Más"
+          del BottomTabs — mismo material, blur más fuerte al flotar sobre
+          el contenido real. Con prefers-reduced-motion: cross-fade corto y
+          sin el spring que desplaza el panel (Apple: reemplazar deslizamientos
+          por una transición no vestibular equivalente). */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -395,17 +403,20 @@ export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; 
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-50 backdrop-blur-md lg:hidden"
+              className="fixed inset-0 z-50 backdrop-blur-md md:hidden"
               style={{ background: 'var(--nav-overlay-bg)' }}
               onClick={onClose}
             />
             <motion.aside
               key="drawer"
-              initial={{ x: -260 }}
-              animate={{ x: 0 }}
-              exit={{ x: -260 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="fixed top-0 left-0 bottom-0 w-[240px] z-50 flex flex-col overflow-hidden lg:hidden"
+              initial={prefersReducedMotion ? { opacity: 0 } : { x: -260 }}
+              animate={prefersReducedMotion ? { opacity: 1 } : { x: 0 }}
+              exit={prefersReducedMotion ? { opacity: 0 } : { x: -260 }}
+              transition={prefersReducedMotion
+                ? { duration: 0.15, ease: 'easeOut' }
+                : { type: 'spring', damping: 28, stiffness: 320 }
+              }
+              className="nav-glass fixed top-0 left-0 bottom-0 w-[240px] z-50 flex flex-col overflow-hidden md:hidden"
               style={{ ...sidebarStyle, backdropFilter: 'blur(32px) saturate(180%)', WebkitBackdropFilter: 'blur(32px) saturate(180%)' }}
             >
               <SidebarGrain />

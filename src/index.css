@@ -351,7 +351,8 @@ button:not(:disabled), [role="button"]:not(:disabled) {
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .glass-shell, .glass-panel, .glass-chip, .glass-card, .glass-dark {
+  .glass-shell, .glass-panel, .glass-chip, .glass-card, .glass-dark,
+  .nav-glass, .tabs-glass {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     background: var(--card-bg);
