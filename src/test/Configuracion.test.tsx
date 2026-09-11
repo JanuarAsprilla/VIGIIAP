@@ -24,7 +24,7 @@ vi.mock('@/components/ui/Card3D', () => ({
     <div className={className}>{children}</div>,
 }))
 
-vi.mock('@/lib/api', () => ({ default: { get: vi.fn(), put: vi.fn() } }))
+vi.mock('@/lib/api', () => ({ default: { get: vi.fn(), put: vi.fn(), post: vi.fn().mockResolvedValue({}) } }))
 import api from '@/lib/api'
 
 const authMock = { user: { name: 'Root', role: 'Super Administrador', rol: 'super_admin' } }
@@ -165,5 +165,87 @@ describe('Configuracion — notificaciones y roles', () => {
     renderPage()
     const link = screen.getByRole('link', { name: /Generar reporte de actividad/i })
     expect(link).toHaveAttribute('href', '/admin/reportes')
+  })
+})
+
+describe('Configuracion — SMTP (solo super_admin)', () => {
+  test('admin_sig no ve la sección de Correo (SMTP)', () => {
+    authMock.user = { name: 'Admin', role: 'Administrador SIG', rol: 'admin_sig' }
+    renderPage()
+    expect(screen.queryByText('Correo (SMTP)')).not.toBeInTheDocument()
+    authMock.user = { name: 'Root', role: 'Super Administrador', rol: 'super_admin' }
+  })
+
+  test('super_admin sí ve la sección y sus campos', async () => {
+    renderPage()
+    expect(await screen.findByText('Correo (SMTP)')).toBeInTheDocument()
+    expect(screen.getByLabelText('Servidor (host)')).toBeInTheDocument()
+    expect(screen.getByLabelText('Puerto')).toBeInTheDocument()
+  })
+
+  test('precarga host/puerto/usuario, pero NUNCA la contraseña (el backend no la devuelve)', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { mail_host: 'smtp.instituto.co', mail_port: '465', mail_user: 'x@iiap.org.co', mail_pass_configurado: true },
+    })
+    renderPage()
+
+    expect(await screen.findByDisplayValue('smtp.instituto.co')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('465')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Contraseña/)).toHaveValue('')
+    expect(screen.getByText('(ya hay una guardada)')).toBeInTheDocument()
+  })
+
+  test('si no se escribe una contraseña nueva, no se manda mail_pass en el guardado', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: { mail_pass_configurado: true } })
+    vi.mocked(api.put).mockResolvedValue({})
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('(ya hay una guardada)')
+    await user.click(screen.getByRole('button', { name: /Guardar Cambios/i }))
+
+    const body = vi.mocked(api.put).mock.calls[0][1] as Record<string, unknown>
+    expect(body).not.toHaveProperty('mail_pass')
+  })
+
+  test('si se escribe una contraseña nueva, sí se incluye en el guardado', async () => {
+    vi.mocked(api.put).mockResolvedValue({})
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.type(screen.getByLabelText(/^Contraseña/), 'clave-nueva-123')
+    await user.click(screen.getByRole('button', { name: /Guardar Cambios/i }))
+
+    expect(api.put).toHaveBeenCalledWith('/admin/configuracion', expect.objectContaining({ mail_pass: 'clave-nueva-123' }))
+  })
+
+  test('el botón "mostrar" revela la contraseña en texto plano', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const input = screen.getByLabelText(/^Contraseña/)
+    expect(input).toHaveAttribute('type', 'password')
+    await user.click(screen.getByRole('button', { name: 'Mostrar contraseña' }))
+    expect(input).toHaveAttribute('type', 'text')
+  })
+
+  test('"Enviar correo de prueba" llama al endpoint y muestra confirmación', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: /Enviar correo de prueba/i }))
+
+    expect(api.post).toHaveBeenCalledWith('/admin/configuracion/probar-correo')
+    expect(await screen.findByText(/Enviado — revisa tu bandeja/i)).toBeInTheDocument()
+  })
+
+  test('si el correo de prueba falla, muestra el mensaje de error del backend', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    vi.mocked(api.post).mockRejectedValueOnce(new Error('SMTP no configurado'))
+
+    await user.click(screen.getByRole('button', { name: /Enviar correo de prueba/i }))
+
+    expect(await screen.findByText('SMTP no configurado')).toBeInTheDocument()
   })
 })
