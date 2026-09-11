@@ -20,10 +20,13 @@ Autorización y vigencia: Al marcar la casilla de aceptación en el formulario d
 interface PublicConfig { politicaPrivacidad?: string | null }
 
 export default function Terminos() {
+  // api.get ya devuelve el body sin envolver (interceptor de respuesta en
+  // src/lib/api.ts) — un select que lea `.data` de nuevo siempre da
+  // undefined, y la política editada en el panel nunca llegaba a mostrarse
+  // aquí (se veía el fallback hardcodeado sin que nadie lo notara).
   const { data, isLoading } = useQuery({
     queryKey: ['public', 'configuracion'],
-    queryFn: () => api.get('/public/configuracion'),
-    select: (res) => res.data as PublicConfig,
+    queryFn: () => api.get('/public/configuracion') as Promise<PublicConfig>,
     staleTime: 5 * 60_000,
   })
 

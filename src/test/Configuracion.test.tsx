@@ -41,14 +41,14 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(api.get).mockResolvedValue({ data: {} })
+  vi.mocked(api.get).mockResolvedValue({})
 })
 
 describe('Configuracion — carga remota', () => {
   test('precarga los campos generales con la config remota', async () => {
-    vi.mocked(api.get).mockResolvedValue({
-      data: { siteName: 'Portal de Prueba', modoMantenimiento: 'true', mensajeMantenimiento: 'En mantenimiento' },
-    })
+    vi.mocked(api.get).mockResolvedValue(
+      { siteName: 'Portal de Prueba', modoMantenimiento: 'true', mensajeMantenimiento: 'En mantenimiento' },
+    )
 
     renderPage()
 
@@ -184,9 +184,9 @@ describe('Configuracion — SMTP (solo super_admin)', () => {
   })
 
   test('precarga host/puerto/usuario, pero NUNCA la contraseña (el backend no la devuelve)', async () => {
-    vi.mocked(api.get).mockResolvedValue({
-      data: { mail_host: 'smtp.instituto.co', mail_port: '465', mail_user: 'x@iiap.org.co', mail_pass_configurado: true },
-    })
+    vi.mocked(api.get).mockResolvedValue(
+      { mail_host: 'smtp.instituto.co', mail_port: '465', mail_user: 'x@iiap.org.co', mail_pass_configurado: true },
+    )
     renderPage()
 
     expect(await screen.findByDisplayValue('smtp.instituto.co')).toBeInTheDocument()
@@ -196,7 +196,7 @@ describe('Configuracion — SMTP (solo super_admin)', () => {
   })
 
   test('si no se escribe una contraseña nueva, no se manda mail_pass en el guardado', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: { mail_pass_configurado: true } })
+    vi.mocked(api.get).mockResolvedValue({ mail_pass_configurado: true })
     vi.mocked(api.put).mockResolvedValue({})
     const user = userEvent.setup()
     renderPage()
@@ -259,9 +259,9 @@ describe('Configuracion — Ajustes Avanzados (solo super_admin)', () => {
   })
 
   test('precarga los tres campos con la config remota', async () => {
-    vi.mocked(api.get).mockResolvedValue({
-      data: { cors_extra_origins: 'https://staging.iiap.org.co', rate_limit_max: '250', admin_email_fallback: 'respaldo@iiap.org.co' },
-    })
+    vi.mocked(api.get).mockResolvedValue(
+      { cors_extra_origins: 'https://staging.iiap.org.co', rate_limit_max: '250', admin_email_fallback: 'respaldo@iiap.org.co' },
+    )
     renderPage()
 
     expect(await screen.findByDisplayValue('https://staging.iiap.org.co')).toBeInTheDocument()
