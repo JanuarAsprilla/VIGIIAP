@@ -5,7 +5,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   Save, Globe, Bell, Shield, AlertTriangle, Scale,
   Mail, Phone, MapPin, CheckCircle, AlertCircle, ArrowRight,
-  Server, Send, Loader2, Eye, EyeOff,
+  Server, Send, Loader2, Eye, EyeOff, Gauge, Network,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -128,6 +128,15 @@ export default function Configuracion() {
   const [testEmailStatus, setTestEmailStatus] = useState<'ok' | 'error' | null>(null)
   const [testEmailError, setTestEmailError] = useState('')
 
+  // Todos aditivos a su env var — nunca la reemplazan (ver dynamicConfig.js
+  // en el backend). Así un error al guardarlos no puede bloquear el acceso
+  // al propio panel ni dejar el sitio sin ningún límite de peticiones.
+  const [avanzado, setAvanzado] = useState({
+    corsExtraOrigins: '',
+    rateLimitMax: '',
+    adminEmailFallback: '',
+  })
+
   const [politicaPrivacidad, setPoliticaPrivacidad] = useState('')
 
   const [saveStatus, setSaveStatus] = useState<'ok' | 'error' | null>(null)
@@ -177,6 +186,11 @@ export default function Configuracion() {
       // mail_pass queda fuera a propósito — nunca llega del backend.
     }))
     setMailPassConfigurado(Boolean(remoteConfig.mail_pass_configurado))
+    setAvanzado((a) => ({
+      corsExtraOrigins:   remoteConfig.cors_extra_origins   ?? a.corsExtraOrigins,
+      rateLimitMax:       remoteConfig.rate_limit_max       ?? a.rateLimitMax,
+      adminEmailFallback: remoteConfig.admin_email_fallback ?? a.adminEmailFallback,
+    }))
   }, [remoteConfig])
 
   // ── Save mutation ──
@@ -216,6 +230,9 @@ export default function Configuracion() {
         // Campo vacío = "no la estoy cambiando" — nunca se manda para no
         // pisar la contraseña ya guardada con un string vacío.
         ...(smtp.mail_pass ? { mail_pass: smtp.mail_pass } : {}),
+        cors_extra_origins:   avanzado.corsExtraOrigins,
+        rate_limit_max:       avanzado.rateLimitMax,
+        admin_email_fallback: avanzado.adminEmailFallback,
       } : {}),
     })
   }
@@ -493,6 +510,62 @@ export default function Configuracion() {
           <p className="text-xs text-text-muted">
             Guarda primero los cambios de arriba — la prueba usa la configuración ya guardada, no lo que esté sin guardar en estos campos.
           </p>
+        </SectionCard>
+      )}
+
+      {/* Ajustes avanzados — exclusivo super_admin: todos aditivos a su
+          variable de entorno correspondiente, nunca la reemplazan. */}
+      {isSuperAdmin && (
+        <SectionCard title="Ajustes Avanzados" icon={Network} delay={0.29}>
+          <p className="text-xs text-text-muted">
+            Estos ajustes se suman a los ya fijos en el servidor — nunca los reemplazan. Un valor mal
+            guardado aquí no puede bloquear el acceso a la plataforma ni a este panel.
+          </p>
+          <hr className="border-border" />
+          <div>
+            <label htmlFor="conf-cors" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+              Dominios adicionales permitidos (CORS)
+            </label>
+            <input
+              id="conf-cors"
+              type="text"
+              placeholder="https://otro-dominio.co, https://staging.iiap.org.co"
+              value={avanzado.corsExtraOrigins}
+              onChange={(e) => setAvanzado((a) => ({ ...a, corsExtraOrigins: e.target.value }))}
+              className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+            />
+            <p className="text-xs text-text-muted mt-1">Separados por coma. Se suman a los dominios ya configurados en el servidor.</p>
+          </div>
+          <hr className="border-border" />
+          <FieldRow label="Límite de peticiones" hint="Peticiones permitidas por usuario sin sesión en la ventana de tiempo del servidor. Vacío = usar el valor del servidor.">
+            <div className="flex items-center gap-2 max-w-[160px]">
+              <Gauge className="w-4 h-4 text-text-muted shrink-0" aria-hidden="true" />
+              <input
+                id="conf-rate-limit"
+                type="text"
+                inputMode="numeric"
+                placeholder="100"
+                value={avanzado.rateLimitMax}
+                onChange={(e) => setAvanzado((a) => ({ ...a, rateLimitMax: e.target.value.replace(/\D/g, '') }))}
+                className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+              />
+            </div>
+          </FieldRow>
+          <hr className="border-border" />
+          <div>
+            <label htmlFor="conf-admin-fallback" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+              Correo de respaldo para alertas admin
+            </label>
+            <input
+              id="conf-admin-fallback"
+              type="text"
+              placeholder="respaldo@iiap.org.co"
+              value={avanzado.adminEmailFallback}
+              onChange={(e) => setAvanzado((a) => ({ ...a, adminEmailFallback: e.target.value }))}
+              className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+            />
+            <p className="text-xs text-text-muted mt-1">Solo se usa si no hay ningún administrador activo en el sistema — un respaldo para ese caso.</p>
+          </div>
         </SectionCard>
       )}
 
