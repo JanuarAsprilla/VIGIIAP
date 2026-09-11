@@ -142,10 +142,14 @@ export default function Configuracion() {
   const [saveStatus, setSaveStatus] = useState<'ok' | 'error' | null>(null)
 
   // ── Load config from API ──
+  // api.get ya devuelve el body sin envolver (el interceptor de respuesta de
+  // src/lib/api.ts hace `(res) => res.data`), así que un `select` que vuelva
+  // a leer `.data` aquí siempre da undefined — la sincronización con el
+  // servidor nunca corría, solo parecía funcionar en los campos generales
+  // porque sus valores por defecto ya coincidían con los reales.
   const { data: remoteConfig } = useQuery({
     queryKey: ['admin', 'configuracion'],
-    queryFn: () => api.get('/admin/configuracion'),
-    select: (res) => res.data,
+    queryFn: () => api.get('/admin/configuracion') as Promise<Record<string, string | undefined>>,
     staleTime: 60_000,
   })
 
