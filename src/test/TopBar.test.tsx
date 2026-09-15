@@ -44,9 +44,15 @@ vi.mock('@/components/topbar/ProfileDropdown', () => ({
     <div><button onClick={onLogout}>Cerrar sesión</button></div>
   ),
 }))
+vi.mock('@/components/topbar/LoginPanel', () => ({
+  default: ({ onClose }: { onClose: () => void }) => (
+    <div role="dialog" aria-label="Iniciar sesión">Login Panel<button onClick={onClose}>Cerrar login</button></div>
+  ),
+}))
 
 const authMock = {
   isAuthenticated: false,
+  initializing: false,
   user: null as { name: string; role: string; initials: string; isVisitante?: boolean } | null,
   logout: vi.fn(),
   isAdmin: false,
@@ -69,14 +75,19 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return { ...actual, useNavigate: () => navigateSpy }
 })
 
-function renderTopBar() {
-  return render(<TopBar onMenuToggle={vi.fn()} />, { wrapper: MemoryRouter })
+function renderTopBar(initialEntries?: { pathname: string; state?: unknown }[]) {
+  return render(<TopBar onMenuToggle={vi.fn()} />, {
+    wrapper: ({ children }) => (
+      <MemoryRouter initialEntries={initialEntries ?? ['/']}>{children}</MemoryRouter>
+    ),
+  })
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
   authMock.isAuthenticated = false
+  authMock.initializing = false
   authMock.user = null
   authMock.isAdmin = false
   uiMock.openPalette = openPaletteSpy
@@ -86,11 +97,56 @@ beforeEach(() => {
 })
 
 describe('TopBar — usuario anónimo', () => {
-  test('muestra "Ingresar" y ningún panel de sesión', () => {
+  test('muestra "Ingresar" y ningún otro panel', () => {
     renderTopBar()
-    expect(screen.getByRole('link', { name: /Ingresar/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Ingresar/i })).toBeInTheDocument()
     expect(screen.queryByLabelText('Notificaciones')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Ajustes rápidos')).not.toBeInTheDocument()
+  })
+
+  test('clic en "Ingresar" reabre el panel de login tras cerrarlo', async () => {
+    const user = userEvent.setup()
+    renderTopBar()
+    // El panel ya se abrió solo (ver describe de abajo) — se cierra primero
+    // para probar que el botón "Ingresar" también lo abre por su cuenta.
+    await user.click(await screen.findByText('Cerrar login'))
+    expect(screen.queryByRole('dialog', { name: /Iniciar sesión/i })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Ingresar/i }))
+    expect(await screen.findByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
+  })
+
+  test('location.state.openLogin (reenviado desde /login) abre el panel automáticamente', async () => {
+    renderTopBar([{ pathname: '/', state: { openLogin: true, from: { pathname: '/mapas' } } }])
+    expect(await screen.findByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
+  })
+})
+
+describe('TopBar — panel de login se abre solo (reemplaza al antiguo WelcomeGate)', () => {
+  test('se abre solo, sin clic ni redirect, para quien no tiene sesión', async () => {
+    renderTopBar()
+    expect(await screen.findByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
+  })
+
+  test('no se abre solo si ya hay sesión iniciada', () => {
+    authMock.isAuthenticated = true
+    authMock.user = { name: 'Root', role: 'Investigador', initials: 'RT' }
+    renderTopBar()
+    expect(screen.queryByRole('dialog', { name: /Iniciar sesión/i })).not.toBeInTheDocument()
+  })
+
+  test('no se abre solo mientras la sesión todavía se está verificando', () => {
+    authMock.initializing = true
+    renderTopBar()
+    expect(screen.queryByRole('dialog', { name: /Iniciar sesión/i })).not.toBeInTheDocument()
+  })
+
+  test('si la persona lo cierra, no se vuelve a abrir solo en ese mismo montaje', async () => {
+    const user = userEvent.setup()
+    renderTopBar()
+    expect(await screen.findByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
+    await user.click(screen.getByText('Cerrar login'))
+    expect(screen.queryByRole('dialog', { name: /Iniciar sesión/i })).not.toBeInTheDocument()
   })
 })
 

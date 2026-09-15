@@ -25,6 +25,7 @@ import SoportePanel        from './topbar/SoportePanel'
 import NotificacionesPanel from './topbar/NotificacionesPanel'
 import AjustesPanel        from './topbar/AjustesPanel'
 import ProfileDropdown     from './topbar/ProfileDropdown'
+import LoginPanel          from './topbar/LoginPanel'
 import AvatarBadge         from './ui/AvatarBadge'
 import Avatar               from './ui/Avatar'
 
@@ -162,7 +163,7 @@ function TopBarSearchInput({ value, onChange, placeholder, autoFocus, onClear, s
 export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) {
   const location  = useLocation()
   const navigate  = useNavigate()
-  const { isAuthenticated, user, logout, isAdmin } = useAuth()
+  const { isAuthenticated, initializing, user, logout, isAdmin } = useAuth()
   const { openPalette, notifications }     = useUI()
   const { query, setQuery }               = useSearch()
   const { isDark, toggleTheme }           = useTheme()
@@ -170,13 +171,18 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
   const placeholder = (SEARCH_PLACEHOLDERS as Record<string, string>)[location.pathname] ?? (SEARCH_PLACEHOLDERS as Record<string, string>)['/']
   const activeLabel = (PAGE_LABELS as Record<string, string>)[location.pathname]
 
-  type PanelName = 'soporte' | 'notificaciones' | 'ajustes' | 'dropdown'
+  type PanelName = 'soporte' | 'notificaciones' | 'ajustes' | 'dropdown' | 'login'
 
   const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [activePanel, setActivePanel]           = useState<PanelName | null>(null)
+  // Solo se usa cuando el panel de login se abre vía redirect desde una ruta
+  // protegida (RequireAuth guarda location.state.from) — /login reenvía ese
+  // "from" hasta aquí para volver al sitio original tras iniciar sesión.
+  const [loginFrom, setLoginFrom]               = useState<string | undefined>(undefined)
 
-  const panelRef    = useRef<HTMLDivElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const panelRef       = useRef<HTMLDivElement>(null)
+  const dropdownRef    = useRef<HTMLDivElement>(null)
+  const autoOpenedRef  = useRef(false)
 
   const { readIds, markRead, markAllRead } = useReadNotifications()
 
@@ -195,6 +201,31 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
     setShowMobileSearch(false)
     setActivePanel(null)
   }, [location.pathname, setQuery])
+
+  // /login (ver src/pages/auth/Login.tsx) ya no es una página propia — reenvía
+  // aquí con state.openLogin y state.from, para abrir el panel en vez de
+  // mostrar una pantalla aparte. Esto reutiliza los redirects existentes de
+  // RequireAuth/RequireAdmin/etc. (todos navegan a "/login" con state.from)
+  // sin tener que tocarlos uno por uno.
+  useEffect(() => {
+    const state = location.state as { openLogin?: boolean; from?: { pathname?: string } } | null
+    if (!state?.openLogin) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- solo corre cuando llega el redirect, no en cada render
+    setActivePanel('login')
+    setLoginFrom(state.from?.pathname)
+    navigate(location.pathname + location.search, { replace: true, state: {} })
+  }, [location.state, location.pathname, location.search, navigate])
+
+  // Antes lo hacía WelcomeGate (un aviso aparte, con sus propios botones
+  // visitante/institucional) — ahora el propio panel de login es el punto de
+  // entrada: se abre solo, una vez por montaje, para quien no tiene sesión,
+  // sin esperar a que haga clic en "Ingresar". autoOpenedRef evita que se
+  // reabra si la persona lo cierra manualmente mientras sigue sin sesión.
+  useEffect(() => {
+    if (initializing || isAuthenticated || autoOpenedRef.current) return
+    autoOpenedRef.current = true
+    setActivePanel((prev) => prev ?? 'login')
+  }, [initializing, isAuthenticated])
 
   // Cerrar paneles al hacer clic fuera o presionar Escape
   useEffect(() => {
@@ -436,19 +467,24 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
               </AnimatePresence>
             </div>
           ) : (
-            <Link
-              to="/login"
-              className="flex items-center gap-2 pl-3 md:pl-4 no-underline"
-              style={{borderLeft:"1px solid var(--topbar-sep)"}}
-            >
-              <span
+            <div className="relative pl-3 md:pl-4" style={{borderLeft:"1px solid var(--topbar-sep)"}}>
+              <button
+                type="button"
+                onClick={() => { if (activePanel !== 'login') setLoginFrom(undefined); togglePanel('login') }}
+                aria-expanded={activePanel === 'login'}
+                aria-haspopup="dialog"
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.97]"
                 style={{ background: 'var(--brand-gradient)', color: '#fff', boxShadow: '0 2px 10px rgba(0,152,70,0.25)' }}
               >
                 <LogIn className="w-4 h-4" aria-hidden="true" />
                 <span className="hidden sm:inline">Ingresar</span>
-              </span>
-            </Link>
+              </button>
+              <AnimatePresence>
+                {activePanel === 'login' && (
+                  <LoginPanel onClose={closePanel} from={loginFrom} />
+                )}
+              </AnimatePresence>
+            </div>
           )}
         </div>
       </div>
