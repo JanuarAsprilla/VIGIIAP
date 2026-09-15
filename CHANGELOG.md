@@ -6,6 +6,24 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.1.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.0.0...v1.1.0) (2026-09-15)
+
+
+### Features
+
+* aviso de bienvenida antes de la primera interacción ([#106](https://github.com/JanuarAsprilla/VIGIIAP/issues/106)) ([488818c](https://github.com/JanuarAsprilla/VIGIIAP/commit/488818c9537253904f7bb4c38b1a93426ce34dde))
+* logo institucional real del IIAP en el sidebar ([#108](https://github.com/JanuarAsprilla/VIGIIAP/issues/108)) ([021639c](https://github.com/JanuarAsprilla/VIGIIAP/commit/021639cedb6459011905dd4545030a772a40e18a))
+* navegación responsiva unificada tablet/teléfono + pulido liquid glass ([#111](https://github.com/JanuarAsprilla/VIGIIAP/issues/111)) ([3cb4c43](https://github.com/JanuarAsprilla/VIGIIAP/commit/3cb4c4398f045b047805cbbfe7eec1fe17524664))
+* panel de login anclado con Liquid Glass, reemplaza /login ([#118](https://github.com/JanuarAsprilla/VIGIIAP/issues/118)) ([18c9259](https://github.com/JanuarAsprilla/VIGIIAP/commit/18c9259895cc5d5f4b6f4a404dc23602b374e0e7))
+* panel SMTP en Configuración + correo de prueba (solo super_admin) ([#109](https://github.com/JanuarAsprilla/VIGIIAP/issues/109)) ([d1951e0](https://github.com/JanuarAsprilla/VIGIIAP/commit/d1951e04d49fc1433554518dfa19bedd3ede3aaa))
+* sección Ajustes Avanzados en Configuración (CORS/rate limit/correo respaldo) ([#110](https://github.com/JanuarAsprilla/VIGIIAP/issues/110)) ([52f44d4](https://github.com/JanuarAsprilla/VIGIIAP/commit/52f44d4e637cf90ba965804f56f64e58e2b99fd9))
+
+
+### Bug Fixes
+
+* consistencia visual — altura sidebar/topbar, fondo Home, cursor botones ([#105](https://github.com/JanuarAsprilla/VIGIIAP/issues/105)) ([b55ffe6](https://github.com/JanuarAsprilla/VIGIIAP/commit/b55ffe655e2dfcd2f8b67fc0a1ced56ec4bfad7c))
+* la config remota nunca sincronizaba en Configuración ni en Términos ([#112](https://github.com/JanuarAsprilla/VIGIIAP/issues/112)) ([a8b22a5](https://github.com/JanuarAsprilla/VIGIIAP/commit/a8b22a50c2feba4df3528d8417ee1f622b03cdfe))
+
 ## 1.0.0 (2026-09-10)
 
 
