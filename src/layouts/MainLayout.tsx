@@ -6,7 +6,6 @@ import TopBar from '@/components/TopBar'
 import FooterBar from '@/components/FooterBar'
 import BottomTabs from '@/components/BottomTabs'
 import CommandPalette from '@/components/CommandPalette'
-import WelcomeGate from '@/components/WelcomeGate'
 import { useUI, type Density } from '@/contexts/UIContext'
 import { useLenis } from '@/hooks/useLenis'
 
@@ -100,7 +99,6 @@ export default function MainLayout() {
 
       <BottomTabs onMore={() => setMobileMenuOpen(true)} moreOpen={mobileMenuOpen} />
       <CommandPalette />
-      <WelcomeGate />
     </div>
   )
 }

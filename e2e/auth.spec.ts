@@ -1,16 +1,22 @@
 import { test, expect } from '@playwright/test';
 
 // ─── Login ────────────────────────────────────────────────────────────────────
+// /login ya no es una página propia — reenvía a "/" y abre el panel de login
+// anclado bajo el botón "Ingresar" del TopBar (ver src/pages/auth/Login.tsx).
 
-test.describe('Página de Login', () => {
+test.describe('Panel de Login', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
+    await expect(page).toHaveURL('/');
   });
 
   test('muestra el formulario de login', async ({ page }) => {
     await expect(page.locator('input[type="email"], input[name="email"]')).toBeVisible();
     await expect(page.locator('input[type="password"], input[name="password"]')).toBeVisible();
-    await expect(page.locator('button[type="submit"], button:has-text("Ingresar"), button:has-text("Iniciar")')).toBeVisible();
+    // El botón "Ingresar" del TopBar (que abre el panel) y el "Iniciar
+    // Sesión" del formulario coexisten mientras el panel está abierto —
+    // type="submit" es el único selector que apunta solo al segundo.
+    await expect(page.locator('button[type="submit"]')).toBeVisible();
   });
 
   test('muestra error con credenciales inválidas', async ({ page }) => {
@@ -46,25 +52,32 @@ test.describe('Página de Login', () => {
 // que estas aserciones necesitan más margen que el default de Playwright.
 const REDIRECT_TIMEOUT = 20_000;
 
+// El redirect ya no aterriza en /login (que ya no es una página) — cae en
+// "/" con el panel de login abierto solo (ver el efecto en TopBar.tsx que
+// lee location.state.openLogin).
 test.describe('Redirección de rutas protegidas', () => {
-  test('/perfil redirige a login sin autenticación', async ({ page }) => {
+  test('/perfil redirige a "/" con el panel de login abierto, sin autenticación', async ({ page }) => {
     await page.goto('/perfil');
-    await expect(page).toHaveURL(/login/, { timeout: REDIRECT_TIMEOUT });
+    await expect(page).toHaveURL('/', { timeout: REDIRECT_TIMEOUT });
+    await expect(page.locator('input[type="email"], input[name="email"]')).toBeVisible({ timeout: REDIRECT_TIMEOUT });
   });
 
-  test('/admin redirige a login sin autenticación', async ({ page }) => {
+  test('/admin redirige a "/" con el panel de login abierto, sin autenticación', async ({ page }) => {
     await page.goto('/admin');
-    await expect(page).toHaveURL(/login/, { timeout: REDIRECT_TIMEOUT });
+    await expect(page).toHaveURL('/', { timeout: REDIRECT_TIMEOUT });
+    await expect(page.locator('input[type="email"], input[name="email"]')).toBeVisible({ timeout: REDIRECT_TIMEOUT });
   });
 
-  test('/mapas redirige a login sin autenticación', async ({ page }) => {
+  test('/mapas redirige a "/" con el panel de login abierto, sin autenticación', async ({ page }) => {
     await page.goto('/mapas');
-    await expect(page).toHaveURL(/login/, { timeout: REDIRECT_TIMEOUT });
+    await expect(page).toHaveURL('/', { timeout: REDIRECT_TIMEOUT });
+    await expect(page.locator('input[type="email"], input[name="email"]')).toBeVisible({ timeout: REDIRECT_TIMEOUT });
   });
 
-  test('/solicitudes redirige a login sin autenticación', async ({ page }) => {
+  test('/solicitudes redirige a "/" con el panel de login abierto, sin autenticación', async ({ page }) => {
     await page.goto('/solicitudes');
-    await expect(page).toHaveURL(/login/, { timeout: REDIRECT_TIMEOUT });
+    await expect(page).toHaveURL('/', { timeout: REDIRECT_TIMEOUT });
+    await expect(page.locator('input[type="email"], input[name="email"]')).toBeVisible({ timeout: REDIRECT_TIMEOUT });
   });
 });
 
