@@ -51,7 +51,10 @@ export default function OAuthProviders() {
         <div className="flex-1 h-px bg-border" />
       </div>
 
-      <div className="flex flex-col gap-2">
+      {/* Una sola fila de 3 columnas — de un vistazo se ve con qué tipos de
+          correo se podrá entrar (Google, Apple/iCloud, Microsoft), en vez de
+          una lista larga que hay que leer una por una. */}
+      <div className="grid grid-cols-3 gap-2">
         {PROVIDERS.map(({ id, label, Icon }) => (
           <button
             key={id}
@@ -59,11 +62,11 @@ export default function OAuthProviders() {
             disabled
             title={`Iniciar sesión con ${label} — próximamente`}
             aria-disabled="true"
-            className="flex items-center gap-3 px-4 py-2.5 border border-border rounded-xl text-sm font-semibold text-text-muted bg-[var(--card-bg)] cursor-not-allowed opacity-60"
+            className="flex flex-col items-center gap-1.5 px-2 py-3 border border-border rounded-xl text-text-muted bg-[var(--card-bg)] cursor-not-allowed opacity-60"
           >
             <Icon />
-            <span>{label}</span>
-            <span className="ml-auto text-[0.55rem] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-bg-alt text-text-muted shrink-0">
+            <span className="text-xs font-semibold">{label}</span>
+            <span className="text-[0.5rem] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-bg-alt text-text-muted">
               Pronto
             </span>
           </button>
