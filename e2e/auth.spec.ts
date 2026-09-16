@@ -68,16 +68,37 @@ test.describe('Redirección de rutas protegidas', () => {
     await expect(page.locator('input[type="email"], input[name="email"]')).toBeVisible({ timeout: REDIRECT_TIMEOUT });
   });
 
-  test('/mapas redirige a "/" con el panel de login abierto, sin autenticación', async ({ page }) => {
-    await page.goto('/mapas');
-    await expect(page).toHaveURL('/', { timeout: REDIRECT_TIMEOUT });
-    await expect(page.locator('input[type="email"], input[name="email"]')).toBeVisible({ timeout: REDIRECT_TIMEOUT });
-  });
-
   test('/solicitudes redirige a "/" con el panel de login abierto, sin autenticación', async ({ page }) => {
     await page.goto('/solicitudes');
     await expect(page).toHaveURL('/', { timeout: REDIRECT_TIMEOUT });
     await expect(page.locator('input[type="email"], input[name="email"]')).toBeVisible({ timeout: REDIRECT_TIMEOUT });
+  });
+});
+
+// ─── Módulos públicos ─────────────────────────────────────────────────────────
+// Mapas, Documentos, Geovisor y Herramientas son navegables sin sesión — cada
+// mapa/documento trae su propia visibilidad (público/usuarios/acreditados),
+// filtrada por el backend (ver optionalAuthenticate + visibilidadPermitida en
+// mapas.service.js y documentos.service.js). No deben redirigir a login.
+test.describe('Módulos públicos — no redirigen sin autenticación', () => {
+  test('/mapas no redirige', async ({ page }) => {
+    await page.goto('/mapas');
+    await expect(page).toHaveURL('/mapas', { timeout: REDIRECT_TIMEOUT });
+  });
+
+  test('/documentos no redirige', async ({ page }) => {
+    await page.goto('/documentos');
+    await expect(page).toHaveURL('/documentos', { timeout: REDIRECT_TIMEOUT });
+  });
+
+  test('/geovisor no redirige', async ({ page }) => {
+    await page.goto('/geovisor');
+    await expect(page).toHaveURL('/geovisor', { timeout: REDIRECT_TIMEOUT });
+  });
+
+  test('/herramientas no redirige', async ({ page }) => {
+    await page.goto('/herramientas');
+    await expect(page).toHaveURL('/herramientas', { timeout: REDIRECT_TIMEOUT });
   });
 });
 
