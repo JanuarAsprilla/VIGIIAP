@@ -1,11 +1,15 @@
 /**
  * Botones de proveedor externo — Google, Apple (cubre también correos
- * iCloud) y Microsoft. Ninguno tiene credenciales reales todavía — cada
- * proveedor exige su propio registro (Google Cloud Console, Apple Developer
- * Program, Azure AD) que solo el instituto puede gestionar. Se muestran
- * deshabilitados con "Próximamente" en vez de fingir que funcionan — un
- * botón que no hace nada al hacer clic es peor que no tenerlo.
+ * iCloud) y Microsoft. Cuáles están activos depende de si el backend tiene
+ * credenciales configuradas (ver useOAuthProviders) — así el día que el
+ * instituto agregue GOOGLE_CLIENT_ID/MICROSOFT_CLIENT_ID no hace falta tocar
+ * el frontend, el botón se activa solo. El que siga sin configurar se
+ * muestra deshabilitado con "Próximamente" — un botón que no hace nada al
+ * hacer clic es peor que no tenerlo.
  */
+import api from '@/lib/api'
+import { useOAuthProviders, type OAuthProvidersStatus } from '@/hooks/useOAuthProviders'
+
 function GoogleIcon() {
   return (
     <svg className="w-[18px] h-[18px]" viewBox="0 0 48 48" aria-hidden="true">
@@ -40,9 +44,17 @@ const PROVIDERS = [
   { id: 'google',    label: 'Google',    Icon: GoogleIcon    },
   { id: 'apple',     label: 'Apple',     Icon: AppleIcon     },
   { id: 'microsoft', label: 'Microsoft', Icon: MicrosoftIcon },
-]
+] as const
+
+function oauthStartUrl(id: string) {
+  // Navegación de página completa a propósito — un fetch/XHR no puede seguir
+  // la redirección cross-site a la pantalla de consentimiento del proveedor.
+  return `${api.defaults.baseURL}/auth/oauth/${id}/start`
+}
 
 export default function OAuthProviders() {
+  const { data: providers } = useOAuthProviders()
+
   return (
     <div className="pt-1">
       <div className="flex items-center gap-4 mb-3">
@@ -55,22 +67,35 @@ export default function OAuthProviders() {
           correo se podrá entrar (Google, Apple/iCloud, Microsoft), en vez de
           una lista larga que hay que leer una por una. */}
       <div className="grid grid-cols-3 gap-2">
-        {PROVIDERS.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            type="button"
-            disabled
-            title={`Iniciar sesión con ${label} — próximamente`}
-            aria-disabled="true"
-            className="flex flex-col items-center gap-1.5 px-2 py-3 border border-border rounded-xl text-text-muted bg-[var(--card-bg)] cursor-not-allowed opacity-60"
-          >
-            <Icon />
-            <span className="text-xs font-semibold">{label}</span>
-            <span className="text-[0.5rem] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-bg-alt text-text-muted">
-              Pronto
-            </span>
-          </button>
-        ))}
+        {PROVIDERS.map(({ id, label, Icon }) => {
+          const enabled = providers?.[id as keyof OAuthProvidersStatus] ?? false
+          const className = 'flex flex-col items-center gap-1.5 px-2 py-3 border border-border rounded-xl transition-colors ' + (
+            enabled
+              ? 'text-text bg-[var(--card-bg)] hover:bg-bg-alt hover:border-primary-400'
+              : 'text-text-muted bg-[var(--card-bg)] cursor-not-allowed opacity-60'
+          )
+          const content = (
+            <>
+              <Icon />
+              <span className="text-xs font-semibold">{label}</span>
+              {!enabled && (
+                <span className="text-[0.5rem] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-bg-alt text-text-muted">
+                  Pronto
+                </span>
+              )}
+            </>
+          )
+          if (enabled) return (
+            <a key={id} href={oauthStartUrl(id)} title={`Iniciar sesión con ${label}`} className={className}>
+              {content}
+            </a>
+          )
+          return (
+            <button key={id} type="button" disabled title={`Iniciar sesión con ${label} — próximamente`} aria-disabled="true" className={className}>
+              {content}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

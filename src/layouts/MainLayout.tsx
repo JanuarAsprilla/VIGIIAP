@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar from '@/components/Sidebar'
@@ -8,10 +8,24 @@ import BottomTabs from '@/components/BottomTabs'
 import CommandPalette from '@/components/CommandPalette'
 import RecuperarPasswordPanel from '@/components/auth/RecuperarPasswordPanel'
 import SolicitarAccesoPanel from '@/components/auth/SolicitarAccesoPanel'
+import CompletarPerfilPanel from '@/components/auth/CompletarPerfilPanel'
+import { ToastContainer, useToast } from '@/components/Toast'
 import { useUI, type Density } from '@/contexts/UIContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { useLenis } from '@/hooks/useLenis'
 
 type AuthModal = 'recuperar' | 'solicitar' | null
+
+// Mensajes legibles para los códigos de error que el backend agrega como
+// ?oauthError=... al redirigir de vuelta tras un login con Google/Microsoft
+// fallido (ver src/modules/oauth/oauth.controller.js) — llega como parámetro
+// de URL real, no como location.state, porque viene de una redirección del
+// backend, no de una navegación del propio SPA.
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  access_denied: 'Cancelaste el inicio de sesión.',
+  ACCOUNT_INACTIVE: 'Tu cuenta está pendiente de aprobación. Recibirás un correo cuando sea activada.',
+  missing_code: 'No se pudo completar el inicio de sesión. Intenta de nuevo.',
+}
 
 // pb-20 compensa la altura del BottomTabs fijo — solo hace falta por debajo
 // de md, que es donde BottomTabs sigue visible (ver breakpoint compartido
@@ -40,9 +54,13 @@ function AmbientBackground() {
 export default function MainLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [authModal, setAuthModal] = useState<AuthModal>(null)
+  const [showCompletarPerfil, setShowCompletarPerfil] = useState(false)
+  const completarPerfilShownRef = useRef(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { density, openPalette } = useUI()
+  const { user } = useAuth()
+  const { toasts, toast, dismiss } = useToast()
   useLenis() // smooth scroll global
 
   // Global keyboard shortcut: Cmd+K / Ctrl+K
@@ -69,6 +87,33 @@ export default function MainLayout() {
     setAuthModal(state.openAuthModal)
     navigate(location.pathname + location.search, { replace: true, state: {} })
   }, [location.state, location.pathname, location.search, navigate])
+
+  // Alerta de completar perfil — se muestra una vez por montaje para quien
+  // entró por primera vez con Google/Microsoft sin institución (perfilCompleto
+  // viene de /auth/me, así que cubre cualquier punto de entrada, no solo el
+  // redirect inmediato de OAuth). completarPerfilShownRef evita que reaparezca
+  // si la persona la cierra mientras el perfil sigue incompleto en esta sesión.
+  useEffect(() => {
+    if (completarPerfilShownRef.current || !user) return
+    if (user.perfilCompleto === false) {
+      completarPerfilShownRef.current = true
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- solo corre una vez, cuando /auth/me confirma perfil incompleto
+      setShowCompletarPerfil(true)
+    }
+  }, [user])
+
+  // ?oauthError=... llega como parámetro de URL real (no location.state) tras
+  // un login con Google/Microsoft fallido — el backend redirige directo a "/"
+  // desde fuera del SPA, así que no hay forma de pasarlo por state.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const oauthError = params.get('oauthError')
+    if (!oauthError) return
+    toast(OAUTH_ERROR_MESSAGES[oauthError] ?? 'No se pudo iniciar sesión. Intenta de nuevo.', 'error', 5000)
+    params.delete('oauthError')
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- toast/navigate son estables; solo debe correr cuando cambia la URL
+  }, [location.search, location.pathname])
 
   const mainPad = DENSITY_PADDING[density] || DENSITY_PADDING.normal
 
@@ -121,7 +166,10 @@ export default function MainLayout() {
       <AnimatePresence>
         {authModal === 'recuperar' && <RecuperarPasswordPanel key="recuperar" onClose={() => setAuthModal(null)} />}
         {authModal === 'solicitar' && <SolicitarAccesoPanel key="solicitar" onClose={() => setAuthModal(null)} />}
+        {showCompletarPerfil && <CompletarPerfilPanel key="completar-perfil" onClose={() => setShowCompletarPerfil(false)} />}
       </AnimatePresence>
+
+      <ToastContainer toasts={toasts} dismiss={dismiss} />
     </div>
   )
 }
