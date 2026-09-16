@@ -16,9 +16,9 @@ export const ALL_MODULES = [
     glow: 'rgba(247,172,66,0.28)', ctaColor: '#C45A1A', publicAccess: true,
   },
   {
-    id: 'geovisor', title: 'Geovisor Interactivo',
+    id: 'geovisores', title: 'Geovisores',
     description: 'Herramienta SIG en línea para la visualización y análisis de capas geoespaciales sobre el territorio del Chocó Biogeográfico.',
-    icon: Globe, path: '/geovisor', action: 'Abrir geovisor', tag: 'SIG',
+    icon: Globe, path: '/geovisores', action: 'Abrir geovisores', tag: 'SIG',
     gradient: 'from-[#1A5632] to-[#218842]', chip: 'bg-primary-50 text-primary-800',
     glow: 'rgba(26,86,50,0.22)', ctaColor: '#1A5632', publicAccess: false,
   },

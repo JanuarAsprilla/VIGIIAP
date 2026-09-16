@@ -45,7 +45,7 @@ describe('wgs84ToMagna -> magnaToWgs84 round-trip', () => {
   const points: [number, number][] = [
     [4.0, -77.0],   // origen
     [6.2442, -75.5812], // Medellín (fuera de zona pero dentro de un rango razonable)
-    [5.6878, -76.6581], // Quibdó — centro del mapa del Geovisor (Geovisor.tsx)
+    [5.6878, -76.6581], // Quibdó — coordenadas de referencia para el centro del mapa
     [3.4516, -76.5320], // Cali
     [1.2, -78.9],   // sur del Chocó biogeográfico
   ]

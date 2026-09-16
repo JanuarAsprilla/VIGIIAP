@@ -6,8 +6,8 @@ import { EASE_OUT_EXPO } from '@/lib/animations'
 
 const FAQS = [
   { q: '¿Cómo puedo solicitar acceso al sistema?', a: 'Desde la pantalla de inicio de sesión, haga clic en "Solicitar Acceso" y complete el formulario. Un administrador revisará su solicitud y le enviará las credenciales por correo electrónico.' },
-  { q: '¿En qué formatos puedo descargar los mapas?', a: 'Los mapas están disponibles en formato PDF e Imagen. También puede visualizarlos directamente en el Geovisor interactivo.' },
-  { q: '¿Cómo funciona el Geovisor?', a: 'El Geovisor permite visualizar capas de información territorial con controles de zoom, búsqueda por coordenadas, herramientas de medición y diferentes estilos de mapa base.' },
+  { q: '¿En qué formatos puedo descargar los mapas?', a: 'Los mapas están disponibles en formato PDF e Imagen. También puede visualizarlos directamente en los Geovisores interactivos.' },
+  { q: '¿Cómo funcionan los Geovisores?', a: 'Los Geovisores permiten visualizar capas de información territorial con controles de zoom, búsqueda por coordenadas, herramientas de medición y diferentes estilos de mapa base.' },
   { q: '¿Cuánto tarda una solicitud de trámite?', a: 'El tiempo promedio de respuesta es de 5.2 días hábiles, dependiendo del tipo de trámite y la complejidad de la solicitud.' },
   { q: '¿Puedo usar las herramientas SIG sin iniciar sesión?', a: 'Las herramientas de visualización están disponibles para todos. Sin embargo, para guardar resultados y acceder a funciones avanzadas es necesario iniciar sesión.' },
   { q: '¿Cómo contacto al soporte técnico?', a: 'Puede comunicarse con el equipo de soporte a través del módulo de Documentos (sección "Soporte Documental") o escribiendo directamente a info@iiap.org.co.' },

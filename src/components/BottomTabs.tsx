@@ -18,7 +18,7 @@ const TABS = [
 
 // Única navegación primaria en teléfono — antes coexistía con la hamburguesa
 // del TopBar (mismos destinos, dos disparadores). "Más" reemplaza esa
-// hamburguesa: abre el mismo drawer del Sidebar (Geovisor, Perfil, Ayuda,
+// hamburguesa: abre el mismo drawer del Sidebar (Geovisores, Perfil, Ayuda,
 // Panel Admin, etc. — todo lo que no cabe en 5 iconos), ahora como
 // navegación secundaria/overflow, no como una segunda primaria compitiendo.
 export default function BottomTabs({ onMore, moreOpen }: { onMore: () => void; moreOpen: boolean }) {

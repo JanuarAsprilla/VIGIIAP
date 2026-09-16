@@ -15,7 +15,7 @@ import iiapIsotipoColor from '@/assets/iiap-isotipo-color.png'
 import iiapIsotipoBlanco from '@/assets/iiap-isotipo-blanco.png'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 
-// Mapas, Documentos, Geovisor y Herramientas son públicos — cualquiera navega
+// Mapas, Documentos, Geovisores y Herramientas son públicos — cualquiera navega
 // ahí sin sesión; lo que varía es el contenido que ve dentro (cada mapa/
 // documento trae su propio campo de visibilidad, filtrado por el backend).
 // Solicitudes es la única ruta que sigue exclusiva de cuenta verificada — y a

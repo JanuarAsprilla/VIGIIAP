@@ -24,7 +24,7 @@ const ROUTE_ICONS: Record<string, LucideIcon> = {
   '/':            Home,
   '/mapas':       MapIcon,
   '/documentos':  FileText,
-  '/geovisor':    Globe,
+  '/geovisores':  Globe,
   '/herramientas': Wrench,
   '/solicitudes': ClipboardList,
 }

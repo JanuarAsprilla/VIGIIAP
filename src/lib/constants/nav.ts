@@ -7,7 +7,7 @@ export const ROUTES = {
   HOME: '/',
   MAPAS: '/mapas',
   DOCUMENTOS: '/documentos',
-  GEOVISOR: '/geovisor',
+  GEOVISORES: '/geovisores',
   HERRAMIENTAS: '/herramientas',
   SOLICITUDES: '/solicitudes',
   ADMIN: '/admin',
@@ -17,7 +17,7 @@ export const NAV_LINKS = [
   { label: 'Inicio',       path: ROUTES.HOME,         icon: Home },
   { label: 'Mapas',        path: ROUTES.MAPAS,        icon: Map },
   { label: 'Documentos',   path: ROUTES.DOCUMENTOS,   icon: FileText },
-  { label: 'Geovisor',     path: ROUTES.GEOVISOR,     icon: Globe },
+  { label: 'Geovisores',   path: ROUTES.GEOVISORES,   icon: Globe },
   { label: 'Herramientas', path: ROUTES.HERRAMIENTAS, icon: Wrench },
   { label: 'Solicitudes',  path: ROUTES.SOLICITUDES,  icon: ClipboardList },
 ]
@@ -40,11 +40,11 @@ export const MODULES = [
     action: 'CONSULTAR',
   },
   {
-    id: 'geovisor',
-    title: 'Geovisor 3D',
+    id: 'geovisores',
+    title: 'Geovisores',
     description: 'Herramienta interactiva de análisis espacial en tiempo real.',
     icon: Globe,
-    path: ROUTES.GEOVISOR,
+    path: ROUTES.GEOVISORES,
     action: 'LANZAR APP',
   },
   {

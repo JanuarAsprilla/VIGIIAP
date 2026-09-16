@@ -147,7 +147,7 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
   const hasPdf     = map.formats.includes('PDF')
   const hasImg     = map.formats.includes('IMG')
   const hasGeovisor = map.formats.includes('GEOVISOR')
-  const geovisorHref = map.geovisorLink && isTrustedUrl(map.geovisorLink) ? map.geovisorLink : '/geovisor'
+  const geovisorHref = map.geovisorLink && isTrustedUrl(map.geovisorLink) ? map.geovisorLink : '/geovisores'
 
   // Chaos testing (clics de frustración): sin esta guarda, clics rápidos repetidos
   // durante un cold start de Render disparaban múltiples fetch() + descargas simultáneas.

@@ -48,7 +48,7 @@ describe('FAQ', () => {
   test('cada pregunta se expande de forma independiente', async () => {
     const user = userEvent.setup()
     render(<FAQ />)
-    await user.click(screen.getByText('¿Cómo funciona el Geovisor?'))
+    await user.click(screen.getByText('¿Cómo funcionan los Geovisores?'))
     expect(screen.getByText(/controles de zoom, búsqueda por coordenadas/)).toBeInTheDocument()
     expect(screen.queryByText(/haga clic en "Solicitar Acceso"/)).not.toBeInTheDocument()
   })

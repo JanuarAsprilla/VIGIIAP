@@ -828,7 +828,7 @@ export default function GestionMapas() {
                     </label>
                     <input id="gm-url" type="url" value={form.url}
                       onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
-                      placeholder="https://geovisor.iiap.gov.co/mapa/... o /geovisor"
+                      placeholder="https://geovisor.iiap.gov.co/mapa/... o /geovisores"
                       className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.url ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
                     />
                     {formErrors.url && <p className="text-xs text-red-500 mt-1">{formErrors.url}</p>}

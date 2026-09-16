@@ -141,7 +141,7 @@ describe('RequireVerified — gates /perfil y /solicitudes', () => {
   )
 })
 
-describe('RequireInvestigador — gates /geovisor y /herramientas', () => {
+describe('RequireInvestigador — gates /geovisores y /herramientas', () => {
   test('redirects to /login when there is no session', () => {
     mockAuth({ isAuthenticated: false })
     renderGuard(RequireInvestigador)

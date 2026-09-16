@@ -4,9 +4,9 @@ import { EASE_OUT_EXPO } from '@/lib/animations'
 
 const SECTIONS = [
   { title: 'Primeros Pasos', description: 'Cómo acceder al sistema, configurar su perfil y personalizar su experiencia en VIGIA-IIAP.' },
-  { title: 'Módulo de Mapas', description: 'Buscar, filtrar y descargar cartografía temática. Uso de formatos y visualización en el Geovisor.' },
+  { title: 'Módulo de Mapas', description: 'Buscar, filtrar y descargar cartografía temática. Uso de formatos y visualización en los Geovisores.' },
   { title: 'Centro de Documentos', description: 'Navegación por categorías, búsqueda avanzada y descarga de protocolos y guías técnicas.' },
-  { title: 'Geovisor SIAT-PC', description: 'Capas de información, herramientas de medición, exportación y cambio de estilos de mapa.' },
+  { title: 'Geovisores SIAT-PC', description: 'Capas de información, herramientas de medición, exportación y cambio de estilos de mapa.' },
   { title: 'Herramientas SIG', description: 'Calculadora de áreas, generador de buffers, conversor de coordenadas y analizador de superposición.' },
   { title: 'Solicitudes y Trámites', description: 'Cómo crear solicitudes, hacer seguimiento y descargar formatos oficiales.' },
 ]

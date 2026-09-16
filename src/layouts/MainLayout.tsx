@@ -51,7 +51,7 @@ export default function MainLayout() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [openPalette])
 
-  const isGeovisor = location.pathname === '/geovisor'
+  const isGeovisores = location.pathname === '/geovisores'
   const mainPad = DENSITY_PADDING[density] || DENSITY_PADDING.normal
 
   return (
@@ -84,13 +84,13 @@ export default function MainLayout() {
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
             id="main-content"
             style={{ transformPerspective: 1400, transformOrigin: 'top center' }}
-            className={isGeovisor ? 'flex-1' : `flex-1 ${mainPad}`}
+            className={isGeovisores ? 'flex-1' : `flex-1 ${mainPad}`}
           >
             <Outlet />
           </motion.main>
         </AnimatePresence>
 
-        {!isGeovisor && (
+        {!isGeovisores && (
           <div className="hidden md:block relative z-10">
             <FooterBar />
           </div>
