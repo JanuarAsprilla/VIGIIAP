@@ -40,6 +40,16 @@ vi.mock('@/components/BottomTabs', () => ({
   ),
 }))
 vi.mock('@/components/CommandPalette', () => ({ default: () => <div>CommandPalette</div> }))
+vi.mock('@/components/auth/RecuperarPasswordPanel', () => ({
+  default: ({ onClose }: { onClose: () => void }) => (
+    <div role="dialog" aria-label="Recuperar Contraseña">RecuperarPasswordPanel<button onClick={onClose}>Cerrar recuperar</button></div>
+  ),
+}))
+vi.mock('@/components/auth/SolicitarAccesoPanel', () => ({
+  default: ({ onClose }: { onClose: () => void }) => (
+    <div role="dialog" aria-label="Solicitar Acceso">SolicitarAccesoPanel<button onClick={onClose}>Cerrar solicitar</button></div>
+  ),
+}))
 
 const openPaletteSpy = vi.fn()
 let density: 'compact' | 'normal' | 'comfortable' = 'normal'
@@ -50,11 +60,13 @@ beforeEach(() => {
   density = 'normal'
 })
 
-function renderMainLayout(path = '/') {
+function renderMainLayout(path: string | { pathname: string; state?: unknown } = '/') {
+  const entry = typeof path === 'string' ? path : path
+  const pathname = typeof path === 'string' ? path : path.pathname
   return render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[entry]}>
       <Routes>
-        <Route path={path} element={<MainLayout />}>
+        <Route path={pathname} element={<MainLayout />}>
           <Route index element={<div>Contenido de la página</div>} />
         </Route>
       </Routes>
@@ -98,5 +110,30 @@ describe('MainLayout — orquestación del shell principal', () => {
     await user.click(screen.getByText('Cerrar sidebar móvil'))
     expect(screen.getByText(/Sidebar \(cerrado\)/)).toBeInTheDocument()
     expect(screen.getByText(/BottomTabs \(cerrado\)/)).toBeInTheDocument()
+  })
+})
+
+describe('MainLayout — paneles de recuperar contraseña / solicitar acceso', () => {
+  test('sin state.openAuthModal, ningún panel se abre solo', () => {
+    renderMainLayout('/')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  test('location.state.openAuthModal="recuperar" (reenviado desde /recuperar-password) abre ese panel', async () => {
+    renderMainLayout({ pathname: '/', state: { openAuthModal: 'recuperar' } })
+    expect(await screen.findByRole('dialog', { name: 'Recuperar Contraseña' })).toBeInTheDocument()
+  })
+
+  test('location.state.openAuthModal="solicitar" (reenviado desde /solicitar-acceso) abre ese panel', async () => {
+    renderMainLayout({ pathname: '/', state: { openAuthModal: 'solicitar' } })
+    expect(await screen.findByRole('dialog', { name: 'Solicitar Acceso' })).toBeInTheDocument()
+  })
+
+  test('cerrar el panel de recuperar contraseña lo quita del DOM', async () => {
+    const user = userEvent.setup()
+    renderMainLayout({ pathname: '/', state: { openAuthModal: 'recuperar' } })
+    await screen.findByRole('dialog', { name: 'Recuperar Contraseña' })
+    await user.click(screen.getByText('Cerrar recuperar'))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
