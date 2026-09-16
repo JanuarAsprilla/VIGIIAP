@@ -39,10 +39,15 @@ beforeEach(() => {
 })
 
 describe('Sidebar — visitante sin sesión', () => {
-  test('los módulos restringidos aparecen bloqueados, sin enlace real', () => {
+  test('Geovisor es público — es un enlace real', () => {
     renderSidebar()
-    expect(screen.queryByRole('link', { name: /Geovisor/i })).not.toBeInTheDocument()
-    expect(screen.getByText('Geovisor')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Geovisor/i })).toHaveAttribute('href', '/geovisor')
+  })
+
+  test('Solicitudes no se muestra en absoluto — sigue exclusivo de cuenta verificada', () => {
+    renderSidebar()
+    expect(screen.queryByRole('link', { name: /Solicitudes/i })).not.toBeInTheDocument()
+    expect(screen.queryByText('Solicitudes')).not.toBeInTheDocument()
   })
 
   test('los módulos públicos sí son enlaces reales', () => {
@@ -58,11 +63,11 @@ describe('Sidebar — visitante sin sesión', () => {
 })
 
 describe('Sidebar — visitante autenticado (no verificado)', () => {
-  test('los módulos restringidos siguen bloqueados y se ofrece solicitar acceso', () => {
+  test('Solicitudes sigue oculto y se ofrece solicitar acceso', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Invitado', role: ROLES.VISITANTE, initials: 'V', isVisitante: true }
     renderSidebar()
-    expect(screen.queryByRole('link', { name: /Solicitudes/i })).not.toBeInTheDocument()
+    expect(screen.queryByText('Solicitudes')).not.toBeInTheDocument()
     expect(screen.getByText('Solicitar acceso')).toBeInTheDocument()
   })
 })

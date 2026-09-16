@@ -15,8 +15,13 @@ import iiapIsotipoColor from '@/assets/iiap-isotipo-color.png'
 import iiapIsotipoBlanco from '@/assets/iiap-isotipo-blanco.png'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 
-
-const RESTRICTED_PATHS = ['/geovisor', '/herramientas', '/solicitudes']
+// Mapas, Documentos, Geovisor y Herramientas son públicos — cualquiera navega
+// ahí sin sesión; lo que varía es el contenido que ve dentro (cada mapa/
+// documento trae su propio campo de visibilidad, filtrado por el backend).
+// Solicitudes es la única ruta que sigue exclusiva de cuenta verificada — y a
+// diferencia de las demás, ni siquiera se muestra en el menú para quien no
+// tiene cuenta: no se lista como item bloqueado, se oculta directamente.
+const HIDDEN_FOR_UNVERIFIED = ['/solicitudes']
 
 // ── Animaciones ──────────────────────────────────────────────────────────────
 const navContainer = {
@@ -28,34 +33,10 @@ const navItemVariant = {
 }
 
 // ── Nav link ─────────────────────────────────────────────────────────────────
-function SidebarLink({ link, onClose, userRole, isAuthenticated }: {
+function SidebarLink({ link, onClose }: {
   link: { path: string; label: string; icon: LucideIcon }
   onClose: () => void
-  userRole: string
-  isAuthenticated: boolean
 }) {
-  const needsInstitutional = RESTRICTED_PATHS.includes(link.path)
-  const isLocked = needsInstitutional && (
-    !isAuthenticated ||
-    userRole === ROLES.VISITANTE ||
-    userRole === ROLES.PUBLICO
-  )
-
-  if (isLocked) {
-    return (
-      <motion.div variants={navItemVariant}>
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm select-none cursor-not-allowed"
-          style={{ color: 'var(--nav-text-locked)', background: 'var(--nav-locked-bg, rgba(0,0,0,0.03))' }}>
-          <link.icon className="w-[16px] h-[16px] shrink-0 opacity-35" aria-hidden="true" />
-          <span className="truncate opacity-50">{link.label}</span>
-          <span className="ml-auto flex items-center gap-1 shrink-0">
-            <Lock className="w-2.5 h-2.5 opacity-35" aria-hidden="true" />
-          </span>
-        </div>
-      </motion.div>
-    )
-  }
-
   return (
     <NavLink to={link.path} end={link.path === '/'} onClick={onClose} className="block no-underline">
       {({ isActive }) => (
@@ -135,6 +116,7 @@ function SidebarInner({ onClose, onLogout, user, isAuthenticated }: {
   isAuthenticated: boolean
 }) {
   const { isDark } = useTheme()
+  const isVerified = isAuthenticated && !user?.isVisitante && user?.role !== ROLES.PUBLICO && user?.role !== ROLES.VISITANTE
 
   return (
     <div className="flex flex-col h-full relative z-10">
@@ -216,13 +198,11 @@ function SidebarInner({ onClose, onLogout, user, isAuthenticated }: {
           animate="animate"
           className="space-y-0.5"
         >
-          {NAV_LINKS.map((link) => (
+          {NAV_LINKS.filter((link) => isVerified || !HIDDEN_FOR_UNVERIFIED.includes(link.path)).map((link) => (
             <SidebarLink
               key={link.path}
               link={link}
               onClose={onClose}
-              userRole={user?.role ?? ''}
-              isAuthenticated={isAuthenticated}
             />
           ))}
         </motion.div>

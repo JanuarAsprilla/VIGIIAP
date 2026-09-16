@@ -6,7 +6,7 @@ import { UIProvider } from './contexts/UIContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import MainLayout from './layouts/MainLayout'
 import AdminLayout from './layouts/AdminLayout'
-import RequireAuth, { RequireInvestigador, RequireVerified, RequireAdmin, RequireSuperAdmin } from './components/RequireAuth'
+import { RequireVerified, RequireAdmin, RequireSuperAdmin } from './components/RequireAuth'
 import ErrorBoundary from './components/ErrorBoundary'
 import Preloader from './components/Preloader'
 import {
@@ -134,15 +134,24 @@ function AppRoutes() {
               <Suspense fallback={<GenericPageSkeleton />}><Terminos /></Suspense>
             } />
 
-            {/* Requiere sesión (cualquier rol incluyendo Público y Visitante) */}
-            <Route element={<RequireAuth />}>
-              <Route path="/mapas" element={
-                <Suspense fallback={<MapasSkeleton />}><Mapas /></Suspense>
-              } />
-              <Route path="/documentos" element={
-                <Suspense fallback={<DocumentosSkeleton />}><Documentos /></Suspense>
-              } />
-            </Route>
+            {/* Mapas, Documentos, Geovisor y Herramientas son públicos — cualquiera
+                entra sin sesión. Lo que varía es el contenido: cada mapa/documento
+                trae su propio campo `visibilidad` (público / usuarios / acreditados)
+                y el backend ya filtra según haya o no sesión (ver
+                optionalAuthenticate + visibilidadPermitida en mapas.service.js y
+                documentos.service.js) — no hace falta bloquear la ruta completa. */}
+            <Route path="/mapas" element={
+              <Suspense fallback={<MapasSkeleton />}><Mapas /></Suspense>
+            } />
+            <Route path="/documentos" element={
+              <Suspense fallback={<DocumentosSkeleton />}><Documentos /></Suspense>
+            } />
+            <Route path="/geovisor" element={
+              <Suspense fallback={<GeovisorLoader />}><Geovisor /></Suspense>
+            } />
+            <Route path="/herramientas" element={
+              <Suspense fallback={<HerramientasSkeleton />}><Herramientas /></Suspense>
+            } />
 
             {/* Requiere usuario verificado — bloquea visitante y público */}
             <Route element={<RequireVerified />}>
@@ -151,18 +160,6 @@ function AppRoutes() {
               } />
               <Route path="/solicitudes" element={
                 <Suspense fallback={<SolicitudesSkeleton />}><Solicitudes /></Suspense>
-              } />
-            </Route>
-
-            {/* Bloquea Público y Visitante — en la práctica deja pasar a cualquier
-                otro rol verificado (investigador/tecnico/institucional/admin),
-                no solo Investigador/Admin. Ver nota en RequireAuth.tsx. */}
-            <Route element={<RequireInvestigador />}>
-              <Route path="/geovisor" element={
-                <Suspense fallback={<GeovisorLoader />}><Geovisor /></Suspense>
-              } />
-              <Route path="/herramientas" element={
-                <Suspense fallback={<HerramientasSkeleton />}><Herramientas /></Suspense>
               } />
             </Route>
           </Route>
