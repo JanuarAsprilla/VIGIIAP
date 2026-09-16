@@ -167,6 +167,106 @@ export interface Usuario {
   creado_en: string
 }
 
+// ─── Geovisores ───────────────────────────────────────────────────────────────
+// El backend responde `geovisores` en camelCase (mapeo hecho en filaAGeovisor,
+// VIGIIAP-backend/src/modules/geovisores/geovisores.service.js) pero
+// `conexiones_geoserver` se devuelve tal cual la columna SQL (snake_case) —
+// ver COLUMNAS_PUBLICAS en conexionesGeoserver.service.js.
+
+export interface CampoPopup {
+  campo: string
+  alias: string
+}
+
+export interface PresentacionGeovisor {
+  mostrarMetricas: boolean
+  mostrarImagenes: boolean
+  campoImagenUrl?: string
+  camposPopup: CampoPopup[]
+}
+
+export interface PresetArea {
+  nombre: string
+  geometria: {
+    type: 'Polygon' | 'MultiPolygon'
+    coordinates: unknown[]
+  }
+}
+
+export interface GeovisorRaw {
+  id: string
+  slug: string
+  titulo: string
+  subtitulo: string | null
+  descripcion: string | null
+  cita: string | null
+  categoria: string | null
+  conexionGeoserverId: string
+  workspacesGeoserver: string[]
+  colorPorTema: Record<string, string>
+  centro: { lat: number; lng: number }
+  zoomInicial: number
+  basemapDefecto: string
+  areaMaxHa: number | null
+  presetsArea: PresetArea[]
+  iaHabilitada: boolean
+  visibilidad: MapaVisibilidad
+  presentacion: PresentacionGeovisor
+  thumbnailUrl: string | null
+  activo: boolean
+  orden: number
+  creadoEn: string
+}
+
+/** Payload de creación/edición — espejo de geovisores.schema.js (createGeovisorSchema). */
+export interface GeovisorInput {
+  titulo: string
+  subtitulo?: string
+  descripcion?: string
+  cita?: string
+  categoria?: string
+  conexionGeoserverId: string
+  workspacesGeoserver: string[]
+  colorPorTema: Record<string, string>
+  centroLat: number
+  centroLng: number
+  zoomInicial: number
+  basemapDefecto: string
+  areaMaxHa?: number
+  presetsArea: PresetArea[]
+  iaHabilitada: boolean
+  visibilidad: MapaVisibilidad
+  presentacion: PresentacionGeovisor
+  thumbnailUrl?: string
+}
+
+export interface ConexionGeoserverRaw {
+  id: string
+  nombre: string
+  url: string
+  usuario_lectura: string
+  timeout_ms: number
+  activo: boolean
+  creado_en: string
+  actualizado_en: string
+}
+
+/** Payload de creación/edición — espejo de createConexionGeoserverSchema/updateConexionGeoserverSchema. */
+export interface ConexionGeoserverInput {
+  nombre: string
+  url: string
+  usuarioLectura: string
+  password?: string
+  timeoutMs?: number
+  activo?: boolean
+}
+
+export interface WorkspaceOption {
+  id: string
+  nombre: string
+  totalCapas: number
+}
+
 // ─── Categorías ───────────────────────────────────────────────────────────────
 
 export interface Categoria {

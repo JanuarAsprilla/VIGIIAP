@@ -47,6 +47,8 @@ const AdminUsuarios    = lazy(() => import('./pages/admin/Usuarios'))
 const AdminSolicitudes = lazy(() => import('./pages/admin/GestionSolicitudes'))
 const AdminDocumentos  = lazy(() => import('./pages/admin/GestionDocumentos'))
 const AdminMapas       = lazy(() => import('./pages/admin/GestionMapas'))
+const AdminGeovisores  = lazy(() => import('./pages/admin/GestionGeovisores'))
+const AdminConexionesGeoserver = lazy(() => import('./pages/admin/GestionConexionesGeoserver'))
 const AdminConfig      = lazy(() => import('./pages/admin/Configuracion'))
 const AdminActividad   = lazy(() => import('./pages/admin/Actividad'))
 const AdminErrores     = lazy(() => import('./pages/admin/Errores'))
@@ -172,6 +174,8 @@ function AppRoutes() {
               <Route path="/admin/solicitudes"   element={<Suspense fallback={<GenericPageSkeleton />}><AdminSolicitudes /></Suspense>} />
               <Route path="/admin/documentos"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminDocumentos /></Suspense>} />
               <Route path="/admin/mapas"         element={<Suspense fallback={<GenericPageSkeleton />}><AdminMapas /></Suspense>} />
+              <Route path="/admin/geovisores"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminGeovisores /></Suspense>} />
+              <Route path="/admin/conexiones-geoserver" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConexionesGeoserver /></Suspense>} />
               <Route path="/admin/configuracion" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConfig /></Suspense>} />
               <Route path="/admin/actividad"     element={<Suspense fallback={<GenericPageSkeleton />}><AdminActividad /></Suspense>} />
               <Route path="/admin/errores"       element={<Suspense fallback={<GenericPageSkeleton />}><AdminErrores /></Suspense>} />
