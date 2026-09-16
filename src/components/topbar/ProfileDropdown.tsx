@@ -23,8 +23,8 @@ function RoleBadge({ user }: { user: AuthUser | null }) {
     </span>
   )
   if (isSuperAdmin) return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-bold uppercase tracking-wider"
-      style={{ background: 'rgba(124,58,237,0.1)', color: '#6D28D9', border: '1px solid rgba(124,58,237,0.2)' }}>
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-bold uppercase tracking-wider text-white"
+      style={{ background: 'var(--brand-gradient)', boxShadow: '0 1px 4px rgba(0,152,70,0.25)' }}>
       <ShieldCheck className="w-2.5 h-2.5" />Super Admin
     </span>
   )
@@ -42,39 +42,42 @@ function RoleBadge({ user }: { user: AuthUser | null }) {
   )
 }
 
-// Fila plana estándar del menú (Mi Perfil, Mis Solicitudes, Guía de Usuario).
-function MenuItem({ to = '', icon: Icon, label, onClick = undefined }: {
-  to?: string; icon: LucideIcon; label: string; onClick?: () => void
+// Fila plana estándar del menú (Mi Perfil, Mis Solicitudes, Guía de Usuario,
+// Panel Admin). "accent" solo cambia el color/peso del ícono y el texto —
+// misma altura y padding que el resto para que la lista mantenga un único
+// ritmo visual (antes Panel Admin era un pill de gradiente aparte, lo que
+// se leía como un botón CTA compitiendo con Cerrar Sesión).
+function MenuItem({ to = '', icon: Icon, label, onClick = undefined, accent = false }: {
+  to?: string; icon: LucideIcon; label: string; onClick?: () => void; accent?: boolean
 }) {
-  const base = 'flex items-center gap-3 px-4 py-2.5 text-sm no-underline transition-colors w-full text-left text-text hover:bg-bg-alt'
+  const base = `flex items-center gap-3 px-4 py-2.5 text-sm no-underline transition-colors w-full text-left hover:bg-bg-alt ${
+    accent ? 'font-semibold' : 'text-text'
+  }`
+  const style = accent ? { color: 'var(--color-primary-500)' } : undefined
+  const iconClassName = `w-4 h-4 ${accent ? '' : 'text-text-muted'}`
   if (to) return (
-    <li><Link to={to} onClick={onClick} className={base}>
-      <Icon className="w-4 h-4 text-text-muted" aria-hidden="true" />{label}
+    <li><Link to={to} onClick={onClick} className={base} style={style}>
+      <Icon className={iconClassName} style={accent ? style : undefined} aria-hidden="true" />{label}
     </Link></li>
   )
   return (
-    <li><button onClick={onClick} className={base}>
-      <Icon className="w-4 h-4 text-text-muted" aria-hidden="true" />{label}
+    <li><button onClick={onClick} className={base} style={style}>
+      <Icon className={iconClassName} style={accent ? style : undefined} aria-hidden="true" />{label}
     </button></li>
   )
 }
 
-// Fila con peso propio para acciones que deben destacar sobre el resto del
-// menú (Panel Admin, Cerrar Sesión) — visibles en reposo, no solo al hover.
-function EmphasisItem({ to = '', icon: Icon, label, onClick, tone }: {
-  to?: string; icon: LucideIcon; label: string; onClick?: () => void
-  tone: 'admin' | 'danger'
+// Fila con peso propio, reservada para acciones que interrumpen el flujo
+// normal de navegación (Cerrar Sesión) — visible en reposo, no solo al hover.
+function EmphasisItem({ icon: Icon, label, onClick }: {
+  icon: LucideIcon; label: string; onClick: () => void
 }) {
-  const style = tone === 'admin'
-    ? { background: 'linear-gradient(135deg, #B0CB1F, #8CA318)', color: '#10230f', boxShadow: '0 2px 10px rgba(176,203,31,0.28)' }
-    : { background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.18)' }
   const className = 'flex items-center gap-3 px-4 py-2.5 text-sm font-bold no-underline transition-all w-full text-left rounded-xl mx-2 my-1 hover:opacity-90 active:scale-[0.98]'
-  const content = <><Icon className="w-4 h-4 shrink-0" aria-hidden="true" />{label}</>
-  if (to) return (
-    <li><Link to={to} onClick={onClick} className={className} style={style}>{content}</Link></li>
-  )
+  const style = { background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.18)' }
   return (
-    <li><button onClick={onClick} className={className} style={style}>{content}</button></li>
+    <li><button onClick={onClick} className={className} style={style}>
+      <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />{label}
+    </button></li>
   )
 }
 
@@ -121,14 +124,14 @@ export default function ProfileDropdown({ user, onClose, onLogout }: { user: Aut
         {isVerified && (
           <ul className="py-1">
             <MenuItem to="/perfil"       icon={UserCircle}      label="Mi Perfil"       onClick={onClose} />
-            {isAdmin && <EmphasisItem to="/admin" icon={LayoutDashboard} label="Panel Admin" onClick={onClose} tone="admin" />}
+            {isAdmin && <MenuItem to="/admin" icon={LayoutDashboard} label="Panel Admin" onClick={onClose} accent />}
             <MenuItem to="/solicitudes"  icon={ClipboardList}   label="Mis Solicitudes"  onClick={onClose} />
             <MenuItem to="/guia-usuario" icon={BookOpen}        label="Guía de Usuario"  onClick={onClose} />
           </ul>
         )}
 
         <div className="border-t border-border py-1">
-          <EmphasisItem icon={LogOut} label="Cerrar Sesión" onClick={onLogout} tone="danger" />
+          <EmphasisItem icon={LogOut} label="Cerrar Sesión" onClick={onLogout} />
         </div>
       </nav>
     </GlassPanel>

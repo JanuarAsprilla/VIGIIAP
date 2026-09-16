@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar from '@/components/Sidebar'
 import TopBar from '@/components/TopBar'
 import FooterBar from '@/components/FooterBar'
 import BottomTabs from '@/components/BottomTabs'
 import CommandPalette from '@/components/CommandPalette'
+import RecuperarPasswordPanel from '@/components/auth/RecuperarPasswordPanel'
+import SolicitarAccesoPanel from '@/components/auth/SolicitarAccesoPanel'
 import { useUI, type Density } from '@/contexts/UIContext'
 import { useLenis } from '@/hooks/useLenis'
+
+type AuthModal = 'recuperar' | 'solicitar' | null
 
 // pb-20 compensa la altura del BottomTabs fijo — solo hace falta por debajo
 // de md, que es donde BottomTabs sigue visible (ver breakpoint compartido
@@ -35,7 +39,9 @@ function AmbientBackground() {
 
 export default function MainLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [authModal, setAuthModal] = useState<AuthModal>(null)
   const location = useLocation()
+  const navigate = useNavigate()
   const { density, openPalette } = useUI()
   useLenis() // smooth scroll global
 
@@ -52,6 +58,18 @@ export default function MainLayout() {
   }, [openPalette])
 
   const isGeovisores = location.pathname === '/geovisores'
+
+  // /recuperar-password y /solicitar-acceso (ver src/pages/auth/) ya no son
+  // páginas propias — reenvían aquí con state.openAuthModal para abrir el
+  // panel centrado correspondiente en vez de mostrar una pantalla aparte.
+  useEffect(() => {
+    const state = location.state as { openAuthModal?: 'recuperar' | 'solicitar' } | null
+    if (!state?.openAuthModal) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- solo corre cuando llega el redirect, no en cada render
+    setAuthModal(state.openAuthModal)
+    navigate(location.pathname + location.search, { replace: true, state: {} })
+  }, [location.state, location.pathname, location.search, navigate])
+
   const mainPad = DENSITY_PADDING[density] || DENSITY_PADDING.normal
 
   return (
@@ -99,6 +117,11 @@ export default function MainLayout() {
 
       <BottomTabs onMore={() => setMobileMenuOpen(true)} moreOpen={mobileMenuOpen} />
       <CommandPalette />
+
+      <AnimatePresence>
+        {authModal === 'recuperar' && <RecuperarPasswordPanel key="recuperar" onClose={() => setAuthModal(null)} />}
+        {authModal === 'solicitar' && <SolicitarAccesoPanel key="solicitar" onClose={() => setAuthModal(null)} />}
+      </AnimatePresence>
     </div>
   )
 }

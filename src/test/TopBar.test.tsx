@@ -163,7 +163,7 @@ describe('TopBar — usuario no verificado (visitante/público)', () => {
 })
 
 describe('TopBar — usuario verificado', () => {
-  test('muestra Notificaciones y Ajustes, con el nombre y rol del usuario', () => {
+  test('muestra Notificaciones y Ajustes, con el nombre del usuario (el rol vive en el dropdown, no duplicado en el trigger)', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Ana Restrepo', role: 'Investigador', initials: 'AR' }
 
@@ -171,7 +171,6 @@ describe('TopBar — usuario verificado', () => {
     expect(screen.getByLabelText(/Notificaciones/i)).toBeInTheDocument()
     expect(screen.getByLabelText('Ajustes rápidos')).toBeInTheDocument()
     expect(screen.getByText('Ana Restrepo')).toBeInTheDocument()
-    expect(screen.getByText('Investigador')).toBeInTheDocument()
   })
 
   test('cerrar sesión desde el dropdown llama a logout() y navega a "/"', async () => {

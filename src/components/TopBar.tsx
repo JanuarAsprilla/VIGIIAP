@@ -445,7 +445,6 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
               >
                 <div className="text-right hidden sm:block">
                   <span className="block text-sm font-medium leading-tight" style={{color:"var(--topbar-text)"}}>{user?.name}</span>
-                  <span className="block text-[0.7rem] uppercase tracking-wider" style={{color:"var(--topbar-icon-on)"}}>{user?.role}</span>
                 </div>
                 <div className="relative shrink-0">
                   <Avatar avatarUrl={user?.avatarUrl} initials={user?.initials} size="w-9 h-9" />

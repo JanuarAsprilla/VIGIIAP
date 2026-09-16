@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
+import SolicitarAccesoForm from '@/components/auth/SolicitarAccesoForm'
 import SolicitarAcceso from '@/pages/auth/SolicitarAcceso'
 
 vi.mock('framer-motion', () => {
@@ -23,10 +24,15 @@ vi.mock('framer-motion', () => {
 
 const authMock = { register: vi.fn() }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
-vi.mock('@/hooks/usePlatformStats', () => ({ usePlatformStats: () => [] }))
 
-function renderPage() {
-  return render(<SolicitarAcceso />, { wrapper: MemoryRouter })
+const navigateSpy = vi.fn()
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>()
+  return { ...actual, useNavigate: () => navigateSpy }
+})
+
+function renderForm(onClose = vi.fn()) {
+  return { onClose, ...render(<SolicitarAccesoForm onClose={onClose} />, { wrapper: MemoryRouter }) }
 }
 
 const VALID = {
@@ -50,10 +56,10 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('SolicitarAcceso — validación', () => {
+describe('SolicitarAccesoForm — validación', () => {
   test('todos los campos requeridos muestran error y no se llama a register()', async () => {
     const user = userEvent.setup()
-    renderPage()
+    renderForm()
     await user.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
 
     expect(await screen.findByText('El nombre completo es requerido')).toBeInTheDocument()
@@ -63,7 +69,7 @@ describe('SolicitarAcceso — validación', () => {
 
   test('contraseñas que no coinciden muestran el error específico', async () => {
     const user = userEvent.setup()
-    renderPage()
+    renderForm()
     await user.type(screen.getByLabelText('Contraseña'), 'Sup3r$ecreta')
     await user.type(screen.getByLabelText('Confirmar Contraseña'), 'OtraDistinta1!')
     await user.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
@@ -74,7 +80,7 @@ describe('SolicitarAcceso — validación', () => {
 
   test('una contraseña débil es rechazada aunque no esté vacía', async () => {
     const user = userEvent.setup()
-    renderPage()
+    renderForm()
     await user.type(screen.getByLabelText('Contraseña'), 'abc')
     await user.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
 
@@ -83,11 +89,11 @@ describe('SolicitarAcceso — validación', () => {
   })
 })
 
-describe('SolicitarAcceso — envío', () => {
+describe('SolicitarAccesoForm — envío', () => {
   test('con datos válidos llama a register() con el payload correcto y muestra la pantalla de éxito', async () => {
     authMock.register.mockResolvedValue({ id: '1' })
     const user = userEvent.setup()
-    renderPage()
+    renderForm()
     await fillValidForm(user)
     await user.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
 
@@ -104,11 +110,37 @@ describe('SolicitarAcceso — envío', () => {
   test('si register() falla, muestra el error del servidor y no la pantalla de éxito', async () => {
     authMock.register.mockRejectedValue(new Error('El email ya está registrado'))
     const user = userEvent.setup()
-    renderPage()
+    renderForm()
     await fillValidForm(user)
     await user.click(screen.getByRole('button', { name: /Enviar Solicitud/i }))
 
     expect(await screen.findByText('El email ya está registrado')).toBeInTheDocument()
     expect(screen.queryByText(/Verifica tu correo/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('SolicitarAccesoForm — volver al login', () => {
+  test('"Ya tengo cuenta" cierra el panel y navega a /login', async () => {
+    const user = userEvent.setup()
+    const { onClose } = renderForm()
+    await user.click(screen.getByRole('button', { name: /Ya tengo cuenta/i }))
+
+    expect(onClose).toHaveBeenCalled()
+    expect(navigateSpy).toHaveBeenCalledWith('/login')
+  })
+})
+
+describe('SolicitarAcceso — /solicitar-acceso ya no es una página, reenvía a "/"', () => {
+  test('reenvía a "/" pidiendo abrir el panel de solicitar acceso', () => {
+    render(<SolicitarAcceso />, { wrapper: MemoryRouter })
+    expect(navigateSpy).toHaveBeenCalledWith('/', {
+      replace: true,
+      state: { openAuthModal: 'solicitar' },
+    })
+  })
+
+  test('no renderiza ningún formulario propio', () => {
+    const { container } = render(<SolicitarAcceso />, { wrapper: MemoryRouter })
+    expect(container).toBeEmptyDOMElement()
   })
 })
