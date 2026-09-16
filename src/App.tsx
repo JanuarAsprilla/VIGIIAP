@@ -23,7 +23,7 @@ import {
 const Home            = lazy(() => import('./pages/Home'))
 const Mapas           = lazy(() => import('./pages/Mapas'))
 const Documentos      = lazy(() => import('./pages/Documentos'))
-const Geovisor        = lazy(() => import('./pages/Geovisor'))
+const Geovisores        = lazy(() => import('./pages/Geovisores'))
 const Herramientas    = lazy(() => import('./pages/Herramientas'))
 const Solicitudes     = lazy(() => import('./pages/Solicitudes'))
 const GuiaUsuario     = lazy(() => import('./pages/recursos/GuiaUsuario'))
@@ -55,10 +55,10 @@ const AdminReportes    = lazy(() => import('./pages/admin/Reportes'))
 const AdminGestionAdmins = lazy(() => import('./pages/admin/GestionAdmins'))
 const AdminPapelera      = lazy(() => import('./pages/admin/Papelera'))
 
-// Fallback genérico para Geovisor (mapa de pantalla completa, sin skeleton de columnas)
-function GeovisorLoader() {
+// Fallback genérico para Geovisores (mapa de pantalla completa, sin skeleton de columnas)
+function GeovisoresLoader() {
   return (
-    <div className="flex-1 flex items-center justify-center bg-bg" role="status" aria-label="Cargando geovisor...">
+    <div className="flex-1 flex items-center justify-center bg-bg" role="status" aria-label="Cargando geovisores...">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-primary-300 border-t-primary-800 rounded-full animate-spin" aria-hidden="true" />
         <span className="text-sm text-text-muted">Inicializando mapa...</span>
@@ -134,7 +134,7 @@ function AppRoutes() {
               <Suspense fallback={<GenericPageSkeleton />}><Terminos /></Suspense>
             } />
 
-            {/* Mapas, Documentos, Geovisor y Herramientas son públicos — cualquiera
+            {/* Mapas, Documentos, Geovisores y Herramientas son públicos — cualquiera
                 entra sin sesión. Lo que varía es el contenido: cada mapa/documento
                 trae su propio campo `visibilidad` (público / usuarios / acreditados)
                 y el backend ya filtra según haya o no sesión (ver
@@ -146,8 +146,8 @@ function AppRoutes() {
             <Route path="/documentos" element={
               <Suspense fallback={<DocumentosSkeleton />}><Documentos /></Suspense>
             } />
-            <Route path="/geovisor" element={
-              <Suspense fallback={<GeovisorLoader />}><Geovisor /></Suspense>
+            <Route path="/geovisores" element={
+              <Suspense fallback={<GeovisoresLoader />}><Geovisores /></Suspense>
             } />
             <Route path="/herramientas" element={
               <Suspense fallback={<HerramientasSkeleton />}><Herramientas /></Suspense>

@@ -55,7 +55,7 @@ function normalizeMap(m: MapaRaw) {
     formats,
     badge:        primaryFmt === 'GEOVISOR' ? 'Geovisor' : primaryFmt,
     badgeColor:   'primary',
-    geovisorLink: m.geovisor_url ?? '/geovisor',
+    geovisorLink: m.geovisor_url ?? '/geovisores',
     department:   '',
     // ── campos para panel admin (GestionMapas.jsx) ──
     nombre:    m.titulo,

@@ -343,7 +343,7 @@ describe('Usuarios (admin) — panel de detalle', () => {
     render(<Usuarios />)
     await user.click(screen.getByText('Ana Restrepo'))
 
-    expect(screen.getByText('Geovisor')).toBeInTheDocument()
+    expect(screen.getByText('Geovisores')).toBeInTheDocument()
     expect(screen.getByText('Panel de Administración')).toBeInTheDocument()
   })
 

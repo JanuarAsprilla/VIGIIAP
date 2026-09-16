@@ -27,7 +27,7 @@ export default function RequireAuth() {
   return <Outlet />
 }
 
-// Protege /geovisor y /herramientas. Bloquea Público y Visitante — pero, a
+// Protege /geovisores y /herramientas. Bloquea Público y Visitante — pero, a
 // pesar del nombre, deja pasar a cualquier rol verificado (investigador,
 // tecnico, institucional, admin_sig, super_admin), no solo Investigador/Admin.
 export function RequireInvestigador() {

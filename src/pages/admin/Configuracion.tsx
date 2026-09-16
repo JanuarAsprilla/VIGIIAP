@@ -394,7 +394,7 @@ export default function Configuracion() {
           <p className="text-[0.65rem] font-bold uppercase tracking-wider text-[var(--stats-value)] mb-2">Roles del Sistema</p>
           {[
             { rol: 'Administrador SIG', desc: 'Acceso completo al panel de administración y todos los módulos' },
-            { rol: 'Investigador', desc: 'Acceso a mapas, documentos, geovisor, herramientas y solicitudes' },
+            { rol: 'Investigador', desc: 'Acceso a mapas, documentos, geovisores, herramientas y solicitudes' },
             { rol: 'Público', desc: 'Solo acceso al inicio de sesión y módulos públicos. Módulos técnicos bloqueados' },
           ].map(({ rol, desc }) => (
             <div key={rol} className="flex items-start gap-2 py-1.5">

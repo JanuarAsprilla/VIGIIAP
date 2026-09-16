@@ -39,9 +39,9 @@ beforeEach(() => {
 })
 
 describe('Sidebar — visitante sin sesión', () => {
-  test('Geovisor es público — es un enlace real', () => {
+  test('Geovisores es público — es un enlace real', () => {
     renderSidebar()
-    expect(screen.getByRole('link', { name: /Geovisor/i })).toHaveAttribute('href', '/geovisor')
+    expect(screen.getByRole('link', { name: /Geovisores/i })).toHaveAttribute('href', '/geovisores')
   })
 
   test('Solicitudes no se muestra en absoluto — sigue exclusivo de cuenta verificada', () => {
@@ -77,7 +77,7 @@ describe('Sidebar — usuario verificado', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Ana Restrepo', role: ROLES.INVESTIGADOR, initials: 'AR' }
     renderSidebar()
-    expect(screen.getByRole('link', { name: /Geovisor/i })).toHaveAttribute('href', '/geovisor')
+    expect(screen.getByRole('link', { name: /Geovisores/i })).toHaveAttribute('href', '/geovisores')
     expect(screen.queryByText('Panel Admin')).not.toBeInTheDocument()
   })
 

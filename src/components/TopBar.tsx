@@ -37,13 +37,13 @@ const SEARCH_PLACEHOLDERS = {
   '/':            'Buscar módulos, documentos...',
   '/mapas':       'Buscar mapas, capas o territorios...',
   '/documentos':  'Buscar por nombre, tipo o fecha...',
-  '/geovisor':    'Buscar coordenadas, lugar o capa...',
+  '/geovisores':  'Buscar coordenadas, lugar o capa...',
   '/herramientas':'Buscar herramienta o análisis...',
   '/solicitudes': 'Buscar trámites o expedientes...',
 }
 
 const PAGE_LABELS = {
-  '/geovisor': 'Geovisor',
+  '/geovisores': 'Geovisores',
 }
 
 // ── Hook: estado de notificaciones leídas persistido en localStorage ──

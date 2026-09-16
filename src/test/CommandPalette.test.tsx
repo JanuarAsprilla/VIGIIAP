@@ -80,8 +80,8 @@ describe('CommandPalette — resultados y agrupación', () => {
   test('filtra por texto de la etiqueta', async () => {
     const user = userEvent.setup()
     renderPalette()
-    await user.type(screen.getByRole('combobox'), 'geovisor')
-    expect(screen.getByText('Geovisor')).toBeInTheDocument()
+    await user.type(screen.getByRole('combobox'), 'geovisores')
+    expect(screen.getByText('Geovisores')).toBeInTheDocument()
     expect(screen.queryByText('Documentos')).not.toBeInTheDocument()
   })
 
@@ -103,7 +103,7 @@ describe('CommandPalette — resultados y agrupación', () => {
   test('el botón de limpiar borra la búsqueda', async () => {
     const user = userEvent.setup()
     renderPalette()
-    await user.type(screen.getByRole('combobox'), 'geovisor')
+    await user.type(screen.getByRole('combobox'), 'geovisores')
     await user.click(screen.getByLabelText('Limpiar búsqueda'))
     expect(screen.getByRole('combobox')).toHaveValue('')
     expect(screen.getByText('Documentos')).toBeInTheDocument()

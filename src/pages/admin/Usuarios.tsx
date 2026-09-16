@@ -108,7 +108,7 @@ function UserDrawer({ user, onClose }: { user: UsuarioData; onClose: () => void 
               )}
               {(user.rol === 'Investigador' || user.rol === 'Técnico SIG' || user.rol === 'Funcionario Institucional') && (
                 <>
-                  {['Mapas y Documentos', 'Geovisor', 'Herramientas SIG', 'Solicitudes'].map((p) => (
+                  {['Mapas y Documentos', 'Geovisores', 'Herramientas SIG', 'Solicitudes'].map((p) => (
                     <div key={p} className="flex items-center gap-2 text-xs text-text">
                       <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />{p}
                     </div>
@@ -121,7 +121,7 @@ function UserDrawer({ user, onClose }: { user: UsuarioData; onClose: () => void 
               {user.rol === 'Público' && (
                 <>
                   <p className="text-xs text-text-muted mb-1.5">Cuenta no verificada — solo consulta contenido público.</p>
-                  {['Mapas', 'Documentos', 'Herramientas', 'Geovisor', 'Solicitudes', 'Panel de Administración'].map((p) => (
+                  {['Mapas', 'Documentos', 'Herramientas', 'Geovisores', 'Solicitudes', 'Panel de Administración'].map((p) => (
                     <div key={p} className="flex items-center gap-2 text-xs text-text-muted">
                       <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />{p}
                     </div>

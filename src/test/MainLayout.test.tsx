@@ -80,8 +80,8 @@ describe('MainLayout — orquestación del shell principal', () => {
     expect(openPaletteSpy).toHaveBeenCalled()
   })
 
-  test('en /geovisor oculta el footer para dejar el mapa a pantalla completa', () => {
-    renderMainLayout('/geovisor')
+  test('en /geovisores oculta el footer para dejar el mapa a pantalla completa', () => {
+    renderMainLayout('/geovisores')
     expect(screen.queryByText('FooterBar')).not.toBeInTheDocument()
   })
 
