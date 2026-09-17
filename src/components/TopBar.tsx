@@ -160,7 +160,12 @@ function TopBarSearchInput({ value, onChange, placeholder, autoFocus, onClear, s
 // teléfono ya vive completa en BottomTabs (tab "Más"), así que no hace falta
 // un segundo disparador de menú aquí — se elimina esa redundancia. AdminLayout
 // sí lo pasa: el panel admin no tiene una barra inferior propia.
-export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) {
+export default function TopBar({ onMenuToggle, onOpenAuthModal }: {
+  onMenuToggle?: () => void
+  // Abre RecuperarPasswordPanel/SolicitarAccesoPanel (definidos en MainLayout)
+  // desde dentro de LoginPanel sin navegar — ver LoginPanel.tsx.
+  onOpenAuthModal?: (target: 'recuperar' | 'solicitar') => void
+}) {
   const location  = useLocation()
   const navigate  = useNavigate()
   const { isAuthenticated, initializing, user, logout, isAdmin } = useAuth()
@@ -261,6 +266,17 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
   )
 
   const closePanel = useCallback(() => setActivePanel(null), [])
+
+  // AdminLayout monta TopBar sin onOpenAuthModal (solo llega ahí ya
+  // autenticado, así que LoginPanel nunca debería renderizarse) — se deja un
+  // fallback por navegación para no romper si igual llegara a pasar.
+  const openAuthModal = useCallback(
+    (target: 'recuperar' | 'solicitar') => {
+      if (onOpenAuthModal) { onOpenAuthModal(target); return }
+      navigate(target === 'recuperar' ? '/recuperar-password' : '/solicitar-acceso')
+    },
+    [onOpenAuthModal, navigate],
+  )
 
   const handleLogout = useCallback(() => {
     logout()
@@ -486,7 +502,7 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
               </button>
               <AnimatePresence>
                 {activePanel === 'login' && (
-                  <LoginPanel onClose={closePanel} from={loginFrom} anchorRef={loginTriggerRef} boxRef={loginPanelBoxRef} />
+                  <LoginPanel onClose={closePanel} from={loginFrom} anchorRef={loginTriggerRef} boxRef={loginPanelBoxRef} onNavigateAuthModal={openAuthModal} />
                 )}
               </AnimatePresence>
             </div>

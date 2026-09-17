@@ -41,6 +41,11 @@ describe('api.ts — response interceptor', () => {
   })
 
   afterEach(() => {
+    // Sin esto, vi.spyOn devuelve el mismo spy de window.dispatchEvent entre
+    // tests (nunca se restaura el original) y su historial de llamadas se
+    // acumula de principio a fin del archivo — un test que revisa "no se
+    // llamó con X" puede fallar por una llamada legítima de un test anterior.
+    dispatchSpy.mockRestore()
     // attemptRefresh() en api.ts llama a axios.post() directo (no a la
     // instancia `api`), para evitar reentrar el propio interceptor de
     // respuesta durante un refresh — así que los tests que necesitan
@@ -96,8 +101,14 @@ describe('api.ts — response interceptor', () => {
   test('logs out (dispatches vigiiap:logout, clears local session) when refresh also fails', async () => {
     const api = await loadApi()
     localStorage.setItem('vigiiap_token', 'stale')
-    api.defaults.adapter = ((config: AxiosRequestConfig) =>
+    const fakeAdapter = ((config: AxiosRequestConfig) =>
       Promise.reject(unauthorized(config, 'Refresh token no encontrado'))) as FakeAdapter
+    api.defaults.adapter = fakeAdapter
+    // attemptRefresh() usa axios.post() directo — sin esto, ese POST cae al
+    // adapter real (intento de red de verdad contra una URL relativa en
+    // jsdom) en vez del fake, dejando una promesa colgante que se resuelve
+    // en un tick posterior y contamina el dispatchSpy del siguiente test.
+    axios.defaults.adapter = fakeAdapter
 
     await expect(api.get('/protegido')).rejects.toMatchObject({ status: 401 })
     expect(localStorage.getItem('vigiiap_token')).toBeNull()
@@ -107,13 +118,39 @@ describe('api.ts — response interceptor', () => {
   test('does not attempt a silent refresh for a failed /auth/login itself', async () => {
     const api = await loadApi()
     let refreshCalls = 0
-    api.defaults.adapter = ((config: AxiosRequestConfig) => {
-      if (config.url === '/auth/refresh') refreshCalls++
+    const fakeAdapter = ((config: AxiosRequestConfig) => {
+      if (config.url?.includes('/auth/refresh')) refreshCalls++
       return Promise.reject(unauthorized(config, 'Credenciales incorrectas'))
     }) as FakeAdapter
+    api.defaults.adapter = fakeAdapter
+    axios.defaults.adapter = fakeAdapter
 
     await expect(api.post('/auth/login', {})).rejects.toThrow('Credenciales incorrectas')
     expect(refreshCalls).toBe(0)
+  })
+
+  // Regresión: un admin con sesión real activa que se equivoca tecleando el
+  // código TOTP en /perfil (POST /auth/2fa/verify) disparaba un refresh
+  // silencioso — que SÍ tenía éxito, porque su sesión de verdad seguía viva —
+  // y reintentaba la misma petición con el mismo código incorrecto. El
+  // segundo 401 sí cerraba la sesión, expulsando a la persona sin ningún
+  // error visible ("no pasa nada" al introducir el código). Ver AUTH_ATTEMPT_ENDPOINTS.
+  test('a wrong 2FA code does not retry-with-refresh nor force logout, even with a live session', async () => {
+    const api = await loadApi()
+    let refreshCalls = 0
+    const fakeAdapter = ((config: AxiosRequestConfig) => {
+      if (config.url?.includes('/auth/refresh')) {
+        refreshCalls++
+        return Promise.resolve(ok(config, { token: 'still-valid' }))
+      }
+      return Promise.reject(unauthorized(config, 'Código TOTP inválido'))
+    }) as FakeAdapter
+    api.defaults.adapter = fakeAdapter
+    axios.defaults.adapter = fakeAdapter
+
+    await expect(api.post('/auth/2fa/verify', { code: '000000' })).rejects.toThrow('Código TOTP inválido')
+    expect(refreshCalls).toBe(0)
+    expect(dispatchSpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'vigiiap:logout' }))
   })
 
   test('does not retry a request twice — a second 401 after refresh falls through to logout', async () => {
