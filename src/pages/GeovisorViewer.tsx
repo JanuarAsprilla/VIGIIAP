@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { MapContainer, WMSTileLayer, ScaleControl } from 'react-leaflet'
+import type { WMSParams } from 'leaflet'
 import { motion } from 'framer-motion'
 import { Loader2, Lock, ArrowLeft } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
+import 'leaflet-draw/dist/leaflet.draw.css'
 import api from '@/lib/api'
 import { fadeUp } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
@@ -11,6 +13,8 @@ import { useGeovisorPorSlug, useCapasDeGeovisor } from '@/hooks/useGeovisores'
 import BasemapCapas from '@/components/geovisor-viewer/BasemapCapas'
 import BasemapGaleria from '@/components/geovisor-viewer/BasemapGaleria'
 import PanelCapas from '@/components/geovisor-viewer/PanelCapas'
+import HerramientasDibujo from '@/components/geovisor-viewer/HerramientasDibujo'
+import type { AreaInteresState } from '@/components/geovisor-viewer/ControlAreaInteres'
 import type { CapaGeoserver } from '@/types'
 
 interface CapaActiva {
@@ -27,6 +31,7 @@ export default function GeovisorViewer() {
 
   const [basemap, setBasemap] = useState<string | null>(null)
   const [capasActivas, setCapasActivas] = useState<CapaActiva[]>([])
+  const [areaInteres, setAreaInteres] = useState<AreaInteresState | null>(null)
 
   const toggleCapa = (capa: CapaGeoserver, tema: string) => {
     setCapasActivas((prev) =>
@@ -95,18 +100,21 @@ export default function GeovisorViewer() {
         >
           <BasemapCapas basemapId={basemap ?? geovisor.basemapDefecto} />
 
-          {capasActivas.map((ca, i) => (
-            <WMSTileLayer
-              key={ca.capa.id}
-              url={`${API_BASE}/geovisores/${geovisor.slug}/wms`}
-              layers={ca.capa.id}
-              format="image/png"
-              transparent
-              version="1.1.1"
-              crossOrigin="use-credentials"
-              zIndex={100 + i}
-            />
-          ))}
+          {capasActivas.map((ca, i) => {
+            const params: WMSParams & { geometria?: string } = {
+              layers: ca.capa.id, format: 'image/png', transparent: true, version: '1.1.1',
+              ...(areaInteres ? { geometria: JSON.stringify(areaInteres.geometria) } : {}),
+            }
+            return (
+              <WMSTileLayer
+                key={ca.capa.id}
+                url={`${API_BASE}/geovisores/${geovisor.slug}/wms`}
+                params={params as WMSParams}
+                crossOrigin="use-credentials"
+                zIndex={100 + i}
+              />
+            )
+          })}
 
           <ScaleControl position="bottomleft" imperial={false} />
 
@@ -121,10 +129,17 @@ export default function GeovisorViewer() {
           />
 
           <BasemapGaleria basemapId={basemap ?? geovisor.basemapDefecto} onChange={setBasemap} />
+
+          <HerramientasDibujo
+            presetsArea={geovisor.presetsArea}
+            areaMaxHa={geovisor.areaMaxHa ?? undefined}
+            areaActual={areaInteres}
+            onCambiarArea={setAreaInteres}
+          />
         </MapContainer>
 
         {cargandoCapas && (
-          <div className="absolute bottom-3 right-3 z-[1000] flex items-center gap-2 px-3 py-1.5 bg-[var(--card-bg)]/95 backdrop-blur-sm border border-border rounded-lg text-xs text-text-muted shadow-md">
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 px-3 py-1.5 bg-[var(--card-bg)]/95 backdrop-blur-sm border border-border rounded-lg text-xs text-text-muted shadow-md">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
             Cargando catálogo de capas…
           </div>
