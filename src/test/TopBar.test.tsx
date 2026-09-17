@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import TopBar from '@/components/TopBar'
+import { __resetPendingLoginRedirectForTests } from '@/components/topbar/pendingLoginRedirect'
 
 vi.mock('framer-motion', () => {
   const cache = new Map<string, (p: Record<string, unknown>) => ReactNode>()
@@ -95,6 +96,7 @@ function renderTopBar(initialEntries?: { pathname: string; state?: unknown }[]) 
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
+  __resetPendingLoginRedirectForTests()
   authMock.isAuthenticated = false
   authMock.initializing = false
   authMock.user = null
@@ -127,6 +129,22 @@ describe('TopBar — usuario anónimo', () => {
 
   test('location.state.openLogin (reenviado desde /login) abre LoginPanel directo, sin pasar por la bienvenida', async () => {
     renderTopBar([{ pathname: '/', state: { openLogin: true, from: { pathname: '/mapas' } } }])
+    expect(await screen.findByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
+  })
+
+  // Regresión: en la app real, <ErrorBoundary key={location.key}> (ver
+  // App.tsx) remonta TopBar entero en CADA navigate(), incluido el propio
+  // navigate() con el que este mismo efecto limpia location.state después de
+  // leer openLogin — la instancia fresca que nace de ese remount ve
+  // location.state ya vacío. Se simula acá desmontando y volviendo a montar
+  // TopBar con el state ya limpio, tal como lo vería esa instancia fresca.
+  test('sobrevive al remount que dispara su propio navigate() de limpieza de location.state', async () => {
+    const { unmount } = renderTopBar([{ pathname: '/', state: { openLogin: true, from: { pathname: '/mapas' } } }])
+    await screen.findByRole('dialog', { name: /Iniciar sesión/i })
+    unmount()
+
+    renderTopBar([{ pathname: '/', state: {} }])
     expect(await screen.findByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
     expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
   })

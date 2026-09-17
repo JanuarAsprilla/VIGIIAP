@@ -27,6 +27,7 @@ import AjustesPanel        from './topbar/AjustesPanel'
 import ProfileDropdown     from './topbar/ProfileDropdown'
 import LoginPanel          from './topbar/LoginPanel'
 import WelcomePanel        from './topbar/WelcomePanel'
+import { markPendingLoginRedirect, consumePendingLoginRedirect } from './topbar/pendingLoginRedirect'
 import AvatarBadge         from './ui/AvatarBadge'
 import Avatar               from './ui/Avatar'
 
@@ -224,6 +225,7 @@ export default function TopBar({ onMenuToggle, onOpenAuthModal }: {
   useEffect(() => {
     const state = location.state as { openLogin?: boolean; from?: { pathname?: string } } | null
     if (!state?.openLogin) return
+    markPendingLoginRedirect()
     // eslint-disable-next-line react-hooks/set-state-in-effect -- solo corre cuando llega el redirect, no en cada render
     setActivePanel('login')
     setLoginFrom(state.from?.pathname)
@@ -236,9 +238,13 @@ export default function TopBar({ onMenuToggle, onOpenAuthModal }: {
   // credenciales. autoOpenedRef evita que se reabra si la persona lo cierra
   // manualmente mientras sigue sin sesión.
   useEffect(() => {
-    if (initializing || isAuthenticated || autoOpenedRef.current) return
+    if (isAuthenticated) { consumePendingLoginRedirect(); return }
+    if (initializing || autoOpenedRef.current) return
     autoOpenedRef.current = true
-    setActivePanel((prev) => prev ?? 'welcome')
+    setActivePanel((prev) => {
+      if (prev) return prev // ya decidido en este mismo flush (ver efecto de arriba)
+      return consumePendingLoginRedirect() ? 'login' : 'welcome'
+    })
   }, [initializing, isAuthenticated])
 
   // Cerrar paneles al hacer clic fuera o presionar Escape
