@@ -183,6 +183,11 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
   const panelRef       = useRef<HTMLDivElement>(null)
   const dropdownRef    = useRef<HTMLDivElement>(null)
   const autoOpenedRef  = useRef(false)
+  // LoginPanel se renderiza en un portal a <body> (ver LoginPanel.tsx) — ni
+  // panelRef ni dropdownRef lo contienen en el DOM real una vez portado, así
+  // que necesita su propia referencia para el detector de "clic afuera".
+  const loginTriggerRef  = useRef<HTMLDivElement>(null)
+  const loginPanelBoxRef = useRef<HTMLDivElement>(null)
 
   const { readIds, markRead, markAllRead } = useReadNotifications()
 
@@ -232,7 +237,8 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
     function onMouseDown(e: MouseEvent) {
       const outside =
         !panelRef.current?.contains(e.target as Node) &&
-        !dropdownRef.current?.contains(e.target as Node)
+        !dropdownRef.current?.contains(e.target as Node) &&
+        !loginPanelBoxRef.current?.contains(e.target as Node)
       if (outside) setActivePanel(null)
     }
     function onKeyDown(e: KeyboardEvent) {
@@ -466,7 +472,7 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
               </AnimatePresence>
             </div>
           ) : (
-            <div className="relative pl-3 md:pl-4" style={{borderLeft:"1px solid var(--topbar-sep)"}}>
+            <div className="relative pl-3 md:pl-4" style={{borderLeft:"1px solid var(--topbar-sep)"}} ref={loginTriggerRef}>
               <button
                 type="button"
                 onClick={() => { if (activePanel !== 'login') setLoginFrom(undefined); togglePanel('login') }}
@@ -480,7 +486,7 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
               </button>
               <AnimatePresence>
                 {activePanel === 'login' && (
-                  <LoginPanel onClose={closePanel} from={loginFrom} />
+                  <LoginPanel onClose={closePanel} from={loginFrom} anchorRef={loginTriggerRef} boxRef={loginPanelBoxRef} />
                 )}
               </AnimatePresence>
             </div>

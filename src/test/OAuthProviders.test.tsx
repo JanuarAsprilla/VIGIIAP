@@ -19,37 +19,41 @@ function renderOAuthProviders() {
 beforeEach(() => { vi.clearAllMocks() })
 
 describe('OAuthProviders — antes de que resuelva /auth/oauth/providers', () => {
-  test('los 3 botones aparecen deshabilitados con "Pronto" mientras carga', () => {
+  test('los 2 botones aparecen deshabilitados con "Pronto" mientras carga', () => {
     vi.mocked(api.get).mockReturnValue(new Promise(() => {})) // nunca resuelve
     renderOAuthProviders()
-    for (const label of ['Google', 'Apple', 'Microsoft']) {
+    for (const label of ['Google', 'Microsoft']) {
       expect(screen.getByRole('button', { name: new RegExp(label) })).toBeDisabled()
     }
-    expect(screen.getAllByText('Pronto')).toHaveLength(3)
+    expect(screen.getAllByText('Pronto')).toHaveLength(2)
+  })
+
+  test('no muestra Apple — requiere Apple Developer Program de pago, no está disponible', () => {
+    vi.mocked(api.get).mockReturnValue(new Promise(() => {}))
+    renderOAuthProviders()
+    expect(screen.queryByText('Apple')).not.toBeInTheDocument()
   })
 })
 
 describe('OAuthProviders — con /auth/oauth/providers resuelto', () => {
   test('un proveedor configurado (google:true) se renderiza como enlace real al endpoint /start', async () => {
-    vi.mocked(api.get).mockResolvedValue({ google: true, microsoft: false, apple: false })
+    vi.mocked(api.get).mockResolvedValue({ google: true, microsoft: false })
     renderOAuthProviders()
 
     const googleLink = await screen.findByRole('link', { name: /Google/ })
     expect(googleLink).toHaveAttribute('href', 'https://api.vigiiap.iiap.gov.co/api/v1/auth/oauth/google/start')
 
-    // Microsoft y Apple siguen deshabilitados
+    // Microsoft sigue deshabilitado
     expect(screen.getByRole('button', { name: /Microsoft/ })).toBeDisabled()
-    expect(screen.getByRole('button', { name: /Apple/ })).toBeDisabled()
-    expect(screen.getAllByText('Pronto')).toHaveLength(2)
+    expect(screen.getAllByText('Pronto')).toHaveLength(1)
   })
 
-  test('con los 3 configurados, no queda ningún botón deshabilitado', async () => {
-    vi.mocked(api.get).mockResolvedValue({ google: true, microsoft: true, apple: true })
+  test('con los 2 configurados, no queda ningún botón deshabilitado', async () => {
+    vi.mocked(api.get).mockResolvedValue({ google: true, microsoft: true })
     renderOAuthProviders()
 
     expect(await screen.findByRole('link', { name: /Google/ })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Microsoft/ })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Apple/ })).toBeInTheDocument()
     expect(screen.queryByText('Pronto')).not.toBeInTheDocument()
   })
 })

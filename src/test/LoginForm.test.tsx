@@ -12,7 +12,7 @@ import LoginForm from '@/components/auth/LoginForm'
 // verifica el describe "proveedores OAuth" más abajo.
 vi.mock('@/lib/api', () => ({
   default: {
-    get: vi.fn().mockResolvedValue({ google: false, microsoft: false, apple: false }),
+    get: vi.fn().mockResolvedValue({ google: false, microsoft: false }),
     defaults: { baseURL: '/api/v1' },
   },
 }))
@@ -182,15 +182,16 @@ describe('LoginForm — encabezado', () => {
 })
 
 describe('LoginForm — proveedores OAuth', () => {
-  test('muestra Google, Apple y Microsoft, todos deshabilitados', () => {
+  test('muestra Google y Microsoft, todos deshabilitados', () => {
     renderLoginForm()
-    for (const label of ['Google', 'Apple', 'Microsoft']) {
+    for (const label of ['Google', 'Microsoft']) {
       expect(screen.getByRole('button', { name: new RegExp(label) })).toBeDisabled()
     }
   })
 
-  test('no muestra Facebook ni Yahoo', () => {
+  test('no muestra Apple, Facebook ni Yahoo', () => {
     renderLoginForm()
+    expect(screen.queryByText('Apple')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Facebook/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Yahoo/ })).not.toBeInTheDocument()
   })
