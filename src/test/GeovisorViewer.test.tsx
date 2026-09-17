@@ -51,6 +51,7 @@ const temasFixture: TemaCapas[] = [
   {
     id: 'geologia', nombre: 'Geología', capas: [
       { id: 'geologia:unidades', nombre: 'Unidades geológicas', tipo: 'vectorial', tema: 'geologia', bbox: { norte: 6, sur: 5, este: -76, oeste: -77 } },
+      { id: 'geologia:fallas', nombre: 'Fallas geológicas', tipo: 'vectorial', tema: 'geologia' },
     ],
   },
 ]
@@ -136,5 +137,68 @@ describe('GeovisorViewer — mapa y catálogo de capas', () => {
 
     await user.click(screen.getByTitle('Quitar capa'))
     expect(screen.queryByTestId('wms-layer')).not.toBeInTheDocument()
+  })
+
+  test('subir una capa activa la mueve por encima de la otra en el mapa', async () => {
+    const user = userEvent.setup()
+    renderViewer()
+
+    await user.click(screen.getByRole('button', { name: /Geología/i }))
+    await user.click(screen.getByRole('checkbox', { name: /Unidades geológicas/i }))
+    await user.click(screen.getByRole('checkbox', { name: /Fallas geológicas/i }))
+
+    const antes = screen.getAllByTestId('wms-layer').map((el) => el.textContent)
+    expect(antes).toEqual(['geologia:unidades', 'geologia:fallas'])
+
+    const botonesSubir = screen.getAllByTitle('Subir') as HTMLButtonElement[]
+    const subirHabilitado = botonesSubir.find((b) => !b.disabled)!
+    await user.click(subirHabilitado)
+
+    const despues = screen.getAllByTestId('wms-layer').map((el) => el.textContent)
+    expect(despues).toEqual(['geologia:fallas', 'geologia:unidades'])
+  })
+
+  test('la capa sin bbox no ofrece el botón de ubicar', async () => {
+    const user = userEvent.setup()
+    renderViewer()
+
+    await user.click(screen.getByRole('button', { name: /Geología/i }))
+    await user.click(screen.getByRole('checkbox', { name: /Fallas geológicas/i }))
+
+    expect(screen.queryByTitle('Ubicar capa')).not.toBeInTheDocument()
+  })
+
+  test('colapsar y expandir el panel de Capas oculta y muestra el catálogo', async () => {
+    const user = userEvent.setup()
+    renderViewer()
+
+    expect(screen.getByText('Catálogo')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /^Capas/i }))
+    expect(screen.queryByText('Catálogo')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^Capas/i }))
+    expect(screen.getByText('Catálogo')).toBeInTheDocument()
+  })
+
+  test('expandir la leyenda de una capa activa muestra su imagen', async () => {
+    const user = userEvent.setup()
+    renderViewer()
+
+    await user.click(screen.getByRole('button', { name: /Geología/i }))
+    await user.click(screen.getByRole('checkbox', { name: /Unidades geológicas/i }))
+    await user.click(screen.getByTitle('Leyenda'))
+
+    const img = screen.getByAltText('Leyenda de Unidades geológicas')
+    expect(img).toHaveAttribute('src', expect.stringContaining('/geovisores/geologia-choco/capas/geologia%3Aunidades/leyenda'))
+  })
+
+  test('cambiar el mapa base actualiza el selector', async () => {
+    const user = userEvent.setup()
+    renderViewer()
+
+    await user.click(screen.getByTitle('Cambiar mapa base'))
+    await user.click(screen.getByRole('button', { name: 'Satélite' }))
+
+    expect(screen.getByTitle('Cambiar mapa base')).toHaveTextContent('Satélite')
   })
 })
