@@ -31,3 +31,22 @@ export function formatearArea(hectareas: number): string {
 export function formatearDistancia(metros: number): string {
   return L.GeometryUtil.readableDistance(metros, true)
 }
+
+/** Métrica legible (área u distancia) de la geometría de una feature -- null si el tipo no aplica (ej. Point). */
+export function metricaDeGeometria(geometry: GeoJSON.Geometry): string | null {
+  if (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon') {
+    return formatearArea(hectareasDeGeometria(geometry as PresetArea['geometria']))
+  }
+  if (geometry.type === 'LineString') {
+    const latlngs = geometry.coordinates.map(([lng, lat]) => L.latLng(lat, lng))
+    return formatearDistancia(distanciaMetros(latlngs))
+  }
+  if (geometry.type === 'MultiLineString') {
+    const total = geometry.coordinates.reduce(
+      (acc, linea) => acc + distanciaMetros(linea.map(([lng, lat]) => L.latLng(lat, lng))),
+      0,
+    )
+    return formatearDistancia(total)
+  }
+  return null
+}
