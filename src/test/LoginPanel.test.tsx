@@ -21,7 +21,7 @@ vi.mock('@/components/auth/LoginForm', () => ({
   default: () => <div>LoginForm</div>,
 }))
 
-function renderLoginPanel(rectOverrides: Partial<DOMRect> = {}) {
+function renderLoginPanel(rectOverrides: Partial<DOMRect> = {}, extraProps: { onBack?: () => void; from?: string } = {}) {
   const anchorEl = document.createElement('div')
   vi.spyOn(anchorEl, 'getBoundingClientRect').mockReturnValue({
     top: 56, bottom: 56, left: 900, right: 980, width: 80, height: 24,
@@ -34,12 +34,13 @@ function renderLoginPanel(rectOverrides: Partial<DOMRect> = {}) {
   anchorRef.current = anchorEl
   const boxRef = createRef<HTMLDivElement>()
   const onClose = vi.fn()
+  const onNavigateAuthModal = vi.fn()
 
   const utils = render(
-    <LoginPanel onClose={onClose} anchorRef={anchorRef} boxRef={boxRef} />,
+    <LoginPanel onClose={onClose} anchorRef={anchorRef} boxRef={boxRef} onNavigateAuthModal={onNavigateAuthModal} {...extraProps} />,
     { wrapper: MemoryRouter },
   )
-  return { ...utils, onClose, boxRef, anchorEl }
+  return { ...utils, onClose, boxRef, anchorEl, onNavigateAuthModal }
 }
 
 beforeEach(() => {
@@ -109,5 +110,27 @@ describe('LoginPanel — cerrar', () => {
     const { onClose } = renderLoginPanel()
     await user.click(screen.getByRole('button', { name: 'Cerrar' }))
     expect(onClose).toHaveBeenCalled()
+  })
+})
+
+describe('LoginPanel — muestra siempre el formulario de credenciales (es un panel aparte de WelcomePanel)', () => {
+  test('renderiza LoginForm de inmediato, sin paso previo', () => {
+    renderLoginPanel()
+    expect(screen.getByText('LoginForm')).toBeInTheDocument()
+  })
+})
+
+describe('LoginPanel — botón "volver"', () => {
+  test('con onBack, muestra la flecha de volver y la llama al pulsarla', async () => {
+    const user = userEvent.setup()
+    const onBack = vi.fn()
+    renderLoginPanel({}, { onBack })
+    await user.click(screen.getByRole('button', { name: 'Volver a bienvenida' }))
+    expect(onBack).toHaveBeenCalled()
+  })
+
+  test('sin onBack (abierto directo por redirect desde una ruta protegida), no hay a dónde volver', () => {
+    renderLoginPanel({}, { from: '/perfil' })
+    expect(screen.queryByRole('button', { name: 'Volver a bienvenida' })).not.toBeInTheDocument()
   })
 })

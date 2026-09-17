@@ -29,6 +29,20 @@ const SAFE_METHODS = new Set(['get', 'head', 'options'])
 let csrfToken: string | null = null
 let csrfPromise: Promise<string | null> | null = null
 
+// Endpoints donde un 401 significa "credencial o código incorrecto" — un
+// resultado de negocio esperado, no una sesión muerta. Si se tratan como el
+// resto, un admin con sesión activa que se equivoca tecleando el código TOTP
+// al activar 2FA en /perfil dispara un refresh silencioso (que SÍ funciona,
+// porque su sesión real sigue viva), lo que reintenta la misma petición con
+// el mismo código incorrecto, recibe un segundo 401 y esta vez SÍ cierra la
+// sesión — la persona queda expulsada sin ningún mensaje de error visible,
+// como si "no pasara nada" al introducir el código.
+const AUTH_ATTEMPT_ENDPOINTS = ['/auth/login', '/auth/2fa/verify', '/auth/2fa/disable', '/auth/2fa/confirm']
+
+function isAuthAttemptEndpoint(url?: string): boolean {
+  return !!url && AUTH_ATTEMPT_ENDPOINTS.some((path) => url.includes(path))
+}
+
 function clearCsrfToken() {
   csrfToken = null
 }
@@ -89,7 +103,7 @@ api.interceptors.response.use(
     const originalReq  = err.config
     const isRefreshCall = originalReq?.url?.includes('/auth/refresh')
 
-    if (status === 401) {
+    if (status === 401 && !isAuthAttemptEndpoint(originalReq?.url)) {
       // Único camino que NO cierra sesión: primer 401 de esta petición,
       // con config disponible para reintentar, que no sea el propio
       // /auth/refresh, y cuyo refresh efectivamente funcione.

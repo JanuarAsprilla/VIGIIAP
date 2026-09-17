@@ -26,6 +26,8 @@ import NotificacionesPanel from './topbar/NotificacionesPanel'
 import AjustesPanel        from './topbar/AjustesPanel'
 import ProfileDropdown     from './topbar/ProfileDropdown'
 import LoginPanel          from './topbar/LoginPanel'
+import WelcomePanel        from './topbar/WelcomePanel'
+import { markPendingLoginRedirect, consumePendingLoginRedirect } from './topbar/pendingLoginRedirect'
 import AvatarBadge         from './ui/AvatarBadge'
 import Avatar               from './ui/Avatar'
 
@@ -160,7 +162,12 @@ function TopBarSearchInput({ value, onChange, placeholder, autoFocus, onClear, s
 // teléfono ya vive completa en BottomTabs (tab "Más"), así que no hace falta
 // un segundo disparador de menú aquí — se elimina esa redundancia. AdminLayout
 // sí lo pasa: el panel admin no tiene una barra inferior propia.
-export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) {
+export default function TopBar({ onMenuToggle, onOpenAuthModal }: {
+  onMenuToggle?: () => void
+  // Abre RecuperarPasswordPanel/SolicitarAccesoPanel (definidos en MainLayout)
+  // desde dentro de LoginPanel sin navegar — ver LoginPanel.tsx.
+  onOpenAuthModal?: (target: 'recuperar' | 'solicitar') => void
+}) {
   const location  = useLocation()
   const navigate  = useNavigate()
   const { isAuthenticated, initializing, user, logout, isAdmin } = useAuth()
@@ -171,7 +178,10 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
   const placeholder = (SEARCH_PLACEHOLDERS as Record<string, string>)[location.pathname] ?? (SEARCH_PLACEHOLDERS as Record<string, string>)['/']
   const activeLabel = (PAGE_LABELS as Record<string, string>)[location.pathname]
 
-  type PanelName = 'soporte' | 'notificaciones' | 'ajustes' | 'dropdown' | 'login'
+  // 'welcome' y 'login' son paneles distintos (ver WelcomePanel.tsx y
+  // LoginPanel.tsx), no un paso interno de uno solo — WelcomePanel explica
+  // las dos formas de acceder; LoginPanel solo pide credenciales.
+  type PanelName = 'soporte' | 'notificaciones' | 'ajustes' | 'dropdown' | 'welcome' | 'login'
 
   const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [activePanel, setActivePanel]           = useState<PanelName | null>(null)
@@ -215,21 +225,26 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
   useEffect(() => {
     const state = location.state as { openLogin?: boolean; from?: { pathname?: string } } | null
     if (!state?.openLogin) return
+    markPendingLoginRedirect()
     // eslint-disable-next-line react-hooks/set-state-in-effect -- solo corre cuando llega el redirect, no en cada render
     setActivePanel('login')
     setLoginFrom(state.from?.pathname)
     navigate(location.pathname + location.search, { replace: true, state: {} })
   }, [location.state, location.pathname, location.search, navigate])
 
-  // Antes lo hacía WelcomeGate (un aviso aparte, con sus propios botones
-  // visitante/institucional) — ahora el propio panel de login es el punto de
-  // entrada: se abre solo, una vez por montaje, para quien no tiene sesión,
-  // sin esperar a que haga clic en "Ingresar". autoOpenedRef evita que se
-  // reabra si la persona lo cierra manualmente mientras sigue sin sesión.
+  // WelcomePanel (ver ese archivo) es el punto de entrada: se abre solo, una
+  // vez por montaje, para quien no tiene sesión, sin esperar a que haga clic
+  // en "Ingresar" — explica las dos formas de acceder antes de pedir
+  // credenciales. autoOpenedRef evita que se reabra si la persona lo cierra
+  // manualmente mientras sigue sin sesión.
   useEffect(() => {
-    if (initializing || isAuthenticated || autoOpenedRef.current) return
+    if (isAuthenticated) { consumePendingLoginRedirect(); return }
+    if (initializing || autoOpenedRef.current) return
     autoOpenedRef.current = true
-    setActivePanel((prev) => prev ?? 'login')
+    setActivePanel((prev) => {
+      if (prev) return prev // ya decidido en este mismo flush (ver efecto de arriba)
+      return consumePendingLoginRedirect() ? 'login' : 'welcome'
+    })
   }, [initializing, isAuthenticated])
 
   // Cerrar paneles al hacer clic fuera o presionar Escape
@@ -261,6 +276,17 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
   )
 
   const closePanel = useCallback(() => setActivePanel(null), [])
+
+  // AdminLayout monta TopBar sin onOpenAuthModal (solo llega ahí ya
+  // autenticado, así que LoginPanel nunca debería renderizarse) — se deja un
+  // fallback por navegación para no romper si igual llegara a pasar.
+  const openAuthModal = useCallback(
+    (target: 'recuperar' | 'solicitar') => {
+      if (onOpenAuthModal) { onOpenAuthModal(target); return }
+      navigate(target === 'recuperar' ? '/recuperar-password' : '/solicitar-acceso')
+    },
+    [onOpenAuthModal, navigate],
+  )
 
   const handleLogout = useCallback(() => {
     logout()
@@ -475,8 +501,12 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
             <div className="relative pl-3 md:pl-4" style={{borderLeft:"1px solid var(--topbar-sep)"}} ref={loginTriggerRef}>
               <button
                 type="button"
-                onClick={() => { if (activePanel !== 'login') setLoginFrom(undefined); togglePanel('login') }}
-                aria-expanded={activePanel === 'login'}
+                onClick={() => {
+                  if (activePanel === 'welcome' || activePanel === 'login') { setActivePanel(null); return }
+                  setLoginFrom(undefined)
+                  setActivePanel('welcome')
+                }}
+                aria-expanded={activePanel === 'welcome' || activePanel === 'login'}
                 aria-haspopup="dialog"
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.97]"
                 style={{ background: 'var(--brand-gradient)', color: '#fff', boxShadow: '0 2px 10px rgba(0,152,70,0.25)' }}
@@ -485,8 +515,24 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle?: () => void }) 
                 <span className="hidden sm:inline">Ingresar</span>
               </button>
               <AnimatePresence>
+                {activePanel === 'welcome' && (
+                  <WelcomePanel
+                    onClose={closePanel}
+                    onIniciarSesion={() => setActivePanel('login')}
+                    onSolicitar={() => { openAuthModal('solicitar'); closePanel() }}
+                    anchorRef={loginTriggerRef}
+                    boxRef={loginPanelBoxRef}
+                  />
+                )}
                 {activePanel === 'login' && (
-                  <LoginPanel onClose={closePanel} from={loginFrom} anchorRef={loginTriggerRef} boxRef={loginPanelBoxRef} />
+                  <LoginPanel
+                    onClose={closePanel}
+                    onBack={loginFrom ? undefined : () => setActivePanel('welcome')}
+                    from={loginFrom}
+                    anchorRef={loginTriggerRef}
+                    boxRef={loginPanelBoxRef}
+                    onNavigateAuthModal={openAuthModal}
+                  />
                 )}
               </AnimatePresence>
             </div>

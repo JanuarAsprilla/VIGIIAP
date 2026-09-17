@@ -138,7 +138,7 @@ export default function MainLayout() {
 
       {/* Main area — offset by sidebar desde tablet (md) en adelante */}
       <div className="relative z-10 md:ml-[210px] min-h-screen flex flex-col">
-        <TopBar />
+        <TopBar onOpenAuthModal={setAuthModal} />
 
         {/* Page transition wrapper — 3D perspective flip */}
         <AnimatePresence mode="sync" initial={false}>

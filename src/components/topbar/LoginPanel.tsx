@@ -7,6 +7,10 @@
  * (TopBar incluido) para que la persona se enfoque solo en esto (ver Apple
  * HIG: "dim to focus, separate to keep flow").
  *
+ * Es un panel aparte de WelcomePanel (ver ese archivo) — TopBar decide cuál
+ * de los dos mostrar vía `activePanel`. Este solo pide credenciales; no
+ * conoce ni explica las dos formas de acceso, eso es trabajo de WelcomePanel.
+ *
  * Se renderiza vía <Portal> directo a <body>: el propio TopBar ya usa
  * backdropFilter para su estilo de nav — eso lo convierte en el "containing
  * block" de cualquier descendiente position:fixed (ver Portal.tsx), así que
@@ -17,15 +21,18 @@
  */
 import { useState, useLayoutEffect, type RefObject } from 'react'
 import { motion } from 'framer-motion'
-import { User, X } from 'lucide-react'
+import { ArrowLeft, User, X } from 'lucide-react'
 import LoginForm from '@/components/auth/LoginForm'
 import Portal from '@/components/ui/Portal'
 import { panelAnim } from './panelAnim'
 
 const GAP_PX = 8 // equivalente al mt-2 que tenía el panel cuando estaba anclado con CSS
 
-export default function LoginPanel({ onClose, from, anchorRef, boxRef }: {
+export default function LoginPanel({ onClose, onBack, from, anchorRef, boxRef, onNavigateAuthModal }: {
   onClose: () => void
+  // Vuelve a WelcomePanel — omitido cuando se llega directo aquí (redirect
+  // desde una ruta protegida, ver TopBar), donde no hay a dónde volver.
+  onBack?: () => void
   from?: string
   anchorRef: RefObject<HTMLElement | null>
   // El panel vive en un portal (ver comentario de arriba) — TopBar necesita
@@ -33,6 +40,11 @@ export default function LoginPanel({ onClose, from, anchorRef, boxRef }: {
   // que una vez portado, el nodo real del panel deja de ser descendiente
   // DOM del contenedor que ese detector ya vigila.
   boxRef: RefObject<HTMLDivElement | null>
+  // Abre RecuperarPasswordPanel/SolicitarAccesoPanel (ver MainLayout) sin
+  // navegar — navegar y volver (ver RecuperarPassword.tsx) dispara dos veces
+  // la transición de página en sucesión inmediata, que se percibe como que
+  // la página se recarga.
+  onNavigateAuthModal: (target: 'recuperar' | 'solicitar') => void
 }) {
   const [coords, setCoords] = useState<{ top: number; right: number } | null>(null)
 
@@ -71,9 +83,19 @@ export default function LoginPanel({ onClose, from, anchorRef, boxRef }: {
             style={{ background: 'var(--card-bg)' }}
           >
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--brand-gradient)' }}>
-                <User className="w-4 h-4 text-white" aria-hidden="true" />
-              </div>
+              {onBack ? (
+                <button
+                  onClick={onBack}
+                  aria-label="Volver a bienvenida"
+                  className="w-8 h-8 -ml-1 rounded-lg flex items-center justify-center shrink-0 text-text-muted hover:text-text hover:bg-bg-alt transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+                </button>
+              ) : (
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--brand-gradient)' }}>
+                  <User className="w-4 h-4 text-white" aria-hidden="true" />
+                </div>
+              )}
               <h2 id="login-panel-title" className="font-display text-base font-bold text-text">Iniciar sesión</h2>
             </div>
             <button
@@ -86,7 +108,12 @@ export default function LoginPanel({ onClose, from, anchorRef, boxRef }: {
           </div>
 
           <div className="flex-1 overflow-y-auto p-5">
-            <LoginForm from={from} onClose={onClose} showHeading={false} />
+            <LoginForm
+              from={from}
+              onClose={onClose}
+              showHeading={false}
+              onNavigate={onNavigateAuthModal}
+            />
           </div>
         </motion.div>
       )}
