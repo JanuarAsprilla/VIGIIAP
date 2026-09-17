@@ -75,7 +75,10 @@ export default function MainLayout() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [openPalette])
 
-  const isGeovisores = location.pathname === '/geovisores'
+  // El listado (`/geovisores`) es una página de contenido normal (like Mapas/Documentos) y sí
+  // necesita el padding y el footer estándar. El visor de un geovisor concreto
+  // (`/geovisores/:slug`) es un mapa a pantalla completa -- ahí es donde se necesita quitarlos.
+  const isGeovisorViewer = location.pathname.startsWith('/geovisores/')
 
   // /recuperar-password y /solicitar-acceso (ver src/pages/auth/) ya no son
   // páginas propias — reenvían aquí con state.openAuthModal para abrir el
@@ -147,13 +150,13 @@ export default function MainLayout() {
             transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
             id="main-content"
             style={{ transformPerspective: 1400, transformOrigin: 'top center' }}
-            className={isGeovisores ? 'flex-1' : `flex-1 ${mainPad}`}
+            className={isGeovisorViewer ? 'flex-1' : `flex-1 ${mainPad}`}
           >
             <Outlet />
           </motion.main>
         </AnimatePresence>
 
-        {!isGeovisores && (
+        {!isGeovisorViewer && (
           <div className="hidden md:block relative z-10">
             <FooterBar />
           </div>

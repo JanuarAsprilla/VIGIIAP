@@ -267,6 +267,27 @@ export interface WorkspaceOption {
   totalCapas: number
 }
 
+export interface BboxGeografico {
+  norte: number
+  sur: number
+  este: number
+  oeste: number
+}
+
+export interface CapaGeoserver {
+  id: string
+  nombre: string
+  tipo: 'vectorial' | 'raster'
+  bbox?: BboxGeografico
+  tema: string
+}
+
+export interface TemaCapas {
+  id: string
+  nombre: string
+  capas: CapaGeoserver[]
+}
+
 // ─── Categorías ───────────────────────────────────────────────────────────────
 
 export interface Categoria {

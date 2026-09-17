@@ -24,6 +24,7 @@ const Home            = lazy(() => import('./pages/Home'))
 const Mapas           = lazy(() => import('./pages/Mapas'))
 const Documentos      = lazy(() => import('./pages/Documentos'))
 const Geovisores        = lazy(() => import('./pages/Geovisores'))
+const GeovisorViewer     = lazy(() => import('./pages/GeovisorViewer'))
 const Herramientas    = lazy(() => import('./pages/Herramientas'))
 const Solicitudes     = lazy(() => import('./pages/Solicitudes'))
 const GuiaUsuario     = lazy(() => import('./pages/recursos/GuiaUsuario'))
@@ -150,6 +151,9 @@ function AppRoutes() {
             } />
             <Route path="/geovisores" element={
               <Suspense fallback={<GeovisoresLoader />}><Geovisores /></Suspense>
+            } />
+            <Route path="/geovisores/:slug" element={
+              <Suspense fallback={<GeovisoresLoader />}><GeovisorViewer /></Suspense>
             } />
             <Route path="/herramientas" element={
               <Suspense fallback={<HerramientasSkeleton />}><Herramientas /></Suspense>

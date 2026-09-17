@@ -101,8 +101,13 @@ describe('MainLayout — orquestación del shell principal', () => {
     expect(openPaletteSpy).toHaveBeenCalled()
   })
 
-  test('en /geovisores oculta el footer para dejar el mapa a pantalla completa', () => {
+  test('el listado /geovisores muestra el footer -- es una página de contenido normal', () => {
     renderMainLayout('/geovisores')
+    expect(screen.getByText('FooterBar')).toBeInTheDocument()
+  })
+
+  test('el visor de un geovisor concreto oculta el footer para dejar el mapa a pantalla completa', () => {
+    renderMainLayout('/geovisores/geologia-choco')
     expect(screen.queryByText('FooterBar')).not.toBeInTheDocument()
   })
 
