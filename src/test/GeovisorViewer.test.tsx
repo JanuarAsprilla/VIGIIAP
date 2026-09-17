@@ -24,9 +24,10 @@ vi.mock('react-leaflet', () => ({
     <div data-testid="map-container" data-center={JSON.stringify(center)} data-zoom={zoom}>{children}</div>
   ),
   TileLayer: () => null,
-  WMSTileLayer: ({ layers }: { layers: string }) => <div data-testid="wms-layer">{layers}</div>,
+  WMSTileLayer: ({ params }: { params: { layers: string } }) => <div data-testid="wms-layer">{params.layers}</div>,
+  GeoJSON: () => null,
   ScaleControl: () => null,
-  useMap: () => ({ flyToBounds: vi.fn() }),
+  useMap: () => ({ flyToBounds: vi.fn(), on: vi.fn(), off: vi.fn() }),
 }))
 
 vi.mock('@/hooks/useGeovisores', () => ({
