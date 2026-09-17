@@ -14,6 +14,7 @@ import BasemapCapas from '@/components/geovisor-viewer/BasemapCapas'
 import BasemapGaleria from '@/components/geovisor-viewer/BasemapGaleria'
 import PanelCapas from '@/components/geovisor-viewer/PanelCapas'
 import HerramientasDibujo from '@/components/geovisor-viewer/HerramientasDibujo'
+import ConsultaCapaClick from '@/components/geovisor-viewer/ConsultaCapaClick'
 import type { AreaInteresState } from '@/components/geovisor-viewer/ControlAreaInteres'
 import type { CapaGeoserver } from '@/types'
 
@@ -135,6 +136,13 @@ export default function GeovisorViewer() {
             areaMaxHa={geovisor.areaMaxHa ?? undefined}
             areaActual={areaInteres}
             onCambiarArea={setAreaInteres}
+          />
+
+          <ConsultaCapaClick
+            slug={geovisor.slug}
+            capasActivas={capasActivas}
+            colorPorTema={geovisor.colorPorTema}
+            presentacion={geovisor.presentacion}
           />
         </MapContainer>
 

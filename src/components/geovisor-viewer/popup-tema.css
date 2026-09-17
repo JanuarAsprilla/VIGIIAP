@@ -1,0 +1,27 @@
+/* El popup de Leaflet por defecto es una caja blanca cuadrada con sombra dura -- se ajusta al
+   mismo lenguaje visual de tarjeta (radio, sombra suave, borde) que el resto de los paneles
+   flotantes del visor. Alcance acotado a .geovisor-popup-capa, no a todo Leaflet en la app. */
+
+.geovisor-popup-capa .leaflet-popup-content-wrapper {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}
+
+.geovisor-popup-capa .leaflet-popup-content {
+  margin: 0.75rem 0.85rem;
+  color: var(--text, #1f2937);
+}
+
+.geovisor-popup-capa .leaflet-popup-tip {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+  box-shadow: none;
+}
+
+.geovisor-popup-capa .leaflet-popup-close-button {
+  color: var(--text-muted, #6b7280);
+  top: 6px;
+  right: 6px;
+}
