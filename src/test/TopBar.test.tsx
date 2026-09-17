@@ -49,6 +49,15 @@ vi.mock('@/components/topbar/LoginPanel', () => ({
     <div role="dialog" aria-label="Iniciar sesión">Login Panel<button onClick={onClose}>Cerrar login</button></div>
   ),
 }))
+vi.mock('@/components/topbar/WelcomePanel', () => ({
+  default: ({ onClose, onIniciarSesion }: { onClose: () => void; onIniciarSesion: () => void }) => (
+    <div role="dialog" aria-label="Bienvenido">
+      Welcome Panel
+      <button onClick={onClose}>Cerrar bienvenida</button>
+      <button onClick={onIniciarSesion}>Ir a iniciar sesión</button>
+    </div>
+  ),
+}))
 
 const authMock = {
   isAuthenticated: false,
@@ -104,49 +113,59 @@ describe('TopBar — usuario anónimo', () => {
     expect(screen.queryByLabelText('Ajustes rápidos')).not.toBeInTheDocument()
   })
 
-  test('clic en "Ingresar" reabre el panel de login tras cerrarlo', async () => {
+  test('clic en "Ingresar" reabre el panel de bienvenida tras cerrarlo', async () => {
     const user = userEvent.setup()
     renderTopBar()
     // El panel ya se abrió solo (ver describe de abajo) — se cierra primero
     // para probar que el botón "Ingresar" también lo abre por su cuenta.
-    await user.click(await screen.findByText('Cerrar login'))
-    expect(screen.queryByRole('dialog', { name: /Iniciar sesión/i })).not.toBeInTheDocument()
+    await user.click(await screen.findByText('Cerrar bienvenida'))
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /Ingresar/i }))
-    expect(await screen.findByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
+    expect(await screen.findByRole('dialog', { name: /Bienvenido/i })).toBeInTheDocument()
   })
 
-  test('location.state.openLogin (reenviado desde /login) abre el panel automáticamente', async () => {
+  test('location.state.openLogin (reenviado desde /login) abre LoginPanel directo, sin pasar por la bienvenida', async () => {
     renderTopBar([{ pathname: '/', state: { openLogin: true, from: { pathname: '/mapas' } } }])
     expect(await screen.findByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
   })
 })
 
-describe('TopBar — panel de login se abre solo (reemplaza al antiguo WelcomeGate)', () => {
+describe('TopBar — panel de bienvenida se abre solo (reemplaza al antiguo WelcomeGate)', () => {
   test('se abre solo, sin clic ni redirect, para quien no tiene sesión', async () => {
     renderTopBar()
-    expect(await screen.findByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
+    expect(await screen.findByRole('dialog', { name: /Bienvenido/i })).toBeInTheDocument()
   })
 
   test('no se abre solo si ya hay sesión iniciada', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Root', role: 'Investigador', initials: 'RT' }
     renderTopBar()
-    expect(screen.queryByRole('dialog', { name: /Iniciar sesión/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
   })
 
   test('no se abre solo mientras la sesión todavía se está verificando', () => {
     authMock.initializing = true
     renderTopBar()
-    expect(screen.queryByRole('dialog', { name: /Iniciar sesión/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
   })
 
   test('si la persona lo cierra, no se vuelve a abrir solo en ese mismo montaje', async () => {
     const user = userEvent.setup()
     renderTopBar()
-    expect(await screen.findByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
-    await user.click(screen.getByText('Cerrar login'))
-    expect(screen.queryByRole('dialog', { name: /Iniciar sesión/i })).not.toBeInTheDocument()
+    expect(await screen.findByRole('dialog', { name: /Bienvenido/i })).toBeInTheDocument()
+    await user.click(screen.getByText('Cerrar bienvenida'))
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
+  })
+
+  test('"Iniciar sesión" desde la bienvenida cambia a LoginPanel (paneles aparte, no un paso interno)', async () => {
+    const user = userEvent.setup()
+    renderTopBar()
+    expect(await screen.findByRole('dialog', { name: /Bienvenido/i })).toBeInTheDocument()
+    await user.click(screen.getByText('Ir a iniciar sesión'))
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
   })
 })
 

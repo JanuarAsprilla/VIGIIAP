@@ -21,10 +21,7 @@ vi.mock('@/components/auth/LoginForm', () => ({
   default: () => <div>LoginForm</div>,
 }))
 
-const loginVisitanteMock = vi.fn()
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ loginVisitante: loginVisitanteMock }) }))
-
-function renderLoginPanel(rectOverrides: Partial<DOMRect> = {}) {
+function renderLoginPanel(rectOverrides: Partial<DOMRect> = {}, extraProps: { onBack?: () => void; from?: string } = {}) {
   const anchorEl = document.createElement('div')
   vi.spyOn(anchorEl, 'getBoundingClientRect').mockReturnValue({
     top: 56, bottom: 56, left: 900, right: 980, width: 80, height: 24,
@@ -40,7 +37,7 @@ function renderLoginPanel(rectOverrides: Partial<DOMRect> = {}) {
   const onNavigateAuthModal = vi.fn()
 
   const utils = render(
-    <LoginPanel onClose={onClose} anchorRef={anchorRef} boxRef={boxRef} onNavigateAuthModal={onNavigateAuthModal} />,
+    <LoginPanel onClose={onClose} anchorRef={anchorRef} boxRef={boxRef} onNavigateAuthModal={onNavigateAuthModal} {...extraProps} />,
     { wrapper: MemoryRouter },
   )
   return { ...utils, onClose, boxRef, anchorEl, onNavigateAuthModal }
@@ -49,7 +46,6 @@ function renderLoginPanel(rectOverrides: Partial<DOMRect> = {}) {
 beforeEach(() => {
   document.body.innerHTML = ''
   Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1280 })
-  loginVisitanteMock.mockReset()
 })
 
 describe('LoginPanel — portal a document.body', () => {
@@ -117,52 +113,24 @@ describe('LoginPanel — cerrar', () => {
   })
 })
 
-describe('LoginPanel — paso de bienvenida', () => {
-  test('se abre en el paso de bienvenida, sin mostrar el formulario de credenciales de una vez', () => {
+describe('LoginPanel — muestra siempre el formulario de credenciales (es un panel aparte de WelcomePanel)', () => {
+  test('renderiza LoginForm de inmediato, sin paso previo', () => {
     renderLoginPanel()
-    expect(screen.getByText(/Bienvenido a VIGIA-IIAP/)).toBeInTheDocument()
-    expect(screen.queryByText('LoginForm')).not.toBeInTheDocument()
-  })
-
-  test('clic en "Iniciar sesión" pasa al formulario de credenciales', async () => {
-    const user = userEvent.setup()
-    renderLoginPanel()
-    await user.click(screen.getByRole('button', { name: /Iniciar sesión/ }))
     expect(screen.getByText('LoginForm')).toBeInTheDocument()
   })
+})
 
-  test('clic en "Continuar como visitante" entra directo sin pasar por el formulario', async () => {
-    loginVisitanteMock.mockResolvedValue(undefined)
+describe('LoginPanel — botón "volver"', () => {
+  test('con onBack, muestra la flecha de volver y la llama al pulsarla', async () => {
     const user = userEvent.setup()
-    const { onClose } = renderLoginPanel()
-    await user.click(screen.getByRole('button', { name: /Continuar como visitante/ }))
-    expect(loginVisitanteMock).toHaveBeenCalled()
-    expect(onClose).toHaveBeenCalled()
+    const onBack = vi.fn()
+    renderLoginPanel({}, { onBack })
+    await user.click(screen.getByRole('button', { name: 'Volver a bienvenida' }))
+    expect(onBack).toHaveBeenCalled()
   })
 
-  test('clic en "Solicitar acceso" desde la bienvenida abre ese panel sin pasar por el formulario', async () => {
-    const user = userEvent.setup()
-    const { onClose, onNavigateAuthModal } = renderLoginPanel()
-    await user.click(screen.getByRole('button', { name: /Solicitar acceso/ }))
-    expect(onNavigateAuthModal).toHaveBeenCalledWith('solicitar')
-    expect(onClose).toHaveBeenCalled()
-  })
-
-  test('cuando `from` viene de una ruta protegida, se salta la bienvenida y abre directo el formulario', () => {
-    const anchorEl = document.createElement('div')
-    vi.spyOn(anchorEl, 'getBoundingClientRect').mockReturnValue({
-      top: 56, bottom: 56, left: 900, right: 980, width: 80, height: 24,
-      x: 900, y: 56, toJSON: () => ({}),
-    } as DOMRect)
-    document.body.appendChild(anchorEl)
-    const anchorRef = createRef<HTMLDivElement>()
-    anchorRef.current = anchorEl
-    const boxRef = createRef<HTMLDivElement>()
-
-    render(
-      <LoginPanel onClose={vi.fn()} from="/perfil" anchorRef={anchorRef} boxRef={boxRef} onNavigateAuthModal={vi.fn()} />,
-      { wrapper: MemoryRouter },
-    )
-    expect(screen.getByText('LoginForm')).toBeInTheDocument()
+  test('sin onBack (abierto directo por redirect desde una ruta protegida), no hay a dónde volver', () => {
+    renderLoginPanel({}, { from: '/perfil' })
+    expect(screen.queryByRole('button', { name: 'Volver a bienvenida' })).not.toBeInTheDocument()
   })
 })
