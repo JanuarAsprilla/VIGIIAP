@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 
-export type OAuthProvidersStatus = Record<'google' | 'microsoft' | 'apple', boolean>
+export type OAuthProvidersStatus = Record<'google' | 'microsoft', boolean>
 
 // Qué proveedores tienen credenciales configuradas en el backend — permite
 // activar/desactivar los botones de OAuthProviders sin tocar el frontend el
