@@ -253,8 +253,12 @@ function InviteModal({ onClose, assignableRoles }: { onClose: () => void; assign
 export default function Usuarios() {
   const { user: currentUser, isSuperAdmin } = useAuth()
   // Solo el super_admin gestiona (edita/elimina/desactiva) cuentas admin_sig y
-  // puede asignar el rol de Administrador. admin_sig solo gestiona roles inferiores.
+  // puede promover un usuario existente a Administrador. admin_sig solo gestiona roles inferiores.
   const assignableRoles = isSuperAdmin ? ROLES_LIST : ROLES_LIST.filter((r) => r !== ROLES.ADMIN)
+  // Crear un usuario NUEVO con rol Administrador SIG no existe como flujo — eso
+  // se hace exclusivamente desde Gestión de Administradores (crear-admin), para
+  // que solo haya un camino de creación por tipo de cuenta.
+  const rolesCreables = ROLES_LIST.filter((r) => r !== ROLES.ADMIN)
   // Determina si el viewer puede accionar sobre una fila concreta.
   const canManageRow = (u: UsuarioData) =>
     u.id !== currentUser?.id && (isSuperAdmin || u.rolBackend !== 'admin_sig')
@@ -514,7 +518,7 @@ export default function Usuarios() {
 
       {/* Invite modal */}
       <AnimatePresence>
-        {showInvite && <InviteModal onClose={() => setShowInvite(false)} assignableRoles={assignableRoles} />}
+        {showInvite && <InviteModal onClose={() => setShowInvite(false)} assignableRoles={rolesCreables} />}
       </AnimatePresence>
 
       {/* Create/Edit Modal */}
