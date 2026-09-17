@@ -15,6 +15,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useUpdatePassword, useUpdatePerfil, useUpdateAvatar } from '@/hooks/useUsuarios'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { asApiError } from '@/lib/apiError'
 import Avatar from '@/components/ui/Avatar'
 
 const fadeUp = fadeUpSm
@@ -249,7 +250,20 @@ function TwoFactor() {
       setStep('done')
       setCode('')
       await refreshProfile()
-    } catch (e) { setError((e as Error).message) }
+    } catch (e) {
+      setError((e as Error).message)
+      // El QR/secret pendiente de confirmar caduca a los 10 min (ver
+      // TOTP_SETUP_EXPIRED en el backend) — si quedó abierto en un equipo
+      // compartido más de eso, no debe seguir siendo válido para nadie que
+      // lo vea después. Vuelve a 'idle' para que la persona pida uno nuevo
+      // en vez de dejar un QR muerto en pantalla con solo el mensaje de error.
+      if (asApiError(e)?.code === 'TOTP_SETUP_EXPIRED') {
+        setStep('idle')
+        setQr(null)
+        setSecret(null)
+        setCode('')
+      }
+    }
     finally { setLoading(false) }
   }
 

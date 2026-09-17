@@ -270,6 +270,27 @@ describe('Perfil — autenticación en dos pasos', () => {
     expect(await screen.findByText('No se pudo generar el código')).toBeInTheDocument()
   })
 
+  test('si el QR caducó (más de 10 min sin confirmar), vuelve al botón "Activar" con el mensaje de error', async () => {
+    vi.mocked(api.post).mockImplementation((url: string) => {
+      if (url === '/auth/2fa/setup') return Promise.resolve({ qrDataUrl: 'data:image/png;base64,abc', secret: 'SECRET123' })
+      const expired = Object.assign(new Error('El código QR expiró (más de 10 minutos). Genera uno nuevo.'), { code: 'TOTP_SETUP_EXPIRED' })
+      return Promise.reject(expired)
+    })
+
+    const user = userEvent.setup()
+    renderPerfil()
+    await user.click(screen.getByRole('button', { name: 'Activar' }))
+    expect(await screen.findByAltText('QR 2FA')).toBeInTheDocument()
+
+    await user.type(screen.getByPlaceholderText('Código de 6 dígitos'), '123456')
+    await user.click(screen.getByRole('button', { name: 'Verificar' }))
+
+    expect(await screen.findByText(/El código QR expiró/)).toBeInTheDocument()
+    // El QR muerto desaparece — no debe quedar visible ni utilizable, hay que pedir uno nuevo
+    expect(screen.queryByAltText('QR 2FA')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Activar' })).toBeInTheDocument()
+  })
+
   test('con 2FA activo, desactivar pide un código de confirmación antes de llamar al endpoint', async () => {
     authMock.user = { ...authMock.user, twoFactorEnabled: true } as typeof authMock.user & { twoFactorEnabled: boolean }
     vi.mocked(api.post).mockResolvedValue({})
