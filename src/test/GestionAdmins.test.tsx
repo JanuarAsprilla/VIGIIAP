@@ -31,6 +31,9 @@ vi.mock('@/lib/api', () => ({
         : Promise.resolve({ data: [] }),
     ),
     post: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+    put: vi.fn(),
   },
 }))
 import api from '@/lib/api'
@@ -134,5 +137,86 @@ describe('GestionAdmins — tabla de administradores', () => {
     expect(screen.getByText('—')).toBeInTheDocument()
     expect(screen.getByText('Activo')).toBeInTheDocument()
     expect(screen.getByText('Inactivo')).toBeInTheDocument()
+  })
+})
+
+describe('GestionAdmins — permisos por módulo', () => {
+  const admin = {
+    id: 'a1', nombre: 'Ana Restrepo', email: 'ana@iiap.gov.co', institucion: 'IIAP', activo: true,
+    permisos: [{ modulo: 'mapas', puede_ver: true, puede_editar: false }],
+  }
+
+  beforeEach(() => {
+    vi.mocked(api.get).mockImplementation((url: string) =>
+      url.includes('super/stats')
+        ? Promise.resolve({ total_usuarios: 10, admins: 1, activos: 1, pendientes_verificacion: 0 })
+        : Promise.resolve({ data: [admin] }),
+    )
+  })
+
+  test('abrir "Editar módulos" muestra el catálogo con el estado actual de permisos', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Editar módulos de Ana Restrepo/i }))
+
+    expect(screen.getByText('Módulos habilitados')).toBeInTheDocument()
+    expect(screen.getByLabelText('Ver Mapas')).toBeChecked()
+    expect(screen.getByLabelText('Editar Mapas')).not.toBeChecked()
+    expect(screen.getByLabelText('Ver Usuarios')).not.toBeChecked()
+  })
+
+  test('marcar "Editar" en un módulo también marca "Ver" automáticamente', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Editar módulos de Ana Restrepo/i }))
+    await user.click(screen.getByLabelText('Editar Usuarios'))
+
+    expect(screen.getByLabelText('Ver Usuarios')).toBeChecked()
+    expect(screen.getByLabelText('Editar Usuarios')).toBeChecked()
+  })
+
+  test('guardar permisos llama a PUT con el payload completo del catálogo', async () => {
+    vi.mocked(api.put).mockResolvedValue({ data: [] })
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Editar módulos de Ana Restrepo/i }))
+    await user.click(screen.getByRole('button', { name: /Guardar permisos/i }))
+
+    expect(api.put).toHaveBeenCalledWith(
+      '/admin/administradores/a1/permisos',
+      { permisos: expect.arrayContaining([expect.objectContaining({ modulo: 'mapas', puede_ver: true, puede_editar: false })]) },
+    )
+  })
+})
+
+describe('GestionAdmins — activar/desactivar y eliminar', () => {
+  const admin = { id: 'a1', nombre: 'Ana Restrepo', email: 'ana@iiap.gov.co', institucion: 'IIAP', activo: true }
+
+  beforeEach(() => {
+    vi.mocked(api.get).mockImplementation((url: string) =>
+      url.includes('super/stats')
+        ? Promise.resolve({ total_usuarios: 10, admins: 1, activos: 1, pendientes_verificacion: 0 })
+        : Promise.resolve({ data: [admin] }),
+    )
+  })
+
+  test('desactivar un admin llama a PATCH con activo=false', async () => {
+    vi.mocked(api.patch).mockResolvedValue({})
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Desactivar a Ana Restrepo/i }))
+
+    expect(api.patch).toHaveBeenCalledWith('/admin/usuarios/a1', { activo: false })
+  })
+
+  test('eliminar un admin pide confirmación y luego llama a DELETE', async () => {
+    vi.mocked(api.delete).mockResolvedValue({})
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Eliminar administrador Ana Restrepo/i }))
+    expect(api.delete).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: /^Eliminar$/i }))
+    expect(api.delete).toHaveBeenCalledWith('/admin/usuarios/a1')
   })
 })
