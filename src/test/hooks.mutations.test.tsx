@@ -38,6 +38,10 @@ import {
   useDeleteUsuario, useUpdatePerfil, useUpdatePassword, useUpdateAvatar,
 } from '@/hooks/useUsuarios'
 import { useCreateCategoria, useDeleteCategoria, useUploadCategoriaThumbnail } from '@/hooks/useCategorias'
+import { useCreateGeovisor, useUpdateGeovisor, useToggleGeovisorActivo, useDeleteGeovisor } from '@/hooks/useGeovisores'
+import {
+  useCreateConexionGeoserver, useUpdateConexionGeoserver, useDeleteConexionGeoserver,
+} from '@/hooks/useConexionesGeoserver'
 
 function makeWrapper() {
   const qc = new QueryClient({
@@ -470,5 +474,109 @@ describe('useUploadCategoriaThumbnail', () => {
       expect.any(FormData),
       expect.any(Object)
     )
+  })
+})
+
+// ─── useGeovisores mutations ──────────────────────────────────────────────────
+const geovisorInput = {
+  titulo: 'Geología del Chocó', conexionGeoserverId: 'c1', workspacesGeoserver: [],
+  colorPorTema: {}, centroLat: 5.55, centroLng: -76.6, zoomInicial: 8,
+  basemapDefecto: 'calles', presetsArea: [], iaHabilitada: false, visibilidad: 'publico' as const,
+  presentacion: { mostrarMetricas: true, mostrarImagenes: false, camposPopup: [] },
+}
+
+describe('useCreateGeovisor', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls POST /geovisores con el payload', async () => {
+    vi.mocked(api.post).mockResolvedValue({ id: '1', ...geovisorInput })
+    const { result } = renderHook(() => useCreateGeovisor(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync(geovisorInput) })
+    expect(api.post).toHaveBeenCalledWith('/geovisores', geovisorInput)
+  })
+
+  test('expone isError cuando la API falla', async () => {
+    vi.mocked(api.post).mockRejectedValue(new Error('500'))
+    const { result } = renderHook(() => useCreateGeovisor(), { wrapper: makeWrapper() })
+
+    await act(async () => {
+      try { await result.current.mutateAsync(geovisorInput) } catch { /* expected */ }
+    })
+    await waitFor(() => expect(result.current.isError).toBe(true))
+  })
+})
+
+describe('useUpdateGeovisor', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls PATCH /geovisores/:id con el id y el payload separados', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ id: '1', ...geovisorInput })
+    const { result } = renderHook(() => useUpdateGeovisor(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync({ id: '1', data: { titulo: 'Nuevo título' } }) })
+    expect(api.patch).toHaveBeenCalledWith('/geovisores/1', { titulo: 'Nuevo título' })
+  })
+})
+
+describe('useToggleGeovisorActivo', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls PATCH /geovisores/:id/activo con el estado', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ id: '1', activo: false })
+    const { result } = renderHook(() => useToggleGeovisorActivo(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync({ id: '1', activo: false }) })
+    expect(api.patch).toHaveBeenCalledWith('/geovisores/1/activo', { activo: false })
+  })
+})
+
+describe('useDeleteGeovisor', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls DELETE /geovisores/:id', async () => {
+    vi.mocked(api.delete).mockResolvedValue(undefined)
+    const { result } = renderHook(() => useDeleteGeovisor(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync('1') })
+    expect(api.delete).toHaveBeenCalledWith('/geovisores/1')
+  })
+})
+
+// ─── useConexionesGeoserver mutations ─────────────────────────────────────────
+describe('useCreateConexionGeoserver', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls POST /admin/conexiones-geoserver con el payload', async () => {
+    vi.mocked(api.post).mockResolvedValue({ id: 'c1' })
+    const { result } = renderHook(() => useCreateConexionGeoserver(), { wrapper: makeWrapper() })
+
+    const payload = { nombre: 'GeoServer IIAP', url: 'https://geoserver.test/geoserver', usuarioLectura: 'lector', password: 'secreta', timeoutMs: 20000 }
+    await act(async () => { await result.current.mutateAsync(payload) })
+    expect(api.post).toHaveBeenCalledWith('/admin/conexiones-geoserver', payload)
+  })
+})
+
+describe('useUpdateConexionGeoserver', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls PATCH /admin/conexiones-geoserver/:id con el id y el payload separados', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ id: 'c1' })
+    const { result } = renderHook(() => useUpdateConexionGeoserver(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync({ id: 'c1', data: { activo: false } }) })
+    expect(api.patch).toHaveBeenCalledWith('/admin/conexiones-geoserver/c1', { activo: false })
+  })
+})
+
+describe('useDeleteConexionGeoserver', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls DELETE /admin/conexiones-geoserver/:id', async () => {
+    vi.mocked(api.delete).mockResolvedValue(undefined)
+    const { result } = renderHook(() => useDeleteConexionGeoserver(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync('c1') })
+    expect(api.delete).toHaveBeenCalledWith('/admin/conexiones-geoserver/c1')
   })
 })

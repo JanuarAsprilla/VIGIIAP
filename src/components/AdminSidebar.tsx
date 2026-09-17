@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Users, ClipboardList,
   FileText, Map, Settings, Activity, X,
   LogOut, Globe, Shield, Tag, ShieldCheck, Trash2, FileBarChart, AlertTriangle,
+  MapPinned, Server,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/lib/constants/roles'
@@ -25,6 +26,8 @@ const NAV_SECTIONS = [
       { label: 'Solicitudes',  path: '/admin/solicitudes', icon: ClipboardList },
       { label: 'Documentos',   path: '/admin/documentos',  icon: FileText },
       { label: 'Mapas',        path: '/admin/mapas',       icon: Map },
+      { label: 'Geovisores',   path: '/admin/geovisores',  icon: MapPinned },
+      { label: 'Conexiones GeoServer', path: '/admin/conexiones-geoserver', icon: Server },
       { label: 'Categorías',   path: '/admin/categorias',  icon: Tag },
     ],
   },
