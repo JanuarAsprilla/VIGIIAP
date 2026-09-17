@@ -108,6 +108,30 @@ describe('GestionGeovisores — eliminar', () => {
 
     expect(mutateAsync).toHaveBeenCalledWith('geovisor-1')
   })
+
+  test('cancelar en el modal de confirmación no llama a la mutación', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useDeleteGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useDeleteGeovisor>)
+
+    const user = userEvent.setup()
+    render(<GestionGeovisores />)
+    await user.click(screen.getByTitle('Eliminar'))
+    await user.click(screen.getByRole('button', { name: /Cancelar/i }))
+
+    expect(mutateAsync).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: /Sí, eliminar/i })).not.toBeInTheDocument()
+  })
+})
+
+describe('GestionGeovisores — editar', () => {
+  test('el botón Editar abre el formulario precargado con los datos del geovisor', async () => {
+    const user = userEvent.setup()
+    render(<GestionGeovisores />)
+    await user.click(screen.getByTitle('Editar'))
+
+    expect(screen.getByRole('heading', { name: 'Editar geovisor' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Título/i)).toHaveValue('Geología del Chocó')
+  })
 })
 
 describe('GestionGeovisores — formulario de creación', () => {

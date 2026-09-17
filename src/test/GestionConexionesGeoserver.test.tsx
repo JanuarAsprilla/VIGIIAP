@@ -127,4 +127,48 @@ describe('GestionConexionesGeoserver — eliminar conexión', () => {
 
     expect(mutateAsync).toHaveBeenCalledWith('conexion-1')
   })
+
+  test('cancelar en el modal de confirmación no llama a la mutación', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useDeleteConexionGeoserver).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useDeleteConexionGeoserver>)
+
+    const user = userEvent.setup()
+    render(<GestionConexionesGeoserver />)
+    await user.click(screen.getByTitle('Eliminar'))
+    await user.click(screen.getByRole('button', { name: /Cancelar/i }))
+
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+})
+
+describe('GestionConexionesGeoserver — editar conexión, campos adicionales', () => {
+  test('el botón X cierra el formulario', async () => {
+    const user = userEvent.setup()
+    render(<GestionConexionesGeoserver />)
+    await user.click(screen.getByRole('button', { name: /Nueva conexión/i }))
+    expect(screen.getByLabelText(/^Nombre/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '' }))
+    expect(screen.queryByLabelText(/^Nombre/i)).not.toBeInTheDocument()
+  })
+
+  test('cambiar el timeout y desactivar la conexión se incluyen en la actualización', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useUpdateConexionGeoserver).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useUpdateConexionGeoserver>)
+
+    const user = userEvent.setup()
+    render(<GestionConexionesGeoserver />)
+    await user.click(screen.getByTitle('Editar'))
+
+    const timeoutInput = screen.getByLabelText(/Timeout/i)
+    await user.clear(timeoutInput)
+    await user.type(timeoutInput, '30000')
+    await user.click(screen.getByLabelText(/Conexión activa/i))
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'conexion-1',
+      data: expect.objectContaining({ timeoutMs: 30000, activo: false }),
+    }))
+  })
 })

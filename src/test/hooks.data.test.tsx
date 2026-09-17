@@ -42,6 +42,8 @@ import { useUsuariosList } from '@/hooks/useUsuarios'
 import { useCategoriasList } from '@/hooks/useCategorias'
 import { useAdminNotificaciones } from '@/hooks/useNotificaciones'
 import { useCatalogue } from '@/hooks/useCatalogue'
+import { useGeovisoresList } from '@/hooks/useGeovisores'
+import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
 
 // ─── QueryClient wrapper (fresh per test, no retries) ─────────────────────────
 function makeWrapper() {
@@ -288,5 +290,65 @@ describe('useCatalogue', () => {
 
     const modulos = result.current.filter((e) => e.group === 'Módulos')
     expect(modulos.length).toBeGreaterThan(0)
+  })
+})
+
+// ─── useGeovisoresList ─────────────────────────────────────────────────────────
+describe('useGeovisoresList', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('pide la vista admin con admin=true y limit por defecto', async () => {
+    const rawGeovisor = {
+      id: '1', slug: 'geologia-choco', titulo: 'Geología del Chocó', subtitulo: null,
+      descripcion: null, cita: null, categoria: 'Geología', conexionGeoserverId: 'c1',
+      workspacesGeoserver: [], colorPorTema: {}, centro: { lat: 5.55, lng: -76.6 },
+      zoomInicial: 8, basemapDefecto: 'calles', areaMaxHa: null, presetsArea: [],
+      iaHabilitada: false, visibilidad: 'publico',
+      presentacion: { mostrarMetricas: true, mostrarImagenes: false, camposPopup: [] },
+      thumbnailUrl: null, activo: true, orden: 0, creadoEn: '2026-01-01',
+    }
+    vi.mocked(api.get).mockResolvedValue({ data: [rawGeovisor], meta: { total: 1 } })
+
+    const { result } = renderHook(() => useGeovisoresList(), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(api.get).toHaveBeenCalledWith('/geovisores', { params: { admin: 'true', limit: 200 } })
+    expect(result.current.data?.data).toEqual([rawGeovisor])
+  })
+})
+
+// ─── useConexionesGeoserverList / useWorkspacesDeConexion ─────────────────────
+describe('useConexionesGeoserverList', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('pide /admin/conexiones-geoserver', async () => {
+    const rawConexion = { id: 'c1', nombre: 'GeoServer IIAP', url: 'https://geoserver.test/geoserver', usuario_lectura: 'lector', timeout_ms: 20000, activo: true, creado_en: '', actualizado_en: '' }
+    vi.mocked(api.get).mockResolvedValue([rawConexion])
+
+    const { result } = renderHook(() => useConexionesGeoserverList(), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(api.get).toHaveBeenCalledWith('/admin/conexiones-geoserver')
+    expect(result.current.data).toEqual([rawConexion])
+  })
+})
+
+describe('useWorkspacesDeConexion', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('pide /admin/conexiones-geoserver/:id/workspaces cuando hay conexionId', async () => {
+    const workspaces = [{ id: 't_15_geologia', nombre: 'Geologia', totalCapas: 3 }]
+    vi.mocked(api.get).mockResolvedValue(workspaces)
+
+    const { result } = renderHook(() => useWorkspacesDeConexion('c1'), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(api.get).toHaveBeenCalledWith('/admin/conexiones-geoserver/c1/workspaces')
+    expect(result.current.data).toEqual(workspaces)
+  })
+
+  test('no dispara la consulta sin conexionId', () => {
+    const { result } = renderHook(() => useWorkspacesDeConexion(null), { wrapper: makeWrapper() })
+    expect(result.current.fetchStatus).toBe('idle')
   })
 })
