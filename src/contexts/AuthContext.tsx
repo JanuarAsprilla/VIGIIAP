@@ -17,6 +17,11 @@ export interface AuthUser {
   institucion: string | null
   twoFactorEnabled?: boolean
   avatarUrl: string | null
+  // false solo tras un primer login con Google/Microsoft sin institución (ver
+  // src/modules/oauth/ en el backend) — dispara la alerta de completar perfil.
+  // true por defecto: las cuentas registradas por formulario ya piden
+  // institución, y el shape de /auth/visitante no trae este campo.
+  perfilCompleto: boolean
 }
 
 interface RawAuthUser {
@@ -28,6 +33,7 @@ interface RawAuthUser {
   institucion?: string | null
   twoFactorEnabled?: boolean
   avatar_url?: string | null
+  perfilCompleto?: boolean
   [key: string]: unknown
 }
 
@@ -45,6 +51,7 @@ export interface AuthContextValue {
   logout: () => Promise<void>
   register: (data: Record<string, unknown>) => Promise<unknown>
   refreshProfile: () => Promise<AuthUser | undefined>
+  completarPerfil: (data: { nombre?: string; institucion: string }) => Promise<AuthUser>
 }
 
 const ROLE_MAP: Record<string, string> = {
@@ -77,6 +84,7 @@ function normalizeUser(raw: RawAuthUser): AuthUser {
     institucion:       raw.institucion ?? null,
     twoFactorEnabled:  raw.twoFactorEnabled ?? false,
     avatarUrl:         raw.avatar_url ?? null,
+    perfilCompleto:    raw.perfilCompleto ?? true,
   }
 }
 
@@ -204,6 +212,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return api.post('/auth/registro', data)
   }, [])
 
+  // ── Completar perfil (institución) tras un primer login OAuth ──
+  const completarPerfil = useCallback(async (data: { nombre?: string; institucion: string }) => {
+    await api.patch('/auth/completar-perfil', data)
+    const full = await refreshProfile()
+    if (!full) throw new Error('No se pudo actualizar el perfil')
+    return full
+  }, [refreshProfile])
+
   // ── Logout ──
   // Invalida la cookie HttpOnly en el servidor antes de limpiar el estado local.
   // Si el request falla (red caída, server error), igual limpia localmente.
@@ -231,6 +247,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       register,
       refreshProfile,
+      completarPerfil,
     }}>
       {children}
     </AuthContext.Provider>

@@ -3,10 +3,26 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import LoginForm from '@/components/auth/LoginForm'
 
-function renderLoginForm(props: { from?: string; onClose?: () => void } = {}) {
-  return render(<LoginForm {...props} />, { wrapper: MemoryRouter })
+// OAuthProviders (dentro de LoginForm) pide GET /auth/oauth/providers vía
+// react-query — sin credenciales configuradas en este entorno de test, todo
+// proveedor debe quedar deshabilitado ("Pronto"), que es justo lo que
+// verifica el describe "proveedores OAuth" más abajo.
+vi.mock('@/lib/api', () => ({
+  default: {
+    get: vi.fn().mockResolvedValue({ google: false, microsoft: false, apple: false }),
+    defaults: { baseURL: '/api/v1' },
+  },
+}))
+
+function renderLoginForm(props: { from?: string; onClose?: () => void; showHeading?: boolean } = {}) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(
+    <QueryClientProvider client={qc}><LoginForm {...props} /></QueryClientProvider>,
+    { wrapper: MemoryRouter },
+  )
 }
 
 vi.mock('framer-motion', () => {
@@ -155,7 +171,7 @@ describe('LoginForm — onClose', () => {
 
 describe('LoginForm — encabezado', () => {
   test('showHeading=false (contexto de panel) no muestra "Bienvenido"', () => {
-    render(<LoginForm showHeading={false} />, { wrapper: MemoryRouter })
+    renderLoginForm({ showHeading: false })
     expect(screen.queryByText('Bienvenido')).not.toBeInTheDocument()
   })
 

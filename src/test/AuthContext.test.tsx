@@ -11,8 +11,9 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 
 vi.mock('@/lib/api', () => ({
   default: {
-    get:  vi.fn(),
-    post: vi.fn(),
+    get:   vi.fn(),
+    post:  vi.fn(),
+    patch: vi.fn(),
   },
 }))
 
@@ -169,6 +170,42 @@ describe('AuthProvider — forced logout via vigiiap:logout event', () => {
     act(() => { window.dispatchEvent(new Event('vigiiap:logout')) })
 
     await waitFor(() => expect(result.current.isAuthenticated).toBe(false))
+  })
+})
+
+describe('AuthProvider — perfilCompleto / completarPerfil()', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('normalizeUser expone perfilCompleto=false cuando /auth/me lo reporta así (cuenta OAuth sin institución)', async () => {
+    vi.mocked(api.get).mockResolvedValue({ ...rawInvestigador, perfilCompleto: false })
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(result.current.initializing).toBe(false))
+
+    expect(result.current.user).toMatchObject({ perfilCompleto: false })
+  })
+
+  test('perfilCompleto por defecto es true cuando /auth/me no lo incluye (cuenta tradicional)', async () => {
+    vi.mocked(api.get).mockResolvedValue(rawInvestigador)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(result.current.initializing).toBe(false))
+
+    expect(result.current.user).toMatchObject({ perfilCompleto: true })
+  })
+
+  test('completarPerfil() llama al PATCH y refresca el perfil', async () => {
+    vi.mocked(api.get).mockResolvedValue({ ...rawInvestigador, perfilCompleto: false })
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(result.current.initializing).toBe(false))
+
+    vi.mocked(api.patch).mockResolvedValue({ perfilCompleto: true })
+    vi.mocked(api.get).mockResolvedValueOnce({ ...rawInvestigador, perfilCompleto: true })
+
+    await act(async () => { await result.current.completarPerfil({ institucion: 'IIAP' }) })
+
+    expect(api.patch).toHaveBeenCalledWith('/auth/completar-perfil', { institucion: 'IIAP' })
+    expect(result.current.user).toMatchObject({ perfilCompleto: true })
   })
 })
 
