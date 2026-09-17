@@ -42,7 +42,9 @@ import { useUsuariosList } from '@/hooks/useUsuarios'
 import { useCategoriasList } from '@/hooks/useCategorias'
 import { useAdminNotificaciones } from '@/hooks/useNotificaciones'
 import { useCatalogue } from '@/hooks/useCatalogue'
-import { useGeovisoresList } from '@/hooks/useGeovisores'
+import {
+  useGeovisoresList, useGeovisoresPublico, useGeovisorPorSlug, useCapasDeGeovisor,
+} from '@/hooks/useGeovisores'
 import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
 
 // ─── QueryClient wrapper (fresh per test, no retries) ─────────────────────────
@@ -349,6 +351,78 @@ describe('useWorkspacesDeConexion', () => {
 
   test('no dispara la consulta sin conexionId', () => {
     const { result } = renderHook(() => useWorkspacesDeConexion(null), { wrapper: makeWrapper() })
+    expect(result.current.fetchStatus).toBe('idle')
+  })
+})
+
+// ─── useGeovisoresPublico / useGeovisorPorSlug / useCapasDeGeovisor ──────────
+const rawGeovisorPublico = {
+  id: '1', slug: 'geologia-choco', titulo: 'Geología del Chocó', subtitulo: null,
+  descripcion: null, cita: null, categoria: 'Geología', conexionGeoserverId: 'c1',
+  workspacesGeoserver: [], colorPorTema: {}, centro: { lat: 5.55, lng: -76.6 },
+  zoomInicial: 8, basemapDefecto: 'calles', areaMaxHa: null, presetsArea: [],
+  iaHabilitada: false, visibilidad: 'publico',
+  presentacion: { mostrarMetricas: true, mostrarImagenes: false, camposPopup: [] },
+  thumbnailUrl: null, activo: true, orden: 0, creadoEn: '2026-01-01',
+}
+
+describe('useGeovisoresPublico', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('pide el listado publico sin el parametro admin', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [rawGeovisorPublico], meta: { total: 1 } })
+
+    const { result } = renderHook(() => useGeovisoresPublico(), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(api.get).toHaveBeenCalledWith('/geovisores', { params: { limit: 200 } })
+  })
+})
+
+describe('useGeovisorPorSlug', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('pide /geovisores/:slug cuando hay slug', async () => {
+    vi.mocked(api.get).mockResolvedValue(rawGeovisorPublico)
+
+    const { result } = renderHook(() => useGeovisorPorSlug('geologia-choco'), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(api.get).toHaveBeenCalledWith('/geovisores/geologia-choco')
+    expect(result.current.data).toEqual(rawGeovisorPublico)
+  })
+
+  test('no dispara la consulta sin slug', () => {
+    const { result } = renderHook(() => useGeovisorPorSlug(undefined), { wrapper: makeWrapper() })
+    expect(result.current.fetchStatus).toBe('idle')
+    expect(api.get).not.toHaveBeenCalled()
+  })
+
+  test('expone isError si el geovisor no existe o no hay permiso', async () => {
+    vi.mocked(api.get).mockRejectedValue(new Error('Geovisor no encontrado'))
+
+    const { result } = renderHook(() => useGeovisorPorSlug('no-existe'), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isError).toBe(true))
+  })
+})
+
+describe('useCapasDeGeovisor', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  const temas = [{ id: 'geologia', nombre: 'Geología', capas: [{ id: 'geologia:unidades', nombre: 'Unidades', tipo: 'vectorial', tema: 'geologia' }] }]
+
+  test('pide /geovisores/:slug/capas y extrae `temas` de la respuesta', async () => {
+    vi.mocked(api.get).mockResolvedValue({ temas })
+
+    const { result } = renderHook(() => useCapasDeGeovisor('geologia-choco'), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(api.get).toHaveBeenCalledWith('/geovisores/geologia-choco/capas')
+    expect(result.current.data).toEqual(temas)
+  })
+
+  test('no dispara la consulta sin slug', () => {
+    const { result } = renderHook(() => useCapasDeGeovisor(null), { wrapper: makeWrapper() })
     expect(result.current.fetchStatus).toBe('idle')
   })
 })
