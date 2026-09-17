@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest'
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, createRef, type ReactNode } from 'react'
@@ -21,30 +21,50 @@ const loginVisitanteMock = vi.fn()
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ loginVisitante: loginVisitanteMock }) }))
 
 function renderWelcomePanel() {
-  const anchorEl = document.createElement('div')
-  vi.spyOn(anchorEl, 'getBoundingClientRect').mockReturnValue({
-    top: 56, bottom: 56, left: 900, right: 980, width: 80, height: 24,
-    x: 900, y: 56, toJSON: () => ({}),
-  } as DOMRect)
-  document.body.appendChild(anchorEl)
-
-  const anchorRef = createRef<HTMLDivElement>()
-  anchorRef.current = anchorEl
   const boxRef = createRef<HTMLDivElement>()
   const onClose = vi.fn()
   const onIniciarSesion = vi.fn()
   const onSolicitar = vi.fn()
 
   const utils = render(
-    <WelcomePanel onClose={onClose} onIniciarSesion={onIniciarSesion} onSolicitar={onSolicitar} anchorRef={anchorRef} boxRef={boxRef} />,
+    <WelcomePanel onClose={onClose} onIniciarSesion={onIniciarSesion} onSolicitar={onSolicitar} boxRef={boxRef} />,
   )
-  return { ...utils, onClose, onIniciarSesion, onSolicitar }
+  return { ...utils, onClose, onIniciarSesion, onSolicitar, boxRef }
 }
 
 beforeEach(() => {
   document.body.innerHTML = ''
-  Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1280 })
+  document.body.style.overflow = ''
   loginVisitanteMock.mockReset()
+})
+
+describe('WelcomePanel — centrado en pantalla (no anclado, a diferencia de LoginPanel)', () => {
+  test('se monta en un portal a document.body, fuera del árbol de montaje', () => {
+    const { container } = renderWelcomePanel()
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+    expect(document.body.querySelector('[role="dialog"]')).not.toBeNull()
+  })
+
+  test('boxRef apunta al nodo real del panel para el detector de "clic afuera" de TopBar', () => {
+    const { boxRef } = renderWelcomePanel()
+    expect(boxRef.current).toBe(screen.getByRole('dialog'))
+  })
+
+  describe('bloqueo de scroll del body', () => {
+    afterEach(() => { document.body.style.overflow = '' })
+
+    test('bloquea el scroll del body mientras está montado', () => {
+      renderWelcomePanel()
+      expect(document.body.style.overflow).toBe('hidden')
+    })
+
+    test('restaura el scroll del body al desmontarse', () => {
+      const { unmount } = renderWelcomePanel()
+      expect(document.body.style.overflow).toBe('hidden')
+      unmount()
+      expect(document.body.style.overflow).toBe('')
+    })
+  })
 })
 
 describe('WelcomePanel — bienvenida antes de pedir credenciales', () => {
