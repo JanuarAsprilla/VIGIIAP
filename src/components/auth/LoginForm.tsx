@@ -74,10 +74,17 @@ function InputField({ id, label, icon: Icon, error, right = null, ...props }: { 
  * lógica de autenticación vive aquí una sola vez; los contenedores solo
  * deciden el encabezado y qué hacer al terminar (cerrar panel, navegar, etc.).
  */
-export default function LoginForm({ from = '/', onClose, showHeading = true }: {
+export default function LoginForm({ from = '/', onClose, showHeading = true, onNavigate }: {
   from?: string
   onClose?: () => void
   showHeading?: boolean
+  // Cuando el formulario vive dentro del panel central (LoginPanel), "¿Olvidó
+  // su contraseña?" y "Solicitar acceso" deben cambiar de vista ahí mismo en
+  // vez de navegar — navegar y volver (ver RecuperarPassword.tsx/SolicitarAcceso.tsx)
+  // dispara dos veces la transición de página de MainLayout en sucesión
+  // inmediata, lo que se percibe como que la página se recarga. Sin esta
+  // prop, cae de vuelta al <Link> normal para cualquier otro contexto.
+  onNavigate?: (target: 'recuperar' | 'solicitar') => void
 }) {
   const navigate  = useNavigate()
   const { login, loginVisitante, loading } = useAuth()
@@ -258,10 +265,17 @@ export default function LoginForm({ from = '/', onClose, showHeading = true }: {
               }
             />
             <div className="flex items-center justify-end pt-1">
-              <Link to="/recuperar-password" onClick={onClose}
-                className="text-sm font-semibold text-primary-800 no-underline hover:text-primary-600 transition-colors">
-                ¿Olvidó su contraseña?
-              </Link>
+              {onNavigate ? (
+                <button type="button" onClick={() => onNavigate('recuperar')}
+                  className="text-sm font-semibold text-primary-800 hover:text-primary-600 transition-colors">
+                  ¿Olvidó su contraseña?
+                </button>
+              ) : (
+                <Link to="/recuperar-password" onClick={onClose}
+                  className="text-sm font-semibold text-primary-800 no-underline hover:text-primary-600 transition-colors">
+                  ¿Olvidó su contraseña?
+                </Link>
+              )}
             </div>
             <button type="submit" disabled={loading}
               className="w-full flex items-center justify-center gap-2 py-3 bg-primary-800 text-white rounded-xl text-sm font-bold hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-sm">
@@ -280,11 +294,19 @@ export default function LoginForm({ from = '/', onClose, showHeading = true }: {
               <div className="flex-1 h-px bg-border" />
             </div>
 
-            <Link to="/solicitar-acceso" onClick={onClose}
-              className="flex items-center justify-between w-full px-4 py-3 border-2 border-border rounded-xl text-sm font-semibold text-text no-underline hover:border-primary-800 hover:text-primary-800 transition-colors group">
-              <span>¿No tiene cuenta? Solicitar acceso</span>
-              <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary-800 transition-colors" />
-            </Link>
+            {onNavigate ? (
+              <button type="button" onClick={() => onNavigate('solicitar')}
+                className="flex items-center justify-between w-full px-4 py-3 border-2 border-border rounded-xl text-sm font-semibold text-text hover:border-primary-800 hover:text-primary-800 transition-colors group">
+                <span>¿No tiene cuenta? Solicitar acceso</span>
+                <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary-800 transition-colors" />
+              </button>
+            ) : (
+              <Link to="/solicitar-acceso" onClick={onClose}
+                className="flex items-center justify-between w-full px-4 py-3 border-2 border-border rounded-xl text-sm font-semibold text-text no-underline hover:border-primary-800 hover:text-primary-800 transition-colors group">
+                <span>¿No tiene cuenta? Solicitar acceso</span>
+                <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary-800 transition-colors" />
+              </Link>
+            )}
           </motion.form>
         )}
 
@@ -323,9 +345,15 @@ export default function LoginForm({ from = '/', onClose, showHeading = true }: {
             <p className="text-xs text-text-muted text-center leading-relaxed">
               El acceso como visitante solo permite consultar información pública.
               Para solicitar acceso completo,{' '}
-              <Link to="/solicitar-acceso" onClick={onClose} className="text-primary-800 font-semibold hover:underline">
-                regístrate aquí
-              </Link>.
+              {onNavigate ? (
+                <button type="button" onClick={() => onNavigate('solicitar')} className="text-primary-800 font-semibold hover:underline">
+                  regístrate aquí
+                </button>
+              ) : (
+                <Link to="/solicitar-acceso" onClick={onClose} className="text-primary-800 font-semibold hover:underline">
+                  regístrate aquí
+                </Link>
+              )}.
             </p>
 
             <p className="text-[0.65rem] text-text-muted/70 text-center leading-relaxed">
