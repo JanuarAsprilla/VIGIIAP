@@ -520,7 +520,6 @@ export default function TopBar({ onMenuToggle, onOpenAuthModal }: {
                     onClose={closePanel}
                     onIniciarSesion={() => setActivePanel('login')}
                     onSolicitar={() => { openAuthModal('solicitar'); closePanel() }}
-                    anchorRef={loginTriggerRef}
                     boxRef={loginPanelBoxRef}
                   />
                 )}
