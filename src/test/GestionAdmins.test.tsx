@@ -219,4 +219,19 @@ describe('GestionAdmins — activar/desactivar y eliminar', () => {
     await user.click(screen.getByRole('button', { name: /^Eliminar$/i }))
     expect(api.delete).toHaveBeenCalledWith('/admin/usuarios/a1')
   })
+
+  // Regresión: desactivar/eliminar un admin desde aquí debe refrescar también
+  // la lista de Usuarios (que muestra admins desactivados), no solo esta
+  // pantalla — si no, el usuario degradado solo reaparece tras un refresh manual.
+  test('desactivar un admin invalida también la caché de usuarios', async () => {
+    vi.mocked(api.patch).mockResolvedValue({})
+    const spy = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Desactivar a Ana Restrepo/i }))
+
+    const invalidatedKeys = spy.mock.calls.map((c) => (c[0] as { queryKey: unknown[] }).queryKey)
+    expect(invalidatedKeys).toContainEqual(['usuarios'])
+    spy.mockRestore()
+  })
 })

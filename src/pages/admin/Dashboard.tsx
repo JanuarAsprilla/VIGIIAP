@@ -10,13 +10,16 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { fadeUpSm, staggerContainer, staggerItem3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
-import { useAdminStats } from '@/hooks/useStats'
+import Sparkline from '@/components/ui/Sparkline'
+import {
+  useAdminStats, useDashboardTendencias,
+  type AdminStats, type TendenciaKPI, type DashboardTendencias,
+} from '@/hooks/useStats'
 import {
   useSolicitudesAdmin, useUpdateEstadoSolicitud,
   ESTADO_LABEL, ESTADO_COLOR,
 } from '@/hooks/useSolicitudes'
 import { useUsuariosList } from '@/hooks/useUsuarios'
-import { useMapasList } from '@/hooks/useMapas'
 import { useAuditLog, MODULO_STYLES } from '@/hooks/useAuditLog'
 import { ROLES } from '@/lib/constants/roles'
 
@@ -24,25 +27,41 @@ const fadeUp = fadeUpSm
 
 const KPI_ICONS = [Users, ClipboardList, FileText, MapIcon]
 
-interface DashboardStats {
-  documentos: number
-  solicitudesPendientes: number
-  [key: string]: unknown
+interface KpiDef {
+  label: string
+  value: number | undefined
+  /** KPI de tendencias.ts correspondiente a este valor (ninguno para snapshots sin flujo, como visitantes). */
+  tendencia: TendenciaKPI | undefined
+  /** Cómo nombrar la cifra de flujo semanal debajo del valor — ej. "nuevos", "publicados". */
+  flowLabel: string
+}
+
+function DeltaBadge({ pct }: { pct: number }) {
+  if (pct === 0) {
+    return <span className="text-[0.65rem] font-semibold text-text-faint">Sin cambios</span>
+  }
+  const up = pct > 0
+  return (
+    <span className={`inline-flex items-center gap-1 text-[0.65rem] font-semibold ${up ? 'text-green-600' : 'text-orange-500'}`}>
+      {up ? <TrendingUp className="w-3 h-3" aria-hidden="true" /> : <TrendingDown className="w-3 h-3" aria-hidden="true" />}
+      {up ? '+' : ''}{pct}%
+    </span>
+  )
 }
 
 function KPICards({
-  stats, isLoading, mapasTotal, mapasLoading,
+  stats, isLoading, tendencias, tendenciasLoading,
 }: {
-  stats: DashboardStats | undefined
+  stats: AdminStats | undefined
   isLoading: boolean
-  mapasTotal: number | undefined
-  mapasLoading: boolean
+  tendencias: DashboardTendencias | undefined
+  tendenciasLoading: boolean
 }) {
-  const kpis = [
-    { label: 'Usuarios Registrados',   value: (stats?.usuarios as number | undefined) ?? '—', loading: isLoading,    trendUp: true  },
-    { label: 'Solicitudes Pendientes', value: stats?.solicitudesPendientes ?? '—',             loading: isLoading,    trendUp: false },
-    { label: 'Documentos Activos',     value: stats?.documentos ?? '—',                        loading: isLoading,    trendUp: true  },
-    { label: 'Mapas Publicados',       value: mapasTotal ?? '—',                               loading: mapasLoading, trendUp: true  },
+  const kpis: KpiDef[] = [
+    { label: 'Usuarios Registrados',   value: stats?.usuarios,              tendencia: tendencias?.usuarios,    flowLabel: 'nuevos' },
+    { label: 'Solicitudes Pendientes', value: stats?.solicitudesPendientes, tendencia: tendencias?.solicitudes, flowLabel: 'nuevas' },
+    { label: 'Documentos Activos',     value: stats?.documentos,            tendencia: tendencias?.documentos,  flowLabel: 'publicados' },
+    { label: 'Mapas Publicados',       value: stats?.mapasPublicados,       tendencia: tendencias?.mapas,       flowLabel: 'publicados' },
   ]
   return (
     <motion.div
@@ -53,6 +72,9 @@ function KPICards({
     >
       {kpis.map((kpi, i) => {
         const Icon = KPI_ICONS[i]
+        const dotColor = !kpi.tendencia || kpi.tendencia.deltaPct === 0
+          ? 'var(--stats-value)'
+          : kpi.tendencia.deltaPct > 0 ? 'var(--color-primary-600)' : 'var(--color-orange-500)'
         return (
           <motion.div key={kpi.label} variants={staggerItem3D}>
             <Card3D
@@ -69,16 +91,29 @@ function KPICards({
                 <div className="w-9 h-9 bg-[var(--stats-bg)] border border-[var(--stats-border)] rounded-xl flex items-center justify-center">
                   <Icon className="w-4 h-4 text-[var(--stats-value)]" aria-hidden="true" />
                 </div>
-                <span className={`inline-flex items-center gap-1 text-[0.65rem] font-semibold ${kpi.trendUp ? 'text-green-600' : 'text-orange-500'}`}>
-                  {kpi.trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                </span>
+                {kpi.tendencia && <DeltaBadge pct={kpi.tendencia.deltaPct} />}
               </div>
               <div className="tabular font-display text-3xl font-bold text-text relative">
-                {kpi.loading
+                {isLoading
                   ? <span className="inline-block w-10 h-7 bg-bg-alt rounded animate-pulse" />
-                  : kpi.value}
+                  : (kpi.value ?? '—')}
               </div>
               <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">{kpi.label}</p>
+
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/60 relative">
+                {tendenciasLoading ? (
+                  <span className="inline-block w-24 h-3 bg-bg-alt rounded animate-pulse" />
+                ) : kpi.tendencia ? (
+                  <>
+                    <span className="text-[0.68rem] text-text-muted">
+                      <span className="font-semibold text-text">{kpi.tendencia.semanaActual}</span> {kpi.flowLabel} esta semana
+                    </span>
+                    <Sparkline data={kpi.tendencia.serie7} endColor={dotColor} />
+                  </>
+                ) : (
+                  <span className="text-[0.68rem] text-text-faint">Sin datos de tendencia</span>
+                )}
+              </div>
             </Card3D>
           </motion.div>
         )
@@ -481,9 +516,9 @@ function QuickActions() {
 export default function Dashboard() {
   const { user } = useAuth()
   const { data: stats, isLoading: loadingStats, isError: statsError, refetch: refetchStats } = useAdminStats()
+  const { data: tendencias, isLoading: loadingTendencias } = useDashboardTendencias()
   const { data: solData, isError: solError, refetch: refetchSol } = useSolicitudesAdmin({ limit: 100 })
   const { data: usrData, isError: usrError, refetch: refetchUsr } = useUsuariosList({ limit: 100 })
-  const { data: mapasData, isLoading: loadingMapas } = useMapasList({ limit: 1 })
   const solicitudes = solData?.data ?? []
   const usuarios    = usrData?.data ?? []
 
@@ -512,8 +547,8 @@ export default function Dashboard() {
       <KPICards
         stats={stats}
         isLoading={loadingStats}
-        mapasTotal={mapasData?.meta?.total}
-        mapasLoading={loadingMapas}
+        tendencias={tendencias}
+        tendenciasLoading={loadingTendencias}
       />
 
       {/* Alerta solicitudes */}
