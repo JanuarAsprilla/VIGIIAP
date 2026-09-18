@@ -329,6 +329,17 @@ describe('useDocumentoBySlug', () => {
 
 // ─── useUsuarios mutations ────────────────────────────────────────────────────
 
+// Regresión: promover/degradar/desactivar/borrar un usuario debe refrescar
+// también la caché de GestionAdmins.tsx ('administradores', 'super-stats'),
+// no solo la de Usuarios — si no, un usuario recién vuelto admin_sig solo
+// aparece en el panel de Administradores tras un refresh manual.
+function expectInvalidatesUsuariosYAdmins(spy: ReturnType<typeof vi.spyOn>) {
+  const invalidatedKeys = spy.mock.calls.map((c: unknown[]) => (c[0] as { queryKey: unknown[] }).queryKey)
+  expect(invalidatedKeys).toContainEqual(['usuarios'])
+  expect(invalidatedKeys).toContainEqual(['administradores'])
+  expect(invalidatedKeys).toContainEqual(['super-stats'])
+}
+
 describe('useCreateUsuario', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
@@ -340,6 +351,18 @@ describe('useCreateUsuario', () => {
       await result.current.mutateAsync({ nombre: 'Test', email: 'test@iiap.gov.co', rol: 'Público' })
     })
     expect(api.post).toHaveBeenCalledWith('/admin/usuarios', expect.any(Object))
+  })
+
+  test('invalidates usuarios y administradores — un usuario puede crearse ya como admin_sig', async () => {
+    vi.mocked(api.post).mockResolvedValue({ id: 10 })
+    const spy = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
+    const { result } = renderHook(() => useCreateUsuario(), { wrapper: makeWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync({ nombre: 'Test', email: 'test@iiap.gov.co', rol: 'Administrador SIG' })
+    })
+    expectInvalidatesUsuariosYAdmins(spy)
+    spy.mockRestore()
   })
 })
 
@@ -355,6 +378,18 @@ describe('useUpdateUsuarioRol', () => {
     })
     expect(api.patch).toHaveBeenCalledWith(expect.stringContaining('usuarios/1'), expect.any(Object))
   })
+
+  test('invalidates usuarios y administradores al cambiar el rol', async () => {
+    vi.mocked(api.patch).mockResolvedValue({})
+    const spy = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
+    const { result } = renderHook(() => useUpdateUsuarioRol(), { wrapper: makeWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync({ id: '1', rol: 'Administrador SIG' })
+    })
+    expectInvalidatesUsuariosYAdmins(spy)
+    spy.mockRestore()
+  })
 })
 
 describe('useToggleActivo', () => {
@@ -369,6 +404,18 @@ describe('useToggleActivo', () => {
     })
     expect(api.patch).toHaveBeenCalledWith(expect.stringContaining('usuarios/2'), expect.any(Object))
   })
+
+  test('invalidates usuarios y administradores al (des)activar', async () => {
+    vi.mocked(api.patch).mockResolvedValue({})
+    const spy = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
+    const { result } = renderHook(() => useToggleActivo(), { wrapper: makeWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync({ id: '2', activo: false })
+    })
+    expectInvalidatesUsuariosYAdmins(spy)
+    spy.mockRestore()
+  })
 })
 
 describe('useDeleteUsuario', () => {
@@ -380,6 +427,16 @@ describe('useDeleteUsuario', () => {
 
     await act(async () => { await result.current.mutateAsync('5') })
     expect(api.delete).toHaveBeenCalledWith(expect.stringContaining('usuarios/5'))
+  })
+
+  test('invalidates usuarios y administradores al eliminar', async () => {
+    vi.mocked(api.delete).mockResolvedValue({})
+    const spy = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
+    const { result } = renderHook(() => useDeleteUsuario(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync('5') })
+    expectInvalidatesUsuariosYAdmins(spy)
+    spy.mockRestore()
   })
 })
 

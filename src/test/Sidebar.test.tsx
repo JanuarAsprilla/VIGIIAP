@@ -88,14 +88,11 @@ describe('Sidebar — usuario verificado', () => {
     expect(screen.getByText('Panel Admin')).toBeInTheDocument()
   })
 
-  test('cerrar sesión llama a logout() y a onClose()', async () => {
+  test('no muestra "Cerrar Sesión" — el avatar del TopBar ya lo ofrece en todos los breakpoints', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Ana Restrepo', role: ROLES.INVESTIGADOR, initials: 'AR' }
-    const user = userEvent.setup()
-    const { onClose } = renderSidebar()
-    await user.click(screen.getByText('Cerrar Sesión'))
-    expect(authMock.logout).toHaveBeenCalled()
-    expect(onClose).toHaveBeenCalled()
+    renderSidebar()
+    expect(screen.queryByText('Cerrar Sesión')).not.toBeInTheDocument()
   })
 })
 
