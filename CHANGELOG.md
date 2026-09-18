@@ -6,6 +6,41 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.1.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.0.0...v1.1.0) (2026-09-18)
+
+
+### Features
+
+* abrir Mapas, Documentos, Geovisor y Herramientas al público ([#119](https://github.com/JanuarAsprilla/VIGIIAP/issues/119)) ([1d35d7c](https://github.com/JanuarAsprilla/VIGIIAP/commit/1d35d7c97958bfdb1770a62d3038511d59ebe0e9))
+* agregar renombrar categoría en el panel de administración ([bc41045](https://github.com/JanuarAsprilla/VIGIIAP/commit/bc41045627a04bbc3dcfda7040a89883207a01af))
+* agregar renombrar categoría en el panel de administración ([251cd91](https://github.com/JanuarAsprilla/VIGIIAP/commit/251cd914e961ce6548627ba63c97a868af432689))
+* area de interes y medicion en el visor de geovisores ([#126](https://github.com/JanuarAsprilla/VIGIIAP/issues/126)) ([15c6ca7](https://github.com/JanuarAsprilla/VIGIIAP/commit/15c6ca7d040dd1b50953b33fbf7f1d7b877257dc))
+* aviso de bienvenida antes de la primera interacción ([#106](https://github.com/JanuarAsprilla/VIGIIAP/issues/106)) ([488818c](https://github.com/JanuarAsprilla/VIGIIAP/commit/488818c9537253904f7bb4c38b1a93426ce34dde))
+* constructor visual de geovisores con mapa en vivo ([5fdcc9c](https://github.com/JanuarAsprilla/VIGIIAP/commit/5fdcc9c0dc6ffd44cdf6198a142eb05efbf7e99b))
+* constructor visual de geovisores con mapa en vivo ([0b4103a](https://github.com/JanuarAsprilla/VIGIIAP/commit/0b4103a6c0ff66fe01c3ed0a7a2d7d0b3f7c0a69))
+* login con Google/Microsoft funcional + alerta de completar perfil ([#122](https://github.com/JanuarAsprilla/VIGIIAP/issues/122)) ([8e17eaa](https://github.com/JanuarAsprilla/VIGIIAP/commit/8e17eaaa857ad190cd91e0d2bf85149d9416aacf))
+* logo institucional real del IIAP en el sidebar ([#108](https://github.com/JanuarAsprilla/VIGIIAP/issues/108)) ([021639c](https://github.com/JanuarAsprilla/VIGIIAP/commit/021639cedb6459011905dd4545030a772a40e18a))
+* navegación responsiva unificada tablet/teléfono + pulido liquid glass ([#111](https://github.com/JanuarAsprilla/VIGIIAP/issues/111)) ([3cb4c43](https://github.com/JanuarAsprilla/VIGIIAP/commit/3cb4c4398f045b047805cbbfe7eec1fe17524664))
+* panel de login anclado con Liquid Glass, reemplaza /login ([#118](https://github.com/JanuarAsprilla/VIGIIAP/issues/118)) ([18c9259](https://github.com/JanuarAsprilla/VIGIIAP/commit/18c9259895cc5d5f4b6f4a404dc23602b374e0e7))
+* panel SMTP en Configuración + correo de prueba (solo super_admin) ([#109](https://github.com/JanuarAsprilla/VIGIIAP/issues/109)) ([d1951e0](https://github.com/JanuarAsprilla/VIGIIAP/commit/d1951e04d49fc1433554518dfa19bedd3ede3aaa))
+* paneles centrados para recuperar contraseña/solicitar acceso + rediseño del menú de perfil ([#121](https://github.com/JanuarAsprilla/VIGIIAP/issues/121)) ([28d9a9f](https://github.com/JanuarAsprilla/VIGIIAP/commit/28d9a9f5e905680f0f97cf304ad9efbf0df82883))
+* popup por capa al hacer clic en el mapa ([#127](https://github.com/JanuarAsprilla/VIGIIAP/issues/127)) ([4fdba88](https://github.com/JanuarAsprilla/VIGIIAP/commit/4fdba885fe467a269ccd6e196130b7b26e181ce3))
+* renombra el modulo Geovisor a Geovisores y elimina el mockup sin datos reales ([6599a73](https://github.com/JanuarAsprilla/VIGIIAP/commit/6599a73764708bed9e0be5fa3e7e337961d8c5cf))
+* sección Ajustes Avanzados en Configuración (CORS/rate limit/correo respaldo) ([#110](https://github.com/JanuarAsprilla/VIGIIAP/issues/110)) ([52f44d4](https://github.com/JanuarAsprilla/VIGIIAP/commit/52f44d4e637cf90ba965804f56f64e58e2b99fd9))
+* selector de perfil de acceso en "Completar Perfil" (login OAuth) ([#136](https://github.com/JanuarAsprilla/VIGIIAP/issues/136)) ([a8f5f98](https://github.com/JanuarAsprilla/VIGIIAP/commit/a8f5f98a7b06c7cf1a486ccb96de848e3e818969))
+* separar administradores de usuarios y permisos por módulo ([216f4a2](https://github.com/JanuarAsprilla/VIGIIAP/commit/216f4a2453b273eda718fb9fdfa9b7f6e154bbac))
+* separar administradores de usuarios y permisos por módulo ([2f35122](https://github.com/JanuarAsprilla/VIGIIAP/commit/2f351228f6cfb934caf5553922af74d469671a88))
+
+
+### Bug Fixes
+
+* 2FA force-logout bug + restore welcome step before login ([#128](https://github.com/JanuarAsprilla/VIGIIAP/issues/128)) ([68de1d8](https://github.com/JanuarAsprilla/VIGIIAP/commit/68de1d82e0bc065579aba4abd40f4559a0be25a2))
+* center the welcome panel and lock body scroll on all auth overlays ([#131](https://github.com/JanuarAsprilla/VIGIIAP/issues/131)) ([65696a5](https://github.com/JanuarAsprilla/VIGIIAP/commit/65696a5da894e9fd5e60174f061ff4f5caddef4f))
+* consistencia visual — altura sidebar/topbar, fondo Home, cursor botones ([#105](https://github.com/JanuarAsprilla/VIGIIAP/issues/105)) ([b55ffe6](https://github.com/JanuarAsprilla/VIGIIAP/commit/b55ffe655e2dfcd2f8b67fc0a1ced56ec4bfad7c))
+* el blur del panel de login cubre toda la página, no solo el TopBar ([#125](https://github.com/JanuarAsprilla/VIGIIAP/issues/125)) ([65f3ddf](https://github.com/JanuarAsprilla/VIGIIAP/commit/65f3ddf297d84c2115291664520d934ef62ad701))
+* la config remota nunca sincronizaba en Configuración ni en Términos ([#112](https://github.com/JanuarAsprilla/VIGIIAP/issues/112)) ([a8b22a5](https://github.com/JanuarAsprilla/VIGIIAP/commit/a8b22a50c2feba4df3528d8417ee1f622b03cdfe))
+* recover cleanly when a 2FA setup QR expires ([#129](https://github.com/JanuarAsprilla/VIGIIAP/issues/129)) ([9a45b74](https://github.com/JanuarAsprilla/VIGIIAP/commit/9a45b7451e183297f6011031ee1564089b1763f5))
+
 ## 1.0.0 (2026-09-10)
 
 
