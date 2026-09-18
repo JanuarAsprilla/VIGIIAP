@@ -265,6 +265,7 @@ export interface WorkspaceOption {
   id: string
   nombre: string
   totalCapas: number
+  capas: Array<{ id: string; nombre: string; tipo: 'vectorial' | 'raster'; bbox?: BboxGeografico }>
 }
 
 export interface BboxGeografico {
