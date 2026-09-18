@@ -78,6 +78,55 @@ describe('CompletarPerfilForm — envío', () => {
   })
 })
 
+describe('CompletarPerfilForm — solicitud de perfil de acceso', () => {
+  test('sin perfil seleccionado, no se muestra el campo de motivo', () => {
+    renderForm()
+    expect(screen.queryByLabelText(/Motivo/)).not.toBeInTheDocument()
+  })
+
+  test('al elegir un perfil, aparece el campo de motivo y cambia el texto del botón', async () => {
+    const user = userEvent.setup()
+    renderForm()
+
+    await user.selectOptions(screen.getByLabelText('Perfil de Acceso'), 'investigador')
+
+    expect(screen.getByLabelText(/Motivo/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Enviar solicitud/i })).toBeInTheDocument()
+  })
+
+  test('con un perfil elevado, envía perfilSolicitado y motivo, y NO cierra el panel de inmediato — muestra la confirmación', async () => {
+    authMock.completarPerfil.mockResolvedValue({ perfilCompleto: true, rolSolicitado: 'investigador' })
+    const user = userEvent.setup()
+    const { onClose } = renderForm()
+
+    await user.type(screen.getByLabelText('Institución / Organización'), 'IIAP')
+    await user.selectOptions(screen.getByLabelText('Perfil de Acceso'), 'investigador')
+    await user.type(screen.getByLabelText(/Motivo/), 'Investigación de biodiversidad')
+    await user.click(screen.getByRole('button', { name: /Enviar solicitud/i }))
+
+    expect(authMock.completarPerfil).toHaveBeenCalledWith({
+      nombre: 'Ana Restrepo', institucion: 'IIAP',
+      perfilSolicitado: 'investigador', motivo: 'Investigación de biodiversidad',
+    })
+    expect(await screen.findByText('Solicitud enviada')).toBeInTheDocument()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  test('"Entendido" en la confirmación cierra el panel', async () => {
+    authMock.completarPerfil.mockResolvedValue({ perfilCompleto: true })
+    const user = userEvent.setup()
+    const { onClose } = renderForm()
+
+    await user.type(screen.getByLabelText('Institución / Organización'), 'IIAP')
+    await user.selectOptions(screen.getByLabelText('Perfil de Acceso'), 'tecnico')
+    await user.click(screen.getByRole('button', { name: /Enviar solicitud/i }))
+    await screen.findByText('Solicitud enviada')
+
+    await user.click(screen.getByRole('button', { name: /Entendido/i }))
+    expect(onClose).toHaveBeenCalled()
+  })
+})
+
 describe('CompletarPerfilPanel', () => {
   test('renderiza el título y pasa onClose al panel', () => {
     const onClose = vi.fn()

@@ -207,6 +207,25 @@ describe('AuthProvider — perfilCompleto / completarPerfil()', () => {
     expect(api.patch).toHaveBeenCalledWith('/auth/completar-perfil', { institucion: 'IIAP' })
     expect(result.current.user).toMatchObject({ perfilCompleto: true })
   })
+
+  test('completarPerfil() pasa perfilSolicitado y motivo al PATCH cuando se piden', async () => {
+    vi.mocked(api.get).mockResolvedValue({ ...rawInvestigador, perfilCompleto: false })
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(result.current.initializing).toBe(false))
+
+    vi.mocked(api.patch).mockResolvedValue({ perfilCompleto: true, rolSolicitado: 'investigador' })
+    vi.mocked(api.get).mockResolvedValueOnce({ ...rawInvestigador, perfilCompleto: true })
+
+    await act(async () => {
+      await result.current.completarPerfil({
+        institucion: 'IIAP', perfilSolicitado: 'investigador', motivo: 'Investigación',
+      })
+    })
+
+    expect(api.patch).toHaveBeenCalledWith('/auth/completar-perfil', {
+      institucion: 'IIAP', perfilSolicitado: 'investigador', motivo: 'Investigación',
+    })
+  })
 })
 
 describe('useAuth() outside AuthProvider', () => {
