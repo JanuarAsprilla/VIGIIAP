@@ -431,7 +431,17 @@ export default function Usuarios() {
                   </td>
                   <td className="px-5 py-3.5 text-sm text-text-muted">{u.correo}</td>
                   <td className="px-5 py-3.5">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ROLE_COLORS[u.rol]}`}>{u.rol}</span>
+                    <div className="flex flex-col items-start gap-1">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ROLE_COLORS[u.rol]}`}>{u.rol}</span>
+                      {u.rolSolicitado && (
+                        <span
+                          title="Solicitud pendiente de aprobación — inició sesión con Google/Microsoft"
+                          className="inline-flex items-center gap-1 text-[0.65rem] font-semibold text-gold-500 bg-gold-500/12 px-2 py-0.5 rounded-full"
+                        >
+                          <Clock className="w-2.5 h-2.5" />Solicita: {u.rolSolicitado}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-3.5">
                     {u.emailVerified ? (
