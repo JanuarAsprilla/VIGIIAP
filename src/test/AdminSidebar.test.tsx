@@ -91,10 +91,9 @@ describe('AdminSidebar — navegación', () => {
 })
 
 describe('AdminSidebar — usuario y cierre de sesión', () => {
-  test('muestra el nombre y rol del usuario autenticado', () => {
+  test('no duplica el nombre/rol del usuario (ya visibles en el TopBar)', () => {
     renderSidebar(false)
-    expect(screen.getByText('Ana Restrepo')).toBeInTheDocument()
-    expect(screen.getByText(ROLES.ADMIN)).toBeInTheDocument()
+    expect(screen.queryByText('Ana Restrepo')).not.toBeInTheDocument()
   })
 
   test('cerrar sesión llama a logout() y a onClose()', async () => {

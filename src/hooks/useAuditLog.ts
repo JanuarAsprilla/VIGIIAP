@@ -3,10 +3,17 @@ import type { ApiMeta } from '@/types'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
 
+// Un color por módulo, sin reutilizar el mismo tono dos veces en esta lista —
+// admin y mapas compartían literalmente el mismo hex (bug real, no solo un
+// matiz difícil de distinguir). No se introducen colores nuevos: "pink" ya
+// existe en la paleta de marca (src/index.css) y no lo usa ninguna otra
+// pantalla, así que admin lo toma sin chocar con nada. El resto de la marca
+// (verde, gold/orange, magenta) ya está repartido entre auth/usuarios/
+// solicitudes/documentos/mapas.
 export const MODULO_STYLES: Record<string, string> = {
   auth:        'bg-primary-500/12 text-primary-500',
   usuarios:    'bg-magenta/12 text-magenta',
-  admin:       'bg-primary-700/10 text-primary-700',
+  admin:       'bg-pink/12 text-pink',
   solicitudes: 'bg-gold-400/12 text-gold-400',
   mapas:       'bg-primary-700/10 text-primary-700',
   documentos:  'bg-gold-500/12 text-gold-500',
