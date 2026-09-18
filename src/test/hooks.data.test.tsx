@@ -210,6 +210,26 @@ describe('useUsuariosList', () => {
     const users = result.current.data?.data
     expect(users![0].rol).toBe('Investigador')
   })
+
+  test('normaliza rolSolicitado a su etiqueta de display cuando hay una solicitud pendiente', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [{ ...rawUser, rol: 'publico', rolSolicitado: 'tecnico' }], meta: { total: 1 },
+    })
+
+    const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(result.current.data?.data[0].rolSolicitado).toBe('Técnico SIG')
+  })
+
+  test('rolSolicitado es null cuando no hay solicitud pendiente', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [rawUser], meta: { total: 1 } })
+
+    const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(result.current.data?.data[0].rolSolicitado).toBeNull()
+  })
 })
 
 // ─── useCategoriasList ────────────────────────────────────────────────────────
