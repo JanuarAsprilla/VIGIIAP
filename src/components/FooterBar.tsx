@@ -38,13 +38,16 @@ const resourceLinks = [
 
 export default function Footer() {
   return (
-    <footer className="relative text-white mt-16" style={{ background: '#1A2E22' }}>
+    <footer className="relative mt-16" style={{ background: 'var(--footer-bg)', color: 'var(--footer-text)' }}>
       {/* ── Wave separator ── */}
-      <div className="absolute -top-15 inset-x-0 h-15 overflow-hidden pointer-events-none">
+      {/* currentColor = --footer-bg (no --color-primary-900, que es fijo y no
+          cambia con el tema) para que la curva quede siempre del mismo color
+          que el footer justo debajo, en ambos modos. */}
+      <div className="absolute -top-15 inset-x-0 h-15 overflow-hidden pointer-events-none" style={{ color: 'var(--footer-bg)' }}>
         <svg
           viewBox="0 0 1440 120"
           preserveAspectRatio="none"
-          className="w-full h-full text-primary-900"
+          className="w-full h-full"
         >
           <path
             d="M0,60 C240,120 480,0 720,60 C960,120 1200,0 1440,60 L1440,120 L0,120 Z"
@@ -78,7 +81,7 @@ export default function Footer() {
               </div>
 
               {/* Description */}
-              <p className="text-white/70 text-[0.95rem] leading-relaxed max-w-87.5 mb-6">
+              <p className="text-[var(--footer-text-muted)] text-[0.95rem] leading-relaxed max-w-87.5 mb-6">
                 Visor Gestor de Información del Instituto de Investigaciones
                 Ambientales del Pacífico (IIAP).
               </p>
@@ -91,7 +94,7 @@ export default function Footer() {
                     type="button"
                     aria-label={label}
                     title={label}
-                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-primary-300 hover:text-primary-900 transition-colors"
+                    className="w-10 h-10 rounded-full bg-[var(--footer-social-bg)] flex items-center justify-center text-[var(--footer-text)] hover:bg-primary-300 hover:text-primary-900 transition-colors"
                   >
                     <Icon className="w-4.5 h-4.5" aria-hidden="true" />
                   </button>
@@ -109,7 +112,7 @@ export default function Footer() {
                     <li key={link.path}>
                       <Link
                         to={link.path}
-                        className="text-white/70 hover:text-primary-300 text-sm no-underline transition-colors"
+                        className="text-[var(--footer-text-muted)] hover:text-primary-300 text-sm no-underline transition-colors"
                       >
                         {link.label}
                       </Link>
@@ -126,7 +129,7 @@ export default function Footer() {
                     <li key={link.label}>
                       <Link
                         to={link.href}
-                        className="text-white/70 hover:text-primary-300 text-sm no-underline transition-colors"
+                        className="text-[var(--footer-text-muted)] hover:text-primary-300 text-sm no-underline transition-colors"
                       >
                         {link.label}
                       </Link>
@@ -141,15 +144,15 @@ export default function Footer() {
                 <ul className="space-y-3">
                   <li className="flex items-center gap-2 text-sm">
                     <MapPin className="w-4 h-4 text-primary-300 shrink-0" />
-                    <span className="text-white/70">Quibdó, Chocó, Colombia</span>
+                    <span className="text-[var(--footer-text-muted)]">Quibdó, Chocó, Colombia</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm">
                     <Phone className="w-4 h-4 text-primary-300 shrink-0" />
-                    <span className="text-white/70">+57 (4) 671 1127</span>
+                    <span className="text-[var(--footer-text-muted)]">+57 (4) 671 1127</span>
                   </li>
                   <li className="flex items-center gap-2 text-sm">
                     <Mail className="w-4 h-4 text-primary-300 shrink-0" />
-                    <span className="text-white/70">info@iiap.org.co</span>
+                    <span className="text-[var(--footer-text-muted)]">info@iiap.org.co</span>
                   </li>
                 </ul>
               </FooterReveal>
@@ -158,7 +161,7 @@ export default function Footer() {
 
           {/* ── Bottom bar ── */}
           <div className="pt-6 text-center">
-            <p className="text-[0.85rem] text-white/50">
+            <p className="text-[0.85rem] text-[var(--footer-text-faint)]">
               © {new Date().getFullYear()} IIAP — Instituto de Investigaciones
               Ambientales del Pacífico. Todos los derechos reservados.
             </p>
