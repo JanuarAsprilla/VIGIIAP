@@ -394,6 +394,24 @@ describe('Usuarios (admin) — listado y filtros', () => {
     expect(screen.getByText('Pendiente')).toBeInTheDocument()
   })
 
+  test('un usuario con rolSolicitado muestra la insignia "Solicita: <rol>"', () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo', rolSolicitado: 'Investigador' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    render(<Usuarios />)
+    expect(screen.getByText('Solicita: Investigador')).toBeInTheDocument()
+  })
+
+  test('sin rolSolicitado, no muestra ninguna insignia de solicitud pendiente', () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    render(<Usuarios />)
+    expect(screen.queryByText(/Solicita:/)).not.toBeInTheDocument()
+  })
+
   test('el buscador actualiza el input controlado', async () => {
     const user = userEvent.setup()
     render(<Usuarios />)

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect, type FormEvent } from 'react'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Plus, Trash2, Upload, X, CheckCircle,
+  Plus, Trash2, Pencil, Upload, X, CheckCircle,
   AlertCircle, Loader2, Tag, ImageOff, FolderOpen,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, staggerContainer } from '@/lib/animations'
@@ -11,6 +11,7 @@ import {
   useCategoriasList,
   useCreateCategoria,
   useUploadCategoriaThumbnail,
+  useRenameCategoria,
   useDeleteCategoria,
 } from '@/hooks/useCategorias'
 import { useDocumentosList } from '@/hooks/useDocumentos'
@@ -101,7 +102,7 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { 
 }
 
 // ── Tarjeta de categoría ──────────────────────────────────────────────────────
-function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbnail }: { cat: { nombre: string; descripcion?: string | null; thumbnail_url?: string | null; activo?: boolean }; docCount: number; onDelete: (target: { nombre: string }) => void; onThumbnailSaved: (nombre: string) => void; uploadThumbnail: ReturnType<typeof import('@/hooks/useCategorias').useUploadCategoriaThumbnail> }) {
+function CategoriaCard({ cat, docCount, onRename, onDelete, onThumbnailSaved, uploadThumbnail }: { cat: { nombre: string; descripcion?: string | null; thumbnail_url?: string | null; activo?: boolean }; docCount: number; onRename: (target: { nombre: string }) => void; onDelete: (target: { nombre: string }) => void; onThumbnailSaved: (nombre: string) => void; uploadThumbnail: ReturnType<typeof import('@/hooks/useCategorias').useUploadCategoriaThumbnail> }) {
   const [file, setFile]         = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress]   = useState(0)
@@ -171,13 +172,24 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
       <div className="p-4 flex flex-col gap-3 flex-1">
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-sm font-bold text-text leading-snug">{cat.nombre}</h3>
-          <button
-            onClick={() => onDelete(cat)}
-            className="p-1.5 rounded-lg text-text-muted hover:text-red-dark hover:bg-red/10 transition-colors shrink-0"
-            title="Eliminar categoría"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => onRename(cat)}
+              className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors"
+              title="Renombrar categoría"
+              aria-label={`Renombrar categoría ${cat.nombre}`}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => onDelete(cat)}
+              className="p-1.5 rounded-lg text-text-muted hover:text-red-dark hover:bg-red/10 transition-colors"
+              title="Eliminar categoría"
+              aria-label={`Eliminar categoría ${cat.nombre}`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Dropzone compacto */}
@@ -232,12 +244,16 @@ export default function GestionCategorias() {
 
   const createCategoria   = useCreateCategoria()
   const uploadThumbnail   = useUploadCategoriaThumbnail()
+  const renameCategoria   = useRenameCategoria()
   const deleteCategoria   = useDeleteCategoria()
 
   const [showNew, setShowNew]         = useState(false)
   const [newName, setNewName]         = useState('')
   const [newFile, setNewFile]         = useState<File | null>(null)
   const [newError, setNewError]       = useState<string | null>(null)
+  const [renameTarget, setRenameTarget] = useState<{ nombre: string } | null>(null)
+  const [renameValue, setRenameValue]   = useState('')
+  const [renameError, setRenameError]   = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ nombre: string } | null>(null)
   const [toast, setToast]             = useState<string | null>(null)
 
@@ -260,6 +276,25 @@ export default function GestionCategorias() {
       setShowNew(false); setNewName(''); setNewFile(null)
     } catch (err) {
       setNewError(getApiErrorMessage(err, 'No se pudo crear la categoría'))
+    }
+  }
+
+  const openRename = (target: { nombre: string }) => {
+    setRenameTarget(target); setRenameValue(target.nombre); setRenameError(null)
+  }
+
+  const confirmRename = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!renameTarget) return
+    const nuevoNombre = renameValue.trim()
+    if (!nuevoNombre) { setRenameError('El nombre es obligatorio'); return }
+    if (nuevoNombre === renameTarget.nombre) { setRenameTarget(null); return }
+    try {
+      await renameCategoria.mutateAsync({ nombre: renameTarget.nombre, nuevoNombre })
+      setToast(`Categoría renombrada a "${nuevoNombre}"`)
+      setRenameTarget(null)
+    } catch (err) {
+      setRenameError(getApiErrorMessage(err, 'No se pudo renombrar la categoría'))
     }
   }
 
@@ -339,6 +374,7 @@ export default function GestionCategorias() {
                 key={cat.nombre}
                 cat={cat}
                 docCount={docCountByCategoria[cat.nombre] ?? 0}
+                onRename={openRename}
                 onDelete={setDeleteTarget}
                 onThumbnailSaved={(nombre) => setToast(`Imagen de "${nombre}" actualizada`)}
                 uploadThumbnail={uploadThumbnail}
@@ -400,6 +436,60 @@ export default function GestionCategorias() {
                     className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors">
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     {isSaving ? 'Guardando…' : 'Crear categoría'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal renombrar categoría */}
+      <AnimatePresence>
+        {renameTarget && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget && !renameCategoria.isPending) setRenameTarget(null) }}
+          >
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-md">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-border">
+                <div>
+                  <h3 className="text-base font-bold text-text">Renombrar categoría</h3>
+                  <p className="text-xs text-text-muted mt-0.5">
+                    Se actualiza en Mapas, Documentos y Geovisores que la usen.
+                  </p>
+                </div>
+                <button onClick={() => setRenameTarget(null)} disabled={renameCategoria.isPending}
+                  className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors disabled:opacity-40">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={confirmRename} className="p-6 space-y-4">
+                <div>
+                  <label htmlFor="gc-rename" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Nuevo nombre <span className="text-orange-500" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    id="gc-rename"
+                    type="text"
+                    value={renameValue}
+                    autoFocus
+                    onChange={(e) => { setRenameValue(e.target.value); setRenameError(null) }}
+                    className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${renameError ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                  />
+                  {renameError && <p className="text-xs text-red-500 mt-1">{renameError}</p>}
+                </div>
+
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={() => setRenameTarget(null)} disabled={renameCategoria.isPending}
+                    className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 disabled:opacity-40 transition-colors">
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={renameCategoria.isPending}
+                    className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors">
+                    {renameCategoria.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pencil className="w-4 h-4" />}
+                    {renameCategoria.isPending ? 'Guardando…' : 'Renombrar'}
                   </button>
                 </div>
               </form>

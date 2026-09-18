@@ -24,6 +24,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, User, X } from 'lucide-react'
 import LoginForm from '@/components/auth/LoginForm'
 import Portal from '@/components/ui/Portal'
+import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 import { panelAnim } from './panelAnim'
 
 const GAP_PX = 8 // equivalente al mt-2 que tenía el panel cuando estaba anclado con CSS
@@ -47,6 +48,8 @@ export default function LoginPanel({ onClose, onBack, from, anchorRef, boxRef, o
   onNavigateAuthModal: (target: 'recuperar' | 'solicitar') => void
 }) {
   const [coords, setCoords] = useState<{ top: number; right: number } | null>(null)
+
+  useLockBodyScroll()
 
   useLayoutEffect(() => {
     function updateCoords() {

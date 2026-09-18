@@ -34,7 +34,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 }))
 
 import api from '@/lib/api'
-import { useAdminStats } from '@/hooks/useStats'
+import { useAdminStats, useDashboardTendencias } from '@/hooks/useStats'
 import { useMapasList } from '@/hooks/useMapas'
 import { useDocumentosList } from '@/hooks/useDocumentos'
 import { useSolicitudesAdmin, useMisSolicitudes } from '@/hooks/useSolicitudes'
@@ -88,6 +88,45 @@ describe('useAdminStats', () => {
   })
 })
 
+
+// ─── useDashboardTendencias ───────────────────────────────────────────────────
+describe('useDashboardTendencias', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('fetches trend deltas from /admin/dashboard/tendencias', async () => {
+    const fakeTendencias = {
+      usuarios:    { serie7: [1,1,2,1,3,2,4], semanaActual: 14, semanaAnterior: 10, deltaPct: 40 },
+      solicitudes: { serie7: [0,1,0,0,1,0,1], semanaActual: 3,  semanaAnterior: 3,  deltaPct: 0 },
+      documentos:  { serie7: [0,0,0,1,0,0,0], semanaActual: 1,  semanaAnterior: 2,  deltaPct: -50 },
+      mapas:       { serie7: [0,0,0,0,0,0,0], semanaActual: 0,  semanaAnterior: 0,  deltaPct: 0 },
+    }
+    vi.mocked(api.get).mockResolvedValue(fakeTendencias)
+
+    const { result } = renderHook(() => useDashboardTendencias(), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(api.get).toHaveBeenCalledWith('/admin/dashboard/tendencias')
+    expect(result.current.data).toEqual(fakeTendencias)
+  })
+
+  test('exposes isLoading while fetching', () => {
+    vi.mocked(api.get).mockReturnValue(new Promise(() => {}))
+    const { result } = renderHook(() => useDashboardTendencias(), { wrapper: makeWrapper() })
+    expect(result.current.isLoading).toBe(true)
+  })
+
+  test('exposes isError on API failure', async () => {
+    vi.mocked(api.get).mockRejectedValue(new Error('500'))
+    const { result } = renderHook(() => useDashboardTendencias(), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isError).toBe(true))
+  })
+
+  test('respects the enabled flag', () => {
+    const { result } = renderHook(() => useDashboardTendencias(false), { wrapper: makeWrapper() })
+    expect(result.current.fetchStatus).toBe('idle')
+    expect(api.get).not.toHaveBeenCalled()
+  })
+})
 
 // ─── useMapasList ─────────────────────────────────────────────────────────────
 describe('useMapasList', () => {
@@ -209,6 +248,26 @@ describe('useUsuariosList', () => {
 
     const users = result.current.data?.data
     expect(users![0].rol).toBe('Investigador')
+  })
+
+  test('normaliza rolSolicitado a su etiqueta de display cuando hay una solicitud pendiente', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [{ ...rawUser, rol: 'publico', rolSolicitado: 'tecnico' }], meta: { total: 1 },
+    })
+
+    const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(result.current.data?.data[0].rolSolicitado).toBe('Técnico SIG')
+  })
+
+  test('rolSolicitado es null cuando no hay solicitud pendiente', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [rawUser], meta: { total: 1 } })
+
+    const { result } = renderHook(() => useUsuariosList(), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(result.current.data?.data[0].rolSolicitado).toBeNull()
   })
 })
 
