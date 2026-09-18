@@ -32,18 +32,30 @@ import { useCreateGeovisor, useUpdateGeovisor } from '@/hooks/useGeovisores'
 
 const conexionesFixture = [{ id: 'c1', nombre: 'GeoServer IIAP' }]
 const workspacesFixture: WorkspaceOption[] = [
-  { id: 't_15_geologia', nombre: 'Geologia', totalCapas: 3 },
-  { id: 't_20_hidrologia', nombre: 'Hidrologia', totalCapas: 5 },
+  {
+    id: 't_15_geologia', nombre: 'Geologia', totalCapas: 2,
+    capas: [
+      { id: 't_15_geologia:unidades', nombre: 'Unidades litológicas', tipo: 'vectorial' },
+      { id: 't_15_geologia:fallas', nombre: 'Fallas geológicas', tipo: 'vectorial' },
+    ],
+  },
+  {
+    id: 't_20_hidrologia', nombre: 'Hidrologia', totalCapas: 1,
+    capas: [
+      { id: 't_20_hidrologia:cuencas', nombre: 'Cuencas hidrográficas', tipo: 'raster' },
+    ],
+  },
 ]
 
 function makeGeovisor(overrides: Partial<GeovisorRaw> = {}): GeovisorRaw {
   return {
     id: '1', slug: 'geologia-choco', titulo: 'Geología del Chocó', subtitulo: 'Unidades',
     descripcion: 'Descripción', cita: 'Cita sugerida', categoria: 'Geología', conexionGeoserverId: 'c1',
-    workspacesGeoserver: ['t_15_geologia'], colorPorTema: { t_15_geologia: '#123456' },
+    workspacesGeoserver: ['t_15_geologia'], capasSeleccionadas: ['t_15_geologia:unidades'],
+    colorPorTema: { t_15_geologia: '#123456' },
     centro: { lat: 5.55, lng: -76.6 }, zoomInicial: 9, basemapDefecto: 'satelite',
     areaMaxHa: 5000, presetsArea: [{ nombre: 'Zona norte', geometria: { type: 'Polygon', coordinates: [[[1, 2], [3, 4], [5, 6], [1, 2]]] } }],
-    iaHabilitada: true, visibilidad: 'usuarios',
+    visibilidad: 'usuarios',
     presentacion: { mostrarMetricas: true, mostrarImagenes: true, campoImagenUrl: 'foto_url', camposPopup: [{ campo: 'MGUCR_SIMBL', alias: 'Símbolo' }] },
     thumbnailUrl: 'https://cdn.test/thumb.png', activo: true, orden: 0, creadoEn: '2026-01-01', ...overrides,
   }
@@ -71,7 +83,8 @@ describe('GeovisorFormModal — modo edición: prefill', () => {
     expect(screen.getByLabelText(/Longitud centro/i)).toHaveValue(-76.6)
     expect(screen.getByLabelText(/Zoom inicial/i)).toHaveValue(9)
     expect(screen.getByLabelText(/Mapa base por defecto/i)).toHaveValue('satelite')
-    expect(screen.getByRole('checkbox', { name: /Geologia/i })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: /Unidades litológicas/i })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: /Fallas geológicas/i })).not.toBeChecked()
     expect(screen.getByDisplayValue('Zona norte')).toBeInTheDocument()
     expect(screen.getByDisplayValue('MGUCR_SIMBL')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Símbolo')).toBeInTheDocument()
@@ -98,21 +111,30 @@ describe('GeovisorFormModal — modo edición: prefill', () => {
     }))
     expect(onSaved).toHaveBeenCalledWith('Geovisor "Geología del Chocó" actualizado')
   })
+
+  test('geovisor legado (sin capasSeleccionadas, solo workspacesGeoserver) precarga todas las capas de ese workspace', async () => {
+    const legado = makeGeovisor({ capasSeleccionadas: [], workspacesGeoserver: ['t_15_geologia'] })
+    render(<GeovisorFormModal open editing={legado} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    expect(await screen.findByRole('checkbox', { name: /Unidades litológicas/i })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: /Fallas geológicas/i })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: /Cuencas hidrográficas/i })).not.toBeChecked()
+  })
 })
 
-describe('GeovisorFormModal — workspaces y color por tema', () => {
-  test('sin conexión elegida no muestra la sección de workspaces', () => {
+describe('GeovisorFormModal — capas y color por tema', () => {
+  test('sin conexión elegida muestra el aviso de vista previa en vez de la sección de capas', () => {
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
-    expect(screen.queryByText(/Workspaces temáticos/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/Elige una conexión GeoServer para ver la vista previa en vivo/i)).toBeInTheDocument()
   })
 
-  test('mientras se descubren los workspaces muestra el spinner', async () => {
+  test('mientras se descubren las capas muestra el spinner', async () => {
     vi.mocked(useWorkspacesDeConexion).mockReturnValue({ data: [], isFetching: true } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
 
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
-    expect(screen.getByText('Descubriendo workspaces…')).toBeInTheDocument()
+    expect(screen.getByText('Descubriendo capas…')).toBeInTheDocument()
   })
 
   test('conexión sin capas publicadas muestra el mensaje correspondiente', async () => {
@@ -124,34 +146,45 @@ describe('GeovisorFormModal — workspaces y color por tema', () => {
     expect(screen.getByText('Esta conexión no publica capas todavía.')).toBeInTheDocument()
   })
 
-  test('sin workspaces seleccionados, la sección de color muestra la nota en vez de selectores', async () => {
+  test('sin capas seleccionadas, la sección de color muestra la nota en vez de selectores', async () => {
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
 
-    expect(screen.getByText(/Selecciona uno o más workspaces en la sección 2/i)).toBeInTheDocument()
+    expect(screen.getByText(/Selecciona una o más capas en la sección 2/i)).toBeInTheDocument()
   })
 
-  test('marcar un workspace agrega su selector de color con el nombre correcto', async () => {
+  test('marcar dos capas de dos temas distintos agrega un selector de color por cada tema', async () => {
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
-    await user.click(screen.getByRole('checkbox', { name: /Geologia/i }))
+    await user.click(screen.getByRole('checkbox', { name: /Unidades litológicas/i }))
+    await user.click(screen.getByRole('checkbox', { name: /Cuencas hidrográficas/i }))
 
-    expect(screen.queryByText(/Selecciona uno o más workspaces/i)).not.toBeInTheDocument()
-    const colorInputs = document.querySelectorAll('input[type="color"]')
-    expect(colorInputs).toHaveLength(1)
+    expect(screen.queryByText(/Selecciona una o más capas/i)).not.toBeInTheDocument()
+    expect(document.querySelectorAll('input[type="color"]')).toHaveLength(2)
+    expect(screen.getByText(/2 capas seleccionadas, de 2 temas distintos/i)).toBeInTheDocument()
   })
 
-  test('desmarcar un workspace ya seleccionado quita su selector de color', async () => {
+  test('desmarcar todas las capas de un tema quita su selector de color', async () => {
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
-    const checkbox = screen.getByRole('checkbox', { name: /Geologia/i })
+    const checkbox = screen.getByRole('checkbox', { name: /Unidades litológicas/i })
     await user.click(checkbox)
     await user.click(checkbox)
 
     expect(document.querySelectorAll('input[type="color"]')).toHaveLength(0)
+  })
+
+  test('el filtro de búsqueda esconde las capas que no coinciden', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await user.type(screen.getByPlaceholderText(/Buscar capa por nombre/i), 'cuencas')
+
+    expect(screen.queryByRole('checkbox', { name: /Unidades litológicas/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: /Cuencas hidrográficas/i })).toBeInTheDocument()
   })
 })
 
@@ -233,7 +266,7 @@ describe('GeovisorFormModal — atributos del popup (camposPopup)', () => {
   })
 })
 
-describe('GeovisorFormModal — visibilidad e IA', () => {
+describe('GeovisorFormModal — visibilidad', () => {
   test('elegir "Acreditados" cambia la visibilidad enviada', async () => {
     const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
     vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
@@ -248,18 +281,9 @@ describe('GeovisorFormModal — visibilidad e IA', () => {
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ visibilidad: 'acreditados' }))
   })
 
-  test('habilitar IA se incluye en el payload', async () => {
-    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
-    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
-    const user = userEvent.setup()
+  test('ya no ofrece la generación de reportes con IA — sin funcionalidad real detrás', () => {
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
-
-    await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
-    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
-    await user.click(screen.getByLabelText(/Habilitar generación de reportes con IA/i))
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
-
-    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ iaHabilitada: true }))
+    expect(screen.queryByText(/generación de reportes con IA/i)).not.toBeInTheDocument()
   })
 })
 
@@ -308,7 +332,7 @@ describe('GeovisorFormModal — todos los campos opcionales se envían', () => {
     await user.type(screen.getByLabelText(/^URL de portada/i), 'https://cdn.test/thumb.png')
 
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
-    await user.click(screen.getByRole('checkbox', { name: /Geologia/i }))
+    await user.click(screen.getByRole('checkbox', { name: /Unidades litológicas/i }))
     fireEvent.change(document.querySelector('input[type="color"]')!, { target: { value: '#ff0000' } })
 
     fireEvent.change(screen.getByLabelText(/Latitud centro/i), { target: { value: '6' } })

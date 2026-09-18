@@ -42,9 +42,9 @@ function makeGeovisor(overrides: Partial<GeovisorRaw> = {}): GeovisorRaw {
   return {
     id: '1', slug: 'geologia-choco', titulo: 'Geología del Chocó', subtitulo: 'Unidades litoestratigráficas',
     descripcion: null, cita: null, categoria: 'Geología', conexionGeoserverId: 'c1',
-    workspacesGeoserver: [], colorPorTema: { geologia: '#1B4332' }, centro: { lat: 5.55, lng: -76.6 },
+    workspacesGeoserver: [], capasSeleccionadas: [], colorPorTema: { geologia: '#1B4332' }, centro: { lat: 5.55, lng: -76.6 },
     zoomInicial: 9, basemapDefecto: 'calles', areaMaxHa: null, presetsArea: [],
-    iaHabilitada: false, visibilidad: 'publico',
+    visibilidad: 'publico',
     presentacion: { mostrarMetricas: true, mostrarImagenes: false, camposPopup: [] },
     thumbnailUrl: null, activo: true, orden: 0, creadoEn: '2026-01-01', ...overrides,
   }

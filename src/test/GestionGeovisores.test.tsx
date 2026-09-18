@@ -39,8 +39,9 @@ function makeGeovisor(overrides: Record<string, unknown> = {}) {
     id: 'geovisor-1', slug: 'geologia-choco', titulo: 'Geología del Chocó',
     subtitulo: null, descripcion: null, cita: null, categoria: 'Geología',
     conexionGeoserverId: 'conexion-1', workspacesGeoserver: ['t_15_geologia'],
+    capasSeleccionadas: ['t_15_geologia:unidades'],
     colorPorTema: {}, centro: { lat: 5.55, lng: -76.6 }, zoomInicial: 8,
-    basemapDefecto: 'calles', areaMaxHa: null, presetsArea: [], iaHabilitada: false,
+    basemapDefecto: 'calles', areaMaxHa: null, presetsArea: [],
     visibilidad: 'publico',
     presentacion: { mostrarMetricas: true, mostrarImagenes: false, camposPopup: [] },
     thumbnailUrl: null, activo: true, orden: 0, creadoEn: '2026-01-01', ...overrides,
@@ -60,7 +61,10 @@ beforeEach(() => {
     data: [makeConexion()],
   } as unknown as ReturnType<typeof useConexionesGeoserverList>)
   vi.mocked(useWorkspacesDeConexion).mockReturnValue({
-    data: [{ id: 't_15_geologia', nombre: 'Geologia', totalCapas: 3 }], isFetching: false,
+    data: [{
+      id: 't_15_geologia', nombre: 'Geologia', totalCapas: 1,
+      capas: [{ id: 't_15_geologia:unidades', nombre: 'Unidades', tipo: 'vectorial' }],
+    }], isFetching: false,
   } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
   vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
   vi.mocked(useUpdateGeovisor).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUpdateGeovisor>)
