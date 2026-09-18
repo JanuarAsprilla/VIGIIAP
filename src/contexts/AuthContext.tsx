@@ -51,7 +51,12 @@ export interface AuthContextValue {
   logout: () => Promise<void>
   register: (data: Record<string, unknown>) => Promise<unknown>
   refreshProfile: () => Promise<AuthUser | undefined>
-  completarPerfil: (data: { nombre?: string; institucion: string }) => Promise<AuthUser>
+  completarPerfil: (data: {
+    nombre?: string
+    institucion: string
+    perfilSolicitado?: 'investigador' | 'tecnico' | 'institucional'
+    motivo?: string
+  }) => Promise<AuthUser>
 }
 
 const ROLE_MAP: Record<string, string> = {
@@ -212,8 +217,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return api.post('/auth/registro', data)
   }, [])
 
-  // ── Completar perfil (institución) tras un primer login OAuth ──
-  const completarPerfil = useCallback(async (data: { nombre?: string; institucion: string }) => {
+  // ── Completar perfil (institución, y opcionalmente pedir un rol elevado) tras un primer login OAuth ──
+  const completarPerfil = useCallback(async (data: {
+    nombre?: string
+    institucion: string
+    perfilSolicitado?: 'investigador' | 'tecnico' | 'institucional'
+    motivo?: string
+  }) => {
     await api.patch('/auth/completar-perfil', data)
     const full = await refreshProfile()
     if (!full) throw new Error('No se pudo actualizar el perfil')

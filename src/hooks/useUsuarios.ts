@@ -30,6 +30,7 @@ interface RawUsuario {
   institucion?: string | null
   actualizado_en?: string | null
   creado_en: string
+  rolSolicitado?: string | null
   [key: string]: unknown
 }
 
@@ -45,6 +46,11 @@ function normalizeUser(u: RawUsuario) {
     activo:          u.activo,
     emailVerified:   u.email_verified ?? false,
     motivoAcceso:    u.motivo_acceso ?? '',
+    // Solicitud pendiente de un usuario OAuth que pidió un rol elevado desde
+    // "Completar Perfil" — ver auth.service.js#completarPerfil en el backend.
+    // Aprobar es simplemente cambiar "rol" desde este mismo panel; el backend
+    // limpia rolSolicitado solo al hacerlo (ver admin.service.js#actualizarUsuario).
+    rolSolicitado:   u.rolSolicitado ? (ROLE_MAP[u.rolSolicitado] ?? u.rolSolicitado) : null,
     initials:        (u.nombre ?? '')
       .split(' ')
       .map((w) => w[0] ?? '')
