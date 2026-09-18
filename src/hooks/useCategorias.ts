@@ -44,6 +44,19 @@ export function useUploadCategoriaThumbnail() {
   })
 }
 
+export function useRenameCategoria() {
+  const qc = useQueryClient()
+  return useMutation<{ nombre: string; [key: string]: unknown }, Error, { nombre: string; nuevoNombre: string }>({
+    mutationFn: ({ nombre, nuevoNombre }) => api.patch(`/categorias/${encodeURIComponent(nombre)}`, { nuevoNombre }),
+    onSuccess:  () => {
+      qc.invalidateQueries({ queryKey: KEYS.all })
+      qc.invalidateQueries({ queryKey: ['documentos'] })
+      qc.invalidateQueries({ queryKey: ['mapas'] })
+      qc.invalidateQueries({ queryKey: ['geovisores'] })
+    },
+  })
+}
+
 export function useDeleteCategoria() {
   const qc = useQueryClient()
   return useMutation<void, Error, string>({

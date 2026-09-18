@@ -26,10 +26,11 @@ vi.mock('@/hooks/useCategorias', () => ({
   useCategoriasList: vi.fn(),
   useCreateCategoria: vi.fn(),
   useUploadCategoriaThumbnail: vi.fn(),
+  useRenameCategoria: vi.fn(),
   useDeleteCategoria: vi.fn(),
 }))
 import {
-  useCategoriasList, useCreateCategoria, useUploadCategoriaThumbnail, useDeleteCategoria,
+  useCategoriasList, useCreateCategoria, useUploadCategoriaThumbnail, useRenameCategoria, useDeleteCategoria,
 } from '@/hooks/useCategorias'
 
 vi.mock('@/hooks/useDocumentos', () => ({ useDocumentosList: vi.fn() }))
@@ -51,6 +52,7 @@ beforeEach(() => {
   } as unknown as ReturnType<typeof useDocumentosList>)
   vi.mocked(useCreateCategoria).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useCreateCategoria>)
   vi.mocked(useUploadCategoriaThumbnail).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUploadCategoriaThumbnail>)
+  vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
   vi.mocked(useDeleteCategoria).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useDeleteCategoria>)
 })
 
@@ -93,6 +95,80 @@ describe('GestionCategorias — crear categoría', () => {
 
     expect(await screen.findByText('Ya existe una categoría con ese nombre')).toBeInTheDocument()
     expect(screen.getByLabelText(/Nombre/i)).toBeInTheDocument()
+  })
+})
+
+describe('GestionCategorias — renombrar categoría', () => {
+  test('abre el modal con el nombre actual precargado y llama a la mutación con el nuevo nombre', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByTitle('Renombrar categoría'))
+
+    expect(screen.getByLabelText(/Nuevo nombre/i)).toHaveValue('Protocolos')
+
+    await user.clear(screen.getByLabelText(/Nuevo nombre/i))
+    await user.type(screen.getByLabelText(/Nuevo nombre/i), 'Protocolos Ambientales')
+    await user.click(screen.getByRole('button', { name: /^Renombrar$/i }))
+
+    expect(mutateAsync).toHaveBeenCalledWith({ nombre: 'Protocolos', nuevoNombre: 'Protocolos Ambientales' })
+    expect(await screen.findByText('Categoría renombrada a "Protocolos Ambientales"')).toBeInTheDocument()
+  })
+
+  test('un nombre vacío muestra error y no llama a la mutación', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByTitle('Renombrar categoría'))
+    await user.clear(screen.getByLabelText(/Nuevo nombre/i))
+    await user.click(screen.getByRole('button', { name: /^Renombrar$/i }))
+
+    expect(await screen.findByText('El nombre es obligatorio')).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('si el nombre no cambió, cierra el modal sin llamar a la mutación', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByTitle('Renombrar categoría'))
+    await user.click(screen.getByRole('button', { name: /^Renombrar$/i }))
+
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('un error del servidor (nombre duplicado) se muestra sin cerrar el modal', async () => {
+    const mutateAsync = vi.fn().mockRejectedValue(new Error('Ya existe una categoría con ese nombre'))
+    vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByTitle('Renombrar categoría'))
+    await user.clear(screen.getByLabelText(/Nuevo nombre/i))
+    await user.type(screen.getByLabelText(/Nuevo nombre/i), 'Hidrología')
+    await user.click(screen.getByRole('button', { name: /^Renombrar$/i }))
+
+    expect(await screen.findByText('Ya existe una categoría con ese nombre')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Nuevo nombre/i)).toBeInTheDocument()
+  })
+
+  test('cancelar no llama a la mutación de renombrado', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByTitle('Renombrar categoría'))
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(mutateAsync).not.toHaveBeenCalled()
+    expect(screen.queryByLabelText(/Nuevo nombre/i)).not.toBeInTheDocument()
   })
 })
 
