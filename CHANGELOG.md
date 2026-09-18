@@ -6,6 +6,20 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.2.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.1.0...v1.2.0) (2026-09-18)
+
+
+### Features
+
+* deltas reales en las tarjetas KPI del dashboard admin ([2322592](https://github.com/JanuarAsprilla/VIGIIAP/commit/23225925ef07ae599ad488a48cc11ef410f08d74))
+
+
+### Bug Fixes
+
+* logout redundante, caché de admins desactualizada, footer en modo oscuro ([764ba3e](https://github.com/JanuarAsprilla/VIGIIAP/commit/764ba3e68b8da7f3e020854baf16a0dc049049c9))
+* quitar tarjeta de usuario redundante en AdminSidebar ([f1f7d46](https://github.com/JanuarAsprilla/VIGIIAP/commit/f1f7d466a0248337ef66eea7605d6b24e3edb8c0))
+* three production bugs from user report (redundant logout, stale admin cache, footer dark mode) ([884e976](https://github.com/JanuarAsprilla/VIGIIAP/commit/884e9766260a8f366a0c265daa7e36a3d36ad12d))
+
 ## [1.1.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.0.0...v1.1.0) (2026-09-18)
 
 
