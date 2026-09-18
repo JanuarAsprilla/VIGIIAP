@@ -5,7 +5,7 @@
  */
 import type { AuthUser } from '@/contexts/AuthContext'
 import { NavLink, Link } from 'react-router-dom'
-import { LogOut, X, Lock, Shield, ChevronRight, type LucideIcon } from 'lucide-react'
+import { X, Lock, Shield, ChevronRight, type LucideIcon } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -109,9 +109,8 @@ function SidebarLink({ link, onClose }: {
 // redundante.
 
 // ── Contenido del sidebar ─────────────────────────────────────────────────────
-function SidebarInner({ onClose, onLogout, user, isAuthenticated }: {
+function SidebarInner({ onClose, user, isAuthenticated }: {
   onClose: () => void
-  onLogout: () => void
   user: AuthUser | null
   isAuthenticated: boolean
 }) {
@@ -288,20 +287,10 @@ function SidebarInner({ onClose, onLogout, user, isAuthenticated }: {
                 </Link>
               )}
 
-              {/* Cerrar sesión */}
-              <motion.button
-                onClick={onLogout}
-                whileHover={{ x: 3 }}
-                whileTap={{ x: 0 }}
-                transition={{ type: 'spring', stiffness: 400 }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors"
-                style={{ color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.16)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.32)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.18)' }}
-              >
-                <LogOut className="w-[16px] h-[16px] shrink-0" aria-hidden="true" />
-                <span>Cerrar Sesión</span>
-              </motion.button>
+              {/* Nota: "Cerrar Sesión" se retiró de aquí — el avatar del TopBar
+                  (ProfileDropdown) sigue visible y accesible en todos los
+                  breakpoints, incluido móvil, así que repetirlo en el sidebar
+                  era redundante. */}
             </motion.div>
           )}
         </AnimatePresence>
@@ -329,17 +318,11 @@ function SidebarGrain() {
 
 // ── Export principal ──────────────────────────────────────────────────────────
 export default function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
-  const { isAuthenticated, user, logout } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const prefersReducedMotion = useReducedMotion()
-
-  const handleLogout = () => {
-    logout()
-    onClose?.()
-  }
 
   const innerProps = {
     onClose,
-    onLogout: handleLogout,
     user,
     isAuthenticated,
   }

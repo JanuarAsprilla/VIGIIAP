@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
 import { ROLES } from '@/lib/constants/roles'
@@ -68,6 +68,19 @@ export const USUARIOS_KEYS = {
   list: (params: Record<string, unknown>) => ['usuarios', 'list', params],
 }
 
+// GestionAdmins.tsx (panel de Administradores, exclusivo super_admin) mantiene
+// su propia caché con estas claves — separada de USUARIOS_KEYS porque viene de
+// un endpoint distinto (/admin/administradores, /admin/super/stats). Cualquier
+// mutación que pueda mover a alguien dentro o fuera de ese rol (crear con
+// rol admin_sig, cambiar rol, activar/desactivar, eliminar) debe invalidar
+// también esta caché — si no, el admin recién promovido/degradado solo
+// aparece después de un refresh manual.
+function invalidateUsuariosYAdmins(qc: QueryClient) {
+  qc.invalidateQueries({ queryKey: USUARIOS_KEYS.all })
+  qc.invalidateQueries({ queryKey: ['administradores'] })
+  qc.invalidateQueries({ queryKey: ['super-stats'] })
+}
+
 // ─── Queries ──────────────────────────────────────────────────────────────────
 export function useUsuariosList(params: Record<string, unknown> = {}) {
   return useQuery<UsuarioListResult>({
@@ -92,7 +105,7 @@ export function useCreateUsuario() {
         institucion: institucion ?? undefined,
         tipoAcceso:  'institucional',
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: USUARIOS_KEYS.all }),
+    onSuccess: () => invalidateUsuariosYAdmins(qc),
   })
 }
 
@@ -103,7 +116,7 @@ export function useUpdateUsuarioRol() {
       api.patch(`/admin/usuarios/${id}`, {
         rol: ROLE_MAP_REVERSE[rol] ?? rol,
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: USUARIOS_KEYS.all }),
+    onSuccess: () => invalidateUsuariosYAdmins(qc),
   })
 }
 
@@ -113,7 +126,7 @@ export function useToggleActivo() {
   return useMutation<unknown, Error, { id: string; activo: boolean }>({
     mutationFn: ({ id, activo }) =>
       api.patch(`/admin/usuarios/${id}`, { activo }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: USUARIOS_KEYS.all }),
+    onSuccess: () => invalidateUsuariosYAdmins(qc),
   })
 }
 
@@ -121,7 +134,7 @@ export function useDeleteUsuario() {
   const qc = useQueryClient()
   return useMutation<unknown, Error, string>({
     mutationFn: (id) => api.delete(`/admin/usuarios/${id}`),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: USUARIOS_KEYS.all }),
+    onSuccess:  () => invalidateUsuariosYAdmins(qc),
   })
 }
 
