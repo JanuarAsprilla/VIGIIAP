@@ -17,6 +17,7 @@ import Card3D from '@/components/ui/Card3D'
 import api from '@/lib/api'
 import { MODULOS_CATALOGO, type ModuloClave, type PermisoModulo } from '@/lib/constants/modulos'
 import { useToast, ToastContainer } from '@/components/Toast'
+import { USUARIOS_KEYS } from '@/hooks/useUsuarios'
 
 // ── API helpers ───────────────────────────────────────────────────────────────
 const fetchSuperStats  = () => api.get('/admin/super/stats')
@@ -389,9 +390,14 @@ export default function GestionAdmins() {
     select: (d: AdminUsersApiRes) => d?.data ?? [],
   })
 
+  // Espejo de invalidateUsuariosYAdmins() en useUsuarios.ts — desde este panel
+  // un admin puede quedar desactivado o eliminado, así que la lista de
+  // Usuarios (que sí muestra admins inactivos) debe refrescarse también, no
+  // solo esta caché local.
   const invalidateAdmins = () => {
     queryClient.invalidateQueries({ queryKey: ['super-stats'] })
     queryClient.invalidateQueries({ queryKey: ['administradores'] })
+    queryClient.invalidateQueries({ queryKey: USUARIOS_KEYS.all })
   }
 
   const toggleMutation = useMutation({

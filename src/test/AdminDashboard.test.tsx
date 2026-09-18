@@ -27,8 +27,8 @@ vi.mock('@/components/ui/Card3D', () => ({
 const authMock = { user: { name: 'Ana Restrepo' } }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 
-vi.mock('@/hooks/useStats', () => ({ useAdminStats: vi.fn() }))
-import { useAdminStats } from '@/hooks/useStats'
+vi.mock('@/hooks/useStats', () => ({ useAdminStats: vi.fn(), useDashboardTendencias: vi.fn() }))
+import { useAdminStats, useDashboardTendencias } from '@/hooks/useStats'
 
 vi.mock('@/hooks/useSolicitudes', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/hooks/useSolicitudes')>()
@@ -38,9 +38,6 @@ import { useSolicitudesAdmin, useUpdateEstadoSolicitud } from '@/hooks/useSolici
 
 vi.mock('@/hooks/useUsuarios', () => ({ useUsuariosList: vi.fn() }))
 import { useUsuariosList } from '@/hooks/useUsuarios'
-
-vi.mock('@/hooks/useMapas', () => ({ useMapasList: vi.fn() }))
-import { useMapasList } from '@/hooks/useMapas'
 
 vi.mock('@/hooks/useAuditLog', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/hooks/useAuditLog')>()
@@ -69,9 +66,18 @@ function renderPage() {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(useAdminStats).mockReturnValue({
-    data: { usuarios: 50, solicitudesPendientes: 3, documentos: 20, visitantesUltimos30d: 10 },
+    data: { usuarios: 50, solicitudesPendientes: 3, documentos: 20, mapasPublicados: 12, visitantesUltimos30d: 10 },
     isLoading: false,
   } as unknown as ReturnType<typeof useAdminStats>)
+  vi.mocked(useDashboardTendencias).mockReturnValue({
+    data: {
+      usuarios:    { serie7: [1,2,1,3,2,4,5], semanaActual: 18, semanaAnterior: 12, deltaPct: 50 },
+      solicitudes: { serie7: [0,1,0,1,1,0,1], semanaActual: 4,  semanaAnterior: 6,  deltaPct: -33 },
+      documentos:  { serie7: [0,0,1,0,0,1,0], semanaActual: 2,  semanaAnterior: 2,  deltaPct: 0 },
+      mapas:       { serie7: [0,0,0,0,0,0,1], semanaActual: 1,  semanaAnterior: 0,  deltaPct: 100 },
+    },
+    isLoading: false,
+  } as unknown as ReturnType<typeof useDashboardTendencias>)
   vi.mocked(useSolicitudesAdmin).mockReturnValue({
     data: { data: [] },
   } as unknown as ReturnType<typeof useSolicitudesAdmin>)
@@ -81,9 +87,6 @@ beforeEach(() => {
   vi.mocked(useUsuariosList).mockReturnValue({
     data: { data: [] },
   } as unknown as ReturnType<typeof useUsuariosList>)
-  vi.mocked(useMapasList).mockReturnValue({
-    data: { meta: { total: 12 } }, isLoading: false,
-  } as unknown as ReturnType<typeof useMapasList>)
   vi.mocked(useAuditLog).mockReturnValue({
     data: { data: [] }, isLoading: false, isError: false, refetch: vi.fn(),
   } as unknown as ReturnType<typeof useAuditLog>)
@@ -111,6 +114,35 @@ describe('Dashboard — KPIs', () => {
     renderPage()
     expect(await screen.findByText('50')).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
+    expect(screen.getByText('12')).toBeInTheDocument()
+  })
+
+  test('muestra el delta real de tendencias, no una flecha fija', async () => {
+    renderPage()
+    expect(await screen.findByText('+50%')).toBeInTheDocument()
+    expect(screen.getByText('-33%')).toBeInTheDocument()
+    expect(screen.getByText('Sin cambios')).toBeInTheDocument()
+    expect(screen.getByText('+100%')).toBeInTheDocument()
+  })
+
+  test('muestra la cifra de flujo semanal junto al valor total', async () => {
+    renderPage()
+    // El "18" vive en un <span> anidado dentro del texto "18 nuevos esta semana" —
+    // se compara el textContent completo del contenedor en vez del nodo de texto suelto.
+    const isFlowCaption = (text: string) => (_: string, el: Element | null) =>
+      el?.tagName === 'SPAN' && el.textContent === text
+    expect(await screen.findByText(isFlowCaption('18 nuevos esta semana'))).toBeInTheDocument()
+    expect(screen.getByText(isFlowCaption('4 nuevas esta semana'))).toBeInTheDocument()
+    expect(screen.getAllByText(/publicados esta semana/).length).toBe(2)
+  })
+
+  test('mientras cargan las tendencias, muestra un esqueleto en vez de datos a medias', async () => {
+    vi.mocked(useDashboardTendencias).mockReturnValue({
+      data: undefined, isLoading: true,
+    } as unknown as ReturnType<typeof useDashboardTendencias>)
+    renderPage()
+    expect(await screen.findByText('50')).toBeInTheDocument()
+    expect(screen.queryByText(/esta semana/)).not.toBeInTheDocument()
   })
 })
 

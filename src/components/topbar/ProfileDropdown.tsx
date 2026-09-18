@@ -130,7 +130,7 @@ export default function ProfileDropdown({ user, onClose, onLogout }: { user: Aut
           </ul>
         )}
 
-        <div className="border-t border-border py-1">
+        <div className="border-t border-border pt-1 pb-2">
           <EmphasisItem icon={LogOut} label="Cerrar Sesión" onClick={onLogout} />
         </div>
       </nav>
