@@ -50,6 +50,8 @@ function ConexionCard({ conexion, canWrite, onEdit, onDelete }: {
   return (
     <motion.div
       variants={staggerItem}
+      initial="initial"
+      animate="animate"
       layout
       className="bg-[var(--card-bg)] border border-border/70 rounded-2xl p-5 flex flex-col gap-3"
     >

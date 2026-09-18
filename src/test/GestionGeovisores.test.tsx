@@ -60,7 +60,7 @@ beforeEach(() => {
     data: [makeConexion()],
   } as unknown as ReturnType<typeof useConexionesGeoserverList>)
   vi.mocked(useWorkspacesDeConexion).mockReturnValue({
-    data: [{ id: 't_15_geologia', nombre: 'Geologia', totalCapas: 3 }], isFetching: false,
+    data: [{ id: 't_15_geologia', nombre: 'Geologia', totalCapas: 3, capas: [{ id: 't_15_geologia:fallas', nombre: 'Fallas', tipo: 'vectorial' }] }], isFetching: false,
   } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
   vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
   vi.mocked(useUpdateGeovisor).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUpdateGeovisor>)
@@ -158,7 +158,8 @@ describe('GestionGeovisores — formulario de creación', () => {
     await user.click(screen.getByRole('button', { name: /Nuevo geovisor/i }))
     await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'conexion-1')
-    await user.click(screen.getByLabelText(/Mostrar imágenes/i))
+    await user.click(screen.getByRole('button', { name: /Visibilidad y presentación/i }))
+    await user.click(screen.getByRole('switch', { name: 'Mostrar imágenes en el popup' }))
     await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
 
     expect(await screen.findByText('Indica qué atributo trae la URL de la imagen')).toBeInTheDocument()
