@@ -1,20 +1,30 @@
+import { type RefObject } from 'react'
 import { motion } from 'framer-motion'
 import { X, type LucideIcon } from 'lucide-react'
+import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 
 /**
  * Panel centrado con scrim de fondo — mismo material Liquid Glass que
  * LoginPanel (ver src/components/topbar/LoginPanel.tsx), pero centrado en
- * pantalla en vez de anclado bajo un botón del TopBar, porque estos dos no
- * se disparan desde un trigger fijo: se abren desde enlaces dentro del
- * propio panel de login, o desde una URL directa (/recuperar-password,
- * /solicitar-acceso) que redirige aquí con el modal ya elegido.
+ * pantalla en vez de anclado bajo un botón del TopBar. Lo usan WelcomePanel,
+ * RecuperarPasswordPanel y SolicitarAccesoPanel — LoginPanel se queda
+ * anclado bajo "Ingresar" a propósito, no todo panel de auth va centrado.
+ *
+ * Bloquea el scroll del body mientras está montado — sin esto, la rueda del
+ * mouse mueve el home de fondo en vez del contenido de este panel.
  */
-export default function CenteredAuthPanel({ title, icon: Icon, onClose, children }: {
+export default function CenteredAuthPanel({ title, icon: Icon, onClose, children, boxRef }: {
   title: string
   icon: LucideIcon
   onClose: () => void
   children: React.ReactNode
+  // Para el detector de "clic afuera cierra el panel" de quien lo monte (ver
+  // TopBar.tsx) — sin esto, un clic dentro de la tarjeta (que vive fuera de
+  // panelRef/dropdownRef) se contaría como "afuera" y cerraría el panel.
+  boxRef?: RefObject<HTMLDivElement | null>
 }) {
+  useLockBodyScroll()
+
   return (
     <>
       <motion.div
@@ -26,6 +36,7 @@ export default function CenteredAuthPanel({ title, icon: Icon, onClose, children
       />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <motion.div
+          ref={boxRef}
           initial={{ opacity: 0, scale: 0.96, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 10 }}
