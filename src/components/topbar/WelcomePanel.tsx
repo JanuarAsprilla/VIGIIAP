@@ -1,8 +1,10 @@
 /**
  * Panel de bienvenida — centrado en pantalla (ver CenteredAuthPanel), no
  * anclado bajo el botón "Ingresar" como LoginPanel: es el primer contacto
- * con el sitio, bloquea el flujo por completo, así que vive como un modal
- * de verdad en el centro, no como un popover colgado de un botón.
+ * con el sitio, así que vive como un modal centrado, no como un popover
+ * colgado de un botón. No bloqueante (`blocking={false}`): el fondo sigue
+ * visible y con scroll — requisito de verificación de marca OAuth de
+ * Google, que exige poder ver la página principal sin interactuar primero.
  *
  * Separado de LoginPanel a propósito: son dos cosas distintas, no un paso
  * interno de un mismo panel. Este explica brevemente las dos formas de
@@ -44,7 +46,7 @@ export default function WelcomePanel({ onClose, onIniciarSesion, onSolicitar, bo
 
   return (
     <Portal>
-      <CenteredAuthPanel title="Bienvenido a VIGIA-IIAP" icon={User} onClose={onClose} boxRef={boxRef}>
+      <CenteredAuthPanel title="Bienvenido a VIGIA-IIAP" icon={User} onClose={onClose} boxRef={boxRef} blocking={false}>
         <p className="text-sm text-text-muted leading-relaxed mb-5">
           Consulte información pública como <strong className="text-text">visitante</strong>, sin registro,
           o inicie sesión con su cuenta <strong className="text-text">institucional</strong> para acceder al
