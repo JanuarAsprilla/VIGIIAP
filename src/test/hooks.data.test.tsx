@@ -352,6 +352,32 @@ describe('useCatalogue', () => {
     const modulos = result.current.filter((e) => e.group === 'Módulos')
     expect(modulos.length).toBeGreaterThan(0)
   })
+
+  test('enabled=false no dispara las consultas de contenido (mapas/documentos/geovisores)', () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [], meta: { total: 0 } })
+
+    renderHook(() => useCatalogue(false), { wrapper: makeWrapper() })
+
+    expect(api.get).not.toHaveBeenCalledWith('/mapas', expect.anything())
+    expect(api.get).not.toHaveBeenCalledWith('/documentos', expect.anything())
+    expect(api.get).not.toHaveBeenCalledWith('/geovisores', expect.anything())
+  })
+
+  test('enabled=true incluye mapas, documentos y geovisores reales como entradas del catálogo', async () => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/mapas') return Promise.resolve({ data: [{ id: 'm1', titulo: 'Mapa X', categoria: 'Fauna', descripcion: null }], meta: { total: 1 } })
+      if (url === '/documentos') return Promise.resolve({ data: [{ id: 'd1', titulo: 'Doc X', tipo: 'informe', categoria: null, resumen: null }], meta: { total: 1 } })
+      if (url === '/geovisores') return Promise.resolve({ data: [{ id: 'g1', slug: 'geo-x', titulo: 'Geovisor X', subtitulo: null, categoria: null, descripcion: null }], meta: { total: 1 } })
+      return Promise.resolve({ data: [], meta: { total: 0 } })
+    })
+
+    const { result } = renderHook(() => useCatalogue(true), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.some((e) => e.group === 'Mapas')).toBe(true))
+
+    expect(result.current.find((e) => e.group === 'Mapas')).toMatchObject({ label: 'Mapa X', to: '/mapas', presetQuery: 'Mapa X' })
+    expect(result.current.find((e) => e.group === 'Documentos')).toMatchObject({ label: 'Doc X', to: '/documentos', presetQuery: 'Doc X' })
+    expect(result.current.find((e) => e.group === 'Geovisores')).toMatchObject({ label: 'Geovisor X', to: '/geovisores/geo-x' })
+  })
 })
 
 // ─── useGeovisoresList ─────────────────────────────────────────────────────────

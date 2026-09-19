@@ -4,6 +4,20 @@ import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import CommandPalette from '@/components/CommandPalette'
+import type { useGlobalSearchContent } from '@/hooks/useGlobalSearchContent'
+import type { GeovisorRaw } from '@/types'
+
+function makeGeovisor(overrides: Partial<GeovisorRaw>): GeovisorRaw {
+  return {
+    id: 'g1', slug: 'geovisor', titulo: 'Geovisor', subtitulo: null, descripcion: null,
+    cita: null, categoria: null, conexionGeoserverId: 'c1', workspacesGeoserver: [],
+    capasSeleccionadas: [], colorPorTema: {}, centro: { lat: 0, lng: 0 }, zoomInicial: 8,
+    basemapDefecto: 'calles', areaMaxHa: null, presetsArea: [],
+    visibilidad: 'publico', presentacion: { mostrarMetricas: true, mostrarImagenes: false, camposPopup: [] },
+    thumbnailUrl: null, activo: true, orden: 0, creadoEn: '2026-01-01',
+    ...overrides,
+  }
+}
 
 vi.mock('framer-motion', () => {
   const cache = new Map<string, (p: Record<string, unknown>) => ReactNode>()
@@ -24,6 +38,16 @@ vi.mock('@/contexts/UIContext', () => ({ useUI: () => uiMock }))
 const authMock = { isAuthenticated: false }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 
+const setPageQuerySpy = vi.fn()
+vi.mock('@/contexts/SearchContext', () => ({ useSearch: () => ({ query: '', setQuery: setPageQuerySpy }) }))
+
+const { globalSearchContentMock } = vi.hoisted(() => ({
+  globalSearchContentMock: vi.fn<() => ReturnType<typeof useGlobalSearchContent>>(
+    () => ({ mapas: [], documentos: [], geovisores: [] })
+  ),
+}))
+vi.mock('@/hooks/useGlobalSearchContent', () => ({ useGlobalSearchContent: globalSearchContentMock }))
+
 const navigateSpy = vi.fn()
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router-dom')>()
@@ -38,6 +62,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   uiMock.paletteOpen = true
   authMock.isAuthenticated = false
+  globalSearchContentMock.mockReturnValue({ mapas: [], documentos: [], geovisores: [] })
   Element.prototype.scrollIntoView = vi.fn()
 })
 
@@ -149,5 +174,57 @@ describe('CommandPalette — teclado', () => {
     renderPalette()
     await user.click(screen.getByText('Documentos'))
     expect(navigateSpy).toHaveBeenCalledWith('/documentos')
+  })
+})
+
+describe('CommandPalette — búsqueda de contenido real', () => {
+  test('incluye mapas, documentos y geovisores reales, no solo módulos', () => {
+    globalSearchContentMock.mockReturnValue({
+      mapas:      [{ id: 'm1', titulo: 'Cobertura Boscosa Chocó', categoria: 'Ambiental', descripcion: null }],
+      documentos: [{ id: 'd1', titulo: 'Plan de Manejo 2025', tipo: 'informe', categoria: null, resumen: null }],
+      geovisores: [makeGeovisor({ id: 'g1', slug: 'hidrografia', titulo: 'Hidrografía del Chocó' })],
+    })
+    renderPalette()
+    expect(screen.getByText('Cobertura Boscosa Chocó')).toBeInTheDocument()
+    expect(screen.getByText('Plan de Manejo 2025')).toBeInTheDocument()
+    expect(screen.getByText('Hidrografía del Chocó')).toBeInTheDocument()
+  })
+
+  test('tolera errores de tipeo leves en el título de un resultado real', async () => {
+    globalSearchContentMock.mockReturnValue({
+      mapas:      [{ id: 'm1', titulo: 'Cobertura Boscosa Choco', categoria: 'Ambiental', descripcion: null }],
+      documentos: [],
+      geovisores: [],
+    })
+    const user = userEvent.setup()
+    renderPalette()
+    // "Boscosaa" con una letra de más — Levenshtein 1, dentro de tolerancia
+    await user.type(screen.getByRole('combobox'), 'Boscosaa')
+    expect(screen.getByText('Cobertura Boscosa Choco')).toBeInTheDocument()
+  })
+
+  test('seleccionar un mapa precarga el título en SearchContext y navega a /mapas', async () => {
+    globalSearchContentMock.mockReturnValue({
+      mapas:      [{ id: 'm1', titulo: 'Cobertura Boscosa Chocó', categoria: 'Ambiental', descripcion: null }],
+      documentos: [],
+      geovisores: [],
+    })
+    const user = userEvent.setup()
+    renderPalette()
+    await user.click(screen.getByText('Cobertura Boscosa Chocó'))
+    expect(setPageQuerySpy).toHaveBeenCalledWith('Cobertura Boscosa Chocó')
+    expect(navigateSpy).toHaveBeenCalledWith('/mapas')
+  })
+
+  test('seleccionar un geovisor navega directo a su ruta de detalle, sin precargar SearchContext', async () => {
+    globalSearchContentMock.mockReturnValue({
+      mapas: [], documentos: [],
+      geovisores: [makeGeovisor({ id: 'g1', slug: 'hidrografia', titulo: 'Hidrografía del Chocó' })],
+    })
+    const user = userEvent.setup()
+    renderPalette()
+    await user.click(screen.getByText('Hidrografía del Chocó'))
+    expect(navigateSpy).toHaveBeenCalledWith('/geovisores/hidrografia')
+    expect(setPageQuerySpy).not.toHaveBeenCalled()
   })
 })

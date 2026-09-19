@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { NAV_LINKS } from '@/lib/constants'
+import { useGlobalSearchContent } from '@/hooks/useGlobalSearchContent'
 import type { CatalogueEntry } from '@/types'
 
 // Mapa estático icono por path — evita acoplamiento a la estructura de NAV_LINKS
@@ -100,15 +101,60 @@ function buildActionEntries(isAuthenticated: boolean): CatalogueEntry[] {
   return entries
 }
 
-export function useCatalogue() {
-  const { isAuthenticated } = useAuth()
+function buildMapaEntries(mapas: ReturnType<typeof useGlobalSearchContent>['mapas']): CatalogueEntry[] {
+  return mapas.map((m) => ({
+    id:          `mapa-${m.id}`,
+    group:       'Mapas',
+    label:       m.titulo,
+    keywords:    [m.titulo, m.categoria, m.descripcion].filter(Boolean).join(' '),
+    icon:        MapIcon,
+    to:          '/mapas',
+    meta:        m.categoria,
+    presetQuery: m.titulo,
+  }))
+}
 
+function buildDocumentoEntries(documentos: ReturnType<typeof useGlobalSearchContent>['documentos']): CatalogueEntry[] {
+  return documentos.map((d) => ({
+    id:          `documento-${d.id}`,
+    group:       'Documentos',
+    label:       d.titulo,
+    keywords:    [d.titulo, d.categoria ?? d.tipo, d.resumen].filter(Boolean).join(' '),
+    icon:        FileText,
+    to:          '/documentos',
+    meta:        d.categoria ?? d.tipo,
+    presetQuery: d.titulo,
+  }))
+}
+
+function buildGeovisorEntries(geovisores: ReturnType<typeof useGlobalSearchContent>['geovisores']): CatalogueEntry[] {
+  return geovisores.map((g) => ({
+    id:       `geovisor-${g.id}`,
+    group:    'Geovisores',
+    label:    g.titulo,
+    keywords: [g.titulo, g.subtitulo, g.categoria, g.descripcion].filter(Boolean).join(' '),
+    icon:     Globe,
+    to:       `/geovisores/${g.slug}`,
+    meta:     g.categoria ?? undefined,
+  }))
+}
+
+/**
+ * @param enabled  Difiere las 3 consultas de contenido (mapas/documentos/
+ *   geovisores) hasta que el Command Palette se abra por primera vez.
+ */
+export function useCatalogue(enabled = false) {
+  const { isAuthenticated } = useAuth()
+  const { mapas, documentos, geovisores } = useGlobalSearchContent(enabled)
 
   return useMemo(
     () => [
       ...buildModuleEntries(),
+      ...buildMapaEntries(mapas),
+      ...buildDocumentoEntries(documentos),
+      ...buildGeovisorEntries(geovisores),
       ...buildActionEntries(isAuthenticated),
     ],
-    [isAuthenticated],
+    [isAuthenticated, mapas, documentos, geovisores],
   )
 }
