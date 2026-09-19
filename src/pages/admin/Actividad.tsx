@@ -11,7 +11,7 @@ const fadeUp = fadeUpSm
 
 const PAGE_SIZE = 10
 
-const MODULOS_OPCIONES = ['auth', 'usuarios', 'admin', 'solicitudes', 'mapas', 'documentos']
+const MODULOS_OPCIONES = ['auth', 'usuarios', 'admin', 'solicitudes', 'mapas', 'documentos', 'sistema']
 
 export default function Actividad() {
   const [search, setSearch] = useState('')
