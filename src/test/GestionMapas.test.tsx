@@ -38,8 +38,9 @@ import {
 } from '@/hooks/useMapas'
 
 vi.mock('@/hooks/useCategorias', () => ({
-  useCategoriasList: () => ({ data: [] }),
+  useCategoriasList: vi.fn(() => ({ data: [] })),
 }))
+import { useCategoriasList } from '@/hooks/useCategorias'
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -95,7 +96,7 @@ describe('GestionMapas — validación del formulario', () => {
     await user.click(screen.getByRole('button', { name: /Registrar mapa/i }))
 
     expect(await screen.findByText('El nombre del mapa es obligatorio')).toBeInTheDocument()
-    expect(screen.getByText('Selecciona o escribe una temática')).toBeInTheDocument()
+    expect(screen.getByText('Selecciona o escribe una categoría')).toBeInTheDocument()
     expect(screen.getByText('Debes seleccionar el archivo del mapa para continuar')).toBeInTheDocument()
   })
 
@@ -131,7 +132,7 @@ describe('GestionMapas — validación del formulario', () => {
     const user = await openCreateModal()
     await user.click(screen.getByRole('button', { name: 'Geovisor' }))
     await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa geovisor de prueba')
-    await user.type(screen.getByPlaceholderText('Selecciona o crea una temática…'), 'Cartografía')
+    await user.type(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'), 'Cartografía')
     await user.type(screen.getByLabelText(/URL del Geovisor/i), 'https://geovisor.iiap.org.co/mapa')
     await user.click(screen.getByRole('button', { name: /Registrar mapa/i }))
 
@@ -147,7 +148,7 @@ describe('GestionMapas — validación del formulario', () => {
     const user = await openCreateModal()
     await user.click(screen.getByRole('button', { name: 'Geovisor' }))
     await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa geovisor de prueba')
-    await user.type(screen.getByPlaceholderText('Selecciona o crea una temática…'), 'Cartografía')
+    await user.type(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'), 'Cartografía')
     await user.type(screen.getByLabelText(/URL del Geovisor/i), 'https://geovisor.iiap.org.co/mapa')
     await user.clear(screen.getByLabelText('Año'))
     await user.type(screen.getByLabelText('Año'), '1500')
@@ -167,6 +168,26 @@ describe('GestionMapas — guarda de doble envío', () => {
 
     expect(screen.getByRole('button', { name: /Cancelar/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /Registrando…/i })).toBeDisabled()
+  })
+})
+
+// Regresión: antes se ofrecían TODAS las categorías del sistema, aunque
+// solo las usara Documentos o Geovisores -- ahora solo se sugieren las que
+// ya tienen al menos un mapa (ver conteo por módulo, categorias.service.js).
+describe('GestionMapas — categoría por módulo', () => {
+  test('no sugiere una categoría usada solo por otro módulo (Documentos/Geovisores)', async () => {
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [
+        { nombre: 'Solo en Documentos', conteo: { docs: 2, mapas: 0, geovisores: 0 } },
+        { nombre: 'Zonificación Costera', conteo: { docs: 0, mapas: 3, geovisores: 0 } },
+      ],
+    } as unknown as ReturnType<typeof useCategoriasList>)
+
+    const user = await openCreateModal()
+    await user.click(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'))
+
+    expect(screen.getByText('Zonificación Costera')).toBeInTheDocument()
+    expect(screen.queryByText('Solo en Documentos')).not.toBeInTheDocument()
   })
 })
 
@@ -417,7 +438,7 @@ describe('GestionMapas — creación con datos válidos', () => {
     const file = new File(['contenido'], 'mapa.pdf', { type: 'application/pdf' })
     await user.upload(getFileInput(container), file)
     await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa de riesgo')
-    await user.type(screen.getByPlaceholderText('Selecciona o crea una temática…'), 'Riesgo')
+    await user.type(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'), 'Riesgo')
     await user.click(screen.getByRole('button', { name: /^Registrar mapa$/i }))
 
     expect(mutateAsync).toHaveBeenCalledTimes(1)

@@ -28,8 +28,9 @@ import {
 } from '@/hooks/useDocumentos'
 
 vi.mock('@/hooks/useCategorias', () => ({
-  useCategoriasList: () => ({ data: [] }),
+  useCategoriasList: vi.fn(() => ({ data: [] })),
 }))
+import { useCategoriasList } from '@/hooks/useCategorias'
 
 function makeDoc(overrides: Partial<DocumentoData> = {}): DocumentoData {
   return {
@@ -177,6 +178,27 @@ describe('GestionDocumentos — categoría', () => {
     await user.click(screen.getByText('Cartografía'))
 
     expect(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…')).toHaveValue('Cartografía')
+  })
+
+  // Regresión: antes se ofrecían TODAS las categorías del sistema, aunque
+  // solo las usara Mapas o Geovisores -- ahora solo se sugieren las que ya
+  // tienen al menos un documento (ver conteo por módulo, categorias.service.js).
+  test('no sugiere una categoría usada solo por otro módulo (Mapas/Geovisores)', async () => {
+    // mockReturnValue (no ...Once): el componente vuelve a llamar al hook al
+    // re-renderizar cuando se abre el modal -- un valor "once" ya estaría
+    // consumido para ese momento.
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [
+        { nombre: 'Solo en Mapas', conteo: { docs: 0, mapas: 3, geovisores: 0 } },
+        { nombre: 'Sensores Remotos', conteo: { docs: 2, mapas: 0, geovisores: 0 } },
+      ],
+    } as unknown as ReturnType<typeof useCategoriasList>)
+
+    const user = await openCreateModal()
+    await user.click(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'))
+
+    expect(screen.getByText('Sensores Remotos')).toBeInTheDocument()
+    expect(screen.queryByText('Solo en Mapas')).not.toBeInTheDocument()
   })
 })
 

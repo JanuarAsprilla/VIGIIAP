@@ -32,9 +32,10 @@ vi.mock('@/hooks/useGeovisores', () => ({
 import { useCreateGeovisor, useUpdateGeovisor, useUploadGeovisorThumbnail } from '@/hooks/useGeovisores'
 
 vi.mock('@/hooks/useCategorias', () => ({
-  useCategoriasList: () => ({ data: [] }),
+  useCategoriasList: vi.fn(() => ({ data: [] })),
   useCreateCategoria: () => ({ mutateAsync: vi.fn() }),
 }))
+import { useCategoriasList } from '@/hooks/useCategorias'
 
 // El mapa en vivo (react-leaflet real) se prueba aparte en GeovisorMapaConstructor.test.tsx --
 // acá se reemplaza por botones de prueba que disparan los mismos callbacks que dispararía el
@@ -521,6 +522,27 @@ describe('GeovisorFormModal — miniatura (ThumbnailDropzone)', () => {
     await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
 
     expect(uploadMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ id: 'editado-id', file }))
+  })
+})
+
+// Regresión: antes se ofrecían TODAS las categorías del sistema, aunque
+// solo las usara Documentos o Mapas -- ahora solo se sugieren las que ya
+// tienen al menos un geovisor (ver conteo por módulo, categorias.service.js).
+describe('GeovisorFormModal — categoría por módulo', () => {
+  test('no sugiere una categoría usada solo por otro módulo (Documentos/Mapas)', async () => {
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [
+        { nombre: 'Solo en Documentos', conteo: { docs: 2, mapas: 0, geovisores: 0 } },
+        { nombre: 'Hidrografía Regional', conteo: { docs: 0, mapas: 0, geovisores: 1 } },
+      ],
+    } as unknown as ReturnType<typeof useCategoriasList>)
+
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.click(screen.getByLabelText('Categoría'))
+
+    expect(screen.getByText('Hidrografía Regional')).toBeInTheDocument()
+    expect(screen.queryByText('Solo en Documentos')).not.toBeInTheDocument()
   })
 })
 

@@ -4,13 +4,18 @@ import api from '@/lib/api'
 
 const KEYS = {
   all:  ['categorias'],
-  list: () => ['categorias', 'list'],
+  list: (params: Record<string, unknown> = {}) => ['categorias', 'list', params],
 }
 
-export function useCategoriasList() {
+/**
+ * @param params  `{ admin: 'true' }` desde un admin_sig/super_admin autenticado
+ *   trae el conteo por módulo completo (activo o no, cualquier visibilidad) --
+ *   ver categorias.service.js. Sin esto, el conteo solo cuenta lo público/activo.
+ */
+export function useCategoriasList(params: Record<string, unknown> = {}) {
   return useQuery<Categoria[]>({
-    queryKey: KEYS.list(),
-    queryFn:  () => api.get('/categorias'),
+    queryKey: KEYS.list(params),
+    queryFn:  () => api.get('/categorias', { params }),
     select:   (res: Categoria[] | { data?: Categoria[] }) =>
       Array.isArray(res) ? res : (res.data ?? []),
     staleTime: 5 * 60 * 1000,

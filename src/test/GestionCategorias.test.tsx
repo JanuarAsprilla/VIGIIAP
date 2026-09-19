@@ -33,17 +33,15 @@ import {
   useCategoriasList, useCreateCategoria, useUploadCategoriaThumbnail, useRenameCategoria, useDeleteCategoria,
 } from '@/hooks/useCategorias'
 
-vi.mock('@/hooks/useDocumentos', () => ({ useDocumentosList: vi.fn() }))
-import { useDocumentosList } from '@/hooks/useDocumentos'
-
-vi.mock('@/hooks/useMapas', () => ({ useMapasList: vi.fn() }))
-import { useMapasList } from '@/hooks/useMapas'
-
-vi.mock('@/hooks/useGeovisores', () => ({ useGeovisoresList: vi.fn() }))
-import { useGeovisoresList } from '@/hooks/useGeovisores'
-
+// El conteo por módulo ahora lo calcula el servidor (ver categorias.service.js)
+// y viaja en el propio GET /categorias -- ya no hace falta mockear
+// useDocumentosList/useMapasList/useGeovisoresList en esta página.
 function makeCategoria(overrides: Record<string, unknown> = {}) {
-  return { nombre: 'Protocolos', descripcion: '', thumbnail_url: null, activo: true, ...overrides }
+  return {
+    nombre: 'Protocolos', descripcion: '', thumbnail_url: null, activo: true,
+    conteo: { docs: 0, mapas: 0, geovisores: 0 },
+    ...overrides,
+  }
 }
 
 beforeEach(() => {
@@ -53,15 +51,6 @@ beforeEach(() => {
   vi.mocked(useCategoriasList).mockReturnValue({
     data: [makeCategoria()], isLoading: false,
   } as unknown as ReturnType<typeof useCategoriasList>)
-  vi.mocked(useDocumentosList).mockReturnValue({
-    data: { data: [] },
-  } as unknown as ReturnType<typeof useDocumentosList>)
-  vi.mocked(useMapasList).mockReturnValue({
-    data: { data: [] },
-  } as unknown as ReturnType<typeof useMapasList>)
-  vi.mocked(useGeovisoresList).mockReturnValue({
-    data: { data: [] },
-  } as unknown as ReturnType<typeof useGeovisoresList>)
   vi.mocked(useCreateCategoria).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useCreateCategoria>)
   vi.mocked(useUploadCategoriaThumbnail).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUploadCategoriaThumbnail>)
   vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
@@ -232,17 +221,13 @@ describe('GestionCategorias — listado', () => {
     expect(screen.getByText('No hay categorías')).toBeInTheDocument()
   })
 
-  test('cuenta los documentos por categoría, usando tipo como respaldo', () => {
+  test('muestra el conteo de documentos que viene del servidor', () => {
     vi.mocked(useCategoriasList).mockReturnValue({
-      data: [makeCategoria({ nombre: 'Protocolos' }), makeCategoria({ nombre: 'Hidrología' })], isLoading: false,
+      data: [
+        makeCategoria({ nombre: 'Protocolos', conteo: { docs: 2, mapas: 0, geovisores: 0 } }),
+        makeCategoria({ nombre: 'Hidrología', conteo: { docs: 1, mapas: 0, geovisores: 0 } }),
+      ], isLoading: false,
     } as unknown as ReturnType<typeof useCategoriasList>)
-    vi.mocked(useDocumentosList).mockReturnValue({
-      data: { data: [
-        { categoria: 'Protocolos', tipo: 'PDF' },
-        { categoria: 'Protocolos', tipo: 'PDF' },
-        { categoria: null, tipo: 'Hidrología' },
-      ] },
-    } as unknown as ReturnType<typeof useDocumentosList>)
 
     render(<GestionCategorias />)
     expect(screen.getByText('2 docs')).toBeInTheDocument()
@@ -254,17 +239,11 @@ describe('GestionCategorias — listado', () => {
   // debe leerse como "vacía".
   test('suma mapas y geovisores al conteo, no solo documentos', () => {
     vi.mocked(useCategoriasList).mockReturnValue({
-      data: [makeCategoria({ nombre: 'Hidrología' }), makeCategoria({ nombre: 'Geología' })], isLoading: false,
+      data: [
+        makeCategoria({ nombre: 'Hidrología', conteo: { docs: 0, mapas: 2, geovisores: 0 } }),
+        makeCategoria({ nombre: 'Geología', conteo: { docs: 0, mapas: 0, geovisores: 1 } }),
+      ], isLoading: false,
     } as unknown as ReturnType<typeof useCategoriasList>)
-    vi.mocked(useDocumentosList).mockReturnValue({
-      data: { data: [] }, // sin documentos en ninguna categoría
-    } as unknown as ReturnType<typeof useDocumentosList>)
-    vi.mocked(useMapasList).mockReturnValue({
-      data: { data: [{ categoria: 'Hidrología' }, { categoria: 'Hidrología' }] },
-    } as unknown as ReturnType<typeof useMapasList>)
-    vi.mocked(useGeovisoresList).mockReturnValue({
-      data: { data: [{ categoria: 'Geología' }] },
-    } as unknown as ReturnType<typeof useGeovisoresList>)
 
     render(<GestionCategorias />)
     expect(screen.getByText('2 mapas')).toBeInTheDocument()
@@ -280,6 +259,78 @@ describe('GestionCategorias — listado', () => {
 
     render(<GestionCategorias />)
     expect(screen.getByText('0 elementos')).toBeInTheDocument()
+  })
+})
+
+describe('GestionCategorias — filtro por módulo', () => {
+  function setupTresCategorias() {
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [
+        makeCategoria({ nombre: 'Hidrología', conteo: { docs: 0, mapas: 1, geovisores: 0 } }),
+        makeCategoria({ nombre: 'Geología', conteo: { docs: 0, mapas: 0, geovisores: 1 } }),
+        makeCategoria({ nombre: 'Sin uso' }),
+      ], isLoading: false,
+    } as unknown as ReturnType<typeof useCategoriasList>)
+  }
+
+  test('filtrar por Geovisores solo muestra la categoría con al menos un geovisor', async () => {
+    setupTresCategorias()
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+
+    await user.click(screen.getByRole('button', { name: 'Geovisores' }))
+
+    expect(screen.getByText('Geología')).toBeInTheDocument()
+    expect(screen.queryByText('Hidrología')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sin uso')).not.toBeInTheDocument()
+  })
+
+  test('filtrar por Mapas solo muestra la categoría con al menos un mapa', async () => {
+    setupTresCategorias()
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+
+    await user.click(screen.getByRole('button', { name: 'Mapas' }))
+
+    expect(screen.getByText('Hidrología')).toBeInTheDocument()
+    expect(screen.queryByText('Geología')).not.toBeInTheDocument()
+  })
+
+  test('volver a "Todas" quita el filtro', async () => {
+    setupTresCategorias()
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+
+    await user.click(screen.getByRole('button', { name: 'Mapas' }))
+    await user.click(screen.getByRole('button', { name: 'Todas' }))
+
+    expect(screen.getByText('Hidrología')).toBeInTheDocument()
+    expect(screen.getByText('Geología')).toBeInTheDocument()
+    expect(screen.getByText('Sin uso')).toBeInTheDocument()
+  })
+
+  test('un filtro sin ninguna categoría coincidente muestra el estado vacío específico', async () => {
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [makeCategoria({ nombre: 'Sin uso' })], isLoading: false,
+    } as unknown as ReturnType<typeof useCategoriasList>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByRole('button', { name: 'Documentos' }))
+
+    expect(screen.getByText('Ninguna categoría tiene documentos todavía.')).toBeInTheDocument()
+  })
+
+  test('hacer clic de nuevo en el mismo filtro lo quita (toggle)', async () => {
+    setupTresCategorias()
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+
+    await user.click(screen.getByRole('button', { name: 'Geovisores' }))
+    await user.click(screen.getByRole('button', { name: 'Geovisores' }))
+
+    expect(screen.getByText('Hidrología')).toBeInTheDocument()
+    expect(screen.getByText('Sin uso')).toBeInTheDocument()
   })
 })
 

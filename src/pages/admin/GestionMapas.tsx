@@ -321,13 +321,14 @@ export default function GestionMapas() {
   const isSubmitting = createMapa.isPending || updateMapa.isPending
 
   // Todas las temáticas: base + las ya usadas en mapas cargados + las de la
-  // tabla categorias compartida (así una categoría creada desde Documentos o
-  // Geovisores aparece acá también, sin duplicar el listado por módulo).
-  const { data: categoriasCompartidas = [] } = useCategoriasList()
+  // tabla categorias compartida, pero solo las que ya tienen al menos un
+  // mapa -- una categoría usada solo por Documentos o Geovisores no debe
+  // ofrecerse acá (ver conteo por módulo en categorias.service.js).
+  const { data: categoriasCompartidas = [] } = useCategoriasList({ admin: 'true' })
   const allTematicas = [...new Set([
     ...BASE_TEMATICAS,
     ...mapas.map((m) => m.tematica).filter(Boolean),
-    ...categoriasCompartidas.map((c) => c.nombre),
+    ...categoriasCompartidas.filter((c) => (c.conteo?.mapas ?? 0) > 0).map((c) => c.nombre),
   ])].sort((a, b) => a.localeCompare(b))
 
   const filtered = mapas.filter((m) => {
@@ -390,7 +391,7 @@ export default function GestionMapas() {
   const validate = () => {
     const e: FormErrors = {}
     if (!form.nombre.trim()) e.nombre = 'El nombre del mapa es obligatorio'
-    if (!form.tematica.trim()) e.tematica = 'Selecciona o escribe una temática'
+    if (!form.tematica.trim()) e.tematica = 'Selecciona o escribe una categoría'
     if (form.formato !== 'Geovisor' && !editing && !uploadedFile)
       e.archivo = 'Debes seleccionar el archivo del mapa para continuar'
     if (form.formato === 'Geovisor' && !form.url.trim()) {
@@ -730,19 +731,16 @@ export default function GestionMapas() {
                   </div>
                   <div>
                     <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                      Temática <span className="text-orange-500">*</span>
+                      Categoría <span className="text-orange-500">*</span>
                     </label>
                     <CategoryCombobox
                       value={form.tematica}
                       onChange={(t) => setForm((f) => ({ ...f, tematica: t }))}
                       options={allTematicas}
-                      placeholder="Selecciona o crea una temática…"
-                      existingLabel="Temáticas existentes"
-                      createLabel="Crear"
                     />
                     {form.tematica && !BASE_TEMATICAS.includes(form.tematica) && (
                       <p className="text-[0.65rem] text-primary-700 mt-1 flex items-center gap-1">
-                        <Tag className="w-3 h-3" />Nueva temática — se creará al guardar
+                        <Tag className="w-3 h-3" />Nueva categoría — se creará al guardar
                       </p>
                     )}
                     {formErrors.tematica && (
