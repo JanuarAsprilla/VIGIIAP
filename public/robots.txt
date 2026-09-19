@@ -8,4 +8,4 @@ Disallow: /perfil
 Disallow: /solicitudes
 
 # Sitemap
-Sitemap: https://vigiiap.onrender.com/sitemap.xml
+Sitemap: https://vigiiap.iiap.org.co/sitemap.xml
