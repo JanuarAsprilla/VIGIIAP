@@ -50,19 +50,22 @@ describe('WelcomePanel — centrado en pantalla (no anclado, a diferencia de Log
     expect(boxRef.current).toBe(screen.getByRole('dialog'))
   })
 
-  describe('bloqueo de scroll del body', () => {
+  describe('no bloqueante (requisito de verificación de marca OAuth de Google)', () => {
     afterEach(() => { document.body.style.overflow = '' })
 
-    test('bloquea el scroll del body mientras está montado', () => {
+    test('no bloquea el scroll del body mientras está montado', () => {
       renderWelcomePanel()
-      expect(document.body.style.overflow).toBe('hidden')
+      expect(document.body.style.overflow).not.toBe('hidden')
     })
 
-    test('restaura el scroll del body al desmontarse', () => {
-      const { unmount } = renderWelcomePanel()
-      expect(document.body.style.overflow).toBe('hidden')
-      unmount()
-      expect(document.body.style.overflow).toBe('')
+    test('no renderiza el scrim de fondo', () => {
+      renderWelcomePanel()
+      expect(document.querySelector('.fixed.inset-0.z-40')).toBeNull()
+    })
+
+    test('aria-modal es false, ya que el fondo sigue interactuable', () => {
+      renderWelcomePanel()
+      expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'false')
     })
   })
 })

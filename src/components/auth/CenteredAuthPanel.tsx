@@ -12,8 +12,14 @@ import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
  *
  * Bloquea el scroll del body mientras está montado — sin esto, la rueda del
  * mouse mueve el home de fondo en vez del contenido de este panel.
+ *
+ * `blocking = false` (usado por WelcomePanel) quita el scrim y el bloqueo de
+ * scroll para que la página de fondo siga siendo visible e interactuable —
+ * Google exige esto para verificar la marca OAuth: la página principal debe
+ * poder verse sin interactuar primero. El cierre por "clic afuera" sigue
+ * funcionando igual, vía el listener a nivel de documento en TopBar.tsx.
  */
-export default function CenteredAuthPanel({ title, icon: Icon, onClose, children, boxRef }: {
+export default function CenteredAuthPanel({ title, icon: Icon, onClose, children, boxRef, blocking = true }: {
   title: string
   icon: LucideIcon
   onClose: () => void
@@ -22,18 +28,21 @@ export default function CenteredAuthPanel({ title, icon: Icon, onClose, children
   // TopBar.tsx) — sin esto, un clic dentro de la tarjeta (que vive fuera de
   // panelRef/dropdownRef) se contaría como "afuera" y cerraría el panel.
   boxRef?: RefObject<HTMLDivElement | null>
+  blocking?: boolean
 }) {
-  useLockBodyScroll()
+  useLockBodyScroll(blocking)
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        transition={{ duration: 0.25 }}
-        className="fixed inset-0 z-40 bg-black/35 backdrop-blur-3xl"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      {blocking && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          className="fixed inset-0 z-40 bg-black/35 backdrop-blur-3xl"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <motion.div
           ref={boxRef}
@@ -42,7 +51,7 @@ export default function CenteredAuthPanel({ title, icon: Icon, onClose, children
           exit={{ opacity: 0, scale: 0.96, y: 10 }}
           transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           role="dialog"
-          aria-modal="true"
+          aria-modal={blocking}
           aria-labelledby="centered-auth-panel-title"
           className="glass-panel pointer-events-auto w-full max-w-md max-h-[85vh] rounded-2xl overflow-hidden flex flex-col"
         >
