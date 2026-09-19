@@ -2,25 +2,31 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
   <url>
-    <loc>https://vigiiap.onrender.com/</loc>
+    <loc>https://vigiiap.iiap.org.co/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
-    <loc>https://vigiiap.onrender.com/guia-usuario</loc>
+    <loc>https://vigiiap.iiap.org.co/guia-usuario</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
-    <loc>https://vigiiap.onrender.com/faq</loc>
+    <loc>https://vigiiap.iiap.org.co/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <url>
-    <loc>https://vigiiap.onrender.com/terminos</loc>
+    <loc>https://vigiiap.iiap.org.co/terminos</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://vigiiap.iiap.org.co/politica-privacidad</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

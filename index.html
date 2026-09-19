@@ -28,6 +28,27 @@
     <!-- Fuentes cargadas via @fontsource (auto-hospedadas, sin CDN externo) -->
   </head>
   <body>
+    <!-- Contenido de respaldo sin JavaScript — VIGIA-IIAP es una SPA de React,
+         así que el HTML servido antes de hidratar no tiene texto en el body
+         (solo <div id="root">). Verificadores automatizados que leen el HTML
+         crudo sin ejecutar JavaScript (como el de verificación de marca OAuth
+         de Google) no veían ni el nombre ni el propósito de la app. Este
+         bloque nunca se muestra con JS activo — React lo reemplaza al montar
+         sobre #root — pero queda en el HTML servido para ese tipo de lector. -->
+    <noscript>
+      <main style="max-width: 640px; margin: 4rem auto; padding: 0 1.5rem; font-family: system-ui, sans-serif; color: #1a1a1a;">
+        <h1>VIGIA-IIAP — Visor y Gestor de Información Ambiental</h1>
+        <p>
+          VIGIA-IIAP es la plataforma digital del Instituto de Investigaciones Ambientales del
+          Pacífico "John von Neumann" (IIAP) para la gestión, visualización y distribución de
+          información ambiental del Chocó Biogeográfico colombiano: mapas temáticos, documentos
+          técnicos, herramientas SIG (geovisores) y trámites institucionales, todo en un solo
+          lugar, con acceso público para consulta y acceso institucional para investigadores y
+          entidades aliadas.
+        </p>
+        <p>Active JavaScript en su navegador para usar la plataforma completa.</p>
+      </main>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
