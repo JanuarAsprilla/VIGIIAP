@@ -10,9 +10,11 @@ import {
   Smartphone, Laptop, Trash2, RefreshCw, Loader2,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useUI, type NotifPrefs } from '@/contexts/UIContext'
+import { useUI } from '@/contexts/UIContext'
 import { useNavigate, Link } from 'react-router-dom'
 import { useUpdatePassword, useUpdatePerfil, useUpdateAvatar } from '@/hooks/useUsuarios'
+import { useNotificacionPrefs, useUpdateNotificacionPref } from '@/hooks/useNotificacionPrefs'
+import { NOTIFICATION_ICONS, DEFAULT_NOTIFICATION_ICON, getNotificationColorClasses } from '@/lib/notificationIcons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { asApiError } from '@/lib/apiError'
@@ -468,34 +470,44 @@ function SesionesActivas() {
 }
 
 // ── Notificaciones section ──
+// Preferencia real por tipo, persistida en el servidor (usuarios ya no
+// pierden esto al cambiar de navegador) -- reemplaza los 3 toggles fijos
+// que antes solo escribían en localStorage y que ningún backend/frontend
+// llegó a leer nunca (solicitudes/mapas/email eran decorativos).
 function Notificaciones() {
-  const { notifPrefs: prefs, setNotifPrefs: setPrefs } = useUI()
+  const { data: prefs, isLoading } = useNotificacionPrefs()
+  const updatePref = useUpdateNotificacionPref()
 
-  const toggle = (k: keyof NotifPrefs) => setPrefs({ ...prefs, [k]: !prefs[k] })
+  if (isLoading) {
+    return <p className="text-sm text-text-muted py-3">Cargando preferencias...</p>
+  }
 
-  const items: { key: keyof NotifPrefs; label: string; desc: string }[] = [
-    { key: 'solicitudes', label: 'Estado de solicitudes',    desc: 'Cambios en el estado de tus trámites' },
-    { key: 'mapas',      label: 'Actualizaciones de mapas',  desc: 'Nuevas capas o versiones de mapas' },
-    { key: 'email',      label: 'Resumen por correo',        desc: 'Recibir resumen semanal de actividad' },
-  ]
+  if (!prefs || prefs.length === 0) {
+    return <p className="text-sm text-text-muted py-3">No hay tipos de notificación disponibles.</p>
+  }
 
   return (
     <div className="space-y-0 divide-y divide-border">
-      {items.map(({ key, label, desc }) => (
-        <div key={key} className="flex items-center justify-between gap-4 py-3">
-          <div>
-            <p className="text-sm font-medium text-text">{label}</p>
-            <p className="text-xs text-text-muted">{desc}</p>
+      {prefs.map(({ clave, nombre, icono, color, en_pantalla }) => {
+        const Icon = (icono && NOTIFICATION_ICONS[icono]) || DEFAULT_NOTIFICATION_ICON
+        const { text } = getNotificationColorClasses(color)
+        return (
+          <div key={clave} className="flex items-center justify-between gap-4 py-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <Icon className={`w-4 h-4 shrink-0 ${text}`} aria-hidden="true" />
+              <p className="text-sm font-medium text-text truncate">{nombre}</p>
+            </div>
+            <button
+              onClick={() => updatePref.mutate({ clave, enPantalla: !en_pantalla })}
+              aria-pressed={en_pantalla}
+              aria-label={`Notificaciones de ${nombre}`}
+              className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${en_pantalla ? 'bg-primary-800' : 'bg-border'}`}
+            >
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${en_pantalla ? 'left-5' : 'left-1'}`} />
+            </button>
           </div>
-          <button
-            onClick={() => toggle(key)}
-            aria-pressed={prefs[key]}
-            className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${prefs[key] ? 'bg-primary-800' : 'bg-border'}`}
-          >
-            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${prefs[key] ? 'left-5' : 'left-1'}`} />
-          </button>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

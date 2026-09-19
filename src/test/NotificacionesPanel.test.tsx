@@ -19,6 +19,17 @@ vi.mock('framer-motion', () => {
   return { motion }
 })
 
+// Catálogo de tipos -- antes era TYPE_META hardcoded en el propio
+// componente, ahora viene del backend (useTiposNotificacionList). Claves
+// elegidas para no cambiar las aserciones de texto existentes.
+const TIPOS_CATALOGO = [
+  { clave: 'usuario',   nombre: 'Usuario',   icono: 'User',          color: 'magenta', aplica_a: 'admin' as const, activo: true, orden: 1 },
+  { clave: 'solicitud', nombre: 'Solicitud', icono: 'ClipboardList', color: 'gold',    aplica_a: 'admin' as const, activo: true, orden: 2 },
+]
+vi.mock('@/hooks/useTiposNotificacion', () => ({
+  useTiposNotificacionList: () => ({ data: TIPOS_CATALOGO }),
+}))
+
 function makeItem(overrides: Partial<Notificacion> = {}): Notificacion {
   return { id: 'n1', mensaje: 'Nueva solicitud registrada', tipo: 'solicitud', leido_en: null, creado_en: new Date().toISOString(), link: '/admin/solicitudes', ...overrides }
 }
