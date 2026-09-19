@@ -4,6 +4,7 @@ import { Download, Loader2, AlertCircle, FileBarChart } from 'lucide-react'
 import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import { useReporte, type PeriodoReporte } from '@/hooks/useReportes'
+import { exportarReporteExcel } from '@/lib/exportarReporteExcel'
 
 const fadeUp = fadeUpSm
 
@@ -28,53 +29,22 @@ export default function Reportes() {
   const [periodo, setPeriodo] = useState<PeriodoReporte>('semana')
   const [desde, setDesde] = useState('')
   const [hasta, setHasta] = useState('')
+  const [exportando, setExportando] = useState(false)
 
   const { data, isLoading, isError, isFetching, refetch } = useReporte({ periodo, desde, hasta })
 
-  const exportCSV = () => {
+  const exportExcel = async () => {
     if (!data) return
-    const csvField = (val: unknown) => {
-      const s = String(val ?? '').replace(/\r\n|\n|\r/g, ' ')
-      const safe = /^[=+\-@\t]/.test(s) ? `'${s}` : s
-      return `"${safe.replace(/"/g, '""')}"`
+    setExportando(true)
+    try {
+      await exportarReporteExcel(data)
+    } finally {
+      setExportando(false)
     }
-    const rows: (string | number)[][] = [
-      ['VIGIA — Sistema de Información Territorial del Chocó (IIAP)'],
-      ['Reporte de actividad'],
-      [`Período: ${data.desde} a ${data.hasta}`],
-      [`Generado: ${new Date().toLocaleString('es-CO')}`],
-      [],
-      ['Métrica', 'Valor'],
-      ['Usuarios nuevos', data.usuarios.nuevos],
-      ['Usuarios creados por admin', data.usuarios.creadosPorAdmin],
-      ['Solicitudes nuevas', data.solicitudes.nuevas],
-      ['Solicitudes resueltas', data.solicitudes.resueltas],
-      ['Solicitudes pendientes', data.solicitudes.pendientes],
-      ['Documentos creados', data.documentos.creados],
-      ['Documentos publicados', data.documentos.publicados],
-      ['Mapas creados', data.mapas.creados],
-      ['Mapas publicados', data.mapas.publicados],
-      ['Logins exitosos', data.logins.exitosos],
-      ['Logins fallidos', data.logins.fallidos],
-      [],
-      ['Módulo', 'Eventos'],
-      ...data.actividadPorModulo.map((m) => [m.modulo, m.total]),
-    ]
-    // \r\n (no solo \n) y el BOM son necesarios para que Excel/Notepad en Windows
-    // interpreten el archivo como UTF-8 con saltos de línea reales -- sin esto,
-    // las tildes se corrompen (é → √©) y algunos visores muestran todas las filas
-    // pegadas en una sola línea. Mismo patrón que ya usa export.controller.js
-    // en el backend para los demás CSV exportables.
-    const csv = rows.map((r) => r.map(csvField).join(',')).join('\r\n')
-    const blobUrl = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }))
-    const a = document.createElement('a')
-    a.href = blobUrl
-    a.download = `reporte-${data.desde}-a-${data.hasta}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(blobUrl)
   }
+
+  const modulosOrdenados = data ? [...data.actividadPorModulo].sort((a, b) => b.total - a.total) : []
+  const maxModulo = modulosOrdenados[0]?.total ?? 0
 
   const rangoInvalido = periodo === 'custom' && desde && hasta && desde > hasta
 
@@ -90,12 +60,12 @@ export default function Reportes() {
           </p>
         </div>
         <button
-          onClick={exportCSV}
-          disabled={!data || isLoading}
+          onClick={exportExcel}
+          disabled={!data || isLoading || exportando}
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 disabled:opacity-50 transition-colors shrink-0"
         >
-          <Download className="w-4 h-4" />
-          Exportar CSV
+          {exportando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          {exportando ? 'Generando Excel…' : 'Exportar Excel'}
         </button>
       </motion.div>
 
@@ -195,14 +165,20 @@ export default function Reportes() {
                 <StatTile label="Mapas publicados" value={data.mapas.publicados} />
               </div>
             </div>
-            {data.actividadPorModulo.length > 0 && (
+            {modulosOrdenados.length > 0 && (
               <div>
                 <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2.5">Actividad por módulo</p>
-                <div className="space-y-1.5">
-                  {data.actividadPorModulo.map((m) => (
-                    <div key={m.modulo} className="flex items-center justify-between px-3 py-2 bg-bg-alt/30 rounded-lg">
-                      <span className="text-sm text-text capitalize">{m.modulo}</span>
-                      <span className="text-sm font-semibold text-text">{m.total}</span>
+                <div className="space-y-2">
+                  {modulosOrdenados.map((m) => (
+                    <div key={m.modulo} className="flex items-center gap-3">
+                      <span className="text-sm text-text capitalize w-32 shrink-0 truncate">{m.modulo}</span>
+                      <div className="flex-1 h-6 bg-bg-alt/40 rounded-md overflow-hidden">
+                        <div
+                          className="h-full rounded-md bg-gradient-to-r from-primary-600 to-primary-800"
+                          style={{ width: `${maxModulo > 0 ? Math.max((m.total / maxModulo) * 100, 4) : 0}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-semibold text-text w-10 text-right shrink-0">{m.total}</span>
                     </div>
                   ))}
                 </div>
