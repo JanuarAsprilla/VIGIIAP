@@ -15,6 +15,8 @@ import {
   useDeleteCategoria,
 } from '@/hooks/useCategorias'
 import { useDocumentosList } from '@/hooks/useDocumentos'
+import { useMapasList } from '@/hooks/useMapas'
+import { useGeovisoresList } from '@/hooks/useGeovisores'
 
 const fadeUp = fadeUpSm
 
@@ -102,7 +104,19 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { 
 }
 
 // ── Tarjeta de categoría ──────────────────────────────────────────────────────
-function CategoriaCard({ cat, docCount, onRename, onDelete, onThumbnailSaved, uploadThumbnail }: { cat: { nombre: string; descripcion?: string | null; thumbnail_url?: string | null; activo?: boolean }; docCount: number; onRename: (target: { nombre: string }) => void; onDelete: (target: { nombre: string }) => void; onThumbnailSaved: (nombre: string) => void; uploadThumbnail: ReturnType<typeof import('@/hooks/useCategorias').useUploadCategoriaThumbnail> }) {
+interface ConteoCategoria { docs: number; mapas: number; geovisores: number }
+
+/** "3 docs · 2 mapas · 1 geovisor" -- omite los tipos en cero, salvo si todo está en cero. */
+function resumenConteo({ docs, mapas, geovisores }: ConteoCategoria): string {
+  const partes = [
+    docs       > 0 ? `${docs} doc${docs !== 1 ? 's' : ''}` : null,
+    mapas      > 0 ? `${mapas} mapa${mapas !== 1 ? 's' : ''}` : null,
+    geovisores > 0 ? `${geovisores} geovisor${geovisores !== 1 ? 'es' : ''}` : null,
+  ].filter(Boolean)
+  return partes.length > 0 ? partes.join(' · ') : '0 elementos'
+}
+
+function CategoriaCard({ cat, conteo, onRename, onDelete, onThumbnailSaved, uploadThumbnail }: { cat: { nombre: string; descripcion?: string | null; thumbnail_url?: string | null; activo?: boolean }; conteo: ConteoCategoria; onRename: (target: { nombre: string }) => void; onDelete: (target: { nombre: string }) => void; onThumbnailSaved: (nombre: string) => void; uploadThumbnail: ReturnType<typeof import('@/hooks/useCategorias').useUploadCategoriaThumbnail> }) {
   const [file, setFile]         = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress]   = useState(0)
@@ -162,9 +176,9 @@ function CategoriaCard({ cat, docCount, onRename, onDelete, onThumbnailSaved, up
           </div>
         )}
 
-        {/* Badge doc count */}
+        {/* Badge de conteo -- desglosado por tipo, no solo documentos */}
         <span className="absolute top-2 right-2 bg-black/60 text-white text-[0.6rem] font-bold px-2 py-0.5 rounded-full">
-          {docCount} doc{docCount !== 1 ? 's' : ''}
+          {resumenConteo(conteo)}
         </span>
       </div>
 
@@ -240,7 +254,11 @@ function CategoriaCard({ cat, docCount, onRename, onDelete, onThumbnailSaved, up
 export default function GestionCategorias() {
   const { data: categorias = [], isLoading } = useCategoriasList()
   const { data: docsData }                   = useDocumentosList({ limit: 500, admin: 'true' })
-  const docs = docsData?.data ?? []
+  const { data: mapasData }                  = useMapasList({ limit: 500, admin: 'true' })
+  const { data: geovisoresData }              = useGeovisoresList({ limit: 500 })
+  const docs       = docsData?.data ?? []
+  const mapas       = mapasData?.data ?? []
+  const geovisores  = geovisoresData?.data ?? []
 
   const createCategoria   = useCreateCategoria()
   const uploadThumbnail   = useUploadCategoriaThumbnail()
@@ -257,11 +275,18 @@ export default function GestionCategorias() {
   const [deleteTarget, setDeleteTarget] = useState<{ nombre: string } | null>(null)
   const [toast, setToast]             = useState<string | null>(null)
 
-  const docCountByCategoria = docs.reduce((acc, d) => {
-    const cat = d.categoria || d.tipo
-    if (cat) acc[cat] = (acc[cat] ?? 0) + 1
-    return acc
-  }, {} as Record<string, number>)
+  // Conteo cruzado -- la tabla categorias es compartida entre documentos, mapas
+  // y geovisores (ver useCategorias.ts), así que "0 docs" no implica que la
+  // categoría esté vacía: puede tener mapas o geovisores y ningún documento.
+  const conteoPorCategoria: Record<string, ConteoCategoria> = {}
+  const contar = (nombre: string | undefined | null, campo: keyof ConteoCategoria) => {
+    if (!nombre) return
+    conteoPorCategoria[nombre] ??= { docs: 0, mapas: 0, geovisores: 0 }
+    conteoPorCategoria[nombre][campo]++
+  }
+  docs.forEach((d) => contar(d.categoria || d.tipo, 'docs'))
+  mapas.forEach((m) => contar(m.categoria, 'mapas'))
+  geovisores.forEach((g) => contar(g.categoria, 'geovisores'))
 
   const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -339,7 +364,7 @@ export default function GestionCategorias() {
       <motion.div {...fadeUp(0.04)} className="flex items-start gap-3 p-4 bg-primary-500/10 border border-primary-500/25 rounded-xl">
         <Tag className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
         <p className="text-xs text-primary-600">
-          Cada categoría agrupa documentos del mismo tema. La imagen de portada aparece como fondo de la tarjeta en el portal público de Documentos.
+          Cada categoría agrupa documentos, mapas y geovisores del mismo tema. La imagen de portada aparece como fondo de la tarjeta en el portal público de Documentos.
           Las categorías sin imagen muestran un fondo con degradado de color.
         </p>
       </motion.div>
@@ -373,7 +398,7 @@ export default function GestionCategorias() {
               <CategoriaCard
                 key={cat.nombre}
                 cat={cat}
-                docCount={docCountByCategoria[cat.nombre] ?? 0}
+                conteo={conteoPorCategoria[cat.nombre] ?? { docs: 0, mapas: 0, geovisores: 0 }}
                 onRename={openRename}
                 onDelete={setDeleteTarget}
                 onThumbnailSaved={(nombre) => setToast(`Imagen de "${nombre}" actualizada`)}
