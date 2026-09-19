@@ -6,6 +6,7 @@ import {
 import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import { useAuditLog, MODULO_STYLES } from '@/hooks/useAuditLog'
+import { exportarActividadExcel } from '@/lib/exportarActividadExcel'
 
 const fadeUp = fadeUpSm
 
@@ -17,6 +18,8 @@ export default function Actividad() {
   const [search, setSearch] = useState('')
   const [filtroModulo, setFiltroModulo] = useState('')
   const [page, setPage] = useState(1)
+  const [exportando, setExportando] = useState(false)
+  const [errorExportar, setErrorExportar] = useState(false)
 
   const { data, isLoading, isError, refetch } = useAuditLog({
     modulo: filtroModulo || undefined,
@@ -38,31 +41,16 @@ export default function Actividad() {
       })
     : logs
 
-  const exportCSV = () => {
-    const csvField = (val: unknown) => {
-      const s = String(val ?? '').replace(/\r\n|\n|\r/g, ' ')
-      const safe = /^[=+\-@\t]/.test(s) ? `'${s}` : s
-      return `"${safe.replace(/"/g, '""')}"`
+  const exportExcel = async () => {
+    setExportando(true)
+    setErrorExportar(false)
+    try {
+      await exportarActividadExcel({ filtroModulo: filtroModulo || undefined, busqueda: search || undefined })
+    } catch {
+      setErrorExportar(true)
+    } finally {
+      setExportando(false)
     }
-    const rows = [
-      ['VIGIA — Sistema de Información Territorial del Chocó (IIAP)'],
-      ['Registro de actividad'],
-      [`Generado: ${new Date().toLocaleString('es-CO')}`],
-      [],
-      ['Acción', 'Módulo', 'Descripción', 'Usuario', 'IP', 'Fecha'],
-    ]
-    logs.forEach((l) => rows.push([l.accion, l.modulo, l.descripcion, l.email, l.ip, l.fecha]))
-    // \r\n y el BOM son necesarios para que Excel/Notepad en Windows interpreten
-    // el archivo como UTF-8 con saltos de línea reales -- ver Reportes.tsx.
-    const csv = rows.map((r) => r.map(csvField).join(',')).join('\r\n')
-    const blobUrl = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }))
-    const a = document.createElement('a')
-    a.href = blobUrl
-    a.download = `actividad-${new Date().toISOString().slice(0, 10)}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(blobUrl)
   }
 
   return (
@@ -77,14 +65,18 @@ export default function Actividad() {
           </p>
         </div>
         <button
-          onClick={exportCSV}
-          disabled={isLoading || logs.length === 0}
+          onClick={exportExcel}
+          disabled={isLoading || logs.length === 0 || exportando}
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 disabled:opacity-50 transition-colors shrink-0"
         >
-          <Download className="w-4 h-4" />
-          Exportar CSV
+          {exportando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          {exportando ? 'Generando Excel…' : 'Exportar Excel'}
         </button>
       </motion.div>
+
+      {errorExportar && (
+        <p className="text-xs text-red-500">No se pudo generar el archivo Excel. Intenta de nuevo.</p>
+      )}
 
       {/* Filters */}
       <motion.div {...fadeUp(0.08)} className="flex flex-wrap gap-3">
@@ -151,8 +143,11 @@ export default function Actividad() {
               {!isLoading && !isError && filtered.length === 0 && (
                 <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-text-muted">Sin eventos registrados</td></tr>
               )}
-              {filtered.map((log) => (
-                <tr key={log.id} className="border-b border-border last:border-b-0 hover:bg-bg-alt/30 transition-colors">
+              {filtered.map((log, i) => (
+                <tr
+                  key={log.id}
+                  className={`border-b border-border last:border-b-0 hover:bg-bg-alt/50 transition-colors ${i % 2 === 1 ? 'bg-bg-alt/20' : ''}`}
+                >
                   <td className="px-5 py-3.5">
                     <span className={`text-[0.6rem] font-bold uppercase px-2 py-0.5 rounded-full ${log.badge}`}>
                       {log.accionLabel}
