@@ -537,8 +537,9 @@ describe('useUploadCategoriaThumbnail', () => {
 // ─── useGeovisores mutations ──────────────────────────────────────────────────
 const geovisorInput = {
   titulo: 'Geología del Chocó', conexionGeoserverId: 'c1', workspacesGeoserver: [],
+  capasSeleccionadas: [],
   colorPorTema: {}, centroLat: 5.55, centroLng: -76.6, zoomInicial: 8,
-  basemapDefecto: 'calles', presetsArea: [], iaHabilitada: false, visibilidad: 'publico' as const,
+  basemapDefecto: 'calles', presetsArea: [], visibilidad: 'publico' as const,
   presentacion: { mostrarMetricas: true, mostrarImagenes: false, camposPopup: [] },
 }
 

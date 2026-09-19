@@ -1,8 +1,8 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import {
   X, Loader2, AlertCircle, Plus, Trash2, Globe, Users, ShieldCheck,
-  Layers, Map as MapIcon, Eye, Sparkles,
+  Layers, Map as MapIcon, Eye, Search, MapPinned,
 } from 'lucide-react'
 import { panelAnim } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
@@ -11,8 +11,15 @@ import { useCreateGeovisor, useUpdateGeovisor } from '@/hooks/useGeovisores'
 import Switch from '@/components/ui/Switch'
 import AccordionSection from './AccordionSection'
 import GeovisorMapaConstructor from './GeovisorMapaConstructor'
-import type { GeovisorRaw, GeovisorInput, MapaVisibilidad, PresetArea } from '@/types'
+import type { GeovisorRaw, GeovisorInput, MapaVisibilidad, PresetArea, WorkspaceOption } from '@/types'
 import type { FormErrors } from '@/types/forms'
+
+type CapaWorkspace = WorkspaceOption['capas'][number]
+
+/** Workspace ("tema") al que pertenece una capa, a partir de su id "workspace:layername". */
+function workspaceDeCapa(capaId: string): string {
+  return capaId.split(':')[0] ?? capaId
+}
 
 const BASEMAPS = [
   { id: 'calles', label: 'Calles' },
@@ -41,7 +48,8 @@ interface FormState {
   cita: string
   categoria: string
   conexionGeoserverId: string
-  workspacesGeoserver: string[]
+  /** IDs de capa ("workspace:layername") — pueden venir de distintos workspaces/temas. */
+  capasSeleccionadas: string[]
   colorPorTema: Record<string, string>
   centroLat: number
   centroLng: number
@@ -49,7 +57,6 @@ interface FormState {
   basemapDefecto: string
   areaMaxHa: string
   presetsArea: PresetArea[]
-  iaHabilitada: boolean
   visibilidad: MapaVisibilidad
   thumbnailUrl: string
   mostrarMetricas: boolean
@@ -61,9 +68,9 @@ interface FormState {
 function emptyForm(): FormState {
   return {
     titulo: '', subtitulo: '', descripcion: '', cita: '', categoria: '',
-    conexionGeoserverId: '', workspacesGeoserver: [], colorPorTema: {},
+    conexionGeoserverId: '', capasSeleccionadas: [], colorPorTema: {},
     centroLat: 5.55, centroLng: -76.6, zoomInicial: 8, basemapDefecto: 'calles',
-    areaMaxHa: '', presetsArea: [], iaHabilitada: false, visibilidad: 'publico',
+    areaMaxHa: '', presetsArea: [], visibilidad: 'publico',
     thumbnailUrl: '', mostrarMetricas: true, mostrarImagenes: false, campoImagenUrl: '',
     camposPopup: [],
   }
@@ -73,12 +80,12 @@ function formFromGeovisor(g: GeovisorRaw): FormState {
   return {
     titulo: g.titulo, subtitulo: g.subtitulo ?? '', descripcion: g.descripcion ?? '',
     cita: g.cita ?? '', categoria: g.categoria ?? '',
-    conexionGeoserverId: g.conexionGeoserverId, workspacesGeoserver: g.workspacesGeoserver,
+    conexionGeoserverId: g.conexionGeoserverId, capasSeleccionadas: g.capasSeleccionadas,
     colorPorTema: g.colorPorTema, centroLat: g.centro.lat, centroLng: g.centro.lng,
     zoomInicial: g.zoomInicial, basemapDefecto: g.basemapDefecto,
     areaMaxHa: g.areaMaxHa != null ? String(g.areaMaxHa) : '',
     presetsArea: g.presetsArea,
-    iaHabilitada: g.iaHabilitada, visibilidad: g.visibilidad, thumbnailUrl: g.thumbnailUrl ?? '',
+    visibilidad: g.visibilidad, thumbnailUrl: g.thumbnailUrl ?? '',
     mostrarMetricas: g.presentacion.mostrarMetricas, mostrarImagenes: g.presentacion.mostrarImagenes,
     campoImagenUrl: g.presentacion.campoImagenUrl ?? '', camposPopup: g.presentacion.camposPopup,
   }
@@ -97,6 +104,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
 }) {
   const [form, setForm] = useState<FormState>(() => editing ? formFromGeovisor(editing) : emptyForm())
   const [errors, setErrors] = useState<FormErrors>({})
+  const [filtroCapa, setFiltroCapa] = useState('')
 
   const { data: conexiones = [] } = useConexionesGeoserverList()
   const { data: workspaces = [], isFetching: loadingWorkspaces } = useWorkspacesDeConexion(form.conexionGeoserverId || null)
@@ -105,14 +113,50 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
   const updateGeovisor = useUpdateGeovisor()
   const isSaving = createGeovisor.isPending || updateGeovisor.isPending
 
-  const toggleWorkspace = (id: string) => {
+  // Geovisores creados antes del picker de capas sueltas solo guardan
+  // workspacesGeoserver (todo-o-nada por tema) — al editarlos, en cuanto carga
+  // el catálogo de la conexión, se preseleccionan las capas equivalentes para
+  // que el picker refleje fielmente la configuración actual en vez de verse
+  // vacío. Guardar sin tocar nada convierte esa selección a capasSeleccionadas
+  // explícitas (deja de seguir automáticamente capas nuevas que se agreguen
+  // luego a ese workspace) — comportamiento intencional del nuevo modelo.
+  useEffect(() => {
+    if (!editing) return
+    if (editing.capasSeleccionadas.length > 0) return
+    if (workspaces.length === 0) return
+    const workspacesLegado = editing.workspacesGeoserver
+    const capasLegado = workspaces
+      .filter((w) => workspacesLegado.length === 0 || workspacesLegado.includes(w.id))
+      .flatMap((w) => w.capas.map((c) => c.id))
+    if (capasLegado.length === 0) return
+    setForm((f) => (f.capasSeleccionadas.length > 0 ? f : { ...f, capasSeleccionadas: capasLegado }))
+  }, [editing, workspaces])
+
+  const gruposFiltrados = useMemo(() => {
+    const q = filtroCapa.trim().toLowerCase()
+    return workspaces
+      .map((w) => ({
+        ...w,
+        capas: q ? w.capas.filter((c) => c.nombre.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)) : w.capas,
+      }))
+      .filter((w) => w.capas.length > 0)
+  }, [workspaces, filtroCapa])
+
+  const toggleCapa = (id: string) => {
     setForm((f) => ({
       ...f,
-      workspacesGeoserver: f.workspacesGeoserver.includes(id)
-        ? f.workspacesGeoserver.filter((w) => w !== id)
-        : [...f.workspacesGeoserver, id],
+      capasSeleccionadas: f.capasSeleccionadas.includes(id)
+        ? f.capasSeleccionadas.filter((c) => c !== id)
+        : [...f.capasSeleccionadas, id],
     }))
   }
+
+  // Temas representados por la selección actual — de aquí sale tanto la lista
+  // de "Color por tema" como los workspaces que se le pasan al mapa en vivo.
+  const temasSeleccionados = useMemo(
+    () => [...new Set(form.capasSeleccionadas.map(workspaceDeCapa))],
+    [form.capasSeleccionadas],
+  )
 
   const setColor = (workspaceId: string, color: string) => {
     setForm((f) => ({ ...f, colorPorTema: { ...f.colorPorTema, [workspaceId]: color } }))
@@ -165,15 +209,18 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
       cita: form.cita.trim() || undefined,
       categoria: form.categoria.trim() || undefined,
       conexionGeoserverId: form.conexionGeoserverId,
-      workspacesGeoserver: form.workspacesGeoserver,
+      // workspacesGeoserver queda como derivado informativo/de compatibilidad —
+      // capasSeleccionadas es la fuente de verdad real desde este formulario
+      // (ver capaPermitidaEnGeovisor() en el backend).
+      workspacesGeoserver: temasSeleccionados,
+      capasSeleccionadas: form.capasSeleccionadas,
       colorPorTema: Object.fromEntries(
-        Object.entries(form.colorPorTema).filter(([id]) => form.workspacesGeoserver.includes(id)),
+        Object.entries(form.colorPorTema).filter(([id]) => temasSeleccionados.includes(id)),
       ),
       centroLat: form.centroLat, centroLng: form.centroLng, zoomInicial: form.zoomInicial,
       basemapDefecto: form.basemapDefecto,
       areaMaxHa,
       presetsArea: form.presetsArea,
-      iaHabilitada: form.iaHabilitada,
       visibilidad: form.visibilidad,
       thumbnailUrl: form.thumbnailUrl.trim() || undefined,
       presentacion: {
@@ -202,7 +249,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
     }
   }
 
-  const workspacesSeleccionados = workspaces.filter((w) => form.workspacesGeoserver.includes(w.id))
+  const workspacesSeleccionados = workspaces.filter((w) => temasSeleccionados.includes(w.id))
 
   return (
     <div
@@ -277,7 +324,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
               <div>
                 <label htmlFor="gv-conexion" className={labelCls}>Conexión <span className="text-orange-500" aria-hidden="true">*</span></label>
                 <select id="gv-conexion" value={form.conexionGeoserverId}
-                  onChange={(e) => setForm((f) => ({ ...f, conexionGeoserverId: e.target.value, workspacesGeoserver: [], colorPorTema: {} }))}
+                  onChange={(e) => setForm((f) => ({ ...f, conexionGeoserverId: e.target.value, capasSeleccionadas: [], colorPorTema: {} }))}
                   className={inputCls(!!errors.conexionGeoserverId)}>
                   <option value="">Selecciona una conexión…</option>
                   {conexiones.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
@@ -285,36 +332,72 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                 {errors.conexionGeoserverId && <p className="text-xs text-red-500 mt-1">{errors.conexionGeoserverId}</p>}
               </div>
 
-              {form.conexionGeoserverId && (
-                loadingWorkspaces ? (
-                  <p className="text-xs text-text-muted flex items-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Descubriendo workspaces…</p>
-                ) : workspaces.length === 0 ? (
-                  <p className="text-xs text-text-muted">Esta conexión no publica capas todavía.</p>
-                ) : (
-                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                    {workspaces.map((w, i) => {
-                      const activo = form.workspacesGeoserver.includes(w.id)
-                      const color = form.colorPorTema[w.id] ?? PALETA_AUTO[i % PALETA_AUTO.length]
-                      return (
-                        <div key={w.id} className={`border rounded-lg p-2.5 transition-colors ${activo ? 'border-primary-600 bg-primary-600/5' : 'border-border'}`}>
-                          <div className="flex items-center gap-2.5">
-                            <Switch checked={activo} onChange={() => toggleWorkspace(w.id)} label={w.nombre} />
-                            <span className="text-sm text-text flex-1 truncate">{w.nombre}</span>
-                            <span className="text-[0.6rem] text-text-muted shrink-0">{w.totalCapas} capa{w.totalCapas === 1 ? '' : 's'}</span>
-                          </div>
-                          {activo && (
-                            <div className="flex items-center gap-2 mt-2 pl-[2.6rem]">
-                              <input type="color" value={color} onChange={(e) => setColor(w.id, e.target.value)}
-                                aria-label={`Color de ${w.nombre}`}
-                                className="w-6 h-6 rounded-md border border-border cursor-pointer shrink-0" />
-                              <span className="text-[0.6rem] text-text-muted font-mono">{color}</span>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
+              {!form.conexionGeoserverId ? (
+                <div className="flex flex-col items-center justify-center gap-2 py-8 px-4 border border-dashed border-border rounded-xl text-center">
+                  <MapPinned className="w-6 h-6 text-text-faint" aria-hidden="true" />
+                  <p className="text-sm text-text-muted">Elige una conexión GeoServer para ver la vista previa en vivo de sus capas.</p>
+                </div>
+              ) : loadingWorkspaces ? (
+                <p className="text-xs text-text-muted flex items-center gap-2 py-4"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Descubriendo capas…</p>
+              ) : workspaces.length === 0 ? (
+                <p className="text-xs text-text-muted py-4">Esta conexión no publica capas todavía.</p>
+              ) : (
+                <>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-faint" aria-hidden="true" />
+                    <input type="text" value={filtroCapa} onChange={(e) => setFiltroCapa(e.target.value)}
+                      placeholder="Buscar capa por nombre…"
+                      className="w-full pl-8 pr-3 py-2 bg-[var(--card-bg)] border border-border rounded-lg text-xs focus:outline-none focus:border-primary-800 transition" />
                   </div>
-                )
+                  {gruposFiltrados.length === 0 ? (
+                    <p className="text-xs text-text-muted py-3 text-center">Ninguna capa coincide con "{filtroCapa}".</p>
+                  ) : (
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                      {gruposFiltrados.map((w, i) => {
+                        const activo = temasSeleccionados.includes(w.id)
+                        const color = form.colorPorTema[w.id] ?? PALETA_AUTO[i % PALETA_AUTO.length]
+                        return (
+                          <div key={w.id} className={`border rounded-lg p-2.5 transition-colors ${activo ? 'border-primary-600 bg-primary-600/5' : 'border-border'}`}>
+                            <div className="flex items-center gap-2.5 mb-1.5">
+                              <span className="text-[0.62rem] font-bold uppercase tracking-wider text-text-faint flex-1 truncate">{w.nombre}</span>
+                              {activo && (
+                                <>
+                                  <input type="color" value={color} onChange={(e) => setColor(w.id, e.target.value)}
+                                    aria-label={`Color de ${w.nombre}`}
+                                    className="w-5 h-5 rounded-md border border-border cursor-pointer shrink-0" />
+                                  <span className="text-[0.58rem] text-text-muted font-mono shrink-0">{color}</span>
+                                </>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              {w.capas.map((c: CapaWorkspace) => {
+                                const checked = form.capasSeleccionadas.includes(c.id)
+                                return (
+                                  <label key={c.id}
+                                    className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs cursor-pointer transition-colors ${
+                                      checked ? 'bg-primary-600/8 text-primary-800' : 'hover:bg-bg-alt text-text'
+                                    }`}>
+                                    <input type="checkbox" checked={checked} onChange={() => toggleCapa(c.id)}
+                                      className="w-3.5 h-3.5 rounded border-border text-primary-800 focus:ring-primary-800/30 shrink-0" />
+                                    <span className="truncate flex-1">{c.nombre}</span>
+                                    <span className={`text-[0.55rem] font-semibold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${
+                                      c.tipo === 'raster' ? 'bg-gold-500/12 text-gold-500' : 'bg-primary-500/12 text-primary-500'
+                                    }`}>{c.tipo === 'raster' ? 'raster' : 'vector'}</span>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                  <p className="text-[0.65rem] text-text-muted">
+                    {form.capasSeleccionadas.length === 0
+                      ? 'Sin selección — el geovisor mostrará todas las capas de esta conexión.'
+                      : `${form.capasSeleccionadas.length} capa${form.capasSeleccionadas.length === 1 ? '' : 's'} seleccionada${form.capasSeleccionadas.length === 1 ? '' : 's'}, de ${temasSeleccionados.length} tema${temasSeleccionados.length === 1 ? '' : 's'} distinto${temasSeleccionados.length === 1 ? '' : 's'}.`}
+                  </p>
+                </>
               )}
             </AccordionSection>
 
@@ -406,14 +489,6 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                     {errors[`campo-${i}`] && <p className="text-xs text-red-500 col-span-2">{errors[`campo-${i}`]}</p>}
                   </div>
                 ))}
-              </div>
-
-              <div className="flex items-center justify-between pt-1 border-t border-border/60 mt-1">
-                <span className="text-sm text-text flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-primary-700" />
-                  Generación de reportes con IA
-                </span>
-                <Switch checked={form.iaHabilitada} onChange={(v) => setForm((f) => ({ ...f, iaHabilitada: v }))} label="Habilitar IA" />
               </div>
             </AccordionSection>
 
