@@ -226,7 +226,7 @@ export default function GestionDocumentos() {
     ...(filtroCategoria && { tipo: filtroCategoria }),
   })
   const docs = data?.data ?? []
-  const { data: categorias = [] } = useCategoriasList()
+  const { data: categorias = [] } = useCategoriasList({ admin: 'true' })
   const createDocumento = useCreateDocumento()
   const updateDocumento = useUpdateDocumento()
   const deleteDocumento = useDeleteDocumento()
@@ -328,11 +328,14 @@ export default function GestionDocumentos() {
     }
   }
 
-  // Todas las categorías: base + las que ya existen en documentos cargados + las de la tabla categorias
+  // Todas las categorías: base (sugerencias curadas) + las que ya existen en
+  // documentos cargados + las de la tabla categorias que ya tengan al menos
+  // un documento -- una categoría usada solo por Mapas o Geovisores no debe
+  // ofrecerse acá (ver conteo por módulo en categorias.service.js).
   const allCategories = [...new Set([
     ...BASE_CATEGORIES,
     ...docs.map((d) => d.categoria).filter(Boolean),
-    ...categorias.map((c) => c.nombre),
+    ...categorias.filter((c) => (c.conteo?.docs ?? 0) > 0).map((c) => c.nombre),
   ])].sort((a, b) => a.localeCompare(b))
 
 
@@ -602,7 +605,7 @@ export default function GestionDocumentos() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                      Categoría temática <span className="text-orange-500">*</span>
+                      Categoría <span className="text-orange-500">*</span>
                     </label>
                     <CategoryCombobox
                       value={form.categoria}

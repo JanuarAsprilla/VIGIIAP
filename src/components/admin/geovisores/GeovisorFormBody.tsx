@@ -119,8 +119,10 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
   const { data: workspaces = [], isFetching: loadingWorkspaces } = useWorkspacesDeConexion(form.conexionGeoserverId || null)
   // Categorías del módulo compartido — geovisores.categoria tiene FK a
   // categorias(nombre) en el backend, así que solo se puede elegir entre
-  // estas o crear una nueva explícitamente (ver handleSubmit).
-  const { data: categoriasCompartidas = [] } = useCategoriasList()
+  // estas o crear una nueva explícitamente (ver handleSubmit). El combobox
+  // (abajo) solo sugiere las que ya tienen algún geovisor -- una categoría
+  // usada solo por Documentos o Mapas no debe ofrecerse acá.
+  const { data: categoriasCompartidas = [] } = useCategoriasList({ admin: 'true' })
   const createCategoria = useCreateCategoria()
 
   const createGeovisor = useCreateGeovisor()
@@ -340,7 +342,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                     id="gv-categoria"
                     value={form.categoria}
                     onChange={(cat) => setForm((f) => ({ ...f, categoria: cat }))}
-                    options={categoriasCompartidas.map((c) => c.nombre)}
+                    options={categoriasCompartidas.filter((c) => (c.conteo?.geovisores ?? 0) > 0).map((c) => c.nombre)}
                   />
                 </div>
               </div>

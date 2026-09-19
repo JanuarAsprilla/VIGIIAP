@@ -297,6 +297,10 @@ export interface Categoria {
   descripcion?: string | null
   thumbnail_url?: string | null
   activo?: boolean
+  // Conteo real por módulo, calculado en el servidor (ver categorias.service.js) --
+  // ausente en respuestas antiguas que no vengan de GET /categorias (ej. el propio
+  // POST/PATCH de creación/renombrado no lo devuelve), de ahí opcional.
+  conteo?: { docs: number; mapas: number; geovisores: number }
 }
 
 // ─── Notificaciones ───────────────────────────────────────────────────────────

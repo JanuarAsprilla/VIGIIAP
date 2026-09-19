@@ -14,9 +14,6 @@ import {
   useRenameCategoria,
   useDeleteCategoria,
 } from '@/hooks/useCategorias'
-import { useDocumentosList } from '@/hooks/useDocumentos'
-import { useMapasList } from '@/hooks/useMapas'
-import { useGeovisoresList } from '@/hooks/useGeovisores'
 
 const fadeUp = fadeUpSm
 
@@ -261,13 +258,7 @@ function CategoriaCard({ cat, conteo, onRename, onDelete, onThumbnailSaved, uplo
 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function GestionCategorias() {
-  const { data: categorias = [], isLoading } = useCategoriasList()
-  const { data: docsData }                   = useDocumentosList({ limit: 500, admin: 'true' })
-  const { data: mapasData }                  = useMapasList({ limit: 500, admin: 'true' })
-  const { data: geovisoresData }              = useGeovisoresList({ limit: 500 })
-  const docs       = docsData?.data ?? []
-  const mapas       = mapasData?.data ?? []
-  const geovisores  = geovisoresData?.data ?? []
+  const { data: categorias = [], isLoading } = useCategoriasList({ admin: 'true' })
 
   const createCategoria   = useCreateCategoria()
   const uploadThumbnail   = useUploadCategoriaThumbnail()
@@ -285,25 +276,15 @@ export default function GestionCategorias() {
   const [toast, setToast]             = useState<string | null>(null)
   const [filtroModulo, setFiltroModulo] = useState<keyof ConteoCategoria | ''>('')
 
-  // Conteo cruzado -- la tabla categorias es compartida entre documentos, mapas
-  // y geovisores (ver useCategorias.ts), así que "0 docs" no implica que la
-  // categoría esté vacía: puede tener mapas o geovisores y ningún documento.
-  const conteoPorCategoria: Record<string, ConteoCategoria> = {}
-  const contar = (nombre: string | undefined | null, campo: keyof ConteoCategoria) => {
-    if (!nombre) return
-    conteoPorCategoria[nombre] ??= { docs: 0, mapas: 0, geovisores: 0 }
-    conteoPorCategoria[nombre][campo]++
-  }
-  docs.forEach((d) => contar(d.categoria || d.tipo, 'docs'))
-  mapas.forEach((m) => contar(m.categoria, 'mapas'))
-  geovisores.forEach((g) => contar(g.categoria, 'geovisores'))
+  const CONTEO_VACIO: ConteoCategoria = { docs: 0, mapas: 0, geovisores: 0 }
 
   // Filtro por módulo -- ver qué categorías tienen al menos un elemento en
   // documentos/mapas/geovisores (ej. para elegir una al configurar un geovisor
-  // nuevo, sin adivinar cuáles de las categorías ya la usan ahí).
+  // nuevo, sin adivinar cuáles de las categorías ya la usan ahí). El conteo
+  // real viene calculado del servidor (GET /categorias), no se recalcula aquí.
   const categoriasFiltradas = !filtroModulo
     ? categorias
-    : categorias.filter((cat) => (conteoPorCategoria[cat.nombre]?.[filtroModulo] ?? 0) > 0)
+    : categorias.filter((cat) => (cat.conteo?.[filtroModulo] ?? 0) > 0)
 
   const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -455,7 +436,7 @@ export default function GestionCategorias() {
               <CategoriaCard
                 key={cat.nombre}
                 cat={cat}
-                conteo={conteoPorCategoria[cat.nombre] ?? { docs: 0, mapas: 0, geovisores: 0 }}
+                conteo={cat.conteo ?? CONTEO_VACIO}
                 onRename={openRename}
                 onDelete={setDeleteTarget}
                 onThumbnailSaved={(nombre) => setToast(`Imagen de "${nombre}" actualizada`)}
