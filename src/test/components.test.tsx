@@ -60,9 +60,11 @@ describe('FooterBar', () => {
     expect(screen.getByText(new RegExp(year))).toBeInTheDocument()
   })
 
-  test('renders social link labels', () => {
+  // Los botones de redes sociales eran placeholders sin URL real (ni siquiera
+  // tenían onClick) -- se quitaron hasta tener cuentas reales que enlazar.
+  test('no muestra botones de redes sociales placeholder', () => {
     withRouter(<Footer />)
-    expect(screen.getByLabelText('Facebook IIAP')).toBeInTheDocument()
-    expect(screen.getByLabelText('Twitter IIAP')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Facebook IIAP')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Twitter IIAP')).not.toBeInTheDocument()
   })
 })
