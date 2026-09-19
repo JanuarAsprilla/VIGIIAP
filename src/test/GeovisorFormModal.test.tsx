@@ -46,6 +46,7 @@ vi.mock('@/components/admin/geovisores/GeovisorMapaConstructor', () => ({
     <div data-testid="mapa-constructor">
       <span data-testid="mapa-conexion">{conexionId ?? 'sin-conexion'}</span>
       <span data-testid="mapa-workspaces">{workspacesSeleccionados.map((w) => w.id).join(',')}</span>
+      <span data-testid="mapa-capas">{workspacesSeleccionados.flatMap((w) => w.capas.map((c) => c.id)).join(',')}</span>
       <span data-testid="mapa-presets">{presetsArea.map((p) => p.nombre).join(',')}</span>
       <button type="button" onClick={() => onMoverMapa(6, -77, 10)}>mover-mapa-test</button>
       <button type="button" onClick={() => onAgregarPreset({ nombre: 'Zona norte', geometria: { type: 'Polygon', coordinates: [[[1, 2], [3, 4], [5, 6], [1, 2]]] } })}>agregar-preset-test</button>
@@ -79,6 +80,11 @@ async function abrirSeccion(user: ReturnType<typeof userEvent.setup>, titulo: Re
   await user.click(screen.getByRole('button', { name: titulo }))
 }
 
+/** Abre el desplegable de un tema/workspace en el picker de capas (empiezan cerrados salvo al editar). */
+async function abrirTema(user: ReturnType<typeof userEvent.setup>, nombre: RegExp) {
+  await user.click(screen.getByRole('button', { name: nombre }))
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(useConexionesGeoserverList).mockReturnValue({
@@ -105,10 +111,14 @@ describe('GeovisorFormModal — modo edición: prefill', () => {
 
   test('geovisor legado (sin capasSeleccionadas, solo workspacesGeoserver) precarga todas las capas de ese workspace', async () => {
     const legado = makeGeovisor({ capasSeleccionadas: [], workspacesGeoserver: ['t_15_geologia'] })
+    const user = userEvent.setup()
     render(<GeovisorFormModal open editing={legado} onClose={vi.fn()} onSaved={vi.fn()} />)
 
     expect(await screen.findByRole('checkbox', { name: /Fallas/i })).toBeChecked()
-    expect(screen.getByRole('checkbox', { name: /Ríos/i })).not.toBeChecked() // otro workspace, no incluido en el legado
+    // Hidrologia no viene en el legado, así que su tema empieza colapsado —
+    // hay que abrirlo a mano para comprobar que Ríos no quedó marcada.
+    await abrirTema(user, /Hidrologia/i)
+    expect(screen.getByRole('checkbox', { name: /Ríos/i })).not.toBeChecked()
   })
 
   test('el título del modal dice "Editar geovisor" y el botón de envío "Guardar cambios"', () => {
@@ -162,6 +172,7 @@ describe('GeovisorFormModal — capas y color por tema', () => {
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
     await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
 
     expect(document.querySelectorAll('input[type="color"]')).toHaveLength(1)
@@ -172,7 +183,9 @@ describe('GeovisorFormModal — capas y color por tema', () => {
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
     await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await abrirTema(user, /Hidrologia/i)
     await user.click(screen.getByRole('checkbox', { name: /Ríos/i }))
 
     expect(document.querySelectorAll('input[type="color"]')).toHaveLength(2)
@@ -184,12 +197,40 @@ describe('GeovisorFormModal — capas y color por tema', () => {
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
     const checkbox = screen.getByRole('checkbox', { name: /Fallas/i })
     await user.click(checkbox)
     await user.click(checkbox)
 
     expect(document.querySelectorAll('input[type="color"]')).toHaveLength(0)
     expect(screen.getByTestId('mapa-workspaces')).toHaveTextContent('')
+  })
+
+  test('marcar una sola capa de un tema con varias no envía las demás al mapa (regresión 429)', async () => {
+    vi.mocked(useWorkspacesDeConexion).mockReturnValue({
+      data: [{
+        id: 't_19_clima', nombre: 'Clima', totalCapas: 3,
+        capas: [
+          { id: 't_19_clima:precipitacion', nombre: 'Precipitación', tipo: 'raster' },
+          { id: 't_19_clima:temperatura', nombre: 'Temperatura', tipo: 'raster' },
+          { id: 't_19_clima:viento', nombre: 'Viento', tipo: 'raster' },
+        ],
+      }],
+      isFetching: false,
+    } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Clima/i)
+    await user.click(screen.getByRole('checkbox', { name: /Precipitación/i }))
+
+    // Regresión: el workspace pasado al mapa traía las 3 capas publicadas
+    // (todo el tema), no solo la marcada — eso disparaba un WMSTileLayer por
+    // cada una y saturaba GeoServer con peticiones de más (429).
+    expect(screen.getByTestId('mapa-workspaces')).toHaveTextContent('t_19_clima')
+    expect(screen.getByTestId('mapa-capas')).toHaveTextContent('t_19_clima:precipitacion')
+    expect(screen.getByTestId('mapa-capas')).not.toHaveTextContent('temperatura')
+    expect(screen.getByTestId('mapa-capas')).not.toHaveTextContent('viento')
   })
 
   test('el filtro de búsqueda esconde las capas que no coinciden', async () => {
@@ -386,6 +427,7 @@ describe('GeovisorFormModal — todos los campos opcionales se envían', () => {
     await user.type(screen.getByLabelText(/^URL de portada/i), 'https://cdn.test/thumb.png')
 
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
     await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
     fireEvent.change(document.querySelector('input[type="color"]')!, { target: { value: '#ff0000' } })
 

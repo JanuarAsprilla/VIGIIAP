@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import {
   X, Loader2, AlertCircle, Plus, Trash2, Globe, Users, ShieldCheck,
-  Layers, Map as MapIcon, Eye, Search, MapPinned,
+  Layers, Map as MapIcon, Eye, Search, MapPinned, ChevronRight,
 } from 'lucide-react'
 import { panelAnim } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
@@ -105,6 +105,11 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
   const [form, setForm] = useState<FormState>(() => editing ? formFromGeovisor(editing) : emptyForm())
   const [errors, setErrors] = useState<FormErrors>({})
   const [filtroCapa, setFiltroCapa] = useState('')
+  // Al editar, los temas con capas ya elegidas empiezan abiertos — si no, el
+  // admin tendría que expandirlos a mano solo para ver su propia selección.
+  const [temasExpandidos, setTemasExpandidos] = useState<Set<string>>(
+    () => new Set(editing ? editing.capasSeleccionadas.map(workspaceDeCapa) : []),
+  )
 
   const { data: conexiones = [] } = useConexionesGeoserverList()
   const { data: workspaces = [], isFetching: loadingWorkspaces } = useWorkspacesDeConexion(form.conexionGeoserverId || null)
@@ -130,6 +135,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
       .flatMap((w) => w.capas.map((c) => c.id))
     if (capasLegado.length === 0) return
     setForm((f) => (f.capasSeleccionadas.length > 0 ? f : { ...f, capasSeleccionadas: capasLegado }))
+    setTemasExpandidos((prev) => new Set([...prev, ...capasLegado.map(workspaceDeCapa)]))
   }, [editing, workspaces])
 
   const gruposFiltrados = useMemo(() => {
@@ -150,6 +156,13 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
         : [...f.capasSeleccionadas, id],
     }))
   }
+
+  const toggleTema = (id: string) => setTemasExpandidos((prev) => {
+    const next = new Set(prev)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    return next
+  })
 
   // Temas representados por la selección actual — de aquí sale tanto la lista
   // de "Color por tema" como los workspaces que se le pasan al mapa en vivo.
@@ -249,7 +262,12 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
     }
   }
 
-  const workspacesSeleccionados = workspaces.filter((w) => temasSeleccionados.includes(w.id))
+  // Filtra también .capas a las marcadas — pasar el workspace completo aquí
+  // dispararía un WMSTileLayer por cada capa publicada en ese tema (todas,
+  // no solo la elegida), saturando GeoServer con peticiones de más.
+  const workspacesSeleccionados = workspaces
+    .filter((w) => temasSeleccionados.includes(w.id))
+    .map((w) => ({ ...w, capas: w.capas.filter((c) => form.capasSeleccionadas.includes(c.id)) }))
 
   return (
     <div
@@ -356,37 +374,52 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                       {gruposFiltrados.map((w, i) => {
                         const activo = temasSeleccionados.includes(w.id)
                         const color = form.colorPorTema[w.id] ?? PALETA_AUTO[i % PALETA_AUTO.length]
+                        // Con filtro de búsqueda activo se fuerza abierto para que los
+                        // resultados sean visibles de inmediato, sin un clic extra.
+                        const abierto = filtroCapa.trim() !== '' || temasExpandidos.has(w.id)
                         return (
-                          <div key={w.id} className={`border rounded-lg p-2.5 transition-colors ${activo ? 'border-primary-600 bg-primary-600/5' : 'border-border'}`}>
-                            <div className="flex items-center gap-2.5 mb-1.5">
+                          <div key={w.id} className={`border rounded-lg overflow-hidden transition-colors ${activo ? 'border-primary-600 bg-primary-600/5' : 'border-border'}`}>
+                            <div
+                              role="button" tabIndex={0} aria-expanded={abierto}
+                              onClick={() => toggleTema(w.id)}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTema(w.id) } }}
+                              className="flex items-center gap-2.5 p-2.5 cursor-pointer select-none">
+                              <ChevronRight aria-hidden="true"
+                                className={`w-3.5 h-3.5 text-text-faint shrink-0 transition-transform ${abierto ? 'rotate-90' : ''}`} />
                               <span className="text-[0.62rem] font-bold uppercase tracking-wider text-text-faint flex-1 truncate">{w.nombre}</span>
+                              <span className="text-[0.58rem] text-text-muted shrink-0">
+                                {w.capas.length} capa{w.capas.length === 1 ? '' : 's'}
+                              </span>
                               {activo && (
                                 <>
-                                  <input type="color" value={color} onChange={(e) => setColor(w.id, e.target.value)}
+                                  <input type="color" value={color} onClick={(e) => e.stopPropagation()}
+                                    onChange={(e) => setColor(w.id, e.target.value)}
                                     aria-label={`Color de ${w.nombre}`}
                                     className="w-5 h-5 rounded-md border border-border cursor-pointer shrink-0" />
                                   <span className="text-[0.58rem] text-text-muted font-mono shrink-0">{color}</span>
                                 </>
                               )}
                             </div>
-                            <div className="space-y-1">
-                              {w.capas.map((c: CapaWorkspace) => {
-                                const checked = form.capasSeleccionadas.includes(c.id)
-                                return (
-                                  <label key={c.id}
-                                    className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs cursor-pointer transition-colors ${
-                                      checked ? 'bg-primary-600/8 text-primary-800' : 'hover:bg-bg-alt text-text'
-                                    }`}>
-                                    <input type="checkbox" checked={checked} onChange={() => toggleCapa(c.id)}
-                                      className="w-3.5 h-3.5 rounded border-border text-primary-800 focus:ring-primary-800/30 shrink-0" />
-                                    <span className="truncate flex-1">{c.nombre}</span>
-                                    <span className={`text-[0.55rem] font-semibold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${
-                                      c.tipo === 'raster' ? 'bg-gold-500/12 text-gold-500' : 'bg-primary-500/12 text-primary-500'
-                                    }`}>{c.tipo === 'raster' ? 'raster' : 'vector'}</span>
-                                  </label>
-                                )
-                              })}
-                            </div>
+                            {abierto && (
+                              <div className="space-y-1 px-2.5 pb-2.5">
+                                {w.capas.map((c: CapaWorkspace) => {
+                                  const checked = form.capasSeleccionadas.includes(c.id)
+                                  return (
+                                    <label key={c.id}
+                                      className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs cursor-pointer transition-colors ${
+                                        checked ? 'bg-primary-600/8 text-primary-800' : 'hover:bg-bg-alt text-text'
+                                      }`}>
+                                      <input type="checkbox" checked={checked} onChange={() => toggleCapa(c.id)}
+                                        className="w-3.5 h-3.5 rounded border-border text-primary-800 focus:ring-primary-800/30 shrink-0" />
+                                      <span className="truncate flex-1">{c.nombre}</span>
+                                      <span className={`text-[0.55rem] font-semibold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${
+                                        c.tipo === 'raster' ? 'bg-gold-500/12 text-gold-500' : 'bg-primary-500/12 text-primary-500'
+                                      }`}>{c.tipo === 'raster' ? 'raster' : 'vector'}</span>
+                                    </label>
+                                  )
+                                })}
+                              </div>
+                            )}
                           </div>
                         )
                       })}
