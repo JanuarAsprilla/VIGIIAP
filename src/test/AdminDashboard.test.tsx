@@ -24,7 +24,12 @@ vi.mock('@/components/ui/Card3D', () => ({
     <div className={className}>{children}</div>,
 }))
 
-const authMock = { user: { name: 'Ana Restrepo' } }
+interface MockUser {
+  name: string
+  rol?: string
+  modulos?: { modulo: string; puede_ver: boolean; puede_editar: boolean }[]
+}
+const authMock: { user: MockUser } = { user: { name: 'Ana Restrepo' } }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 
 vi.mock('@/hooks/useStats', () => ({ useAdminStats: vi.fn(), useDashboardTendencias: vi.fn() }))
@@ -65,6 +70,7 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  authMock.user = { name: 'Ana Restrepo' }
   vi.mocked(useAdminStats).mockReturnValue({
     data: { usuarios: 50, solicitudesPendientes: 3, documentos: 20, mapasPublicados: 12, visitantesUltimos30d: 10 },
     isLoading: false,
@@ -296,5 +302,61 @@ describe('Dashboard — Actividad Reciente', () => {
     const descripcion = await screen.findByText('Acción de sistema')
     expect(screen.getByText('?')).toBeInTheDocument()
     expect(descripcion.nextElementSibling).toHaveTextContent('—')
+  })
+})
+
+describe('Dashboard — personalización por permisos de módulo (admin_sig delegado)', () => {
+  test('un admin_sig con permiso solo de solicitudes no ve el KPI ni el chart de usuarios', async () => {
+    authMock.user = {
+      name: 'Delegado', rol: 'admin_sig',
+      modulos: [{ modulo: 'solicitudes', puede_ver: true, puede_editar: true }],
+    }
+    vi.mocked(useSolicitudesAdmin).mockReturnValue({
+      data: { data: [makeSolicitud({ estado: 'Pendiente' })] },
+    } as unknown as ReturnType<typeof useSolicitudesAdmin>)
+
+    renderPage()
+
+    // "Solicitudes Pendientes" aparece dos veces a propósito: la etiqueta del
+    // KPI y el encabezado de la lista de solicitudes pendientes.
+    expect(await screen.findAllByText('Solicitudes Pendientes')).toHaveLength(2)
+    expect(screen.queryByText('Usuarios Registrados')).not.toBeInTheDocument()
+    expect(screen.queryByText('Documentos Activos')).not.toBeInTheDocument()
+    expect(screen.queryByText('Mapas Publicados')).not.toBeInTheDocument()
+    expect(screen.queryByText('Distribución de Roles')).not.toBeInTheDocument()
+    expect(screen.queryByText('Actividad Reciente')).not.toBeInTheDocument()
+    expect(screen.queryByText('Nuevo Usuario')).not.toBeInTheDocument()
+    expect(screen.getByText('Ver Solicitudes')).toBeInTheDocument()
+  })
+
+  test('no dispara las consultas de módulos sin permiso (evita 403 innecesarios)', async () => {
+    authMock.user = {
+      name: 'Delegado', rol: 'admin_sig',
+      modulos: [{ modulo: 'actividad', puede_ver: true, puede_editar: false }],
+    }
+    renderPage()
+    await screen.findByText('Actividad Reciente')
+
+    expect(useSolicitudesAdmin).toHaveBeenCalledWith(expect.anything(), false)
+    expect(useUsuariosList).toHaveBeenCalledWith(expect.anything(), false)
+  })
+
+  test('un admin_sig sin ningún módulo habilitado no muestra la grilla principal ni las quick actions', async () => {
+    authMock.user = { name: 'Delegado', rol: 'admin_sig', modulos: [] }
+    renderPage()
+
+    expect(await screen.findByText(/Acceso delegado a 0 módulos/)).toBeInTheDocument()
+    expect(screen.queryByText('Solicitudes Pendientes')).not.toBeInTheDocument()
+    expect(screen.queryByText('Distribución de Roles')).not.toBeInTheDocument()
+    expect(screen.queryByText('Nuevo Usuario')).not.toBeInTheDocument()
+  })
+
+  test('super_admin sigue viendo todo, sin el subtítulo de acceso delegado', async () => {
+    authMock.user = { name: 'Root', rol: 'super_admin' }
+    renderPage()
+
+    expect(await screen.findByText('Usuarios Registrados')).toBeInTheDocument()
+    expect(screen.getByText('Distribución de Roles')).toBeInTheDocument()
+    expect(screen.queryByText(/Acceso delegado/)).not.toBeInTheDocument()
   })
 })

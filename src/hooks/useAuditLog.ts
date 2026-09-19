@@ -70,7 +70,7 @@ function normalizeLog(l: AuditLogRaw) {
 
 export type AuditLogData = ReturnType<typeof normalizeLog>
 
-export function useAuditLog(params: Record<string, unknown> = {}) {
+export function useAuditLog(params: Record<string, unknown> = {}, enabled: boolean = true) {
   return useQuery({
     queryKey: ['admin', 'audit', params],
     queryFn:  () => api.get('/admin/audit', { params }),
@@ -79,5 +79,6 @@ export function useAuditLog(params: Record<string, unknown> = {}) {
       meta: Array.isArray(res) ? undefined : res.meta,
     }),
     staleTime: 30_000,
+    enabled,
   })
 }

@@ -10,8 +10,18 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/lib/constants/roles'
+import { puedeVerModulo } from '@/lib/permisosModulo'
+import type { ModuloClave } from '@/lib/constants/modulos'
 
-const NAV_SECTIONS = [
+interface NavLinkDef {
+  label: string
+  path: string
+  icon: ComponentType<{ className?: string }>
+  end?: boolean
+  modulo?: ModuloClave
+}
+
+const NAV_SECTIONS: { label: string; links: NavLinkDef[] }[] = [
   {
     label: 'Panel',
     links: [
@@ -21,22 +31,22 @@ const NAV_SECTIONS = [
   {
     label: 'Gestión',
     links: [
-      { label: 'Usuarios',     path: '/admin/usuarios',    icon: Users },
-      { label: 'Solicitudes',  path: '/admin/solicitudes', icon: ClipboardList },
-      { label: 'Documentos',   path: '/admin/documentos',  icon: FileText },
-      { label: 'Mapas',        path: '/admin/mapas',       icon: Map },
-      { label: 'Geovisores',   path: '/admin/geovisores',  icon: MapPinned },
-      { label: 'Conexiones GeoServer', path: '/admin/conexiones-geoserver', icon: Server },
-      { label: 'Categorías',   path: '/admin/categorias',  icon: Tag },
+      { label: 'Usuarios',     path: '/admin/usuarios',    icon: Users,       modulo: 'usuarios' as ModuloClave },
+      { label: 'Solicitudes',  path: '/admin/solicitudes', icon: ClipboardList, modulo: 'solicitudes' as ModuloClave },
+      { label: 'Documentos',   path: '/admin/documentos',  icon: FileText,    modulo: 'documentos' as ModuloClave },
+      { label: 'Mapas',        path: '/admin/mapas',       icon: Map,         modulo: 'mapas' as ModuloClave },
+      { label: 'Geovisores',   path: '/admin/geovisores',  icon: MapPinned,   modulo: 'geovisores' as ModuloClave },
+      { label: 'Conexiones GeoServer', path: '/admin/conexiones-geoserver', icon: Server, modulo: 'conexiones_geoserver' as ModuloClave },
+      { label: 'Categorías',   path: '/admin/categorias',  icon: Tag,         modulo: 'categorias' as ModuloClave },
     ],
   },
   {
     label: 'Sistema',
     links: [
-      { label: 'Configuración', path: '/admin/configuracion', icon: Settings },
-      { label: 'Actividad',     path: '/admin/actividad',     icon: Activity },
-      { label: 'Errores',       path: '/admin/errores',       icon: AlertTriangle },
-      { label: 'Reportes',      path: '/admin/reportes',      icon: FileBarChart },
+      { label: 'Configuración', path: '/admin/configuracion', icon: Settings,      modulo: 'configuracion' as ModuloClave },
+      { label: 'Actividad',     path: '/admin/actividad',     icon: Activity,      modulo: 'actividad' as ModuloClave },
+      { label: 'Errores',       path: '/admin/errores',       icon: AlertTriangle, modulo: 'errores' as ModuloClave },
+      { label: 'Reportes',      path: '/admin/reportes',      icon: FileBarChart,  modulo: 'reportes' as ModuloClave },
     ],
   },
 ]
@@ -49,7 +59,7 @@ const navItem = {
   animate: { opacity: 1, x: 0, transition: { ease: [0.22, 1, 0.36, 1] as const, duration: 0.35 } },
 }
 
-function AdminNavLink({ link }: { link: { label: string; path: string; icon: ComponentType<{ className?: string }>; end?: boolean; badge?: number | null } }) {
+function AdminNavLink({ link }: { link: NavLinkDef }) {
   return (
     <NavLink to={link.path} end={link.end} className="block no-underline">
       {({ isActive }) => (
@@ -145,23 +155,27 @@ function SidebarContent({ onClose, onLogout, user }: { onClose: () => void; onLo
 
       {/* ── Navigation ── */}
       <nav className="flex-1 py-3 px-3 overflow-y-auto space-y-4">
-        {NAV_SECTIONS.map((section) => (
-          <div key={section.label}>
-            <p className="px-3 pb-1.5 text-[0.58rem] font-bold uppercase tracking-[0.14em] text-text-muted/60">
-              {section.label}
-            </p>
-            <motion.div
-              variants={navContainer}
-              initial="initial"
-              animate="animate"
-              className="space-y-0.5"
-            >
-              {section.links.map((link) => (
-                <AdminNavLink key={link.path} link={link} />
-              ))}
-            </motion.div>
-          </div>
-        ))}
+        {NAV_SECTIONS.map((section) => {
+          const linksVisibles = section.links.filter((link) => !link.modulo || puedeVerModulo(user, link.modulo))
+          if (linksVisibles.length === 0) return null
+          return (
+            <div key={section.label}>
+              <p className="px-3 pb-1.5 text-[0.58rem] font-bold uppercase tracking-[0.14em] text-text-muted/60">
+                {section.label}
+              </p>
+              <motion.div
+                variants={navContainer}
+                initial="initial"
+                animate="animate"
+                className="space-y-0.5"
+              >
+                {linksVisibles.map((link) => (
+                  <AdminNavLink key={link.path} link={link} />
+                ))}
+              </motion.div>
+            </div>
+          )
+        })}
 
         {/* ── Sección exclusiva Super Admin ── */}
         {user?.role === ROLES.SUPER_ADMIN && (

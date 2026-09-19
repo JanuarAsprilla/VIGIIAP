@@ -92,7 +92,7 @@ export const SOL_KEYS = {
 
 type SolicitudRawListResult = { data: SolicitudRaw[]; meta: ApiMeta }
 
-export function useSolicitudesAdmin(params: Record<string, unknown> = {}) {
+export function useSolicitudesAdmin(params: Record<string, unknown> = {}, enabled: boolean = true) {
   return useQuery<SolicitudRawListResult, Error, SolicitudListResult>({
     queryKey: SOL_KEYS.list(params),
     queryFn:  () => api.get('/solicitudes', { params }) as Promise<SolicitudRawListResult>,
@@ -100,6 +100,7 @@ export function useSolicitudesAdmin(params: Record<string, unknown> = {}) {
       data: res.data.map(normalizeSolicitud),
       meta: res.meta,
     }),
+    enabled,
   })
 }
 

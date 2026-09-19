@@ -88,7 +88,7 @@ function invalidateUsuariosYAdmins(qc: QueryClient) {
 }
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
-export function useUsuariosList(params: Record<string, unknown> = {}) {
+export function useUsuariosList(params: Record<string, unknown> = {}, enabled: boolean = true) {
   return useQuery<UsuarioListResult>({
     queryKey: USUARIOS_KEYS.list(params),
     queryFn:  () => api.get('/admin/usuarios', { params }),
@@ -96,6 +96,7 @@ export function useUsuariosList(params: Record<string, unknown> = {}) {
       data: res.data.map(normalizeUser),
       meta: res.meta,
     }),
+    enabled,
   })
 }
 
