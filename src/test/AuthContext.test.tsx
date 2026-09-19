@@ -66,6 +66,46 @@ describe('AuthProvider — rehydration on mount', () => {
   })
 })
 
+describe('AuthProvider — refreshProfile() ante errores transitorios', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  // Regresión: un 429 (rate limit) en /auth/me no debe cerrar una sesión que
+  // sigue siendo válida — antes cualquier error en refreshProfile() llamaba
+  // clearSession() sin importar la causa, desconectando a la persona sin
+  // aviso solo por quedar temporalmente limitada por el rate limiter.
+  test('un 429 en /auth/me no cierra una sesión ya autenticada', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(rawInvestigador)
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(result.current.initializing).toBe(false))
+    expect(result.current.isAuthenticated).toBe(true)
+
+    vi.mocked(api.get).mockRejectedValueOnce(
+      Object.assign(new Error('Demasiadas solicitudes. Intenta de nuevo en unos minutos.'), { status: 429 }),
+    )
+    await act(async () => {
+      await expect(result.current.refreshProfile()).rejects.toThrow('Demasiadas solicitudes')
+    })
+
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.user).toMatchObject({ id: 'u1' })
+  })
+
+  test('un 401 en /auth/me sí cierra una sesión que ya no es válida', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce(rawInvestigador)
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(result.current.initializing).toBe(false))
+    expect(result.current.isAuthenticated).toBe(true)
+
+    vi.mocked(api.get).mockRejectedValueOnce(Object.assign(new Error('401'), { status: 401 }))
+    await act(async () => {
+      await expect(result.current.refreshProfile()).rejects.toThrow()
+    })
+
+    expect(result.current.isAuthenticated).toBe(false)
+    expect(result.current.user).toBeNull()
+  })
+})
+
 describe('AuthProvider — login()', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
