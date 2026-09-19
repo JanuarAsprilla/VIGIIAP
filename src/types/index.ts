@@ -332,6 +332,10 @@ export interface CatalogueEntry {
   icon: React.ComponentType<{ className?: string }>
   to: string
   meta?: string
+  // Mapas/documentos no tienen ruta de detalle propia -- al seleccionarlos
+  // en el Command Palette, se navega a `to` y se precarga este valor en
+  // SearchContext para que la página de destino llegue ya filtrada al ítem.
+  presetQuery?: string
 }
 
 // ─── Web Vitals ───────────────────────────────────────────────────────────────
