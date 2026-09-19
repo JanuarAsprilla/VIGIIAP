@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import api from '@/lib/api'
 import queryClient from '@/lib/queryClient'
 import { ROLES } from '@/lib/constants/roles'
+import type { PermisoModulo } from '@/lib/constants/modulos'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +26,10 @@ export interface AuthUser {
   // Preferencia de tema persistida en el servidor -- null = sin preferencia
   // guardada (ver ThemeSync en App.tsx, que la aplica sobre ThemeContext).
   tema: 'light' | 'dark' | null
+  // Solo presente para admin_sig (ver getProfile en auth.service.js) -- super_admin
+  // y roles no-admin no tienen restricción por módulo, así que este campo queda
+  // undefined para ellos y el panel no debe filtrar nada en base a él.
+  modulos?: PermisoModulo[]
 }
 
 interface RawAuthUser {
@@ -38,6 +43,7 @@ interface RawAuthUser {
   avatar_url?: string | null
   perfilCompleto?: boolean
   tema?: 'light' | 'dark' | null
+  modulos?: PermisoModulo[]
   [key: string]: unknown
 }
 
@@ -95,6 +101,7 @@ function normalizeUser(raw: RawAuthUser): AuthUser {
     avatarUrl:         raw.avatar_url ?? null,
     perfilCompleto:    raw.perfilCompleto ?? true,
     tema:              raw.tema ?? null,
+    modulos:           raw.modulos,
   }
 }
 

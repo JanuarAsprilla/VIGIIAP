@@ -5,9 +5,11 @@ import { motion } from 'framer-motion'
 import {
   Users, ClipboardList, FileText, Map as MapIcon,
   TrendingUp, TrendingDown, CheckCircle, XCircle,
-  ArrowRight, Zap, AlertTriangle,
+  ArrowRight, Zap, AlertTriangle, type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { puedeVerModulo } from '@/lib/permisosModulo'
+import type { ModuloClave } from '@/lib/constants/modulos'
 import { fadeUpSm, staggerContainer, staggerItem3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import Sparkline from '@/components/ui/Sparkline'
@@ -25,8 +27,6 @@ import { ROLES } from '@/lib/constants/roles'
 
 const fadeUp = fadeUpSm
 
-const KPI_ICONS = [Users, ClipboardList, FileText, MapIcon]
-
 interface KpiDef {
   label: string
   value: number | undefined
@@ -34,6 +34,9 @@ interface KpiDef {
   tendencia: TendenciaKPI | undefined
   /** Cómo nombrar la cifra de flujo semanal debajo del valor — ej. "nuevos", "publicados". */
   flowLabel: string
+  /** Módulo del panel al que pertenece esta cifra — un admin_sig sin permiso de "ver" sobre él no debe verla. */
+  modulo: ModuloClave
+  icon: LucideIcon
 }
 
 function DeltaBadge({ pct }: { pct: number }) {
@@ -50,19 +53,22 @@ function DeltaBadge({ pct }: { pct: number }) {
 }
 
 function KPICards({
-  stats, isLoading, tendencias, tendenciasLoading,
+  stats, isLoading, tendencias, tendenciasLoading, user,
 }: {
   stats: AdminStats | undefined
   isLoading: boolean
   tendencias: DashboardTendencias | undefined
   tendenciasLoading: boolean
+  user: ReturnType<typeof useAuth>['user']
 }) {
-  const kpis: KpiDef[] = [
-    { label: 'Usuarios Registrados',   value: stats?.usuarios,              tendencia: tendencias?.usuarios,    flowLabel: 'nuevos' },
-    { label: 'Solicitudes Pendientes', value: stats?.solicitudesPendientes, tendencia: tendencias?.solicitudes, flowLabel: 'nuevas' },
-    { label: 'Documentos Activos',     value: stats?.documentos,            tendencia: tendencias?.documentos,  flowLabel: 'publicados' },
-    { label: 'Mapas Publicados',       value: stats?.mapasPublicados,       tendencia: tendencias?.mapas,       flowLabel: 'publicados' },
+  const todos: KpiDef[] = [
+    { label: 'Usuarios Registrados',   value: stats?.usuarios,              tendencia: tendencias?.usuarios,    flowLabel: 'nuevos',     modulo: 'usuarios',    icon: Users },
+    { label: 'Solicitudes Pendientes', value: stats?.solicitudesPendientes, tendencia: tendencias?.solicitudes, flowLabel: 'nuevas',     modulo: 'solicitudes', icon: ClipboardList },
+    { label: 'Documentos Activos',     value: stats?.documentos,            tendencia: tendencias?.documentos,  flowLabel: 'publicados', modulo: 'documentos',  icon: FileText },
+    { label: 'Mapas Publicados',       value: stats?.mapasPublicados,       tendencia: tendencias?.mapas,       flowLabel: 'publicados', modulo: 'mapas',       icon: MapIcon },
   ]
+  const kpis = todos.filter((kpi) => puedeVerModulo(user, kpi.modulo))
+  if (kpis.length === 0) return null
   return (
     <motion.div
       variants={staggerContainer(0.07, 0.05)}
@@ -70,8 +76,8 @@ function KPICards({
       animate="animate"
       className="grid grid-cols-2 sm:grid-cols-4 gap-4"
     >
-      {kpis.map((kpi, i) => {
-        const Icon = KPI_ICONS[i]
+      {kpis.map((kpi) => {
+        const Icon = kpi.icon
         const dotColor = !kpi.tendencia || kpi.tendencia.deltaPct === 0
           ? 'var(--stats-value)'
           : kpi.tendencia.deltaPct > 0 ? 'var(--color-primary-600)' : 'var(--color-orange-500)'
@@ -417,8 +423,8 @@ function SolicitudesPendientes({ solicitudes, isError, onRetry }: { solicitudes:
 }
 
 // ── Actividad reciente — reusa src/hooks/useAuditLog.ts, mismo hook que Actividad.tsx ──
-function ActividadReciente() {
-  const { data, isLoading, isError, refetch } = useAuditLog({ limit: 7, page: 1 })
+function ActividadReciente({ enabled }: { enabled: boolean }) {
+  const { data, isLoading, isError, refetch } = useAuditLog({ limit: 7, page: 1 }, enabled)
   const logs = data?.data ?? []
 
   return (
@@ -476,13 +482,15 @@ const QA_GLOW = [
   'rgba(249,115,22,0.32)',
 ]
 
-function QuickActions() {
-  const actions = [
-    { label: 'Nuevo Usuario',    to: '/admin/usuarios',    icon: Users,        color: 'from-[#D4A373] to-[#B8860B]'    },
-    { label: 'Ver Solicitudes',  to: '/admin/solicitudes', icon: ClipboardList,color: 'from-primary-500 to-primary-700' },
-    { label: 'Gestionar Docs',   to: '/admin/documentos',  icon: FileText,     color: 'from-magenta to-red-dark'        },
-    { label: 'Ver Actividad',    to: '/admin/actividad',   icon: Zap,          color: 'from-orange-400 to-orange-600'   },
+function QuickActions({ user }: { user: ReturnType<typeof useAuth>['user'] }) {
+  const todas = [
+    { label: 'Nuevo Usuario',    to: '/admin/usuarios',    icon: Users,        color: 'from-[#D4A373] to-[#B8860B]',     modulo: 'usuarios' as ModuloClave },
+    { label: 'Ver Solicitudes',  to: '/admin/solicitudes', icon: ClipboardList,color: 'from-primary-500 to-primary-700', modulo: 'solicitudes' as ModuloClave },
+    { label: 'Gestionar Docs',   to: '/admin/documentos',  icon: FileText,     color: 'from-magenta to-red-dark',        modulo: 'documentos' as ModuloClave },
+    { label: 'Ver Actividad',    to: '/admin/actividad',   icon: Zap,          color: 'from-orange-400 to-orange-600',   modulo: 'actividad' as ModuloClave },
   ]
+  const actions = todas.filter((a) => puedeVerModulo(user, a.modulo))
+  if (actions.length === 0) return null
   return (
     <motion.div
       variants={staggerContainer(0.07, 0.3)}
@@ -494,7 +502,7 @@ function QuickActions() {
         <motion.div key={a.label} variants={staggerItem3D}>
           <Link to={a.to} className="no-underline block">
             <Card3D
-              glow={QA_GLOW[i]}
+              glow={QA_GLOW[i % QA_GLOW.length]}
               intensity={6}
               className={`bg-gradient-to-br ${a.color} rounded-xl p-4 text-center cursor-pointer relative overflow-hidden`}
               whileHover={{ y: -4 }}
@@ -515,10 +523,20 @@ function QuickActions() {
 
 export default function Dashboard() {
   const { user } = useAuth()
+
+  // Un admin_sig delegado solo trae permisos para el subconjunto de módulos
+  // que le asignaron (ver GestionAdmins.tsx / admin_permisos_modulo en el
+  // backend) -- super_admin y roles no-admin no tienen restricción aquí.
+  const verUsuarios    = puedeVerModulo(user, 'usuarios')
+  const verSolicitudes = puedeVerModulo(user, 'solicitudes')
+  const verActividad   = puedeVerModulo(user, 'actividad')
+  const esDelegado     = user?.rol === 'admin_sig'
+  const modulosPropios = esDelegado ? (user?.modulos ?? []).filter((m) => m.puede_ver).length : null
+
   const { data: stats, isLoading: loadingStats, isError: statsError, refetch: refetchStats } = useAdminStats()
   const { data: tendencias, isLoading: loadingTendencias } = useDashboardTendencias()
-  const { data: solData, isError: solError, refetch: refetchSol } = useSolicitudesAdmin({ limit: 100 })
-  const { data: usrData, isError: usrError, refetch: refetchUsr } = useUsuariosList({ limit: 100 })
+  const { data: solData, isError: solError, refetch: refetchSol } = useSolicitudesAdmin({ limit: 100 }, verSolicitudes)
+  const { data: usrData, isError: usrError, refetch: refetchUsr } = useUsuariosList({ limit: 100 }, verUsuarios)
   const solicitudes = solData?.data ?? []
   const usuarios    = usrData?.data ?? []
 
@@ -533,7 +551,9 @@ export default function Dashboard() {
           Bienvenido, {user?.name?.split(' ')[0]}
         </h1>
         <p className="text-sm text-text-muted mt-1">
-          Resumen general del sistema VIGIA-IIAP · {new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}
+          {esDelegado
+            ? `Acceso delegado a ${modulosPropios} módulo${modulosPropios === 1 ? '' : 's'} del panel · ${new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}`
+            : `Resumen general del sistema VIGIA-IIAP · ${new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}`}
         </p>
       </motion.div>
 
@@ -549,25 +569,28 @@ export default function Dashboard() {
         isLoading={loadingStats}
         tendencias={tendencias}
         tendenciasLoading={loadingTendencias}
+        user={user}
       />
 
       {/* Alerta solicitudes */}
-      <AlertasSolicitudes solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />
+      {verSolicitudes && <AlertasSolicitudes solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />}
 
       {/* Quick Actions */}
-      <QuickActions />
+      <QuickActions user={user} />
 
       {/* Main grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-        <div className="space-y-6">
-          <SolicitudesPendientes solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />
-          <ActividadReciente />
+      {(verSolicitudes || verActividad || verUsuarios) && (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+          <div className="space-y-6">
+            {verSolicitudes && <SolicitudesPendientes solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />}
+            {verActividad && <ActividadReciente enabled={verActividad} />}
+          </div>
+          <div className="space-y-6">
+            {verUsuarios && <RolesChart usuarios={usuarios} isError={usrError} onRetry={refetchUsr} />}
+            {verSolicitudes && <SolicitudesChart solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />}
+          </div>
         </div>
-        <div className="space-y-6">
-          <RolesChart usuarios={usuarios} isError={usrError} onRetry={refetchUsr} />
-          <SolicitudesChart solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />
-        </div>
-      </div>
+      )}
     </div>
   )
 }
