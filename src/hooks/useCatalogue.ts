@@ -62,9 +62,17 @@ function buildActionEntries(isAuthenticated: boolean): CatalogueEntry[] {
       id:       'res-terminos',
       group:    'Recursos',
       label:    'Términos y Condiciones',
-      keywords: 'terminos condiciones privacidad politica datos',
+      keywords: 'terminos condiciones uso',
       icon:     FileCheck,
       to:       '/terminos',
+    },
+    {
+      id:       'res-privacidad',
+      group:    'Recursos',
+      label:    'Política de Privacidad',
+      keywords: 'privacidad politica datos personales tratamiento',
+      icon:     FileCheck,
+      to:       '/politica-privacidad',
     },
   ]
 

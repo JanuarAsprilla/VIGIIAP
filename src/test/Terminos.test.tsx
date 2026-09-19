@@ -1,7 +1,7 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest'
+import { describe, test, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import Terminos from '@/pages/recursos/Terminos'
 
 vi.mock('framer-motion', () => {
@@ -22,39 +22,22 @@ vi.mock('@/components/ui/Card3D', () => ({
     <div className={className}>{children}</div>,
 }))
 
-vi.mock('@/lib/api', () => ({ default: { get: vi.fn() } }))
-import api from '@/lib/api'
-
 function renderPage() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(
-    <QueryClientProvider client={qc}><Terminos /></QueryClientProvider>,
-  )
+  return render(<MemoryRouter><Terminos /></MemoryRouter>)
 }
 
-beforeEach(() => {
-  vi.clearAllMocks()
-})
-
-describe('Terminos — política de privacidad remota', () => {
-  test('muestra la política editada por el super_admin cuando la API la devuelve', async () => {
-    // api.get ya viene sin envolver (ver interceptor en src/lib/api.ts) —
-    // este es el caso que antes se rompía por un `select: (res) => res.data`
-    // que volvía a buscar `.data` sobre un objeto que ya no lo tenía.
-    vi.mocked(api.get).mockResolvedValue({
-      politicaPrivacidad: 'Texto personalizado de la política de datos del IIAP.',
-    })
-
+describe('Terminos — condiciones de uso (política de privacidad vive en su propia página)', () => {
+  test('muestra las secciones de términos de uso', () => {
     renderPage()
-
-    expect(await screen.findByText('Texto personalizado de la política de datos del IIAP.')).toBeInTheDocument()
+    expect(screen.getByText(/1\. Aceptación de Términos/)).toBeInTheDocument()
+    expect(screen.getByText(/2\. Uso Autorizado/)).toBeInTheDocument()
+    expect(screen.getByText(/3\. Propiedad Intelectual/)).toBeInTheDocument()
   })
 
-  test('usa el texto de respaldo si la API no trae política configurada', async () => {
-    vi.mocked(api.get).mockResolvedValue({})
-
+  test('enlaza a /politica-privacidad en vez de embeber el texto de la política', () => {
     renderPage()
-
-    expect(await screen.findByText(/En cumplimiento de la Ley 1581 de 2012/)).toBeInTheDocument()
+    const link = screen.getByRole('link', { name: 'Política de Privacidad' })
+    expect(link).toHaveAttribute('href', '/politica-privacidad')
+    expect(screen.queryByText(/En cumplimiento de la Ley 1581 de 2012/)).not.toBeInTheDocument()
   })
 })

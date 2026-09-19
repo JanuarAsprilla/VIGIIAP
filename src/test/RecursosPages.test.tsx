@@ -2,10 +2,8 @@ import { describe, test, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import FAQ from '@/pages/recursos/FAQ'
 import GuiaUsuario from '@/pages/recursos/GuiaUsuario'
-import Terminos from '@/pages/recursos/Terminos'
 
 vi.mock('@/lib/api', () => ({ default: { get: vi.fn().mockResolvedValue({ data: {} }) } }))
 
@@ -60,14 +58,5 @@ describe('GuiaUsuario', () => {
     expect(screen.getByText('Primeros Pasos')).toBeInTheDocument()
     expect(screen.getByText('Herramientas SIG')).toBeInTheDocument()
     expect(screen.getByText('Solicitudes y Trámites')).toBeInTheDocument()
-  })
-})
-
-describe('Terminos', () => {
-  test('renderiza las secciones de términos de uso', () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    render(<Terminos />, { wrapper: ({ children }) => <QueryClientProvider client={qc}>{children}</QueryClientProvider> })
-    expect(screen.getByText('1. Aceptación de Términos')).toBeInTheDocument()
-    expect(screen.getByText('info@iiap.org.co')).toBeInTheDocument()
   })
 })
