@@ -192,3 +192,55 @@ describe('GestionGeovisores — formulario de creación', () => {
     expect(await screen.findByText('Geovisor "Hidrología Amazónica" creado')).toBeInTheDocument()
   })
 })
+
+describe('GestionGeovisores — buscador y filtro por categoría', () => {
+  function mockDosGeovisores() {
+    vi.mocked(useGeovisoresList).mockReturnValue({
+      data: {
+        data: [
+          makeGeovisor({ id: 'g1', titulo: 'Geología del Chocó', categoria: 'Geología' }),
+          makeGeovisor({ id: 'g2', titulo: 'Hidrología Amazónica', categoria: 'Hidrología' }),
+        ],
+        meta: { total: 2 },
+      },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useGeovisoresList>)
+  }
+
+  test('con una sola categoría entre los geovisores, no se muestran píldoras de filtro', () => {
+    render(<GestionGeovisores />)
+    expect(screen.queryByRole('button', { name: 'Geología' })).not.toBeInTheDocument()
+  })
+
+  test('el buscador filtra por título y muestra un mensaje cuando no hay coincidencias', async () => {
+    mockDosGeovisores()
+    const user = userEvent.setup()
+    render(<GestionGeovisores />)
+
+    expect(screen.getByText('Geología del Chocó')).toBeInTheDocument()
+    expect(screen.getByText('Hidrología Amazónica')).toBeInTheDocument()
+
+    await user.type(screen.getByLabelText(/Buscar geovisor por título/i), 'hidro')
+    expect(screen.queryByText('Geología del Chocó')).not.toBeInTheDocument()
+    expect(screen.getByText('Hidrología Amazónica')).toBeInTheDocument()
+
+    await user.clear(screen.getByLabelText(/Buscar geovisor por título/i))
+    await user.type(screen.getByLabelText(/Buscar geovisor por título/i), 'no existe nada así')
+    expect(screen.getByText('Ningún geovisor coincide con la búsqueda')).toBeInTheDocument()
+  })
+
+  test('las píldoras de categoría filtran la lista y se pueden des-seleccionar', async () => {
+    mockDosGeovisores()
+    const user = userEvent.setup()
+    render(<GestionGeovisores />)
+
+    const pill = screen.getByRole('button', { name: 'Geología' })
+    await user.click(pill)
+    expect(screen.getByText('Geología del Chocó')).toBeInTheDocument()
+    expect(screen.queryByText('Hidrología Amazónica')).not.toBeInTheDocument()
+
+    await user.click(pill)
+    expect(screen.getByText('Geología del Chocó')).toBeInTheDocument()
+    expect(screen.getByText('Hidrología Amazónica')).toBeInTheDocument()
+  })
+})

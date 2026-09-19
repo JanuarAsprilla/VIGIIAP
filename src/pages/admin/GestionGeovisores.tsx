@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Trash2, Pencil, CheckCircle, Globe, Layers, MapPinned,
-  ShieldAlert, Power,
+  ShieldAlert, Power, Search,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, staggerContainer, staggerItem } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
@@ -113,8 +113,20 @@ export default function GestionGeovisores() {
   const [editing, setEditing]           = useState<GeovisorRaw | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<GeovisorRaw | null>(null)
   const [toast, setToast]               = useState<string | null>(null)
+  const [search, setSearch]             = useState('')
+  const [filtroCategoria, setFiltroCategoria] = useState('')
 
   const conexionNombrePorId = Object.fromEntries(conexiones.map((c) => [c.id, c.nombre]))
+
+  const categoriasConGeovisores = [...new Set(geovisores.map((g) => g.categoria).filter(Boolean))]
+    .sort((a, b) => a!.localeCompare(b!))
+
+  const filtered = geovisores.filter((g) => {
+    const q = search.toLowerCase()
+    const matchQ = !q || g.titulo.toLowerCase().includes(q)
+    const matchC = !filtroCategoria || g.categoria === filtroCategoria
+    return matchQ && matchC
+  })
 
   const openCreate = () => { setEditing(null); setShowForm(true) }
   const openEdit = (geovisor: GeovisorRaw) => { setEditing(geovisor); setShowForm(true) }
@@ -160,6 +172,33 @@ export default function GestionGeovisores() {
         </button>
       </motion.div>
 
+      {!isLoading && geovisores.length > 0 && categoriasConGeovisores.length > 1 && (
+        <motion.div {...fadeUp(0.03)} className="flex flex-wrap gap-2">
+          {categoriasConGeovisores.map((c) => (
+            <button key={c}
+              onClick={() => setFiltroCategoria(filtroCategoria === c ? '' : c!)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                filtroCategoria === c
+                  ? 'bg-primary-800 text-white border-primary-800'
+                  : 'bg-[var(--card-bg)] text-text-muted border-border hover:border-primary-800 hover:text-primary-800'
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </motion.div>
+      )}
+
+      {!isLoading && geovisores.length > 0 && (
+        <motion.div {...fadeUp(0.05)} className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+          <input type="text" aria-label="Buscar geovisor por título" placeholder="Buscar geovisor por título…"
+            value={search} onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+          />
+        </motion.div>
+      )}
+
       {!isLoading && conexiones.length === 0 && (
         <motion.div {...fadeUp(0.04)} className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/25 rounded-xl">
           <ShieldAlert className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
@@ -187,10 +226,16 @@ export default function GestionGeovisores() {
         </motion.div>
       )}
 
-      {geovisores.length > 0 && (
+      {geovisores.length > 0 && filtered.length === 0 && (
+        <div className="py-12 text-center text-sm text-text-muted">
+          Ningún geovisor coincide con la búsqueda
+        </div>
+      )}
+
+      {filtered.length > 0 && (
         <motion.div variants={staggerContainer(0.05, 0.06)} initial="initial" animate="animate" className="space-y-3">
           <AnimatePresence mode="popLayout">
-            {geovisores.map((geovisor) => (
+            {filtered.map((geovisor) => (
               <GeovisorRow
                 key={geovisor.id}
                 geovisor={geovisor}
