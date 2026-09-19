@@ -126,8 +126,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const normalized = normalizeUser(raw)
       persistUser(normalized)
       return normalized
-    } catch {
-      clearSession()
+    } catch (err) {
+      // Solo una sesión realmente inválida (401) debe cerrar sesión. Otros
+      // errores — 429 por rate limit, 5xx, red caída — son transitorios y
+      // no deben desloguear a alguien con una cookie de sesión todavía válida.
+      if ((err as { status?: number } | null)?.status === 401) {
+        clearSession()
+      }
+      throw err
     }
   }, [persistUser, clearSession])
 
@@ -139,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Patrón "fetch on mount" — setInitializing solo se dispara una vez que
     // la promesa resuelve (éxito o error), no sincrónicamente en el efecto.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    refreshProfile().finally(() => setInitializing(false))
+    refreshProfile().catch(() => {}).finally(() => setInitializing(false))
   }, [refreshProfile])
 
   // Escucha el evento de logout forzado por el interceptor de axios (401)
