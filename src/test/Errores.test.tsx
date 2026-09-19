@@ -68,33 +68,57 @@ describe('Errores — listado', () => {
   test('muestra mensaje, endpoint y contador de ocurrencias', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeError()], meta: { total: 1 } })
     renderPage()
-    expect(await screen.findByText('Connection timeout')).toBeInTheDocument()
-    expect(screen.getByText('POST /api/v1/mapas')).toBeInTheDocument()
-    expect(screen.getByText('3')).toBeInTheDocument()
+    // Aparece dos veces con un solo error: en la fila y en la tarjeta "más
+    // frecuente" del resumen (inevitable cuando solo hay un error cargado).
+    expect(await screen.findAllByText('Connection timeout')).toHaveLength(2)
+    expect(screen.getByText('/api/v1/mapas')).toBeInTheDocument()
+    expect(screen.getByText('POST')).toBeInTheDocument()
+    expect(screen.getByText('3 veces')).toBeInTheDocument()
   })
 
-  test('un error sin stack no muestra el botón de expandir detalle', async () => {
+  test('un error sin stack no tiene la fila expandible', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeError({ stack: null })], meta: { total: 1 } })
     renderPage()
-    await screen.findByText('Connection timeout')
-    expect(screen.queryByRole('button', { name: /Ver detalle/i })).not.toBeInTheDocument()
+    const [filaBtn] = await screen.findAllByRole('button', { name: /Connection timeout/i })
+    expect(filaBtn).toBeDisabled()
+    expect(filaBtn).not.toHaveAttribute('aria-expanded')
   })
 })
 
 describe('Errores — detalle expandible', () => {
-  test('clic en el botón de detalle muestra el stack trace, otro clic lo oculta', async () => {
+  test('clic en la fila muestra el stack trace, otro clic lo oculta', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeError()], meta: { total: 1 } })
     const user = userEvent.setup()
     renderPage()
-    await screen.findByText('Connection timeout')
+    const [filaBtn] = await screen.findAllByRole('button', { name: /Connection timeout/i })
 
     expect(screen.queryByText(/at foo\.js/)).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /Ver detalle/i }))
+    await user.click(filaBtn)
     expect(screen.getByText(/at foo\.js/)).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /Ocultar detalle/i }))
+    await user.click(filaBtn)
     expect(screen.queryByText(/at foo\.js/)).not.toBeInTheDocument()
+  })
+
+  test('el botón de copiar detalle muestra confirmación tras copiar', async () => {
+    // La aserción sobre el mock exacto de navigator.clipboard es frágil en
+    // jsdom (@testing-library/user-event trae su propio shim de portapapeles
+    // que puede tomar precedencia) -- se valida el comportamiento observable
+    // (el botón cambia a "Copiado"), no la llamada interna a la Clipboard API.
+    vi.mocked(api.get).mockResolvedValue({ data: [makeError()], meta: { total: 1 } })
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+      configurable: true,
+    })
+    const user = userEvent.setup()
+    renderPage()
+    const [filaBtn] = await screen.findAllByRole('button', { name: /Connection timeout/i })
+    await user.click(filaBtn)
+
+    expect(screen.getByRole('button', { name: /Copiar detalle/i })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Copiar detalle/i }))
+    expect(await screen.findByText('Copiado')).toBeInTheDocument()
   })
 })
 
@@ -103,7 +127,7 @@ describe('Errores — paginación', () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeError()], meta: { total: 25 } })
     const user = userEvent.setup()
     renderPage()
-    await screen.findByText('Connection timeout')
+    await screen.findAllByText('Connection timeout')
 
     const [prev, next] = screen.getAllByRole('button').filter((b) =>
       b.querySelector('.lucide-chevron-left, .lucide-chevron-right'))
@@ -112,5 +136,43 @@ describe('Errores — paginación', () => {
     await user.click(next)
     expect(screen.getByText('Página 2 de 3 · 25 errores total')).toBeInTheDocument()
     expect(api.get).toHaveBeenCalledWith('/admin/errores', { params: expect.objectContaining({ offset: 10 }) })
+  })
+})
+
+describe('Errores — resumen', () => {
+  test('muestra críticos (5xx), ocurrencias totales y el error más frecuente', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [
+        makeError({ id: 1, mensaje: 'Connection timeout', status_code: 500, ocurrencias: 5 }),
+        makeError({ id: 2, mensaje: 'Petición inválida', status_code: 400, ocurrencias: 1, ruta: '/api/v1/documentos' }),
+      ],
+      meta: { total: 2 },
+    })
+    renderPage()
+    await screen.findAllByText('Connection timeout')
+
+    expect(screen.getByText('1')).toBeInTheDocument() // 1 crítico (5xx)
+    expect(screen.getByText('6')).toBeInTheDocument() // 5 + 1 ocurrencias totales
+    expect(screen.getByText('Más frecuente — 5×')).toBeInTheDocument()
+  })
+
+  test('el buscador filtra por mensaje o endpoint', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [
+        makeError({ id: 1, mensaje: 'Connection timeout', ruta: '/api/v1/mapas' }),
+        makeError({ id: 2, mensaje: 'Token inválido', ruta: '/api/v1/auth/login' }),
+      ],
+      meta: { total: 2 },
+    })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findAllByText('Connection timeout')
+
+    await user.type(screen.getByLabelText(/Buscar error/i), 'auth')
+    // El filtro solo afecta la lista de filas -- la tarjeta de resumen "más
+    // frecuente" sigue mostrando el error más frecuente entre TODOS los
+    // cargados, no solo los que coinciden con la búsqueda.
+    expect(screen.queryByRole('button', { name: /Connection timeout/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Token inválido/i })).toBeInTheDocument()
   })
 })
