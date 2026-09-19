@@ -85,6 +85,10 @@ vi.mock('@/hooks/useNotificaciones', () => ({
   useMarcarNotificacionLeida: () => ({ mutate: marcarLeidaMutate }),
   useMarcarTodasNotificacionesLeidas: () => ({ mutate: marcarTodasLeidasMutate }),
 }))
+const { updatePerfilMutate } = vi.hoisted(() => ({ updatePerfilMutate: vi.fn() }))
+vi.mock('@/hooks/useUsuarios', () => ({
+  useUpdatePerfil: () => ({ mutate: updatePerfilMutate }),
+}))
 
 const navigateSpy = vi.fn()
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -269,6 +273,23 @@ describe('TopBar — tema visual', () => {
     themeMock.isDark = true
     renderTopBar()
     expect(screen.getByLabelText('Cambiar a modo claro')).toBeInTheDocument()
+  })
+
+  test('sin sesión, el botón de tema no persiste preferencia en el servidor', async () => {
+    const user = userEvent.setup()
+    renderTopBar()
+    await user.click(screen.getByLabelText('Cambiar a modo oscuro'))
+    expect(updatePerfilMutate).not.toHaveBeenCalled()
+  })
+
+  test('con sesión, el botón de tema persiste el tema opuesto al actual', async () => {
+    authMock.isAuthenticated = true
+    authMock.user = { name: 'Ana Restrepo', role: 'Investigador', initials: 'AR' }
+    themeMock.isDark = false
+    const user = userEvent.setup()
+    renderTopBar()
+    await user.click(screen.getByLabelText('Cambiar a modo oscuro'))
+    expect(updatePerfilMutate).toHaveBeenCalledWith({ tema: 'dark' })
   })
 })
 

@@ -20,6 +20,7 @@ import { useTheme }  from '@/contexts/ThemeContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { useUI }     from '@/contexts/UIContext'
 import { useNotificaciones, useMarcarNotificacionLeida, useMarcarTodasNotificacionesLeidas } from '@/hooks/useNotificaciones'
+import { useUpdatePerfil } from '@/hooks/useUsuarios'
 
 import SoportePanel        from './topbar/SoportePanel'
 import NotificacionesPanel from './topbar/NotificacionesPanel'
@@ -148,6 +149,15 @@ export default function TopBar({ onMenuToggle, onOpenAuthModal }: {
   const { openPalette, notifications }     = useUI()
   const { query, setQuery }               = useSearch()
   const { isDark, toggleTheme }           = useTheme()
+  const updatePerfil = useUpdatePerfil()
+
+  // Alterna el tema local y, si hay sesión, persiste la preferencia en el
+  // servidor (usuarios.tema) — isDark todavía refleja el tema ANTES del
+  // toggle, así que el valor a guardar es el opuesto.
+  const handleToggleTheme = () => {
+    toggleTheme()
+    if (isAuthenticated) updatePerfil.mutate({ tema: isDark ? 'light' : 'dark' })
+  }
 
   const placeholder = (SEARCH_PLACEHOLDERS as Record<string, string>)[location.pathname] ?? (SEARCH_PLACEHOLDERS as Record<string, string>)['/']
   const activeLabel = (PAGE_LABELS as Record<string, string>)[location.pathname]
@@ -333,7 +343,7 @@ export default function TopBar({ onMenuToggle, onOpenAuthModal }: {
 
           {/* ── Theme toggle — visible para todos ── */}
           <motion.button
-            onClick={toggleTheme}
+            onClick={handleToggleTheme}
             aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
             title={isDark ? 'Modo claro' : 'Modo oscuro'}
             whileTap={{ scale: 0.88 }}

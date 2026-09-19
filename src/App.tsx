@@ -5,6 +5,7 @@ import { SearchProvider } from './contexts/SearchContext'
 import { UIProvider } from './contexts/UIContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import MainLayout from './layouts/MainLayout'
+import ThemeSync from './components/ThemeSync'
 import AdminLayout from './layouts/AdminLayout'
 import { RequireVerified, RequireAdmin, RequireSuperAdmin } from './components/RequireAuth'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -108,6 +109,7 @@ function AppRoutes() {
   return (
     <ThemeProvider>
     <AuthProvider>
+    <ThemeSync />
     <UIProvider>
     <SearchProvider>
       {/* key={location.key} — resetea el ErrorBoundary en cada navegación,

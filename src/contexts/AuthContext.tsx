@@ -22,6 +22,9 @@ export interface AuthUser {
   // true por defecto: las cuentas registradas por formulario ya piden
   // institución, y el shape de /auth/visitante no trae este campo.
   perfilCompleto: boolean
+  // Preferencia de tema persistida en el servidor -- null = sin preferencia
+  // guardada (ver ThemeSync en App.tsx, que la aplica sobre ThemeContext).
+  tema: 'light' | 'dark' | null
 }
 
 interface RawAuthUser {
@@ -34,6 +37,7 @@ interface RawAuthUser {
   twoFactorEnabled?: boolean
   avatar_url?: string | null
   perfilCompleto?: boolean
+  tema?: 'light' | 'dark' | null
   [key: string]: unknown
 }
 
@@ -90,6 +94,7 @@ function normalizeUser(raw: RawAuthUser): AuthUser {
     twoFactorEnabled:  raw.twoFactorEnabled ?? false,
     avatarUrl:         raw.avatar_url ?? null,
     perfilCompleto:    raw.perfilCompleto ?? true,
+    tema:              raw.tema ?? null,
   }
 }
 

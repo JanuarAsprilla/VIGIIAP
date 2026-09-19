@@ -5,12 +5,13 @@ import { ThemeProvider, useTheme } from '../contexts/ThemeContext'
 
 // ─── Helper consumer component ────────────────────────────────────────────────
 function ThemeConsumer() {
-  const { theme, isDark, toggleTheme } = useTheme()
+  const { theme, isDark, toggleTheme, setTheme } = useTheme()
   return (
     <div>
       <div data-testid="theme">{theme}</div>
       <div data-testid="is-dark">{String(isDark)}</div>
       <button onClick={toggleTheme}>toggle</button>
+      <button onClick={() => setTheme('dark')}>set-dark</button>
     </div>
   )
 }
@@ -91,6 +92,17 @@ describe('ThemeContext', () => {
     )
     await user.click(screen.getByRole('button', { name: 'toggle' }))
     expect(screen.getByTestId('theme').textContent).toBe('light')
+  })
+
+  test('setTheme applies a theme directly, bypassing toggle', async () => {
+    const user = userEvent.setup()
+    render(
+      <ThemeProvider>
+        <ThemeConsumer />
+      </ThemeProvider>,
+    )
+    await user.click(screen.getByRole('button', { name: 'set-dark' }))
+    expect(screen.getByTestId('theme').textContent).toBe('dark')
   })
 
   test('throws when useTheme is used outside ThemeProvider', () => {

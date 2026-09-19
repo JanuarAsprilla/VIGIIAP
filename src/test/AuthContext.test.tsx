@@ -268,6 +268,28 @@ describe('AuthProvider — perfilCompleto / completarPerfil()', () => {
   })
 })
 
+describe('AuthProvider — normalización de tema', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('tema es null cuando /auth/me no lo incluye', async () => {
+    vi.mocked(api.get).mockResolvedValue(rawInvestigador)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(result.current.initializing).toBe(false))
+
+    expect(result.current.user).toMatchObject({ tema: null })
+  })
+
+  test('tema pasa directo cuando /auth/me lo reporta', async () => {
+    vi.mocked(api.get).mockResolvedValue({ ...rawInvestigador, tema: 'dark' })
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(result.current.initializing).toBe(false))
+
+    expect(result.current.user).toMatchObject({ tema: 'dark' })
+  })
+})
+
 describe('useAuth() outside AuthProvider', () => {
   test('throws a descriptive error', () => {
     expect(() => renderHook(() => useAuth())).toThrow('useAuth debe usarse dentro de AuthProvider')
