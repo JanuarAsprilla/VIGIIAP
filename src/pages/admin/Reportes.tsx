@@ -39,6 +39,11 @@ export default function Reportes() {
       return `"${safe.replace(/"/g, '""')}"`
     }
     const rows: (string | number)[][] = [
+      ['VIGIA — Sistema de Información Territorial del Chocó (IIAP)'],
+      ['Reporte de actividad'],
+      [`Período: ${data.desde} a ${data.hasta}`],
+      [`Generado: ${new Date().toLocaleString('es-CO')}`],
+      [],
       ['Métrica', 'Valor'],
       ['Usuarios nuevos', data.usuarios.nuevos],
       ['Usuarios creados por admin', data.usuarios.creadosPorAdmin],
@@ -55,8 +60,13 @@ export default function Reportes() {
       ['Módulo', 'Eventos'],
       ...data.actividadPorModulo.map((m) => [m.modulo, m.total]),
     ]
-    const csv = rows.map((r) => r.map(csvField).join(',')).join('\n')
-    const blobUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+    // \r\n (no solo \n) y el BOM son necesarios para que Excel/Notepad en Windows
+    // interpreten el archivo como UTF-8 con saltos de línea reales -- sin esto,
+    // las tildes se corrompen (é → √©) y algunos visores muestran todas las filas
+    // pegadas en una sola línea. Mismo patrón que ya usa export.controller.js
+    // en el backend para los demás CSV exportables.
+    const csv = rows.map((r) => r.map(csvField).join(',')).join('\r\n')
+    const blobUrl = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }))
     const a = document.createElement('a')
     a.href = blobUrl
     a.download = `reporte-${data.desde}-a-${data.hasta}.csv`

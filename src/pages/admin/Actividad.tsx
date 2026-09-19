@@ -44,10 +44,18 @@ export default function Actividad() {
       const safe = /^[=+\-@\t]/.test(s) ? `'${s}` : s
       return `"${safe.replace(/"/g, '""')}"`
     }
-    const rows = [['Acción', 'Módulo', 'Descripción', 'Usuario', 'IP', 'Fecha']]
+    const rows = [
+      ['VIGIA — Sistema de Información Territorial del Chocó (IIAP)'],
+      ['Registro de actividad'],
+      [`Generado: ${new Date().toLocaleString('es-CO')}`],
+      [],
+      ['Acción', 'Módulo', 'Descripción', 'Usuario', 'IP', 'Fecha'],
+    ]
     logs.forEach((l) => rows.push([l.accion, l.modulo, l.descripcion, l.email, l.ip, l.fecha]))
-    const csv = rows.map((r) => r.map(csvField).join(',')).join('\n')
-    const blobUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+    // \r\n y el BOM son necesarios para que Excel/Notepad en Windows interpreten
+    // el archivo como UTF-8 con saltos de línea reales -- ver Reportes.tsx.
+    const csv = rows.map((r) => r.map(csvField).join(',')).join('\r\n')
+    const blobUrl = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }))
     const a = document.createElement('a')
     a.href = blobUrl
     a.download = `actividad-${new Date().toISOString().slice(0, 10)}.csv`

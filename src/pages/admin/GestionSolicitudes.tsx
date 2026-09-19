@@ -150,10 +150,18 @@ export default function GestionSolicitudes() {
       const safe = /^[=+\-@\t]/.test(s) ? `'${s}` : s
       return `"${safe.replace(/"/g, '""')}"`
     }
-    const rows = [['ID', 'Tipo', 'Solicitante', 'Email', 'Fecha', 'Estado']]
+    const rows = [
+      ['VIGIA — Sistema de Información Territorial del Chocó (IIAP)'],
+      ['Solicitudes'],
+      [`Generado: ${new Date().toLocaleString('es-CO')}`],
+      [],
+      ['ID', 'Tipo', 'Solicitante', 'Email', 'Fecha', 'Estado'],
+    ]
     pageItems.forEach((s) => rows.push([s.id, s.tipo, s.solicitante, s.email, s.fecha, s.estado]))
-    const csv = rows.map((r) => r.map(csvField).join(',')).join('\n')
-    const blobUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+    // \r\n y el BOM son necesarios para que Excel/Notepad en Windows interpreten
+    // el archivo como UTF-8 con saltos de línea reales -- ver Reportes.tsx.
+    const csv = rows.map((r) => r.map(csvField).join(',')).join('\r\n')
+    const blobUrl = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }))
     const a = document.createElement('a')
     a.href = blobUrl
     a.download = 'solicitudes.csv'
