@@ -24,8 +24,19 @@ export function distanciaMetros(latlngs: L.LatLng[]): number {
   return total
 }
 
+/**
+ * Reimplementación local de L.GeometryUtil.readableArea -- la de leaflet-draw
+ * (dist/leaflet.draw-src.js:3161) hace `type = typeof isMetric` sin declarar
+ * la variable, lo que revienta con "ReferenceError: type is not defined" en
+ * bundles de módulos ES (modo estricto). Rompía el visor cada vez que
+ * alguien hacía clic en un punto para ver su área. formattedNumber() sí es
+ * segura, así que se reutiliza para mantener el mismo formato de número.
+ */
 export function formatearArea(hectareas: number): string {
-  return L.GeometryUtil.readableArea(hectareas * 10_000, true, { ha: 2, m: 0, km: 2 })
+  const areaM2 = hectareas * 10_000
+  return areaM2 >= 10_000
+    ? `${L.GeometryUtil.formattedNumber(String(hectareas), 2)} ha`
+    : `${L.GeometryUtil.formattedNumber(String(areaM2), 0)} m²`
 }
 
 export function formatearDistancia(metros: number): string {
