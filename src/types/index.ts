@@ -203,13 +203,14 @@ export interface GeovisorRaw {
   categoria: string | null
   conexionGeoserverId: string
   workspacesGeoserver: string[]
+  /** IDs de capa ("workspace:layername") elegidas sueltas, sin importar su workspace/tema — vacío = usar workspacesGeoserver completos (legado). */
+  capasSeleccionadas: string[]
   colorPorTema: Record<string, string>
   centro: { lat: number; lng: number }
   zoomInicial: number
   basemapDefecto: string
   areaMaxHa: number | null
   presetsArea: PresetArea[]
-  iaHabilitada: boolean
   visibilidad: MapaVisibilidad
   presentacion: PresentacionGeovisor
   thumbnailUrl: string | null
@@ -227,6 +228,7 @@ export interface GeovisorInput {
   categoria?: string
   conexionGeoserverId: string
   workspacesGeoserver: string[]
+  capasSeleccionadas: string[]
   colorPorTema: Record<string, string>
   centroLat: number
   centroLng: number
@@ -234,7 +236,6 @@ export interface GeovisorInput {
   basemapDefecto: string
   areaMaxHa?: number
   presetsArea: PresetArea[]
-  iaHabilitada: boolean
   visibilidad: MapaVisibilidad
   presentacion: PresentacionGeovisor
   thumbnailUrl?: string

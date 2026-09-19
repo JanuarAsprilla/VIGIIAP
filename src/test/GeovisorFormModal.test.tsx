@@ -64,10 +64,11 @@ function makeGeovisor(overrides: Partial<GeovisorRaw> = {}): GeovisorRaw {
   return {
     id: '1', slug: 'geologia-choco', titulo: 'Geología del Chocó', subtitulo: 'Unidades',
     descripcion: 'Descripción', cita: 'Cita sugerida', categoria: 'Geología', conexionGeoserverId: 'c1',
-    workspacesGeoserver: ['t_15_geologia'], colorPorTema: { t_15_geologia: '#123456' },
+    workspacesGeoserver: ['t_15_geologia'], capasSeleccionadas: ['t_15_geologia:fallas'],
+    colorPorTema: { t_15_geologia: '#123456' },
     centro: { lat: 5.55, lng: -76.6 }, zoomInicial: 9, basemapDefecto: 'satelite',
     areaMaxHa: 5000, presetsArea: [{ nombre: 'Zona norte', geometria: { type: 'Polygon', coordinates: [[[1, 2], [3, 4], [5, 6], [1, 2]]] } }],
-    iaHabilitada: true, visibilidad: 'usuarios',
+    visibilidad: 'usuarios',
     presentacion: { mostrarMetricas: true, mostrarImagenes: true, campoImagenUrl: 'foto_url', camposPopup: [{ campo: 'MGUCR_SIMBL', alias: 'Símbolo' }] },
     thumbnailUrl: 'https://cdn.test/thumb.png', activo: true, orden: 0, creadoEn: '2026-01-01', ...overrides,
   }
@@ -96,10 +97,18 @@ describe('GeovisorFormModal — modo edición: prefill', () => {
 
     expect(screen.getByLabelText(/^Título/i)).toHaveValue('Geología del Chocó')
     expect(screen.getByLabelText(/^Categoría/i)).toHaveValue('Geología')
-    expect(screen.getByRole('switch', { name: 'Geologia' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('checkbox', { name: /Fallas/i })).toBeChecked()
     expect(screen.getByTestId('mapa-presets')).toHaveTextContent('Zona norte')
     expect(screen.getByTestId('mapa-conexion')).toHaveTextContent('c1')
     expect(screen.getByRole('button', { name: /Guardar cambios/i })).toBeInTheDocument()
+  })
+
+  test('geovisor legado (sin capasSeleccionadas, solo workspacesGeoserver) precarga todas las capas de ese workspace', async () => {
+    const legado = makeGeovisor({ capasSeleccionadas: [], workspacesGeoserver: ['t_15_geologia'] })
+    render(<GeovisorFormModal open editing={legado} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    expect(await screen.findByRole('checkbox', { name: /Fallas/i })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: /Ríos/i })).not.toBeChecked() // otro workspace, no incluido en el legado
   })
 
   test('el título del modal dice "Editar geovisor" y el botón de envío "Guardar cambios"', () => {
@@ -124,19 +133,20 @@ describe('GeovisorFormModal — modo edición: prefill', () => {
   })
 })
 
-describe('GeovisorFormModal — workspaces y color por tema', () => {
-  test('sin conexión elegida, el mapa recibe conexionId nulo', () => {
+describe('GeovisorFormModal — capas y color por tema', () => {
+  test('sin conexión elegida, el mapa recibe conexionId nulo y se muestra el aviso de vista previa', () => {
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
     expect(screen.getByTestId('mapa-conexion')).toHaveTextContent('sin-conexion')
+    expect(screen.getByText(/Elige una conexión GeoServer para ver la vista previa en vivo/i)).toBeInTheDocument()
   })
 
-  test('mientras se descubren los workspaces muestra el spinner', async () => {
+  test('mientras se descubren las capas muestra el spinner', async () => {
     vi.mocked(useWorkspacesDeConexion).mockReturnValue({ data: [], isFetching: true } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
 
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
-    expect(screen.getByText('Descubriendo workspaces…')).toBeInTheDocument()
+    expect(screen.getByText('Descubriendo capas…')).toBeInTheDocument()
   })
 
   test('conexión sin capas publicadas muestra el mensaje correspondiente', async () => {
@@ -148,26 +158,53 @@ describe('GeovisorFormModal — workspaces y color por tema', () => {
     expect(screen.getByText('Esta conexión no publica capas todavía.')).toBeInTheDocument()
   })
 
-  test('marcar un workspace agrega su selector de color y lo refleja en el mapa', async () => {
+  test('marcar una capa agrega el selector de color de su tema y lo refleja en el mapa', async () => {
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
-    await user.click(screen.getByRole('switch', { name: 'Geologia' }))
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
 
     expect(document.querySelectorAll('input[type="color"]')).toHaveLength(1)
     expect(screen.getByTestId('mapa-workspaces')).toHaveTextContent('t_15_geologia')
   })
 
-  test('desmarcar un workspace ya seleccionado quita su selector de color', async () => {
+  test('marcar dos capas de dos temas distintos agrega un selector de color por cada tema', async () => {
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
-    const interruptor = screen.getByRole('switch', { name: 'Geologia' })
-    await user.click(interruptor)
-    await user.click(interruptor)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await user.click(screen.getByRole('checkbox', { name: /Ríos/i }))
+
+    expect(document.querySelectorAll('input[type="color"]')).toHaveLength(2)
+    expect(screen.getByTestId('mapa-workspaces')).toHaveTextContent('t_15_geologia,t_20_hidrologia')
+    expect(screen.getByText(/2 capas seleccionadas, de 2 temas distintos/i)).toBeInTheDocument()
+  })
+
+  test('desmarcar la única capa seleccionada de un tema quita su selector de color', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    const checkbox = screen.getByRole('checkbox', { name: /Fallas/i })
+    await user.click(checkbox)
+    await user.click(checkbox)
 
     expect(document.querySelectorAll('input[type="color"]')).toHaveLength(0)
     expect(screen.getByTestId('mapa-workspaces')).toHaveTextContent('')
+  })
+
+  test('el filtro de búsqueda esconde las capas que no coinciden', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await user.type(screen.getByPlaceholderText(/Buscar capa por nombre/i), 'río')
+
+    expect(screen.queryByRole('checkbox', { name: /Fallas/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: /Ríos/i })).toBeInTheDocument()
+  })
+
+  test('ya no ofrece la generación de reportes con IA — sin funcionalidad real detrás', () => {
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.queryByText(/generación de reportes con IA/i)).not.toBeInTheDocument()
   })
 })
 
@@ -271,7 +308,7 @@ describe('GeovisorFormModal — atributos del popup (camposPopup)', () => {
   })
 })
 
-describe('GeovisorFormModal — visibilidad e IA', () => {
+describe('GeovisorFormModal — visibilidad', () => {
   test('elegir "Acreditados" cambia la visibilidad enviada', async () => {
     const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
     vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
@@ -285,21 +322,6 @@ describe('GeovisorFormModal — visibilidad e IA', () => {
     await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ visibilidad: 'acreditados' }))
-  })
-
-  test('habilitar IA se incluye en el payload', async () => {
-    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
-    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
-    const user = userEvent.setup()
-    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
-    await abrirSeccion(user, /Visibilidad y presentación/i)
-
-    await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
-    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
-    await user.click(screen.getByRole('switch', { name: 'Habilitar IA' }))
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
-
-    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ iaHabilitada: true }))
   })
 
   test('mostrar imágenes en el popup exige el atributo de la URL', async () => {
@@ -364,7 +386,7 @@ describe('GeovisorFormModal — todos los campos opcionales se envían', () => {
     await user.type(screen.getByLabelText(/^URL de portada/i), 'https://cdn.test/thumb.png')
 
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
-    await user.click(screen.getByRole('switch', { name: 'Geologia' }))
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
     fireEvent.change(document.querySelector('input[type="color"]')!, { target: { value: '#ff0000' } })
 
     await abrirSeccion(user, /Mapa y área/i)
