@@ -452,7 +452,7 @@ describe('useGeovisoresList', () => {
     const { result } = renderHook(() => useGeovisoresList(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-    expect(api.get).toHaveBeenCalledWith('/geovisores', { params: { admin: 'true', limit: 200 } })
+    expect(api.get).toHaveBeenCalledWith('/geovisores', { params: { admin: 'true', limit: 100, page: 1 } })
     expect(result.current.data?.data).toEqual([rawGeovisor])
   })
 })
@@ -513,7 +513,7 @@ describe('useGeovisoresPublico', () => {
     const { result } = renderHook(() => useGeovisoresPublico(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-    expect(api.get).toHaveBeenCalledWith('/geovisores', { params: { limit: 200 } })
+    expect(api.get).toHaveBeenCalledWith('/geovisores', { params: { limit: 100, page: 1 } })
   })
 })
 

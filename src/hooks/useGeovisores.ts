@@ -9,20 +9,46 @@ const KEYS = {
   capas:   (slug: string | null | undefined) => ['geovisores', 'capas', slug],
 }
 
+const PAGE_LIMIT   = 100 // techo real del backend (ver paginate.js) -- pedir más no sirve, se recorta igual
+const MAX_PAGINAS  = 20  // salvaguarda (2000 geovisores) contra un loop descontrolado
+
+/**
+ * El backend recorta `limit` a un máximo de 100 por página (paginate.js) sin
+ * avisar al cliente -- pedir limit:200 antes se recortaba en silencio y, con
+ * más de 100 geovisores, algunos simplemente desaparecían de toda vista
+ * (admin y portal) sin ningún indicio visual de que había más páginas. Como
+ * el catálogo de geovisores es curado (no crece sin límite como un log de
+ * auditoría), se trae todo el listado automáticamente en vez de exponer
+ * paginación al usuario.
+ */
+async function fetchTodosLosGeovisores(params: Record<string, unknown>): Promise<ApiListResponse<GeovisorRaw>> {
+  let pagina = 1
+  let acumulado: GeovisorRaw[] = []
+  let ultimoMeta: ApiListResponse<GeovisorRaw>['meta'] = { total: 0 }
+  while (pagina <= MAX_PAGINAS) {
+    const res = await api.get('/geovisores', { params: { ...params, limit: PAGE_LIMIT, page: pagina } }) as ApiListResponse<GeovisorRaw>
+    acumulado = acumulado.concat(res.data)
+    ultimoMeta = res.meta
+    if (!res.meta || res.data.length < PAGE_LIMIT) break
+    pagina++
+  }
+  return { data: acumulado, meta: { ...ultimoMeta, total: acumulado.length } }
+}
+
 /** Vista admin: incluye geovisores inactivos y no filtra por visibilidad (admin=true, ver getAll en geovisores.service.js). */
 export function useGeovisoresList(params: Record<string, unknown> = {}) {
-  const adminParams = { admin: 'true', limit: 200, ...params }
+  const adminParams = { admin: 'true', ...params }
   return useQuery<ApiListResponse<GeovisorRaw>>({
     queryKey: KEYS.list(adminParams),
-    queryFn:  () => api.get('/geovisores', { params: adminParams }),
+    queryFn:  () => fetchTodosLosGeovisores(adminParams),
   })
 }
 
 /** Vista pública: solo geovisores activos, filtrados por visibilidad según la sesión (o falta de ella) -- ver getAll en geovisores.service.js. */
 export function useGeovisoresPublico(params: Record<string, unknown> = {}) {
   return useQuery<ApiListResponse<GeovisorRaw>>({
-    queryKey: KEYS.list({ limit: 200, ...params }),
-    queryFn:  () => api.get('/geovisores', { params: { limit: 200, ...params } }),
+    queryKey: KEYS.list(params),
+    queryFn:  () => fetchTodosLosGeovisores(params),
     staleTime: 60_000,
   })
 }
