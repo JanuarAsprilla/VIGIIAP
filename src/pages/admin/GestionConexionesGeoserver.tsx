@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Trash2, Pencil, X, CheckCircle, AlertCircle, Loader2,
-  Server, Lock, Globe2, Clock, ShieldAlert, Eye,
+  Server, Lock, Globe2, Clock, ShieldAlert, Eye, Building2, Link2,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, staggerContainer, staggerItem } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
@@ -13,14 +13,20 @@ import {
   useUpdateConexionGeoserver,
   useDeleteConexionGeoserver,
 } from '@/hooks/useConexionesGeoserver'
-import type { ConexionGeoserverRaw } from '@/types'
+import type { ConexionGeoserverRaw, TipoConexionGeoserver } from '@/types'
 import type { FormErrors } from '@/types/forms'
 
 const fadeUp = fadeUpSm
 
+const TIPO_CONEXION = [
+  { value: 'propio' as const, label: 'Propio', desc: 'GeoServer institucional, con credenciales de administración', Icon: Building2 },
+  { value: 'externo' as const, label: 'Externo', desc: 'WMS/WFS de otra institución — credenciales opcionales', Icon: Link2 },
+]
+
 const EMPTY_FORM = {
   nombre: '',
   url: '',
+  tipo: 'propio' as TipoConexionGeoserver,
   usuarioLectura: '',
   password: '',
   timeoutMs: '20000',
@@ -62,12 +68,19 @@ function ConexionCard({ conexion, canWrite, onEdit, onDelete }: {
           </div>
           <div className="min-w-0">
             <h3 className="text-sm font-bold text-text truncate">{conexion.nombre}</h3>
-            <span className={`inline-flex items-center gap-1 text-[0.6rem] font-bold uppercase tracking-wider ${
-              conexion.activo ? 'text-green-700' : 'text-text-muted'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${conexion.activo ? 'bg-green-600' : 'bg-text-muted/50'}`} />
-              {conexion.activo ? 'Activa' : 'Desactivada'}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1 text-[0.6rem] font-bold uppercase tracking-wider ${
+                conexion.activo ? 'text-green-700' : 'text-text-muted'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${conexion.activo ? 'bg-green-600' : 'bg-text-muted/50'}`} />
+                {conexion.activo ? 'Activa' : 'Desactivada'}
+              </span>
+              <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                conexion.tipo === 'externo' ? 'bg-gold-400/12 text-gold-400' : 'bg-primary-700/10 text-primary-700'
+              }`}>
+                {conexion.tipo === 'externo' ? 'Externo' : 'Propio'}
+              </span>
+            </div>
           </div>
         </div>
         {canWrite && (
@@ -91,7 +104,9 @@ function ConexionCard({ conexion, canWrite, onEdit, onDelete }: {
         </p>
         <p className="flex items-center gap-1.5">
           <Lock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-          Usuario de lectura: <span className="text-text font-medium">{conexion.usuario_lectura}</span>
+          {conexion.usuario_lectura
+            ? <>Usuario de lectura: <span className="text-text font-medium">{conexion.usuario_lectura}</span></>
+            : 'Sin credenciales (conexión externa)'}
         </p>
         <p className="flex items-center gap-1.5">
           <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
@@ -127,7 +142,8 @@ export default function GestionConexionesGeoserver() {
     setForm({
       nombre: conexion.nombre,
       url: conexion.url,
-      usuarioLectura: conexion.usuario_lectura,
+      tipo: conexion.tipo,
+      usuarioLectura: conexion.usuario_lectura ?? '',
       password: '',
       timeoutMs: String(conexion.timeout_ms),
     })
@@ -136,13 +152,19 @@ export default function GestionConexionesGeoserver() {
     setShowForm(true)
   }
 
+  const esPropio = form.tipo === 'propio'
+
   const validate = () => {
     const e: FormErrors = {}
     if (!form.nombre.trim()) e.nombre = 'El nombre es obligatorio'
     if (!form.url.trim()) e.url = 'La URL es obligatoria'
     else { try { new URL(form.url) } catch { e.url = 'URL inválida' } }
-    if (!form.usuarioLectura.trim()) e.usuarioLectura = 'El usuario de lectura es obligatorio'
-    if (!editing && !form.password.trim()) e.password = 'La contraseña es obligatoria al crear la conexión'
+    // externo: sin credenciales por defecto — un WMS público de otra
+    // institución normalmente no pide login (ver migración 047 del backend).
+    if (esPropio) {
+      if (!form.usuarioLectura.trim()) e.usuarioLectura = 'El usuario de lectura es obligatorio para una conexión propia'
+      if (!editing && !form.password.trim()) e.password = 'La contraseña es obligatoria al crear una conexión propia'
+    }
     const timeout = Number(form.timeoutMs)
     if (!Number.isFinite(timeout) || timeout <= 0) e.timeoutMs = 'Timeout inválido'
     setFormErrors(e)
@@ -159,7 +181,8 @@ export default function GestionConexionesGeoserver() {
           data: {
             nombre: form.nombre.trim(),
             url: form.url.trim(),
-            usuarioLectura: form.usuarioLectura.trim(),
+            tipo: form.tipo,
+            ...(form.usuarioLectura.trim() ? { usuarioLectura: form.usuarioLectura.trim() } : {}),
             ...(form.password.trim() ? { password: form.password.trim() } : {}),
             timeoutMs: Number(form.timeoutMs),
             activo: formActivo,
@@ -170,8 +193,9 @@ export default function GestionConexionesGeoserver() {
         await createConexion.mutateAsync({
           nombre: form.nombre.trim(),
           url: form.url.trim(),
-          usuarioLectura: form.usuarioLectura.trim(),
-          password: form.password.trim(),
+          tipo: form.tipo,
+          ...(form.usuarioLectura.trim() ? { usuarioLectura: form.usuarioLectura.trim() } : {}),
+          ...(form.password.trim() ? { password: form.password.trim() } : {}),
           timeoutMs: Number(form.timeoutMs),
         })
         setToast(`Conexión "${form.nombre.trim()}" creada`)
@@ -313,10 +337,32 @@ export default function GestionConexionesGeoserver() {
                   {formErrors.url && <p className="text-xs text-red-500 mt-1">{formErrors.url}</p>}
                 </div>
 
+                <div>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Tipo de conexión</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {TIPO_CONEXION.map(({ value, label, desc, Icon }) => {
+                      const active = form.tipo === value
+                      return (
+                        <button key={value} type="button" onClick={() => setForm((f) => ({ ...f, tipo: value }))}
+                          className={`flex flex-col items-start gap-1 p-3 rounded-xl border-2 text-left transition-all ${
+                            active ? 'border-primary-600 bg-primary-600/5' : 'border-border bg-[var(--card-bg)] hover:bg-bg-alt'
+                          }`}>
+                          <span className={`flex items-center gap-1.5 text-xs font-bold ${active ? 'text-primary-700' : 'text-text'}`}>
+                            <Icon className="w-3.5 h-3.5" aria-hidden="true" />{label}
+                          </span>
+                          <span className="text-[0.65rem] text-text-muted leading-snug">{desc}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="cg-usuario" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                      Usuario de lectura <span className="text-orange-500" aria-hidden="true">*</span>
+                      Usuario de lectura {esPropio
+                        ? <span className="text-orange-500" aria-hidden="true">*</span>
+                        : <span className="font-normal normal-case tracking-normal text-text-muted">(opcional)</span>}
                     </label>
                     <input id="cg-usuario" type="text" value={form.usuarioLectura}
                       onChange={(e) => { setForm((f) => ({ ...f, usuarioLectura: e.target.value })); setFormErrors((fe) => ({ ...fe, usuarioLectura: undefined })) }}
@@ -336,7 +382,11 @@ export default function GestionConexionesGeoserver() {
 
                 <div>
                   <label htmlFor="cg-password" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                    Contraseña {editing ? <span className="font-normal normal-case tracking-normal text-text-muted">(dejar vacío para no cambiarla)</span> : <span className="text-orange-500" aria-hidden="true">*</span>}
+                    Contraseña {editing
+                      ? <span className="font-normal normal-case tracking-normal text-text-muted">(dejar vacío para no cambiarla)</span>
+                      : esPropio
+                        ? <span className="text-orange-500" aria-hidden="true">*</span>
+                        : <span className="font-normal normal-case tracking-normal text-text-muted">(opcional)</span>}
                   </label>
                   <input id="cg-password" type="password" value={form.password} autoComplete="new-password"
                     onChange={(e) => { setForm((f) => ({ ...f, password: e.target.value })); setFormErrors((fe) => ({ ...fe, password: undefined })) }}

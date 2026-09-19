@@ -33,7 +33,7 @@ import {
 function makeConexion(overrides: Record<string, unknown> = {}) {
   return {
     id: 'conexion-1', nombre: 'GeoServer institucional', url: 'https://geoserver.iiap.org.co/geoserver',
-    usuario_lectura: 'lector', timeout_ms: 20000, activo: true,
+    tipo: 'propio', usuario_lectura: 'lector', timeout_ms: 20000, activo: true,
     creado_en: '2026-01-01', actualizado_en: '2026-01-01', ...overrides,
   }
 }
@@ -95,6 +95,61 @@ describe('GestionConexionesGeoserver — crear conexión', () => {
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
       nombre: 'GeoServer IIAP', usuarioLectura: 'lector', password: 'super-secreta',
     }))
+  })
+})
+
+describe('GestionConexionesGeoserver — conexión externa (WMS/GeoServer de terceros)', () => {
+  test('tipo "Externo" no exige usuario ni contraseña para crear', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeConexion({ tipo: 'externo' }))
+    vi.mocked(useCreateConexionGeoserver).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateConexionGeoserver>)
+
+    const user = userEvent.setup()
+    render(<GestionConexionesGeoserver />)
+    await user.click(screen.getByRole('button', { name: /Nueva conexión/i }))
+    await user.type(screen.getByLabelText(/^Nombre/i), 'WMS Externo')
+    await user.type(screen.getByLabelText(/URL base/i), 'https://wms.otrainstitucion.gov.co')
+    await user.click(screen.getByRole('button', { name: /^Externo/i }))
+    await user.click(screen.getByRole('button', { name: /Crear conexión/i }))
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'externo' }))
+    const [payload] = mutateAsync.mock.calls[0]
+    expect(payload.usuarioLectura).toBeUndefined()
+    expect(payload.password).toBeUndefined()
+  })
+
+  test('cambiar a "Externo" después de haber marcado error de usuario obligatorio permite enviar sin él', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeConexion({ tipo: 'externo' }))
+    vi.mocked(useCreateConexionGeoserver).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateConexionGeoserver>)
+
+    const user = userEvent.setup()
+    render(<GestionConexionesGeoserver />)
+    await user.click(screen.getByRole('button', { name: /Nueva conexión/i }))
+    await user.type(screen.getByLabelText(/^Nombre/i), 'WMS Externo')
+    await user.type(screen.getByLabelText(/URL base/i), 'https://wms.otrainstitucion.gov.co')
+    // propio por defecto: enviar sin credenciales primero muestra el error
+    await user.click(screen.getByRole('button', { name: /Crear conexión/i }))
+    expect(await screen.findByText('El usuario de lectura es obligatorio para una conexión propia')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^Externo/i }))
+    await user.click(screen.getByRole('button', { name: /Crear conexión/i }))
+
+    expect(mutateAsync).toHaveBeenCalled()
+  })
+
+  test('la tarjeta de una conexión externa sin credenciales muestra el aviso correspondiente', () => {
+    vi.mocked(useConexionesGeoserverList).mockReturnValue({
+      data: [makeConexion({ tipo: 'externo', usuario_lectura: null })], isLoading: false,
+    } as unknown as ReturnType<typeof useConexionesGeoserverList>)
+
+    render(<GestionConexionesGeoserver />)
+
+    expect(screen.getByText('Externo')).toBeInTheDocument()
+    expect(screen.getByText('Sin credenciales (conexión externa)')).toBeInTheDocument()
+  })
+
+  test('la tarjeta de una conexión propia muestra el badge "Propio"', () => {
+    render(<GestionConexionesGeoserver />)
+    expect(screen.getByText('Propio')).toBeInTheDocument()
   })
 })
 

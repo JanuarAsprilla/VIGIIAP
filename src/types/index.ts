@@ -241,22 +241,27 @@ export interface GeovisorInput {
   thumbnailUrl?: string
 }
 
+export type TipoConexionGeoserver = 'propio' | 'externo'
+
 export interface ConexionGeoserverRaw {
   id: string
   nombre: string
   url: string
-  usuario_lectura: string
+  tipo: TipoConexionGeoserver
+  usuario_lectura: string | null
   timeout_ms: number
   activo: boolean
   creado_en: string
   actualizado_en: string
 }
 
-/** Payload de creación/edición — espejo de createConexionGeoserverSchema/updateConexionGeoserverSchema. */
+/** Payload de creación/edición — espejo de createConexionGeoserverSchema/updateConexionGeoserverSchema.
+ *  usuarioLectura/password son obligatorios solo cuando tipo='propio' (ver esquema del backend). */
 export interface ConexionGeoserverInput {
   nombre: string
   url: string
-  usuarioLectura: string
+  tipo?: TipoConexionGeoserver
+  usuarioLectura?: string
   password?: string
   timeoutMs?: number
   activo?: boolean
