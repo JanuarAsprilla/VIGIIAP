@@ -6,6 +6,20 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.5.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.4.0...v1.5.0) (2026-09-19)
+
+
+### Features
+
+* agrega buscador y filtro por categoría a la lista de geovisores ([#154](https://github.com/JanuarAsprilla/VIGIIAP/issues/154)) ([fc3fba1](https://github.com/JanuarAsprilla/VIGIIAP/commit/fc3fba1230112883a719ac5b95c150c228b75928))
+
+
+### Bug Fixes
+
+* corrige codificación y formato de los CSV exportables del admin ([#155](https://github.com/JanuarAsprilla/VIGIIAP/issues/155)) ([c3886ab](https://github.com/JanuarAsprilla/VIGIIAP/commit/c3886abc8e5490465730dd7506677f8bee632961))
+* no cerrar sesión ante errores transitorios (429, 5xx) en /auth/me ([#152](https://github.com/JanuarAsprilla/VIGIIAP/issues/152)) ([d3f918c](https://github.com/JanuarAsprilla/VIGIIAP/commit/d3f918c81a8ffcb31b3f5d16ad5b876a98a1dff8))
+* quita los botones de redes sociales placeholder del footer ([#157](https://github.com/JanuarAsprilla/VIGIIAP/issues/157)) ([d3fba82](https://github.com/JanuarAsprilla/VIGIIAP/commit/d3fba82de7e01d7b6538fd9c948bc99f1a76f83f))
+
 ## [1.4.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.3.0...v1.4.0) (2026-09-19)
 
 
