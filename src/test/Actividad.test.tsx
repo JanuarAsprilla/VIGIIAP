@@ -26,6 +26,9 @@ vi.mock('@/components/ui/Card3D', () => ({
 vi.mock('@/lib/api', () => ({ default: { get: vi.fn() } }))
 import api from '@/lib/api'
 
+vi.mock('@/lib/exportarActividadExcel', () => ({ exportarActividadExcel: vi.fn().mockResolvedValue(undefined) }))
+import { exportarActividadExcel } from '@/lib/exportarActividadExcel'
+
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(<QueryClientProvider client={qc}><Actividad /></QueryClientProvider>)
@@ -83,10 +86,10 @@ describe('Actividad — estados', () => {
     expect(await screen.findByText('Sin eventos registrados')).toBeInTheDocument()
   })
 
-  test('el botón de exportar CSV está deshabilitado sin eventos', async () => {
+  test('el botón de exportar Excel está deshabilitado sin eventos', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [], meta: { total: 0 } })
     renderPage()
-    expect(await screen.findByRole('button', { name: /Exportar CSV/i })).toBeDisabled()
+    expect(await screen.findByRole('button', { name: /Exportar Excel/i })).toBeDisabled()
   })
 
   test('muestra un spinner de carga mientras isLoading', () => {
@@ -135,20 +138,29 @@ describe('Actividad — paginación', () => {
   })
 })
 
-describe('Actividad — exportar CSV', () => {
-  test('genera y libera un Object URL al exportar', async () => {
+describe('Actividad — exportar Excel', () => {
+  test('exporta con los filtros de módulo y búsqueda activos', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
-    const createObjectURL = vi.fn().mockReturnValue('blob:mock-url')
-    const revokeObjectURL = vi.fn()
-    vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Login')
+
+    await user.selectOptions(screen.getByRole('combobox'), 'usuarios')
+    await user.type(screen.getByPlaceholderText(/Buscar por usuario/i), 'ana')
+    await user.click(screen.getByRole('button', { name: /Exportar Excel/i }))
+
+    expect(exportarActividadExcel).toHaveBeenCalledWith({ filtroModulo: 'usuarios', busqueda: 'ana' })
+  })
+
+  test('un fallo al exportar muestra un mensaje de error', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
+    vi.mocked(exportarActividadExcel).mockRejectedValueOnce(new Error('fail'))
 
     const user = userEvent.setup()
     renderPage()
     await screen.findByText('Login')
-    await user.click(screen.getByRole('button', { name: /Exportar CSV/i }))
+    await user.click(screen.getByRole('button', { name: /Exportar Excel/i }))
 
-    expect(createObjectURL).toHaveBeenCalled()
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url')
-    vi.unstubAllGlobals()
+    expect(await screen.findByText(/No se pudo generar el archivo Excel/i)).toBeInTheDocument()
   })
 })
