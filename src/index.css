@@ -756,7 +756,6 @@ h1, h2, h3, .font-display {
   --footer-text:           #ffffff;
   --footer-text-muted:     rgba(255,255,255,0.70);
   --footer-text-faint:     rgba(255,255,255,0.50);
-  --footer-social-bg:      rgba(255,255,255,0.10);
 
   /* ── Sidebar / Navigation ─────────────────────── */
   /* Translúcido de verdad — antes era 100% opaco y el backdrop-filter no
@@ -912,7 +911,6 @@ h1, h2, h3, .font-display {
   --footer-text:           rgba(255,255,255,0.92);
   --footer-text-muted:     rgba(255,255,255,0.62);
   --footer-text-faint:     rgba(255,255,255,0.42);
-  --footer-social-bg:      rgba(255,255,255,0.08);
 
   --nav-bg:                linear-gradient(180deg,rgba(6,15,9,0.72) 0%,rgba(9,26,14,0.72) 55%,rgba(12,31,20,0.72) 100%);
   --nav-border:            rgba(0,152,70,0.14);
