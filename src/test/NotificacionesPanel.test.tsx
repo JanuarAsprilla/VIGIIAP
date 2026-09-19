@@ -20,14 +20,13 @@ vi.mock('framer-motion', () => {
 })
 
 function makeItem(overrides: Partial<Notificacion> = {}): Notificacion {
-  return { id: 'n1', mensaje: 'Nueva solicitud registrada', tipo: 'solicitud', creado_en: new Date().toISOString(), link: '/admin/solicitudes', ...overrides }
+  return { id: 'n1', mensaje: 'Nueva solicitud registrada', tipo: 'solicitud', leido_en: null, creado_en: new Date().toISOString(), link: '/admin/solicitudes', ...overrides }
 }
 
 function renderPanel(props: Partial<Parameters<typeof NotificacionesPanel>[0]> = {}) {
   const defaults = {
     onClose: vi.fn(),
     items: [makeItem()],
-    readIds: [] as string[],
     onMarkAllRead: vi.fn(),
     onMarkRead: vi.fn(),
   }
@@ -37,7 +36,7 @@ function renderPanel(props: Partial<Parameters<typeof NotificacionesPanel>[0]> =
 
 describe('NotificacionesPanel — estado vacío / con notificaciones', () => {
   test('con todas las notificaciones leídas, muestra "Todo al día" sin badge ni botón de marcar todas', () => {
-    renderPanel({ items: [makeItem({ id: 'n1' })], readIds: ['n1'] })
+    renderPanel({ items: [makeItem({ id: 'n1', leido_en: new Date().toISOString() })] })
     expect(screen.getByText('Todo al día')).toBeInTheDocument()
     expect(screen.queryByText('Marcar todas como leídas')).not.toBeInTheDocument()
   })
@@ -48,7 +47,7 @@ describe('NotificacionesPanel — estado vacío / con notificaciones', () => {
   })
 
   test('con notificaciones sin leer, muestra el conteo y la lista', () => {
-    renderPanel({ items: [makeItem({ id: 'n1' }), makeItem({ id: 'n2', mensaje: 'Documento actualizado' })], readIds: [] })
+    renderPanel({ items: [makeItem({ id: 'n1' }), makeItem({ id: 'n2', mensaje: 'Documento actualizado' })] })
     expect(screen.getByText('2')).toBeInTheDocument()
     expect(screen.getByText('Nueva solicitud registrada')).toBeInTheDocument()
     expect(screen.getByText('Documento actualizado')).toBeInTheDocument()
@@ -56,12 +55,12 @@ describe('NotificacionesPanel — estado vacío / con notificaciones', () => {
 })
 
 describe('NotificacionesPanel — acciones', () => {
-  test('marcar todas como leídas llama a onMarkAllRead con todos los ids', async () => {
+  test('marcar todas como leídas llama a onMarkAllRead', async () => {
     const onMarkAllRead = vi.fn()
     const user = userEvent.setup()
     renderPanel({ items: [makeItem({ id: 'n1' }), makeItem({ id: 'n2' })], onMarkAllRead })
     await user.click(screen.getByText('Marcar todas como leídas'))
-    expect(onMarkAllRead).toHaveBeenCalledWith(['n1', 'n2'])
+    expect(onMarkAllRead).toHaveBeenCalled()
   })
 
   test('hacer clic en una notificación la marca como leída y cierra el panel', async () => {
@@ -75,7 +74,7 @@ describe('NotificacionesPanel — acciones', () => {
   })
 
   test('una notificación sin leer muestra el punto indicador; una leída no', () => {
-    const { container } = renderPanel({ items: [makeItem({ id: 'n1' })], readIds: [] })
+    const { container } = renderPanel({ items: [makeItem({ id: 'n1', leido_en: null })] })
     expect(container.querySelector('.bg-gold-500.rounded-full.w-2')).not.toBeNull()
   })
 })

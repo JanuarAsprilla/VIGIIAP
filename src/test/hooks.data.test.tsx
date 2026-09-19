@@ -40,7 +40,7 @@ import { useDocumentosList } from '@/hooks/useDocumentos'
 import { useSolicitudesAdmin, useMisSolicitudes } from '@/hooks/useSolicitudes'
 import { useUsuariosList } from '@/hooks/useUsuarios'
 import { useCategoriasList } from '@/hooks/useCategorias'
-import { useAdminNotificaciones } from '@/hooks/useNotificaciones'
+import { useNotificaciones } from '@/hooks/useNotificaciones'
 import { useCatalogue } from '@/hooks/useCatalogue'
 import {
   useGeovisoresList, useGeovisoresPublico, useGeovisorPorSlug, useCapasDeGeovisor,
@@ -296,22 +296,22 @@ describe('useCategoriasList', () => {
   })
 })
 
-// ─── useAdminNotificaciones ───────────────────────────────────────────────────
-describe('useAdminNotificaciones', () => {
+// ─── useNotificaciones ─────────────────────────────────────────────────────────
+describe('useNotificaciones', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('does not fetch when enabled=false', () => {
-    renderHook(() => useAdminNotificaciones(false), { wrapper: makeWrapper() })
+    renderHook(() => useNotificaciones(false), { wrapper: makeWrapper() })
     expect(api.get).not.toHaveBeenCalled()
   })
 
-  test('fetches /admin/notificaciones when enabled=true', async () => {
-    vi.mocked(api.get).mockResolvedValue([{ id: 1, mensaje: 'Nueva solicitud' }])
+  test('fetches /notificaciones when enabled=true', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [{ id: '1', mensaje: 'Nueva solicitud' }] })
 
-    const { result } = renderHook(() => useAdminNotificaciones(true), { wrapper: makeWrapper() })
+    const { result } = renderHook(() => useNotificaciones(true), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-    expect(api.get).toHaveBeenCalledWith('/admin/notificaciones')
+    expect(api.get).toHaveBeenCalledWith('/notificaciones')
     expect(Array.isArray(result.current.data)).toBe(true)
   })
 })

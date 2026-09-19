@@ -88,24 +88,25 @@ describe('AjustesPanel', () => {
 
 describe('NotificacionesPanel', () => {
   const items: Notificacion[] = [
-    { id: 'n1', mensaje: 'Nueva solicitud recibida', tipo: 'solicitud', creado_en: new Date().toISOString(), link: '/solicitudes' },
-    { id: 'n2', mensaje: 'Usuario registrado', tipo: 'usuario', creado_en: new Date().toISOString(), link: '/admin/usuarios' },
+    { id: 'n1', mensaje: 'Nueva solicitud recibida', tipo: 'solicitud', leido_en: null, creado_en: new Date().toISOString(), link: '/solicitudes' },
+    { id: 'n2', mensaje: 'Usuario registrado', tipo: 'usuario', leido_en: null, creado_en: new Date().toISOString(), link: '/admin/usuarios' },
   ]
+  const itemsLeidas: Notificacion[] = items.map((i) => ({ ...i, leido_en: new Date().toISOString() }))
 
   test('muestra el conteo de no leídas y permite marcar todas como leídas', async () => {
     const onMarkAllRead = vi.fn()
     const user = userEvent.setup()
     withRouter(
-      <NotificacionesPanel items={items} readIds={[]} onClose={vi.fn()} onMarkRead={vi.fn()} onMarkAllRead={onMarkAllRead} />,
+      <NotificacionesPanel items={items} onClose={vi.fn()} onMarkRead={vi.fn()} onMarkAllRead={onMarkAllRead} />,
     )
     expect(screen.getByText('2')).toBeInTheDocument()
     await user.click(screen.getByText('Marcar todas como leídas'))
-    expect(onMarkAllRead).toHaveBeenCalledWith(['n1', 'n2'])
+    expect(onMarkAllRead).toHaveBeenCalled()
   })
 
   test('cuando todo está leído, muestra el estado vacío y oculta el botón de marcar todas', () => {
     withRouter(
-      <NotificacionesPanel items={items} readIds={['n1', 'n2']} onClose={vi.fn()} onMarkRead={vi.fn()} onMarkAllRead={vi.fn()} />,
+      <NotificacionesPanel items={itemsLeidas} onClose={vi.fn()} onMarkRead={vi.fn()} onMarkAllRead={vi.fn()} />,
     )
     expect(screen.getByText('Todo al día')).toBeInTheDocument()
     expect(screen.queryByText('Marcar todas como leídas')).not.toBeInTheDocument()
@@ -116,7 +117,7 @@ describe('NotificacionesPanel', () => {
     const onClose = vi.fn()
     const user = userEvent.setup()
     withRouter(
-      <NotificacionesPanel items={items} readIds={[]} onClose={onClose} onMarkRead={onMarkRead} onMarkAllRead={vi.fn()} />,
+      <NotificacionesPanel items={items} onClose={onClose} onMarkRead={onMarkRead} onMarkAllRead={vi.fn()} />,
     )
     await user.click(screen.getByText('Nueva solicitud recibida'))
     expect(onMarkRead).toHaveBeenCalledWith('n1')

@@ -19,7 +19,7 @@ import { ROLES }     from '@/lib/constants/roles'
 import { useTheme }  from '@/contexts/ThemeContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { useUI }     from '@/contexts/UIContext'
-import { useAdminNotificaciones } from '@/hooks/useNotificaciones'
+import { useNotificaciones, useMarcarNotificacionLeida, useMarcarTodasNotificacionesLeidas } from '@/hooks/useNotificaciones'
 
 import SoportePanel        from './topbar/SoportePanel'
 import NotificacionesPanel from './topbar/NotificacionesPanel'
@@ -33,8 +33,6 @@ import Avatar               from './ui/Avatar'
 
 // ── Constantes de configuración ──
 
-const STORAGE_KEY  = 'vigiiap_notif_read'
-
 const SEARCH_PLACEHOLDERS = {
   '/':            'Buscar módulos, documentos...',
   '/mapas':       'Buscar mapas, capas o territorios...',
@@ -46,30 +44,6 @@ const SEARCH_PLACEHOLDERS = {
 
 const PAGE_LABELS = {
   '/geovisores': 'Geovisores',
-}
-
-// ── Hook: estado de notificaciones leídas persistido en localStorage ──
-
-function useReadNotifications() {
-  const [readIds, setReadIds] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      return stored ? JSON.parse(stored) : []
-    } catch {
-      return []
-    }
-  })
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(readIds))
-    } catch { /* localStorage no disponible — modo privado o sin permisos */ }
-  }, [readIds])
-
-  const markRead    = useCallback((id: string) => setReadIds((prev) => [...new Set([...prev, id])]), [])
-  const markAllRead = useCallback((ids: string[]) => setReadIds((prev) => [...new Set([...prev, ...ids])]), [])
-
-  return { readIds, markRead, markAllRead }
 }
 
 // ── Botón de ícono — soporte/notificaciones/ajustes compartían el mismo
@@ -170,7 +144,7 @@ export default function TopBar({ onMenuToggle, onOpenAuthModal }: {
 }) {
   const location  = useLocation()
   const navigate  = useNavigate()
-  const { isAuthenticated, initializing, user, logout, isAdmin } = useAuth()
+  const { isAuthenticated, initializing, user, logout } = useAuth()
   const { openPalette, notifications }     = useUI()
   const { query, setQuery }               = useSearch()
   const { isDark, toggleTheme }           = useTheme()
@@ -199,14 +173,14 @@ export default function TopBar({ onMenuToggle, onOpenAuthModal }: {
   const loginTriggerRef  = useRef<HTMLDivElement>(null)
   const loginPanelBoxRef = useRef<HTMLDivElement>(null)
 
-  const { readIds, markRead, markAllRead } = useReadNotifications()
-
   const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE
 
-  const { data: adminNotifs } = useAdminNotificaciones(isAdmin && isAuthenticated)
+  const { data: notifs } = useNotificaciones(isAuthenticated && !isUnverified)
+  const marcarLeida      = useMarcarNotificacionLeida()
+  const marcarTodasLeidas = useMarcarTodasNotificacionesLeidas()
 
-  const notifItems = isAdmin ? (adminNotifs ?? []) : []
-  const unreadCount = notifItems.filter((n) => !readIds.includes(n.id)).length
+  const notifItems = notifs ?? []
+  const unreadCount = notifItems.filter((n) => !n.leido_en).length
   const hasUnread   = notifications && unreadCount > 0
 
   // Limpiar búsqueda y cerrar mobile search al navegar — reset intencional al cambiar de ruta
@@ -440,9 +414,8 @@ export default function TopBar({ onMenuToggle, onOpenAuthModal }: {
                     <NotificacionesPanel
                       onClose={closePanel}
                       items={notifItems}
-                      readIds={readIds}
-                      onMarkRead={markRead}
-                      onMarkAllRead={() => markAllRead(notifItems.map((n) => n.id))}
+                      onMarkRead={(id) => marcarLeida.mutate(id)}
+                      onMarkAllRead={() => marcarTodasLeidas.mutate()}
                     />
                   )}
                 </AnimatePresence>
