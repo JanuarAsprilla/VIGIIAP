@@ -82,6 +82,42 @@ describe('Configuracion — guardar', () => {
   })
 })
 
+describe('Configuracion — páginas legales (Política de Privacidad y Términos de Uso)', () => {
+  test('precarga la política de privacidad y los términos de uso desde la config remota', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      politicaPrivacidad: 'Texto de la política guardado.',
+      terminosUso: 'Texto de los términos guardado.',
+    })
+
+    renderPage()
+
+    expect(await screen.findByDisplayValue('Texto de la política guardado.')).toBeInTheDocument()
+    expect(await screen.findByDisplayValue('Texto de los términos guardado.')).toBeInTheDocument()
+  })
+
+  test('guardar incluye politicaPrivacidad y terminosUso en el payload', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      politicaPrivacidad: 'Política original.',
+      terminosUso: 'Términos originales.',
+    })
+    vi.mocked(api.put).mockResolvedValue({})
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByDisplayValue('Política original.')
+
+    const terminosTextarea = screen.getByDisplayValue('Términos originales.')
+    await user.clear(terminosTextarea)
+    await user.type(terminosTextarea, 'Términos actualizados.')
+    await user.click(screen.getByRole('button', { name: /Guardar Cambios/i }))
+
+    expect(await screen.findByRole('button', { name: /¡Guardado!/i })).toBeInTheDocument()
+    expect(api.put).toHaveBeenCalledWith('/admin/configuracion', expect.objectContaining({
+      politicaPrivacidad: 'Política original.',
+      terminosUso: 'Términos actualizados.',
+    }))
+  })
+})
+
 describe('Configuracion — modo mantenimiento', () => {
   test('activar el modo mantenimiento revela el campo de mensaje', async () => {
     const user = userEvent.setup()

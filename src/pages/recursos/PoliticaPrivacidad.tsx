@@ -54,7 +54,7 @@ export default function PoliticaPrivacidad() {
         style={{ transformPerspective: 900 }}
         glow="rgba(26,86,50,0.12)"
         intensity={3}
-        className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-8 max-w-3xl"
+        className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-8 max-w-3xl mx-auto"
         whileHover={{ y: -2 }}
       >
         <div className="prose prose-sm max-w-none space-y-5 text-text-light leading-relaxed">
@@ -77,7 +77,7 @@ export default function PoliticaPrivacidad() {
         style={{ transformPerspective: 900 }}
         glow="rgba(26,86,50,0.12)"
         intensity={3}
-        className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-8 max-w-3xl"
+        className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-8 max-w-3xl mx-auto"
         whileHover={{ y: -2 }}
       >
         <div className="prose prose-sm max-w-none space-y-5 text-text-light leading-relaxed">
