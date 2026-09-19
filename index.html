@@ -2,6 +2,42 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
+
+    <!-- Recuperación automática de "página en blanco" — debe ir primero en
+         <head>, antes de cualquier otra etiqueta, porque Vite mueve el
+         <script type="module"> de entrada al final de <head> en el build de
+         producción (para el modulepreload) y empieza a descargarlo tan
+         pronto el parser lo encuentra. Si este listener se registrara más
+         tarde (p. ej. en <body>, donde vivía el script originalmente en el
+         código fuente) y la descarga fallara rápido (red inestable,
+         ERR_CONTENT_LENGTH_MISMATCH, chunk desactualizado tras un deploy),
+         el evento de error se perdería: el navegador nunca ejecuta nada y
+         React no llega a montar ni a mostrar un ErrorBoundary, dejando la
+         página en blanco hasta que el usuario recargue a mano. Recarga UNA
+         sola vez (marcado en sessionStorage) para no entrar en bucle si el
+         fallo persiste. `vite:preloadError` es el evento que Vite emite
+         específicamente para fallos de import() dinámico (React.lazy); el
+         listener en capture phase sobre window cubre además el fallo del
+         script de entrada mismo, que no dispara ese evento por no ser un
+         import() dinámico — se identifica por ser un <script type="module">,
+         ya que Vite no preserva atributos custom como `id` al reubicarlo. -->
+    <script>
+      (function () {
+        var KEY = 'vigiiap:chunk-reload-attempted'
+        function reloadOnce() {
+          var already
+          try { already = sessionStorage.getItem(KEY) } catch (e) { already = null }
+          if (already) return
+          try { sessionStorage.setItem(KEY, '1') } catch (e) { /* modo privado — recarga igual, sin guardia */ }
+          window.location.reload()
+        }
+        window.addEventListener('vite:preloadError', reloadOnce)
+        window.addEventListener('error', function (event) {
+          var t = event.target
+          if (t && t.tagName === 'SCRIPT' && t.type === 'module') reloadOnce()
+        }, true)
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
