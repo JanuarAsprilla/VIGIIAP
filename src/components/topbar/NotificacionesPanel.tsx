@@ -1,14 +1,10 @@
 import { Link } from 'react-router-dom'
-import { BellOff, ExternalLink, User, FileText, ClipboardList } from 'lucide-react'
+import { BellOff, ExternalLink } from 'lucide-react'
 import { panelAnim } from './panelAnim'
-import type { Notificacion } from '@/types'
+import type { Notificacion, TipoNotificacion } from '@/types'
+import { useTiposNotificacionList } from '@/hooks/useTiposNotificacion'
+import { NOTIFICATION_ICONS, DEFAULT_NOTIFICATION_ICON, getNotificationColorClasses } from '@/lib/notificationIcons'
 import GlassPanel from '@/components/ui/GlassPanel'
-
-const TYPE_META = {
-  usuario:   { Icon: User,          color: 'text-magenta',    bg: 'bg-magenta/10',    label: 'Usuario' },
-  solicitud: { Icon: ClipboardList, color: 'text-gold-500',   bg: 'bg-gold-500/10',   label: 'Solicitud' },
-  default:   { Icon: FileText,      color: 'text-text-muted', bg: 'bg-bg-alt',    label: 'General' },
-}
 
 function timeAgo(iso: string | undefined) {
   if (!iso) return ''
@@ -22,9 +18,12 @@ function timeAgo(iso: string | undefined) {
   return `hace ${d} d`
 }
 
-function NotificationItem({ item, onSelect }: { item: Notificacion; onSelect: () => void }) {
+function NotificationItem({ item, tipos, onSelect }: { item: Notificacion; tipos: TipoNotificacion[]; onSelect: () => void }) {
   const isRead = Boolean(item.leido_en)
-  const { Icon, color, bg, label } = (TYPE_META as Record<string, typeof TYPE_META.default>)[item.tipo ?? 'default'] ?? TYPE_META.default
+  const meta  = tipos.find((t) => t.clave === item.tipo)
+  const Icon  = (meta?.icono && NOTIFICATION_ICONS[meta.icono]) || DEFAULT_NOTIFICATION_ICON
+  const { text: color, bg } = getNotificationColorClasses(meta?.color)
+  const label = meta?.nombre ?? 'General'
 
   return (
     <Link
@@ -58,6 +57,7 @@ function NotificationItem({ item, onSelect }: { item: Notificacion; onSelect: ()
 export default function NotificacionesPanel({ onClose, items, onMarkAllRead, onMarkRead }: { onClose: () => void; items: Notificacion[]; onMarkAllRead: () => void; onMarkRead: (id: string) => void }) {
   const unreadCount = items.filter((n) => !n.leido_en).length
   const allRead     = unreadCount === 0
+  const { data: tipos } = useTiposNotificacionList()
 
   return (
     <GlassPanel {...panelAnim} width="w-80">
@@ -94,6 +94,7 @@ export default function NotificacionesPanel({ onClose, items, onMarkAllRead, onM
             <li key={item.id} role="listitem">
               <NotificationItem
                 item={item}
+                tipos={tipos ?? []}
                 onSelect={() => { onMarkRead(item.id); onClose() }}
               />
             </li>

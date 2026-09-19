@@ -27,6 +27,10 @@ vi.mock('@/contexts/UIContext', () => ({ useUI: () => uiMock }))
 const themeMock = { isDark: false, toggleTheme: vi.fn() }
 vi.mock('@/contexts/ThemeContext', () => ({ useTheme: () => themeMock }))
 
+vi.mock('@/hooks/useTiposNotificacion', () => ({
+  useTiposNotificacionList: () => ({ data: [] }),
+}))
+
 beforeEach(() => {
   vi.clearAllMocks()
   uiMock.density = 'normal'

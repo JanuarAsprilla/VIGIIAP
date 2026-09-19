@@ -28,9 +28,19 @@ vi.mock('@/components/ui/Card3D', () => ({
     <div className={className}>{children}</div>,
 }))
 
+const { NOTIF_PREFS } = vi.hoisted(() => ({
+  NOTIF_PREFS: [
+    { clave: 'nueva_solicitud', nombre: 'Nueva solicitud', icono: 'ClipboardList', color: 'gold', en_pantalla: true },
+  ],
+}))
+
 vi.mock('@/lib/api', () => ({
   default: {
-    get: vi.fn((url: string) => (url === '/auth/sessions' ? Promise.resolve([]) : Promise.resolve({}))),
+    get: vi.fn((url: string) => {
+      if (url === '/auth/sessions') return Promise.resolve([])
+      if (url === '/notificaciones/prefs') return Promise.resolve({ data: NOTIF_PREFS })
+      return Promise.resolve({})
+    }),
     post: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn(),
@@ -360,14 +370,27 @@ describe('Perfil — sesiones activas', () => {
 })
 
 describe('Perfil — notificaciones y apariencia', () => {
-  test('activar/desactivar una preferencia de notificación cambia su estado', async () => {
+  test('activar/desactivar una preferencia de notificación llama al backend con el valor opuesto', async () => {
+    // Un test anterior ('sesiones activas') deja su propio mockImplementation
+    // en api.get -- vi.clearAllMocks() en beforeEach no lo deshace (solo
+    // limpia llamadas registradas, no implementaciones), así que hay que
+    // volver a fijar la respuesta esperada explícitamente aquí también.
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/auth/sessions') return Promise.resolve([])
+      if (url === '/notificaciones/prefs') return Promise.resolve({ data: NOTIF_PREFS })
+      return Promise.resolve({})
+    })
+
     const user = userEvent.setup()
     renderPerfil()
-    const toggle = screen.getByText('Estado de solicitudes').closest('div')!.parentElement!.querySelector('button[aria-pressed]') as HTMLElement
-    const before = toggle.getAttribute('aria-pressed')
+    const label = await screen.findByText('Nueva solicitud')
+    const toggle = label.closest('div')!.parentElement!.querySelector('button[aria-pressed]') as HTMLElement
+    expect(toggle.getAttribute('aria-pressed')).toBe('true')
 
     await user.click(toggle)
-    expect(toggle.getAttribute('aria-pressed')).not.toBe(before)
+    await waitFor(() =>
+      expect(api.patch).toHaveBeenCalledWith('/notificaciones/prefs/nueva_solicitud', { enPantalla: false })
+    )
   })
 
   test('elegir una densidad distinta la marca como activa', async () => {

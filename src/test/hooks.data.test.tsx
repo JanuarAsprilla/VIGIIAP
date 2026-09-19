@@ -41,6 +41,8 @@ import { useSolicitudesAdmin, useMisSolicitudes } from '@/hooks/useSolicitudes'
 import { useUsuariosList } from '@/hooks/useUsuarios'
 import { useCategoriasList } from '@/hooks/useCategorias'
 import { useNotificaciones } from '@/hooks/useNotificaciones'
+import { useTiposNotificacionList } from '@/hooks/useTiposNotificacion'
+import { useNotificacionPrefs, useUpdateNotificacionPref } from '@/hooks/useNotificacionPrefs'
 import { useCatalogue } from '@/hooks/useCatalogue'
 import {
   useGeovisoresList, useGeovisoresPublico, useGeovisorPorSlug, useCapasDeGeovisor,
@@ -313,6 +315,57 @@ describe('useNotificaciones', () => {
 
     expect(api.get).toHaveBeenCalledWith('/notificaciones')
     expect(Array.isArray(result.current.data)).toBe(true)
+  })
+})
+
+// ─── useTiposNotificacionList ──────────────────────────────────────────────────
+describe('useTiposNotificacionList', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('fetches /notificaciones/tipos and unwraps data', async () => {
+    const tipos = [{ clave: 'nuevo_usuario', nombre: 'Nuevo usuario', icono: 'User', color: 'magenta', aplica_a: 'admin', activo: true, orden: 1 }]
+    vi.mocked(api.get).mockResolvedValue({ data: tipos });
+
+    const { result } = renderHook(() => useTiposNotificacionList(), { wrapper: makeWrapper() });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(api.get).toHaveBeenCalledWith('/notificaciones/tipos');
+    expect(result.current.data).toEqual(tipos);
+  })
+})
+
+// ─── useNotificacionPrefs / useUpdateNotificacionPref ──────────────────────────
+describe('useNotificacionPrefs', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('fetches /notificaciones/prefs and unwraps data', async () => {
+    const prefs = [{ clave: 'nueva_solicitud', nombre: 'Nueva solicitud', icono: 'ClipboardList', color: 'gold', en_pantalla: true }]
+    vi.mocked(api.get).mockResolvedValue({ data: prefs });
+
+    const { result } = renderHook(() => useNotificacionPrefs(), { wrapper: makeWrapper() });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(api.get).toHaveBeenCalledWith('/notificaciones/prefs');
+    expect(result.current.data).toEqual(prefs);
+  })
+
+  test('does not fetch when enabled=false', () => {
+    renderHook(() => useNotificacionPrefs(false), { wrapper: makeWrapper() });
+    expect(api.get).not.toHaveBeenCalled();
+  })
+})
+
+describe('useUpdateNotificacionPref', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('PATCHes the given clave with enPantalla', async () => {
+    vi.mocked(api.patch).mockResolvedValue({});
+
+    const { result } = renderHook(() => useUpdateNotificacionPref(), { wrapper: makeWrapper() });
+    result.current.mutate({ clave: 'nueva_solicitud', enPantalla: false });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(api.patch).toHaveBeenCalledWith('/notificaciones/prefs/nueva_solicitud', { enPantalla: false });
   })
 })
 

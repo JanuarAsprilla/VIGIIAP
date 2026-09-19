@@ -310,6 +310,30 @@ export interface Notificacion {
   link?: string
 }
 
+// ─── Tipos de notificación (catálogo) y preferencias por usuario ──────────────
+// Ver notificaciones.routes.js (backend) -- 'clave' de TipoNotificacion debe
+// coincidir con el `tipo` usado al crear una Notificacion.
+
+export type AplicaA = 'admin' | 'usuario' | 'ambos'
+
+export interface TipoNotificacion {
+  clave: string
+  nombre: string
+  icono: string
+  color: string
+  aplica_a: AplicaA
+  activo: boolean
+  orden: number
+}
+
+export interface NotificacionPref {
+  clave: string
+  nombre: string
+  icono: string
+  color: string
+  en_pantalla: boolean
+}
+
 // ─── Stats / Dashboard ────────────────────────────────────────────────────────
 
 export interface AdminStats {
