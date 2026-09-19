@@ -6,6 +6,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.6.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.5.0...v1.6.0) (2026-09-19)
+
+
+### Features
+
+* notificaciones reales para todos los usuarios (Fase 1) ([#162](https://github.com/JanuarAsprilla/VIGIIAP/issues/162)) ([d96f5c1](https://github.com/JanuarAsprilla/VIGIIAP/commit/d96f5c1a7c7bfb303ce8ae16046390a6a05a7d01))
+
 ## [1.5.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.4.0...v1.5.0) (2026-09-19)
 
 
