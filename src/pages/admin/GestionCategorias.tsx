@@ -106,6 +106,15 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { 
 // ── Tarjeta de categoría ──────────────────────────────────────────────────────
 interface ConteoCategoria { docs: number; mapas: number; geovisores: number }
 
+const MODULO_LABEL: Record<keyof ConteoCategoria, string> = {
+  docs: 'documentos', mapas: 'mapas', geovisores: 'geovisores',
+}
+const MODULO_FILTROS: { key: keyof ConteoCategoria; label: string }[] = [
+  { key: 'docs', label: 'Documentos' },
+  { key: 'mapas', label: 'Mapas' },
+  { key: 'geovisores', label: 'Geovisores' },
+]
+
 /** "3 docs · 2 mapas · 1 geovisor" -- omite los tipos en cero, salvo si todo está en cero. */
 function resumenConteo({ docs, mapas, geovisores }: ConteoCategoria): string {
   const partes = [
@@ -274,6 +283,7 @@ export default function GestionCategorias() {
   const [renameError, setRenameError]   = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ nombre: string } | null>(null)
   const [toast, setToast]             = useState<string | null>(null)
+  const [filtroModulo, setFiltroModulo] = useState<keyof ConteoCategoria | ''>('')
 
   // Conteo cruzado -- la tabla categorias es compartida entre documentos, mapas
   // y geovisores (ver useCategorias.ts), así que "0 docs" no implica que la
@@ -287,6 +297,13 @@ export default function GestionCategorias() {
   docs.forEach((d) => contar(d.categoria || d.tipo, 'docs'))
   mapas.forEach((m) => contar(m.categoria, 'mapas'))
   geovisores.forEach((g) => contar(g.categoria, 'geovisores'))
+
+  // Filtro por módulo -- ver qué categorías tienen al menos un elemento en
+  // documentos/mapas/geovisores (ej. para elegir una al configurar un geovisor
+  // nuevo, sin adivinar cuáles de las categorías ya la usan ahí).
+  const categoriasFiltradas = !filtroModulo
+    ? categorias
+    : categorias.filter((cat) => (conteoPorCategoria[cat.nombre]?.[filtroModulo] ?? 0) > 0)
 
   const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -349,7 +366,11 @@ export default function GestionCategorias() {
           <span className="text-[0.7rem] font-bold uppercase tracking-widest" style={{ color: 'var(--hero-eyebrow-text)' }}>Administración</span>
           <h1 className="font-display text-2xl font-bold text-text mt-0.5">Gestión de Categorías</h1>
           <p className="text-sm text-text-muted mt-1">
-            {isLoading ? 'Cargando…' : `${categorias.length} categorías registradas`}
+            {isLoading
+              ? 'Cargando…'
+              : filtroModulo
+                ? `${categoriasFiltradas.length} de ${categorias.length} categorías con ${MODULO_LABEL[filtroModulo]}`
+                : `${categorias.length} categorías registradas`}
           </p>
         </div>
         <button
@@ -369,6 +390,35 @@ export default function GestionCategorias() {
         </p>
       </motion.div>
 
+      {/* Filtro por módulo -- ¿qué categorías ya tienen algo en documentos/mapas/geovisores? */}
+      {!isLoading && categorias.length > 0 && (
+        <motion.div {...fadeUp(0.02)} className="flex flex-wrap items-center gap-2">
+          <span className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mr-1">Filtrar por módulo</span>
+          <button
+            onClick={() => setFiltroModulo('')}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+              !filtroModulo
+                ? 'bg-primary-800 text-white border-primary-800'
+                : 'bg-[var(--card-bg)] text-text-muted border-border hover:border-primary-800 hover:text-primary-800'
+            }`}
+          >
+            Todas
+          </button>
+          {MODULO_FILTROS.map(({ key, label }) => (
+            <button key={key}
+              onClick={() => setFiltroModulo(filtroModulo === key ? '' : key)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                filtroModulo === key
+                  ? 'bg-primary-800 text-white border-primary-800'
+                  : 'bg-[var(--card-bg)] text-text-muted border-border hover:border-primary-800 hover:text-primary-800'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </motion.div>
+      )}
+
       {/* Estado vacío */}
       {!isLoading && categorias.length === 0 && (
         <motion.div {...fadeUp(0.08)} className="flex flex-col items-center justify-center py-20 text-center bg-[var(--card-bg)] border border-dashed border-border rounded-2xl">
@@ -386,15 +436,22 @@ export default function GestionCategorias() {
         </motion.div>
       )}
 
+      {/* Sin resultados para el módulo elegido -- distinto del estado "no hay categorías" */}
+      {!isLoading && categorias.length > 0 && categoriasFiltradas.length === 0 && (
+        <div className="py-12 text-center text-sm text-text-muted">
+          Ninguna categoría tiene {MODULO_LABEL[filtroModulo as keyof ConteoCategoria]} todavía.
+        </div>
+      )}
+
       {/* Grid de tarjetas */}
-      {categorias.length > 0 && (
+      {categoriasFiltradas.length > 0 && (
         <motion.div
           variants={staggerContainer(0.07, 0.08)}
           initial="initial" animate="animate"
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
         >
           <AnimatePresence mode="popLayout">
-            {categorias.map((cat) => (
+            {categoriasFiltradas.map((cat) => (
               <CategoriaCard
                 key={cat.nombre}
                 cat={cat}

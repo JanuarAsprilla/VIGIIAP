@@ -283,6 +283,90 @@ describe('GestionCategorias — listado', () => {
   })
 })
 
+describe('GestionCategorias — filtro por módulo', () => {
+  function setupTresCategorias() {
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [
+        makeCategoria({ nombre: 'Hidrología' }),
+        makeCategoria({ nombre: 'Geología' }),
+        makeCategoria({ nombre: 'Sin uso' }),
+      ], isLoading: false,
+    } as unknown as ReturnType<typeof useCategoriasList>)
+    vi.mocked(useDocumentosList).mockReturnValue({
+      data: { data: [] },
+    } as unknown as ReturnType<typeof useDocumentosList>)
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [{ categoria: 'Hidrología' }] },
+    } as unknown as ReturnType<typeof useMapasList>)
+    vi.mocked(useGeovisoresList).mockReturnValue({
+      data: { data: [{ categoria: 'Geología' }] },
+    } as unknown as ReturnType<typeof useGeovisoresList>)
+  }
+
+  test('filtrar por Geovisores solo muestra la categoría con al menos un geovisor', async () => {
+    setupTresCategorias()
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+
+    await user.click(screen.getByRole('button', { name: 'Geovisores' }))
+
+    expect(screen.getByText('Geología')).toBeInTheDocument()
+    expect(screen.queryByText('Hidrología')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sin uso')).not.toBeInTheDocument()
+  })
+
+  test('filtrar por Mapas solo muestra la categoría con al menos un mapa', async () => {
+    setupTresCategorias()
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+
+    await user.click(screen.getByRole('button', { name: 'Mapas' }))
+
+    expect(screen.getByText('Hidrología')).toBeInTheDocument()
+    expect(screen.queryByText('Geología')).not.toBeInTheDocument()
+  })
+
+  test('volver a "Todas" quita el filtro', async () => {
+    setupTresCategorias()
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+
+    await user.click(screen.getByRole('button', { name: 'Mapas' }))
+    await user.click(screen.getByRole('button', { name: 'Todas' }))
+
+    expect(screen.getByText('Hidrología')).toBeInTheDocument()
+    expect(screen.getByText('Geología')).toBeInTheDocument()
+    expect(screen.getByText('Sin uso')).toBeInTheDocument()
+  })
+
+  test('un filtro sin ninguna categoría coincidente muestra el estado vacío específico', async () => {
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [makeCategoria({ nombre: 'Sin uso' })], isLoading: false,
+    } as unknown as ReturnType<typeof useCategoriasList>)
+    vi.mocked(useDocumentosList).mockReturnValue({ data: { data: [] } } as unknown as ReturnType<typeof useDocumentosList>)
+    vi.mocked(useMapasList).mockReturnValue({ data: { data: [] } } as unknown as ReturnType<typeof useMapasList>)
+    vi.mocked(useGeovisoresList).mockReturnValue({ data: { data: [] } } as unknown as ReturnType<typeof useGeovisoresList>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByRole('button', { name: 'Documentos' }))
+
+    expect(screen.getByText('Ninguna categoría tiene documentos todavía.')).toBeInTheDocument()
+  })
+
+  test('hacer clic de nuevo en el mismo filtro lo quita (toggle)', async () => {
+    setupTresCategorias()
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+
+    await user.click(screen.getByRole('button', { name: 'Geovisores' }))
+    await user.click(screen.getByRole('button', { name: 'Geovisores' }))
+
+    expect(screen.getByText('Hidrología')).toBeInTheDocument()
+    expect(screen.getByText('Sin uso')).toBeInTheDocument()
+  })
+})
+
 describe('GestionCategorias — imagen de portada al crear', () => {
   function getDropzoneInput(container: HTMLElement) {
     const inputs = container.querySelectorAll('input[type="file"]')
