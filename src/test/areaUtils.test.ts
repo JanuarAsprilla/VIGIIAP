@@ -52,6 +52,19 @@ describe('formatearArea / formatearDistancia', () => {
     expect(formatearArea(hectareasDeGeometria(cuadradoPequenio))).toMatch(/ha|m²|km²/)
   })
 
+  // Regresión: L.GeometryUtil.readableArea (leaflet-draw) hace `type = typeof isMetric`
+  // sin declarar la variable, lo que revienta con "ReferenceError: type is not defined"
+  // en el build de producción (módulos ES, modo estricto) -- rompía el visor cada vez
+  // que alguien hacía clic en un punto para ver su área. formatearArea ya no depende de
+  // esa función; estas pruebas fijan el formato exacto de sus dos ramas (m² y ha).
+  test('un área menor a 1 ha (10.000 m²) se muestra en m²', () => {
+    expect(formatearArea(0.5)).toBe('5000 m²')
+  })
+
+  test('un área de 1 ha o más se muestra en ha', () => {
+    expect(formatearArea(2.5)).toBe('2.50 ha')
+  })
+
   test('formatearDistancia incluye una unidad legible', () => {
     expect(formatearDistancia(1500)).toMatch(/km|m/)
   })
