@@ -17,6 +17,7 @@ export const MODULO_STYLES: Record<string, string> = {
   solicitudes: 'bg-gold-400/12 text-gold-400',
   mapas:       'bg-primary-700/10 text-primary-700',
   documentos:  'bg-gold-500/12 text-gold-500',
+  sistema:     'bg-bg-alt text-text-muted',
 }
 
 export const ACCION_LABEL: Record<string, { label: string; badge: string }> = {
@@ -38,6 +39,7 @@ export const ACCION_LABEL: Record<string, { label: string; badge: string }> = {
   create_documento:        { label: 'Subir documento',      badge: 'bg-orange-500/12 text-orange-500' },
   update_documento:        { label: 'Editar documento',     badge: 'bg-gold-500/12 text-gold-500'  },
   delete_documento:        { label: 'Eliminar documento',   badge: 'bg-red/10 text-red-dark'       },
+  rate_limit_auto_scale:   { label: 'Límite de tráfico ajustado', badge: 'bg-bg-alt text-text-muted' },
 }
 
 export interface AuditLogRaw {
