@@ -65,7 +65,6 @@ const authMock = {
   initializing: false,
   user: null as { name: string; role: string; initials: string; isVisitante?: boolean } | null,
   logout: vi.fn(),
-  isAdmin: false,
 }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 const toggleThemeSpy = vi.fn()
@@ -76,8 +75,16 @@ vi.mock('@/contexts/SearchContext', () => ({ useSearch: () => ({ query: '', setQ
 const openPaletteSpy = vi.fn()
 const uiMock = { openPalette: openPaletteSpy, notifications: true }
 vi.mock('@/contexts/UIContext', () => ({ useUI: () => uiMock }))
-const { useAdminNotificacionesMock } = vi.hoisted(() => ({ useAdminNotificacionesMock: vi.fn() }))
-vi.mock('@/hooks/useNotificaciones', () => ({ useAdminNotificaciones: useAdminNotificacionesMock }))
+const { useNotificacionesMock, marcarLeidaMutate, marcarTodasLeidasMutate } = vi.hoisted(() => ({
+  useNotificacionesMock: vi.fn(),
+  marcarLeidaMutate: vi.fn(),
+  marcarTodasLeidasMutate: vi.fn(),
+}))
+vi.mock('@/hooks/useNotificaciones', () => ({
+  useNotificaciones: useNotificacionesMock,
+  useMarcarNotificacionLeida: () => ({ mutate: marcarLeidaMutate }),
+  useMarcarTodasNotificacionesLeidas: () => ({ mutate: marcarTodasLeidasMutate }),
+}))
 
 const navigateSpy = vi.fn()
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -100,11 +107,10 @@ beforeEach(() => {
   authMock.isAuthenticated = false
   authMock.initializing = false
   authMock.user = null
-  authMock.isAdmin = false
   uiMock.openPalette = openPaletteSpy
   uiMock.notifications = true
   themeMock.isDark = false
-  useAdminNotificacionesMock.mockReturnValue({ data: [] })
+  useNotificacionesMock.mockReturnValue({ data: [] })
 })
 
 describe('TopBar — usuario anónimo', () => {
@@ -311,22 +317,22 @@ describe('TopBar — paneles de usuario verificado', () => {
   })
 })
 
-describe('TopBar — notificaciones de administrador', () => {
-  test('un usuario no admin nunca ve el conteo de notificaciones, aunque haya datos', () => {
+describe('TopBar — notificaciones', () => {
+  // Ya no es exclusivo de admins -- cualquier cuenta real (no visitante/público
+  // sin verificar) recibe notificaciones, ver useNotificaciones.ts.
+  test('un usuario investigador (no admin) sí ve el conteo de notificaciones', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Ana Restrepo', role: 'Investigador', initials: 'AR' }
-    authMock.isAdmin = false
-    useAdminNotificacionesMock.mockReturnValue({ data: [{ id: 'n1' }] })
+    useNotificacionesMock.mockReturnValue({ data: [{ id: 'n1', leido_en: null }, { id: 'n2', leido_en: null }] })
 
     renderTopBar()
-    expect(screen.getByLabelText('Notificaciones')).toBeInTheDocument()
+    expect(screen.getByLabelText('Notificaciones, 2 sin leer')).toBeInTheDocument()
   })
 
   test('un admin con notificaciones no leídas ve el badge con el conteo', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Root', role: 'Administrador SIG', initials: 'RT' }
-    authMock.isAdmin = true
-    useAdminNotificacionesMock.mockReturnValue({ data: [{ id: 'n1' }, { id: 'n2' }] })
+    useNotificacionesMock.mockReturnValue({ data: [{ id: 'n1', leido_en: null }, { id: 'n2', leido_en: null }] })
 
     renderTopBar()
     expect(screen.getByLabelText('Notificaciones, 2 sin leer')).toBeInTheDocument()
@@ -335,50 +341,45 @@ describe('TopBar — notificaciones de administrador', () => {
   test('con notifications desactivadas en UIContext, no muestra el badge aunque haya no leídas', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Root', role: 'Administrador SIG', initials: 'RT' }
-    authMock.isAdmin = true
     uiMock.notifications = false
-    useAdminNotificacionesMock.mockReturnValue({ data: [{ id: 'n1' }] })
+    useNotificacionesMock.mockReturnValue({ data: [{ id: 'n1', leido_en: null }] })
 
     renderTopBar()
     expect(screen.getByLabelText('Notificaciones')).toBeInTheDocument()
   })
 
-  test('marcar una notificación como leída persiste en localStorage y baja el conteo', async () => {
+  test('marcar una notificación como leída llama a la mutación con su id', async () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Root', role: 'Administrador SIG', initials: 'RT' }
-    authMock.isAdmin = true
-    useAdminNotificacionesMock.mockReturnValue({ data: [{ id: 'n1' }, { id: 'n2' }] })
+    useNotificacionesMock.mockReturnValue({ data: [{ id: 'n1', leido_en: null }, { id: 'n2', leido_en: null }] })
 
     const user = userEvent.setup()
     renderTopBar()
     await user.click(screen.getByLabelText('Notificaciones, 2 sin leer'))
     await user.click(screen.getByText('Marcar primera leída'))
 
-    expect(screen.getByLabelText('Notificaciones, 1 sin leer')).toBeInTheDocument()
-    expect(JSON.parse(localStorage.getItem('vigiiap_notif_read') ?? '[]')).toContain('n1')
+    expect(marcarLeidaMutate).toHaveBeenCalledWith('n1')
   })
 
-  test('marcar todas como leídas deja el conteo en cero', async () => {
+  test('marcar todas como leídas llama a la mutación correspondiente', async () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Root', role: 'Administrador SIG', initials: 'RT' }
-    authMock.isAdmin = true
-    useAdminNotificacionesMock.mockReturnValue({ data: [{ id: 'n1' }, { id: 'n2' }] })
+    useNotificacionesMock.mockReturnValue({ data: [{ id: 'n1', leido_en: null }, { id: 'n2', leido_en: null }] })
 
     const user = userEvent.setup()
     renderTopBar()
     await user.click(screen.getByLabelText('Notificaciones, 2 sin leer'))
     await user.click(screen.getByText('Marcar todas leídas'))
 
-    expect(screen.getByLabelText('Notificaciones')).toBeInTheDocument()
-    expect(screen.queryByLabelText(/sin leer/)).not.toBeInTheDocument()
+    expect(marcarTodasLeidasMutate).toHaveBeenCalled()
   })
 
-  test('el estado de leídas persiste entre renders (localStorage)', () => {
-    localStorage.setItem('vigiiap_notif_read', JSON.stringify(['n1']))
+  test('una notificación ya leída no cuenta en el badge', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Root', role: 'Administrador SIG', initials: 'RT' }
-    authMock.isAdmin = true
-    useAdminNotificacionesMock.mockReturnValue({ data: [{ id: 'n1' }, { id: 'n2' }] })
+    useNotificacionesMock.mockReturnValue({
+      data: [{ id: 'n1', leido_en: new Date().toISOString() }, { id: 'n2', leido_en: null }],
+    })
 
     renderTopBar()
     expect(screen.getByLabelText('Notificaciones, 1 sin leer')).toBeInTheDocument()

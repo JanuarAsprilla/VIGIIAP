@@ -22,7 +22,8 @@ function timeAgo(iso: string | undefined) {
   return `hace ${d} d`
 }
 
-function NotificationItem({ item, isRead, onSelect }: { item: Notificacion; isRead: boolean; onSelect: () => void }) {
+function NotificationItem({ item, onSelect }: { item: Notificacion; onSelect: () => void }) {
+  const isRead = Boolean(item.leido_en)
   const { Icon, color, bg, label } = (TYPE_META as Record<string, typeof TYPE_META.default>)[item.tipo ?? 'default'] ?? TYPE_META.default
 
   return (
@@ -54,8 +55,8 @@ function NotificationItem({ item, isRead, onSelect }: { item: Notificacion; isRe
   )
 }
 
-export default function NotificacionesPanel({ onClose, items, readIds, onMarkAllRead, onMarkRead }: { onClose: () => void; items: Notificacion[]; readIds: string[]; onMarkAllRead: (ids: string[]) => void; onMarkRead: (id: string) => void }) {
-  const unreadCount = items.filter((n) => !readIds.includes(n.id)).length
+export default function NotificacionesPanel({ onClose, items, onMarkAllRead, onMarkRead }: { onClose: () => void; items: Notificacion[]; onMarkAllRead: () => void; onMarkRead: (id: string) => void }) {
+  const unreadCount = items.filter((n) => !n.leido_en).length
   const allRead     = unreadCount === 0
 
   return (
@@ -71,7 +72,7 @@ export default function NotificacionesPanel({ onClose, items, readIds, onMarkAll
         </div>
         {!allRead && (
           <button
-            onClick={() => onMarkAllRead(items.map((i) => i.id))}
+            onClick={onMarkAllRead}
             className="text-xs text-primary-800 hover:text-primary-600 font-semibold transition-colors"
           >
             Marcar todas como leídas
@@ -93,7 +94,6 @@ export default function NotificacionesPanel({ onClose, items, readIds, onMarkAll
             <li key={item.id} role="listitem">
               <NotificationItem
                 item={item}
-                isRead={readIds.includes(item.id)}
                 onSelect={() => { onMarkRead(item.id); onClose() }}
               />
             </li>

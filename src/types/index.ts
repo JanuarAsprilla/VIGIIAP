@@ -305,7 +305,7 @@ export interface Notificacion {
   id: string
   mensaje: string
   tipo?: string
-  leida?: boolean
+  leido_en?: string | null
   creado_en?: string
   link?: string
 }
