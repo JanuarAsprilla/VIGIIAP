@@ -34,6 +34,7 @@ const resourceLinks = [
   { label: 'Guía de Usuario', href: '/guia-usuario' },
   { label: 'Preguntas Frecuentes', href: '/faq' },
   { label: 'Términos de Uso', href: '/terminos' },
+  { label: 'Política de Privacidad', href: '/politica-privacidad' },
 ]
 
 export default function Footer() {
