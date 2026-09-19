@@ -17,15 +17,16 @@ export interface ErrorLogRaw {
 
 function normalizeError(e: ErrorLogRaw) {
   return {
-    id:          e.id,
-    mensaje:     e.mensaje,
-    stack:       e.stack ?? '',
-    metodo:      e.metodo ?? '—',
-    ruta:        e.ruta ?? '—',
-    statusCode:  e.status_code ?? 500,
-    ocurrencias: e.ocurrencias,
-    primeraVez:  formatDate(e.primera_vez),
-    ultimaVez:   formatDate(e.ultima_vez),
+    id:            e.id,
+    mensaje:       e.mensaje,
+    stack:         e.stack ?? '',
+    metodo:        e.metodo ?? '—',
+    ruta:          e.ruta ?? '—',
+    statusCode:    e.status_code ?? 500,
+    ocurrencias:   e.ocurrencias,
+    primeraVez:    formatDate(e.primera_vez),
+    ultimaVez:     formatDate(e.ultima_vez),
+    ultimaVezIso:  e.ultima_vez,
   }
 }
 
