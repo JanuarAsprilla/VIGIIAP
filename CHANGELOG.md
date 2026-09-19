@@ -6,6 +6,21 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.3.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.2.0...v1.3.0) (2026-09-19)
+
+
+### Features
+
+* picker de capas individuales (reconstruido sobre el mapa en vivo) ([43db376](https://github.com/JanuarAsprilla/VIGIIAP/commit/43db376c9d0d6bd1391992eccabbb003e6eac61e))
+* picker de capas individuales en el formulario de geovisores ([6bde80a](https://github.com/JanuarAsprilla/VIGIIAP/commit/6bde80aeb494a2b15c7a4f6470f6493a4ead02e5))
+* separar Política de Privacidad de Términos de Uso en su propia URL ([#145](https://github.com/JanuarAsprilla/VIGIIAP/issues/145)) ([31e7588](https://github.com/JanuarAsprilla/VIGIIAP/commit/31e7588f28da52e3b78bdbfcf8bc06d25e50fe16))
+
+
+### Bug Fixes
+
+* exponer nombre y propósito de la app a crawlers sin JavaScript ([#146](https://github.com/JanuarAsprilla/VIGIIAP/issues/146)) ([b10fa09](https://github.com/JanuarAsprilla/VIGIIAP/commit/b10fa0991a65876e9a2ee35fc2270172fc6180a4))
+* panel de bienvenida ya no bloquea la página de fondo ([#143](https://github.com/JanuarAsprilla/VIGIIAP/issues/143)) ([1c39146](https://github.com/JanuarAsprilla/VIGIIAP/commit/1c391468bad95bf40137f7f43222f95c524763d9))
+
 ## [1.2.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.1.0...v1.2.0) (2026-09-18)
 
 
