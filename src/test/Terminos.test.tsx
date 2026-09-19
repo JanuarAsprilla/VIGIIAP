@@ -1,6 +1,7 @@
-import { describe, test, expect, vi } from 'vitest'
+import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import Terminos from '@/pages/recursos/Terminos'
 
@@ -22,20 +23,47 @@ vi.mock('@/components/ui/Card3D', () => ({
     <div className={className}>{children}</div>,
 }))
 
+vi.mock('@/lib/api', () => ({ default: { get: vi.fn() } }))
+import api from '@/lib/api'
+
 function renderPage() {
-  return render(<MemoryRouter><Terminos /></MemoryRouter>)
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(
+    <MemoryRouter>
+      <QueryClientProvider client={qc}><Terminos /></QueryClientProvider>
+    </MemoryRouter>,
+  )
 }
 
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
 describe('Terminos — condiciones de uso (política de privacidad vive en su propia página)', () => {
-  test('muestra las secciones de términos de uso', () => {
+  test('muestra los términos editados por el super_admin cuando la API los devuelve', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      terminosUso: 'Términos de uso personalizados del IIAP.',
+    })
+
     renderPage()
-    expect(screen.getByText(/1\. Aceptación de Términos/)).toBeInTheDocument()
-    expect(screen.getByText(/2\. Uso Autorizado/)).toBeInTheDocument()
-    expect(screen.getByText(/3\. Propiedad Intelectual/)).toBeInTheDocument()
+
+    expect(await screen.findByText('Términos de uso personalizados del IIAP.')).toBeInTheDocument()
   })
 
-  test('enlaza a /politica-privacidad en vez de embeber el texto de la política', () => {
+  test('usa el texto de respaldo si la API no trae términos configurados', async () => {
+    vi.mocked(api.get).mockResolvedValue({})
+
     renderPage()
+
+    expect(await screen.findByText(/Al acceder y utilizar la plataforma VIGIA-IIAP/)).toBeInTheDocument()
+  })
+
+  test('enlaza a /politica-privacidad en vez de embeber el texto de la política', async () => {
+    vi.mocked(api.get).mockResolvedValue({})
+
+    renderPage()
+    await screen.findByText(/Al acceder y utilizar la plataforma VIGIA-IIAP/)
+
     const link = screen.getByRole('link', { name: 'Política de Privacidad' })
     expect(link).toHaveAttribute('href', '/politica-privacidad')
     expect(screen.queryByText(/En cumplimiento de la Ley 1581 de 2012/)).not.toBeInTheDocument()

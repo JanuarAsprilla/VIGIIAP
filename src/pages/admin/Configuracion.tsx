@@ -138,6 +138,7 @@ export default function Configuracion() {
   })
 
   const [politicaPrivacidad, setPoliticaPrivacidad] = useState('')
+  const [terminosUso, setTerminosUso] = useState('')
 
   const [saveStatus, setSaveStatus] = useState<'ok' | 'error' | null>(null)
 
@@ -180,6 +181,9 @@ export default function Configuracion() {
     }))
     if (remoteConfig.politicaPrivacidad !== undefined) {
       setPoliticaPrivacidad(remoteConfig.politicaPrivacidad ?? '')
+    }
+    if (remoteConfig.terminosUso !== undefined) {
+      setTerminosUso(remoteConfig.terminosUso ?? '')
     }
     setSmtp((s) => ({
       ...s,
@@ -227,6 +231,7 @@ export default function Configuracion() {
         modoMantenimiento:    String(mantenimiento.modoMantenimiento),
         mensajeMantenimiento: mantenimiento.mensaje,
         politicaPrivacidad,
+        terminosUso,
         mail_host: smtp.mail_host,
         mail_port: smtp.mail_port,
         mail_secure: smtp.mail_secure,
@@ -617,7 +622,7 @@ export default function Configuracion() {
       {isSuperAdmin && (
         <SectionCard title="Política de Tratamiento de Datos Personales" icon={Scale} delay={0.32}>
           <p className="text-xs text-text-muted">
-            Este texto se muestra públicamente en <code className="text-[0.7rem]">/terminos</code> y
+            Este texto se muestra públicamente en <code className="text-[0.7rem]">/politica-privacidad</code> y
             es lo que respalda el cumplimiento de la Ley 1581 de 2012. Solo Super Administrador
             puede editarlo — el backend rechaza el cambio si lo intenta cualquier otro rol.
           </p>
@@ -626,6 +631,24 @@ export default function Configuracion() {
             value={politicaPrivacidad}
             onChange={(e) => setPoliticaPrivacidad(e.target.value)}
             placeholder="Responsable del tratamiento, datos que se recolectan, finalidad, derechos ARCO, cómo ejercerlos, autorización y vigencia. Separe cada apartado con una línea en blanco — así se muestran como párrafos independientes."
+            className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm font-mono leading-relaxed focus:outline-none focus:border-primary-800 transition resize-y"
+          />
+        </SectionCard>
+      )}
+
+      {/* Términos de uso — exclusivo super_admin */}
+      {isSuperAdmin && (
+        <SectionCard title="Términos de Uso" icon={Scale} delay={0.36}>
+          <p className="text-xs text-text-muted">
+            Este texto se muestra públicamente en <code className="text-[0.7rem]">/terminos</code>.
+            Solo Super Administrador puede editarlo — el backend rechaza el cambio si lo intenta
+            cualquier otro rol.
+          </p>
+          <textarea
+            rows={12}
+            value={terminosUso}
+            onChange={(e) => setTerminosUso(e.target.value)}
+            placeholder="Aceptación de términos, uso autorizado, propiedad intelectual, responsabilidad, etc. Separe cada apartado con una línea en blanco — así se muestran como párrafos independientes."
             className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm font-mono leading-relaxed focus:outline-none focus:border-primary-800 transition resize-y"
           />
         </SectionCard>
