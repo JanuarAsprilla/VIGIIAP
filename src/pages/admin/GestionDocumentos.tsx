@@ -8,10 +8,11 @@ import {
   Plus, Search, X, Edit2, Trash2,
   FileText, File, FileSpreadsheet, Send, Upload, CheckCircle,
   AlertCircle, Globe, Users, ShieldCheck,
-  Loader2, FolderOpen, ChevronDown, Tag,
+  Loader2, FolderOpen, Tag,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
+import CategoryCombobox from '@/components/admin/CategoryCombobox'
 import { useDocumentosList, useCreateDocumento, useUpdateDocumento, useDeleteDocumento } from '@/hooks/useDocumentos'
 import { useCategoriasList } from '@/hooks/useCategorias'
 
@@ -69,106 +70,6 @@ const TipoIcon = ({ tipo }: { tipo: string }) => {
   if (t === 'docx' || t === 'doc' || t === 'word')  return <FileText className="w-4 h-4 text-gold-400" />
   if (t === 'xlsx' || t === 'xls' || t === 'excel') return <FileSpreadsheet className="w-4 h-4 text-primary-700" />
   return <File className="w-4 h-4 text-primary-600" />
-}
-
-// ── useClickOutside ──────────────────────────────────────────────────────────
-function useClickOutside(ref: React.RefObject<HTMLElement | null>, handler: () => void) {
-  useEffect(() => {
-    const listener = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) handler() }
-    document.addEventListener('mousedown', listener)
-    return () => document.removeEventListener('mousedown', listener)
-  }, [ref, handler])
-}
-
-// ── CategoryCombobox ─────────────────────────────────────────────────────────
-// Permite seleccionar una categoría existente o escribir/crear una nueva al vuelo.
-function CategoryCombobox({ value, onChange, allCategories }: { value: string; onChange: (v: string) => void; allCategories: string[] }) {
-  const [input, setInput] = useState(value || '')
-  const [open, setOpen]   = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  useClickOutside(ref, () => setOpen(false))
-
-  // Sincronizar si el valor externo cambia (ej: al abrir el modal de edición)
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- resync intencional de input controlado
-  useEffect(() => { setInput(value || '') }, [value])
-
-  const filtered = allCategories.filter((c) =>
-    !input.trim() || c.toLowerCase().includes(input.toLowerCase())
-  )
-  const isNew = input.trim() !== '' &&
-    !allCategories.some((c) => c.toLowerCase() === input.trim().toLowerCase())
-
-  const select = (cat: string) => { onChange(cat); setInput(cat); setOpen(false) }
-
-  return (
-    <div className="relative" ref={ref}>
-      <div className="relative">
-        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted pointer-events-none" />
-        <input
-          type="text"
-          value={input}
-          placeholder="Selecciona o escribe una categoría nueva…"
-          onChange={(e) => { setInput(e.target.value); onChange(e.target.value); setOpen(true) }}
-          onFocus={() => setOpen(true)}
-          className="w-full pl-8 pr-8 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
-        />
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={() => setOpen((v) => !v)}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted"
-        >
-          <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
-        </button>
-      </div>
-
-      <AnimatePresence>
-        {open && (filtered.length > 0 || isNew) && (
-          <motion.div
-            initial={{ opacity: 0, y: 4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
-            className="absolute z-30 top-full mt-1 w-full bg-[var(--card-bg)] border border-border rounded-xl shadow-xl overflow-hidden"
-            style={{ maxHeight: '14rem', overflowY: 'auto' }}
-          >
-            {filtered.length > 0 && (
-              <div className="px-3 pt-2.5 pb-1">
-                <span className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">
-                  Categorías existentes
-                </span>
-              </div>
-            )}
-            {filtered.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => select(cat)}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${
-                  value === cat
-                    ? 'bg-primary-500/12 text-primary-700 font-semibold'
-                    : 'text-text hover:bg-bg-alt'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-primary-400 shrink-0" />
-                {cat}
-              </button>
-            ))}
-            {isNew && (
-              <button
-                type="button"
-                onClick={() => select(input.trim())}
-                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-primary-800 hover:bg-primary-500/10 border-t border-border transition-colors flex items-center gap-2"
-              >
-                <Plus className="w-3.5 h-3.5 shrink-0" />
-                Crear categoría: <em className="not-italic font-bold">&ldquo;{input.trim()}&rdquo;</em>
-              </button>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
 }
 
 function formatBytes(bytes: number | null | undefined) {
@@ -706,7 +607,7 @@ export default function GestionDocumentos() {
                     <CategoryCombobox
                       value={form.categoria}
                       onChange={(cat) => setForm((f) => ({ ...f, categoria: cat }))}
-                      allCategories={allCategories}
+                      options={allCategories}
                     />
                     {form.categoria && !BASE_CATEGORIES.includes(form.categoria) && (
                       <p className="text-[0.65rem] text-primary-700 mt-1 flex items-center gap-1">

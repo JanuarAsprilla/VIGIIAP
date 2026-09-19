@@ -37,6 +37,10 @@ import {
   useMapasList, useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa,
 } from '@/hooks/useMapas'
 
+vi.mock('@/hooks/useCategorias', () => ({
+  useCategoriasList: () => ({ data: [] }),
+}))
+
 beforeEach(() => {
   vi.clearAllMocks()
   Object.defineProperty(window, 'matchMedia', {

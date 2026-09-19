@@ -30,6 +30,11 @@ vi.mock('@/hooks/useGeovisores', () => ({
 }))
 import { useCreateGeovisor, useUpdateGeovisor } from '@/hooks/useGeovisores'
 
+vi.mock('@/hooks/useCategorias', () => ({
+  useCategoriasList: () => ({ data: [] }),
+  useCreateCategoria: () => ({ mutateAsync: vi.fn() }),
+}))
+
 // El mapa en vivo (react-leaflet real) se prueba aparte en GeovisorMapaConstructor.test.tsx --
 // acá se reemplaza por botones de prueba que disparan los mismos callbacks que dispararía el
 // mapa real (mover vista, agregar/eliminar preset), para probar el cableado del formulario sin
