@@ -6,6 +6,21 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.4.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.3.0...v1.4.0) (2026-09-19)
+
+
+### Features
+
+* unificar categorías compartidas entre documentos, mapas y geovisores ([5797006](https://github.com/JanuarAsprilla/VIGIIAP/commit/5797006a32f9a47f783588aa670b480c8bf16489))
+* unificar categorías compartidas entre documentos, mapas y geovisores ([d92e253](https://github.com/JanuarAsprilla/VIGIIAP/commit/d92e253fe7f7a1ff711c5db7628b8d5e857ed179))
+
+
+### Bug Fixes
+
+* no sobrecargar GeoServer con todas las capas de un workspace en el constructor de geovisores ([690b60f](https://github.com/JanuarAsprilla/VIGIIAP/commit/690b60f17e0ee69a14e99485fb82a00d4b6bed7b))
+* no sobrecargar GeoServer con todas las capas de un workspace en el constructor de geovisores ([b2fc6d8](https://github.com/JanuarAsprilla/VIGIIAP/commit/b2fc6d827748f3897c99094103ad27e856dfe043))
+* recarga automática cuando falla la carga del bundle principal ([#148](https://github.com/JanuarAsprilla/VIGIIAP/issues/148)) ([f23a9bc](https://github.com/JanuarAsprilla/VIGIIAP/commit/f23a9bcdf555e26363faa026f96d5e9ebae01900))
+
 ## [1.3.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.2.0...v1.3.0) (2026-09-19)
 
 
