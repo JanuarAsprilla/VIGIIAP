@@ -26,6 +26,9 @@ vi.mock('@/components/ui/Card3D', () => ({
 vi.mock('@/lib/api', () => ({ default: { get: vi.fn() } }))
 import api from '@/lib/api'
 
+vi.mock('@/lib/exportarReporteExcel', () => ({ exportarReporteExcel: vi.fn().mockResolvedValue(undefined) }))
+import { exportarReporteExcel } from '@/lib/exportarReporteExcel'
+
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(<QueryClientProvider client={qc}><Reportes /></QueryClientProvider>)
@@ -104,26 +107,52 @@ describe('Reportes — métricas', () => {
   })
 })
 
-describe('Reportes — exportar CSV', () => {
+describe('Reportes — exportar Excel', () => {
   test('el botón de exportar está deshabilitado hasta que haya datos', async () => {
     vi.mocked(api.get).mockReturnValue(new Promise(() => {}))
     renderPage()
-    expect(screen.getByRole('button', { name: /Exportar CSV/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Exportar Excel/i })).toBeDisabled()
   })
 
-  test('genera y libera un Object URL al exportar', async () => {
+  test('al hacer clic genera el libro con los datos del reporte y libera el botón al terminar', async () => {
     vi.mocked(api.get).mockResolvedValue(makeReporte())
-    const createObjectURL = vi.fn().mockReturnValue('blob:mock-url')
-    const revokeObjectURL = vi.fn()
-    vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Del 2026-08-25 al 2026-09-01')
+
+    await user.click(screen.getByRole('button', { name: /Exportar Excel/i }))
+
+    expect(exportarReporteExcel).toHaveBeenCalledWith(expect.objectContaining({ desde: '2026-08-25', hasta: '2026-09-01' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: /Exportar Excel/i })).not.toBeDisabled())
+  })
+
+  test('mientras exporta, el botón muestra "Generando Excel…" y queda deshabilitado', async () => {
+    vi.mocked(api.get).mockResolvedValue(makeReporte())
+    let resolveExport: () => void = () => {}
+    vi.mocked(exportarReporteExcel).mockReturnValue(new Promise((resolve) => { resolveExport = () => resolve(undefined) }))
 
     const user = userEvent.setup()
     renderPage()
     await screen.findByText('Del 2026-08-25 al 2026-09-01')
-    await user.click(screen.getByRole('button', { name: /Exportar CSV/i }))
+    await user.click(screen.getByRole('button', { name: /Exportar Excel/i }))
 
-    expect(createObjectURL).toHaveBeenCalled()
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url')
-    vi.unstubAllGlobals()
+    expect(await screen.findByText('Generando Excel…')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Generando Excel/i })).toBeDisabled()
+
+    resolveExport()
+    await waitFor(() => expect(screen.getByRole('button', { name: /Exportar Excel/i })).toBeInTheDocument())
+  })
+})
+
+describe('Reportes — actividad por módulo', () => {
+  test('ordena los módulos de mayor a menor actividad', async () => {
+    vi.mocked(api.get).mockResolvedValue(makeReporte({
+      actividadPorModulo: [{ modulo: 'auth', total: 3 }, { modulo: 'solicitudes', total: 15 }, { modulo: 'mapas', total: 8 }],
+    }))
+    renderPage()
+    await screen.findByText('Del 2026-08-25 al 2026-09-01')
+
+    const nombres = screen.getAllByText(/^(auth|solicitudes|mapas)$/).map((el) => el.textContent)
+    expect(nombres).toEqual(['solicitudes', 'mapas', 'auth'])
   })
 })
