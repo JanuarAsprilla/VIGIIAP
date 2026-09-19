@@ -36,6 +36,12 @@ import {
 vi.mock('@/hooks/useDocumentos', () => ({ useDocumentosList: vi.fn() }))
 import { useDocumentosList } from '@/hooks/useDocumentos'
 
+vi.mock('@/hooks/useMapas', () => ({ useMapasList: vi.fn() }))
+import { useMapasList } from '@/hooks/useMapas'
+
+vi.mock('@/hooks/useGeovisores', () => ({ useGeovisoresList: vi.fn() }))
+import { useGeovisoresList } from '@/hooks/useGeovisores'
+
 function makeCategoria(overrides: Record<string, unknown> = {}) {
   return { nombre: 'Protocolos', descripcion: '', thumbnail_url: null, activo: true, ...overrides }
 }
@@ -50,6 +56,12 @@ beforeEach(() => {
   vi.mocked(useDocumentosList).mockReturnValue({
     data: { data: [] },
   } as unknown as ReturnType<typeof useDocumentosList>)
+  vi.mocked(useMapasList).mockReturnValue({
+    data: { data: [] },
+  } as unknown as ReturnType<typeof useMapasList>)
+  vi.mocked(useGeovisoresList).mockReturnValue({
+    data: { data: [] },
+  } as unknown as ReturnType<typeof useGeovisoresList>)
   vi.mocked(useCreateCategoria).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useCreateCategoria>)
   vi.mocked(useUploadCategoriaThumbnail).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUploadCategoriaThumbnail>)
   vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
@@ -235,6 +247,39 @@ describe('GestionCategorias — listado', () => {
     render(<GestionCategorias />)
     expect(screen.getByText('2 docs')).toBeInTheDocument()
     expect(screen.getByText('1 doc')).toBeInTheDocument()
+  })
+
+  // Regresión: la tabla categorias es compartida entre documentos, mapas y
+  // geovisores -- una categoría con 0 documentos pero mapas/geovisores no
+  // debe leerse como "vacía".
+  test('suma mapas y geovisores al conteo, no solo documentos', () => {
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [makeCategoria({ nombre: 'Hidrología' }), makeCategoria({ nombre: 'Geología' })], isLoading: false,
+    } as unknown as ReturnType<typeof useCategoriasList>)
+    vi.mocked(useDocumentosList).mockReturnValue({
+      data: { data: [] }, // sin documentos en ninguna categoría
+    } as unknown as ReturnType<typeof useDocumentosList>)
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [{ categoria: 'Hidrología' }, { categoria: 'Hidrología' }] },
+    } as unknown as ReturnType<typeof useMapasList>)
+    vi.mocked(useGeovisoresList).mockReturnValue({
+      data: { data: [{ categoria: 'Geología' }] },
+    } as unknown as ReturnType<typeof useGeovisoresList>)
+
+    render(<GestionCategorias />)
+    expect(screen.getByText('2 mapas')).toBeInTheDocument()
+    expect(screen.getByText('1 geovisor')).toBeInTheDocument()
+    // ninguna de las dos categorías tiene documentos -- el badge no debe mencionarlos
+    expect(screen.queryByText(/^\d+ docs?$/)).not.toBeInTheDocument()
+  })
+
+  test('una categoría sin documentos, mapas ni geovisores muestra "0 elementos"', () => {
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [makeCategoria({ nombre: 'Sin uso' })], isLoading: false,
+    } as unknown as ReturnType<typeof useCategoriasList>)
+
+    render(<GestionCategorias />)
+    expect(screen.getByText('0 elementos')).toBeInTheDocument()
   })
 })
 
