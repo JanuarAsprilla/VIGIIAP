@@ -63,6 +63,18 @@ export function useUpdateGeovisor() {
   })
 }
 
+export function useUploadGeovisorThumbnail() {
+  const qc = useQueryClient()
+  return useMutation<GeovisorRaw, Error, { id: string; file: File; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
+    mutationFn: ({ id, file, onUploadProgress }) => {
+      const fd = new FormData()
+      fd.append('thumbnail', file)
+      return api.post(`/geovisores/${id}/thumbnail`, fd, { onUploadProgress })
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  })
+}
+
 export function useToggleGeovisorActivo() {
   const qc = useQueryClient()
   return useMutation<GeovisorRaw, Error, { id: string; activo: boolean }>({

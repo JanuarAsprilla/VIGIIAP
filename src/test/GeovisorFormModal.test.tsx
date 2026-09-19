@@ -27,8 +27,9 @@ import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/use
 vi.mock('@/hooks/useGeovisores', () => ({
   useCreateGeovisor: vi.fn(),
   useUpdateGeovisor: vi.fn(),
+  useUploadGeovisorThumbnail: vi.fn(),
 }))
-import { useCreateGeovisor, useUpdateGeovisor } from '@/hooks/useGeovisores'
+import { useCreateGeovisor, useUpdateGeovisor, useUploadGeovisorThumbnail } from '@/hooks/useGeovisores'
 
 vi.mock('@/hooks/useCategorias', () => ({
   useCategoriasList: () => ({ data: [] }),
@@ -98,8 +99,9 @@ beforeEach(() => {
   vi.mocked(useWorkspacesDeConexion).mockReturnValue({
     data: workspacesFixture, isFetching: false,
   } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
-  vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
-  vi.mocked(useUpdateGeovisor).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUpdateGeovisor>)
+  vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue({ id: '1' }), isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+  vi.mocked(useUpdateGeovisor).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue({ id: '1' }), isPending: false } as unknown as ReturnType<typeof useUpdateGeovisor>)
+  vi.mocked(useUploadGeovisorThumbnail).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUploadGeovisorThumbnail>)
 })
 
 describe('GeovisorFormModal — modo edición: prefill', () => {
@@ -429,7 +431,6 @@ describe('GeovisorFormModal — todos los campos opcionales se envían', () => {
     await user.type(screen.getByLabelText(/^Categoría/i), 'Geología')
     await user.type(screen.getByLabelText(/^Descripción/i), 'Descripción completa')
     await user.type(screen.getByLabelText(/^Cita sugerida/i), 'IIAP (2026)')
-    await user.type(screen.getByLabelText(/^URL de portada/i), 'https://cdn.test/thumb.png')
 
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
     await abrirTema(user, /Geologia/i)
@@ -453,7 +454,7 @@ describe('GeovisorFormModal — todos los campos opcionales se envían', () => {
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
       titulo: 'Geología del Chocó', subtitulo: 'Unidades litoestratigráficas', categoria: 'Geología',
-      descripcion: 'Descripción completa', cita: 'IIAP (2026)', thumbnailUrl: 'https://cdn.test/thumb.png',
+      descripcion: 'Descripción completa', cita: 'IIAP (2026)',
       centroLat: 6, centroLng: -77, zoomInicial: 10, basemapDefecto: 'satelite', areaMaxHa: 1000,
       colorPorTema: { t_15_geologia: '#ff0000' },
       presentacion: expect.objectContaining({
@@ -461,6 +462,65 @@ describe('GeovisorFormModal — todos los campos opcionales se envían', () => {
         camposPopup: [{ campo: 'MGUCR_SIMBL', alias: 'Símbolo' }],
       }),
     }))
+  })
+})
+
+describe('GeovisorFormModal — miniatura (ThumbnailDropzone)', () => {
+  test('al crear, si se eligió un archivo, sube la miniatura después con el id del geovisor recién creado', async () => {
+    const createMutateAsync = vi.fn().mockResolvedValue(makeGeovisor({ id: 'nuevo-id' }))
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync: createMutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const uploadMutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useUploadGeovisorThumbnail).mockReturnValue({ mutateAsync: uploadMutateAsync, isPending: false } as unknown as ReturnType<typeof useUploadGeovisorThumbnail>)
+
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
+    const file = new File(['x'], 'portada.png', { type: 'image/png' })
+    await user.upload(screen.getByLabelText('Portada del geovisor'), file)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+
+    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+
+    expect(uploadMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ id: 'nuevo-id', file }))
+  })
+
+  test('sin archivo elegido, no llama a la subida de miniatura', async () => {
+    const uploadMutateAsync = vi.fn()
+    vi.mocked(useUploadGeovisorThumbnail).mockReturnValue({ mutateAsync: uploadMutateAsync, isPending: false } as unknown as ReturnType<typeof useUploadGeovisorThumbnail>)
+
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+
+    expect(uploadMutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('al editar, la miniatura existente se muestra como vista previa', () => {
+    render(<GeovisorFormModal open editing={makeGeovisor()} onClose={vi.fn()} onSaved={vi.fn()} />)
+    const img = screen.getByAltText('Miniatura') as HTMLImageElement
+    expect(img.src).toBe('https://cdn.test/thumb.png')
+  })
+
+  test('al editar con un archivo nuevo, sube la miniatura con el id devuelto por la actualización', async () => {
+    const uploadMutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useUploadGeovisorThumbnail).mockReturnValue({ mutateAsync: uploadMutateAsync, isPending: false } as unknown as ReturnType<typeof useUploadGeovisorThumbnail>)
+    vi.mocked(useUpdateGeovisor).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue(makeGeovisor({ id: 'editado-id' })), isPending: false,
+    } as unknown as ReturnType<typeof useUpdateGeovisor>)
+
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={makeGeovisor({ id: 'editado-id' })} onClose={vi.fn()} onSaved={vi.fn()} />)
+    // El input de archivo (oculto) está siempre presente en el DOM, aunque ya
+    // haya una miniatura existente mostrando su vista previa.
+    const file = new File(['x'], 'nueva.png', { type: 'image/png' })
+    await user.upload(screen.getByLabelText('Portada del geovisor'), file)
+
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
+
+    expect(uploadMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ id: 'editado-id', file }))
   })
 })
 
