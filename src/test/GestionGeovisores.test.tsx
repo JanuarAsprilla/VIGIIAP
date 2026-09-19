@@ -28,6 +28,11 @@ import {
   useGeovisoresList, useCreateGeovisor, useUpdateGeovisor, useToggleGeovisorActivo, useDeleteGeovisor,
 } from '@/hooks/useGeovisores'
 
+vi.mock('@/hooks/useCategorias', () => ({
+  useCategoriasList: () => ({ data: [] }),
+  useCreateCategoria: () => ({ mutateAsync: vi.fn() }),
+}))
+
 vi.mock('@/hooks/useConexionesGeoserver', () => ({
   useConexionesGeoserverList: vi.fn(),
   useWorkspacesDeConexion: vi.fn(),

@@ -8,9 +8,11 @@ import { panelAnim } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
 import { useCreateGeovisor, useUpdateGeovisor } from '@/hooks/useGeovisores'
+import { useCategoriasList, useCreateCategoria } from '@/hooks/useCategorias'
 import Switch from '@/components/ui/Switch'
 import AccordionSection from './AccordionSection'
 import GeovisorMapaConstructor from './GeovisorMapaConstructor'
+import CategoryCombobox from '@/components/admin/CategoryCombobox'
 import type { GeovisorRaw, GeovisorInput, MapaVisibilidad, PresetArea, WorkspaceOption } from '@/types'
 import type { FormErrors } from '@/types/forms'
 
@@ -108,6 +110,11 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
 
   const { data: conexiones = [] } = useConexionesGeoserverList()
   const { data: workspaces = [], isFetching: loadingWorkspaces } = useWorkspacesDeConexion(form.conexionGeoserverId || null)
+  // Categorías del módulo compartido — geovisores.categoria tiene FK a
+  // categorias(nombre) en el backend, así que solo se puede elegir entre
+  // estas o crear una nueva explícitamente (ver handleSubmit).
+  const { data: categoriasCompartidas = [] } = useCategoriasList()
+  const createCategoria = useCreateCategoria()
 
   const createGeovisor = useCreateGeovisor()
   const updateGeovisor = useUpdateGeovisor()
@@ -237,6 +244,15 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
     const payload = validate()
     if (!payload) return
     try {
+      // Si la categoría escrita en el combobox no existe todavía en la tabla
+      // compartida, se crea antes de guardar — de lo contrario la FK de
+      // geovisores.categoria hace fallar el guardado con un error crudo de
+      // Postgres en vez de uno claro.
+      if (payload.categoria && !categoriasCompartidas.some(
+        (c) => c.nombre.toLowerCase() === payload.categoria!.toLowerCase(),
+      )) {
+        await createCategoria.mutateAsync(payload.categoria)
+      }
       if (editing) {
         await updateGeovisor.mutateAsync({ id: editing.id, data: payload })
         onSaved(`Geovisor "${payload.titulo}" actualizado`)
@@ -297,8 +313,12 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                 </div>
                 <div>
                   <label htmlFor="gv-categoria" className={labelCls}>Categoría</label>
-                  <input id="gv-categoria" type="text" value={form.categoria} placeholder="Ej: Geología"
-                    onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))} className={inputCls()} />
+                  <CategoryCombobox
+                    id="gv-categoria"
+                    value={form.categoria}
+                    onChange={(cat) => setForm((f) => ({ ...f, categoria: cat }))}
+                    options={categoriasCompartidas.map((c) => c.nombre)}
+                  />
                 </div>
               </div>
               <div>
