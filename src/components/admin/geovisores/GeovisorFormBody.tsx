@@ -7,9 +7,10 @@ import {
 import { panelAnim } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
-import { useCreateGeovisor, useUpdateGeovisor } from '@/hooks/useGeovisores'
+import { useCreateGeovisor, useUpdateGeovisor, useUploadGeovisorThumbnail } from '@/hooks/useGeovisores'
 import { useCategoriasList, useCreateCategoria } from '@/hooks/useCategorias'
 import Switch from '@/components/ui/Switch'
+import ThumbnailDropzone from '@/components/ui/ThumbnailDropzone'
 import AccordionSection from './AccordionSection'
 import GeovisorMapaConstructor from './GeovisorMapaConstructor'
 import CategoryCombobox from '@/components/admin/CategoryCombobox'
@@ -107,6 +108,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
   const [form, setForm] = useState<FormState>(() => editing ? formFromGeovisor(editing) : emptyForm())
   const [errors, setErrors] = useState<FormErrors>({})
   const [filtroCapa, setFiltroCapa] = useState('')
+  const [uploadedThumb, setUploadedThumb] = useState<File | null>(null)
   // Al editar, los temas con capas ya elegidas empiezan abiertos — si no, el
   // admin tendría que expandirlos a mano solo para ver su propia selección.
   const [temasExpandidos, setTemasExpandidos] = useState<Set<string>>(
@@ -123,7 +125,8 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
 
   const createGeovisor = useCreateGeovisor()
   const updateGeovisor = useUpdateGeovisor()
-  const isSaving = createGeovisor.isPending || updateGeovisor.isPending
+  const uploadThumbnail = useUploadGeovisorThumbnail()
+  const isSaving = createGeovisor.isPending || updateGeovisor.isPending || uploadThumbnail.isPending
 
   // Geovisores creados antes del picker de capas sueltas solo guardan
   // workspacesGeoserver (todo-o-nada por tema) — al editarlos, en cuanto carga
@@ -266,13 +269,15 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
       )) {
         await createCategoria.mutateAsync(payload.categoria)
       }
-      if (editing) {
-        await updateGeovisor.mutateAsync({ id: editing.id, data: payload })
-        onSaved(`Geovisor "${payload.titulo}" actualizado`)
-      } else {
-        await createGeovisor.mutateAsync(payload)
-        onSaved(`Geovisor "${payload.titulo}" creado`)
+      const geovisorId = editing
+        ? (await updateGeovisor.mutateAsync({ id: editing.id, data: payload })).id
+        : (await createGeovisor.mutateAsync(payload)).id
+
+      if (uploadedThumb) {
+        await uploadThumbnail.mutateAsync({ id: geovisorId, file: uploadedThumb })
       }
+
+      onSaved(`Geovisor "${payload.titulo}" ${editing ? 'actualizado' : 'creado'}`)
     } catch (err) {
       setErrors((prev) => ({ ...prev, _root: getApiErrorMessage(err, 'No se pudo guardar el geovisor') }))
     }
@@ -344,18 +349,12 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                 <textarea id="gv-descripcion" rows={2} value={form.descripcion}
                   onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))} className={inputCls()} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="gv-cita" className={labelCls}>Cita sugerida</label>
-                  <input id="gv-cita" type="text" value={form.cita}
-                    onChange={(e) => setForm((f) => ({ ...f, cita: e.target.value }))} className={inputCls()} />
-                </div>
-                <div>
-                  <label htmlFor="gv-thumb" className={labelCls}>URL de portada</label>
-                  <input id="gv-thumb" type="text" value={form.thumbnailUrl}
-                    onChange={(e) => setForm((f) => ({ ...f, thumbnailUrl: e.target.value }))} className={inputCls()} />
-                </div>
+              <div>
+                <label htmlFor="gv-cita" className={labelCls}>Cita sugerida</label>
+                <input id="gv-cita" type="text" value={form.cita}
+                  onChange={(e) => setForm((f) => ({ ...f, cita: e.target.value }))} className={inputCls()} />
               </div>
+              <ThumbnailDropzone label="Portada del geovisor" onFile={setUploadedThumb} existing={form.thumbnailUrl || null} />
             </AccordionSection>
 
             <AccordionSection n={2} title="Conexión y capas" hint="Elige de dónde vienen los datos y qué mostrar" icon={Globe} defaultOpen>

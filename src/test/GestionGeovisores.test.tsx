@@ -21,11 +21,12 @@ vi.mock('@/hooks/useGeovisores', () => ({
   useGeovisoresList: vi.fn(),
   useCreateGeovisor: vi.fn(),
   useUpdateGeovisor: vi.fn(),
+  useUploadGeovisorThumbnail: vi.fn(),
   useToggleGeovisorActivo: vi.fn(),
   useDeleteGeovisor: vi.fn(),
 }))
 import {
-  useGeovisoresList, useCreateGeovisor, useUpdateGeovisor, useToggleGeovisorActivo, useDeleteGeovisor,
+  useGeovisoresList, useCreateGeovisor, useUpdateGeovisor, useUploadGeovisorThumbnail, useToggleGeovisorActivo, useDeleteGeovisor,
 } from '@/hooks/useGeovisores'
 
 vi.mock('@/hooks/useCategorias', () => ({
@@ -68,8 +69,9 @@ beforeEach(() => {
   vi.mocked(useWorkspacesDeConexion).mockReturnValue({
     data: [{ id: 't_15_geologia', nombre: 'Geologia', totalCapas: 3, capas: [{ id: 't_15_geologia:fallas', nombre: 'Fallas', tipo: 'vectorial' }] }], isFetching: false,
   } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
-  vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
-  vi.mocked(useUpdateGeovisor).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUpdateGeovisor>)
+  vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue(makeGeovisor()), isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+  vi.mocked(useUpdateGeovisor).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue(makeGeovisor()), isPending: false } as unknown as ReturnType<typeof useUpdateGeovisor>)
+  vi.mocked(useUploadGeovisorThumbnail).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUploadGeovisorThumbnail>)
   vi.mocked(useToggleGeovisorActivo).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useToggleGeovisorActivo>)
   vi.mocked(useDeleteGeovisor).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useDeleteGeovisor>)
 })
