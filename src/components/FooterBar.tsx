@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
-import { MapPin, Phone, Mail, Globe, MessageCircle, Camera, PlayCircle } from 'lucide-react'
+import { MapPin, Phone, Mail } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { EASE_OUT_EXPO } from '@/lib/animations'
 
@@ -20,14 +20,6 @@ function FooterReveal({ delay = 0, className, children }: { delay?: number; clas
     </motion.div>
   )
 }
-
-// ── Redes sociales (próximamente — placeholder hasta tener URLs reales) ──
-const socialLinks = [
-  { icon: Globe, label: 'Facebook IIAP' },
-  { icon: MessageCircle, label: 'Twitter IIAP' },
-  { icon: Camera, label: 'Instagram IIAP' },
-  { icon: PlayCircle, label: 'YouTube IIAP' },
-]
 
 // ── Links de recursos ──
 const resourceLinks = [
@@ -87,20 +79,6 @@ export default function Footer() {
                 Ambientales del Pacífico (IIAP).
               </p>
 
-              {/* Social links */}
-              <div className="flex gap-3">
-                {socialLinks.map(({ icon: Icon, label }) => (
-                  <button
-                    key={label}
-                    type="button"
-                    aria-label={label}
-                    title={label}
-                    className="w-10 h-10 rounded-full bg-[var(--footer-social-bg)] flex items-center justify-center text-[var(--footer-text)] hover:bg-primary-300 hover:text-primary-900 transition-colors"
-                  >
-                    <Icon className="w-4.5 h-4.5" aria-hidden="true" />
-                  </button>
-                ))}
-              </div>
             </FooterReveal>
 
             {/* Links columns */}
