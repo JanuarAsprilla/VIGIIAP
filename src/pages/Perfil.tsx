@@ -15,6 +15,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useUpdatePassword, useUpdatePerfil, useUpdateAvatar } from '@/hooks/useUsuarios'
 import { useNotificacionPrefs, useUpdateNotificacionPref } from '@/hooks/useNotificacionPrefs'
 import { NOTIFICATION_ICONS, DEFAULT_NOTIFICATION_ICON, getNotificationColorClasses } from '@/lib/notificationIcons'
+import { MODULOS_CATALOGO, type PermisoModulo } from '@/lib/constants/modulos'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { asApiError } from '@/lib/apiError'
@@ -550,6 +551,59 @@ function Apariencia() {
   )
 }
 
+// ── Módulos delegados (solo admin_sig) ──
+// Antes de esto, un admin_sig delegado no tenía forma de ver en su propia
+// cuenta qué le delegaron -- solo lo descubría al toparse con un 403 al
+// intentar entrar a un módulo, o le tocaba preguntarle a Super Admin. Ahora
+// que el sidebar/Dashboard ya respetan user.modulos (ver AdminSidebar.tsx y
+// Dashboard.tsx), mostrarlo aquí también le da a la persona una vista clara
+// y propia de su alcance real, en vez de sentir que administra "lo que
+// pueda" a ciegas.
+const MODULO_PATH: Record<string, string> = {
+  usuarios: '/admin/usuarios',
+  solicitudes: '/admin/solicitudes',
+  documentos: '/admin/documentos',
+  mapas: '/admin/mapas',
+  geovisores: '/admin/geovisores',
+  conexiones_geoserver: '/admin/conexiones-geoserver',
+  categorias: '/admin/categorias',
+  configuracion: '/admin/configuracion',
+  actividad: '/admin/actividad',
+  errores: '/admin/errores',
+  reportes: '/admin/reportes',
+}
+
+function MisModulos({ modulos }: { modulos: PermisoModulo[] }) {
+  const habilitados = modulos.filter((m) => m.puede_ver)
+  if (habilitados.length === 0) {
+    return (
+      <p className="text-sm text-text-muted bg-bg-alt/60 border border-border/50 rounded-xl px-4 py-3">
+        Aún no tienes ningún módulo delegado. Pídele a un Super Administrador que te asigne acceso desde Gestión de Admins.
+      </p>
+    )
+  }
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {habilitados.map((m) => {
+        const nombre = MODULOS_CATALOGO.find((c) => c.clave === m.modulo)?.nombre ?? m.modulo
+        return (
+          <Link
+            key={m.modulo}
+            to={MODULO_PATH[m.modulo] ?? '/admin'}
+            className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border hover:border-primary-800 hover:bg-primary-500/5 transition-colors no-underline group"
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-text group-hover:text-primary-800 transition-colors truncate">{nombre}</p>
+              <p className="text-xs text-text-muted">{m.puede_editar ? 'Ver y editar' : 'Solo consulta'}</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary-800 transition-colors shrink-0" />
+          </Link>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Avatar uploader ──
 function AvatarUploader({ avatarUrl, initials, onUploaded }: { avatarUrl: string | null; initials?: string; onUploaded: () => Promise<unknown> }) {
   const updateAvatar = useUpdateAvatar()
@@ -800,6 +854,18 @@ export default function Perfil() {
           </div>
         </Section>
       </motion.div>
+
+      {/* Módulos delegados — solo admin_sig */}
+      {user?.rol === 'admin_sig' && (
+        <motion.div {...fadeUp(0.11)} whileHover={{ y: -3 }}>
+          <Section
+            title="Tus módulos delegados"
+            description="Las secciones del panel de administración a las que tienes acceso"
+          >
+            <MisModulos modulos={user.modulos ?? []} />
+          </Section>
+        </motion.div>
+      )}
 
       {/* Seguridad */}
       <motion.div

@@ -401,3 +401,46 @@ describe('Perfil — notificaciones y apariencia', () => {
     expect(comodo.className).toContain('bg-primary-50')
   })
 })
+
+describe('Perfil — módulos delegados (admin_sig)', () => {
+  test('un investigador (no admin_sig) no ve la sección de módulos delegados', async () => {
+    renderPerfil()
+    await screen.findByText('Información Personal')
+    expect(screen.queryByText('Tus módulos delegados')).not.toBeInTheDocument()
+  })
+
+  test('un admin_sig con módulos habilitados los ve como enlaces al panel correspondiente', async () => {
+    authMock.user = {
+      ...authMock.user, rol: 'admin_sig', role: 'Administrador SIG',
+      modulos: [
+        { modulo: 'solicitudes', puede_ver: true, puede_editar: true },
+        { modulo: 'documentos', puede_ver: true, puede_editar: false },
+        { modulo: 'usuarios', puede_ver: false, puede_editar: false },
+      ],
+    } as typeof authMock.user & { modulos: { modulo: string; puede_ver: boolean; puede_editar: boolean }[] }
+
+    renderPerfil()
+
+    expect(await screen.findByText('Tus módulos delegados')).toBeInTheDocument()
+    const solicitudesLink = screen.getByText('Solicitudes').closest('a')!
+    expect(solicitudesLink).toHaveAttribute('href', '/admin/solicitudes')
+    expect(screen.getByText('Ver y editar')).toBeInTheDocument()
+
+    const documentosLink = screen.getByText('Documentos').closest('a')!
+    expect(documentosLink).toHaveAttribute('href', '/admin/documentos')
+    expect(screen.getByText('Solo consulta')).toBeInTheDocument()
+
+    // usuarios tiene puede_ver:false -- no debe listarse
+    expect(screen.queryByText('Usuarios')).not.toBeInTheDocument()
+  })
+
+  test('un admin_sig sin ningún módulo delegado ve el mensaje explícito en vez de una lista vacía', async () => {
+    authMock.user = {
+      ...authMock.user, rol: 'admin_sig', role: 'Administrador SIG', modulos: [],
+    } as typeof authMock.user & { modulos: { modulo: string; puede_ver: boolean; puede_editar: boolean }[] }
+
+    renderPerfil()
+
+    expect(await screen.findByText(/Aún no tienes ningún módulo delegado/)).toBeInTheDocument()
+  })
+})
