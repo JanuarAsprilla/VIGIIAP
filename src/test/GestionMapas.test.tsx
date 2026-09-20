@@ -449,6 +449,76 @@ describe('GestionMapas — dropzone y detección de formato', () => {
     await user.click(checkbox)
     expect(checkbox).not.toBeChecked()
   })
+
+  test('destildar "Publicar en el portal público" al crear un mapa lo despublica justo después de crearlo', async () => {
+    const createMutate = vi.fn().mockResolvedValue({ id: 'nuevo-1' })
+    const toggleMutate  = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useCreateMapa).mockReturnValue({
+      mutateAsync: createMutate, isPending: false,
+    } as unknown as ReturnType<typeof useCreateMapa>)
+    vi.mocked(useToggleMapaActivo).mockReturnValue({
+      mutateAsync: toggleMutate, isPending: false,
+    } as unknown as ReturnType<typeof useToggleMapaActivo>)
+
+    const user = userEvent.setup()
+    const { container } = render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Ingresar nuevo mapa/i }))
+
+    const file = new File(['contenido'], 'mapa.pdf', { type: 'application/pdf' })
+    await user.upload(container.querySelector('input[type="file"]:not([accept="image/*"])') as HTMLInputElement, file)
+    await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa oculto')
+    await selectCategoria(user, 'Riesgo')
+    await user.click(screen.getByRole('checkbox', { name: /Publicar en el portal público/i }))
+    await user.click(screen.getByRole('button', { name: /^Registrar mapa$/i }))
+
+    expect(createMutate).toHaveBeenCalledTimes(1)
+    expect(toggleMutate).toHaveBeenCalledWith({ id: 'nuevo-1', activo: false })
+  })
+
+  test('destildar "Publicar en el portal público" al editar un mapa publicado lo despublica', async () => {
+    const updateMutate = vi.fn().mockResolvedValue(undefined)
+    const toggleMutate  = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useUpdateMapa).mockReturnValue({
+      mutateAsync: updateMutate, isPending: false,
+    } as unknown as ReturnType<typeof useUpdateMapa>)
+    vi.mocked(useToggleMapaActivo).mockReturnValue({
+      mutateAsync: toggleMutate, isPending: false,
+    } as unknown as ReturnType<typeof useToggleMapaActivo>)
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMapa({ visible: true })], meta: { total: 1 } }, isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Editar'))
+    await user.click(screen.getByRole('checkbox', { name: /Publicar en el portal público/i }))
+    await user.click(screen.getByRole('button', { name: /^Guardar cambios$/i }))
+
+    expect(toggleMutate).toHaveBeenCalledWith({ id: 'm1', activo: false })
+  })
+
+  test('guardar sin tocar el checkbox no llama a cambiar la visibilidad', async () => {
+    const updateMutate = vi.fn().mockResolvedValue(undefined)
+    const toggleMutate  = vi.fn()
+    vi.mocked(useUpdateMapa).mockReturnValue({
+      mutateAsync: updateMutate, isPending: false,
+    } as unknown as ReturnType<typeof useUpdateMapa>)
+    vi.mocked(useToggleMapaActivo).mockReturnValue({
+      mutateAsync: toggleMutate, isPending: false,
+    } as unknown as ReturnType<typeof useToggleMapaActivo>)
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMapa({ visible: true })], meta: { total: 1 } }, isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Editar'))
+    await user.click(screen.getByRole('button', { name: /^Guardar cambios$/i }))
+
+    expect(toggleMutate).not.toHaveBeenCalled()
+  })
 })
 
 describe('GestionMapas — creación con datos válidos', () => {

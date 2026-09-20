@@ -107,7 +107,7 @@ export function useMapaBySlug(slug: string | null | undefined) {
 // ─── Mutations ────────────────────────────────────────────────────────────────
 export function useCreateMapa() {
   const qc = useQueryClient()
-  return useMutation<void, Error, { formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
+  return useMutation<{ id: string; [key: string]: unknown }, Error, { formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ formData, onUploadProgress }) =>
       api.post('/mapas', formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
