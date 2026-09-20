@@ -20,9 +20,18 @@ vi.mock('@/components/ui/Card3D', () => ({
 vi.mock('@/hooks/useMapas', () => ({ useMapasList: vi.fn() }))
 import { useMapasList } from '@/hooks/useMapas'
 
+vi.mock('@/hooks/useCategorias', () => ({ useCategoriasList: vi.fn() }))
+import { useCategoriasList } from '@/hooks/useCategorias'
+
 vi.mock('@/contexts/SearchContext', () => ({
   useSearch: () => ({ query: '', setQuery: vi.fn(), debouncedQuery: '' }),
 }))
+
+// Mock global -- clearAllMocks() en cada describe limpia el historial de
+// llamadas pero no esta implementación, así que basta con fijarla una vez.
+beforeEach(() => {
+  vi.mocked(useCategoriasList).mockReturnValue({ data: [] } as unknown as ReturnType<typeof useCategoriasList>)
+})
 
 function makeMap(overrides: Partial<MapaData> = {}): MapaData {
   return {
@@ -178,6 +187,47 @@ describe('Mapas — filtros de categoría y año, chips', () => {
     const chip = screen.getByText('Limpiar todos los filtros').previousElementSibling as HTMLElement
     await user.click(chip.querySelector('button')!)
     expect(screen.queryByText('Limpiar todos los filtros')).not.toBeInTheDocument()
+  })
+
+  test('el filtro de categoría ofrece las categorías reales del módulo, no una lista fija', () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMap({ category: 'Hidrología' })], meta: { total: 1 } },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [{ nombre: 'Bosques', modulos: ['mapas'] }, { nombre: 'Solo Documentos', modulos: ['documentos'] }],
+    } as unknown as ReturnType<typeof useCategoriasList>)
+
+    render(<Mapas />)
+    const categoriaSelect = screen.getAllByRole('combobox')[0]
+    const opciones = [...categoriaSelect.querySelectorAll('option')].map((o) => o.textContent)
+
+    // "Bosques" está asignada al módulo mapas -- debe aparecer aunque ningún
+    // mapa la tenga todavía. "Solo Documentos" no está asignada a mapas -- no debe aparecer.
+    expect(opciones).toContain('Bosques')
+    expect(opciones).not.toContain('Solo Documentos')
+    expect(opciones).toContain('Hidrología')
+  })
+
+  test('"Ordenar por: Nombre A-Z" reordena las tarjetas alfabéticamente', async () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: {
+        data: [
+          makeMap({ id: 'z', titulo: 'Zonificación', title: 'Zonificación' }),
+          makeMap({ id: 'a', titulo: 'Antioquia', title: 'Antioquia' }),
+        ],
+        meta: { total: 2 },
+      },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<Mapas />)
+    const ordenarSelect = screen.getAllByRole('combobox')[3]
+    await user.selectOptions(ordenarSelect, 'Nombre A-Z')
+
+    const titulos = screen.getAllByText(/^(Antioquia|Zonificación)$/).map((el) => el.textContent)
+    expect(titulos.indexOf('Antioquia')).toBeLessThan(titulos.indexOf('Zonificación'))
   })
 })
 

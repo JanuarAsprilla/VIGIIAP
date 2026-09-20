@@ -5,9 +5,10 @@ import {
   FileText, Globe, Loader2, Eye, Download, Calendar,
   Rows, Columns2, Columns3,
 } from 'lucide-react'
-import { MAP_CATEGORIES, MAP_FORMATS, MAP_YEARS } from '@/lib/constants'
+import { MAP_FORMATS } from '@/lib/constants'
 import { useMapasList } from '@/hooks/useMapas'
 import type { MapaData } from '@/hooks/useMapas'
+import { useCategoriasList } from '@/hooks/useCategorias'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { isTrustedUrl } from '@/lib/trustedUrl'
@@ -367,6 +368,26 @@ export default function Mapas() {
   })
   const allMaps = data?.data ?? []
 
+  // Categorías del filtro: las que de verdad existen para este módulo (igual
+  // que en el formulario de "Editar mapa"), no una lista fija que se
+  // desincroniza en cuanto alguien crea una categoría nueva en Gestión de
+  // Categorías -- antes ofrecía nombres que ningún mapa tenía asignado, y
+  // dejaba fuera los reales, así que elegir una no filtraba nada.
+  const { data: categoriasCompartidas = [] } = useCategoriasList()
+  const categoryOptions = [
+    { value: '', label: 'Todas las categorías' },
+    ...[...new Set([
+      ...allMaps.map((m) => m.category).filter(Boolean),
+      ...categoriasCompartidas.filter((c) => c.modulos?.includes('mapas')).map((c) => c.nombre),
+    ])].sort((a, b) => a.localeCompare(b)).map((nombre) => ({ value: nombre, label: nombre })),
+  ]
+
+  // Años del filtro: los que realmente tienen mapas publicados, no un rango fijo.
+  const yearOptions = [
+    { value: '', label: 'Todos los años' },
+    ...[...new Set(allMaps.map((m) => m.year).filter(Boolean))].sort((a, b) => Number(b) - Number(a)).map((y) => ({ value: y, label: y })),
+  ]
+
   // Filtrado local (búsqueda global + filtros que el backend aún no tiene)
   const filteredMaps = allMaps.filter((m) => {
     if (!matches([m.title, m.category, m.excerpt], query)) return false
@@ -374,20 +395,29 @@ export default function Mapas() {
     return true
   })
 
+  const [sortBy, setSortBy] = useState<'recientes' | 'az' | 'za'>('recientes')
+  const sortedMaps = [...filteredMaps].sort((a, b) => {
+    if (sortBy === 'az') return a.title.localeCompare(b.title)
+    if (sortBy === 'za') return b.title.localeCompare(a.title)
+    return new Date(b.creado_en ?? 0).getTime() - new Date(a.creado_en ?? 0).getTime()
+  })
+  const SORT_OPTIONS = [
+    { value: 'recientes' as const, label: 'Más recientes' },
+    { value: 'az'        as const, label: 'Nombre A-Z' },
+    { value: 'za'        as const, label: 'Nombre Z-A' },
+  ]
+
   const activeChips: { key: string; label: string }[] = []
-  if (filters.category) {
-    const cat = MAP_CATEGORIES.find((c) => c.value === filters.category)
-    if (cat) activeChips.push({ key: 'category', label: cat.label })
-  }
+  if (filters.category) activeChips.push({ key: 'category', label: filters.category })
   if (filters.year)   activeChips.push({ key: 'year', label: filters.year })
   if (filters.format) {
     const fmt = MAP_FORMATS.find((f) => f.value === filters.format)
     if (fmt) activeChips.push({ key: 'format', label: fmt.label })
   }
 
-  const totalPages = Math.max(1, Math.ceil(filteredMaps.length / PER_PAGE))
+  const totalPages = Math.max(1, Math.ceil(sortedMaps.length / PER_PAGE))
   const safePage   = Math.min(page, totalPages)
-  const pagedMaps  = filteredMaps.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
+  const pagedMaps  = sortedMaps.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
 
   const updateFilter = (key: string, value: string) => { setFilters((p) => ({ ...p, [key]: value })); setPage(1) }
   const removeChip   = (key: string) => { setFilters((p) => ({ ...p, [key]: '' }));    setPage(1) }
@@ -425,15 +455,16 @@ export default function Mapas() {
       </motion.div>
 
       {/* Filters */}
-      <motion.div {...fadeUp(0.1)} className="bg-[var(--card-bg)] border border-border rounded-xl p-6">
-        <div className="flex items-center gap-2 mb-4">
+      <motion.div {...fadeUp(0.1)} className="bg-[var(--card-bg)] border border-border rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-3">
           <Filter className="w-4 h-4 text-text-muted" />
           <span className="table-header text-text-muted">Filtros Avanzados</span>
         </div>
         <div className="flex flex-wrap gap-4">
-          <FilterSelect label="Categoría" options={MAP_CATEGORIES} value={filters.category} onChange={(v) => updateFilter('category', v)} />
+          <FilterSelect label="Categoría" options={categoryOptions} value={filters.category} onChange={(v) => updateFilter('category', v)} />
           <FilterSelect label="Formato" options={MAP_FORMATS} value={filters.format} onChange={(v) => updateFilter('format', v)} />
-          <FilterSelect label="Año de Publicación" options={MAP_YEARS} value={filters.year} onChange={(v) => updateFilter('year', v)} />
+          <FilterSelect label="Año de Publicación" options={yearOptions} value={filters.year} onChange={(v) => updateFilter('year', v)} />
+          <FilterSelect label="Ordenar por" options={SORT_OPTIONS} value={sortBy} onChange={(v) => setSortBy(v as typeof sortBy)} />
         </div>
         {activeChips.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-border">
