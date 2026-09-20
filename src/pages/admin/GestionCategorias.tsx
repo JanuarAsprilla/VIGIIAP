@@ -3,7 +3,7 @@ import { getApiErrorMessage } from '@/lib/apiError'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Trash2, Pencil, Upload, X, CheckCircle,
-  AlertCircle, Loader2, Tag, ImageOff, FolderOpen,
+  Loader2, Tag, ImageOff, FolderOpen,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, staggerContainer } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
@@ -163,49 +163,12 @@ function resumenConteo({ docs, mapas, geovisores }: ConteoCategoria): string {
   return partes.length > 0 ? partes.join(' · ') : '0 elementos'
 }
 
-function CategoriaCard({ cat, conteo, onEdit, onDelete, onThumbnailSaved, uploadThumbnail }: {
+function CategoriaCard({ cat, conteo, onEdit, onDelete }: {
   cat: { nombre: string; descripcion?: string | null; thumbnail_url?: string | null; activo?: boolean; modulos?: ModuloCategoria[] }
   conteo: ConteoCategoria
-  onEdit: (target: { nombre: string; modulos: ModuloCategoria[] }) => void
+  onEdit: (target: { nombre: string; modulos: ModuloCategoria[]; thumbnail_url: string | null }) => void
   onDelete: (target: { nombre: string }) => void
-  onThumbnailSaved: (nombre: string) => void
-  uploadThumbnail: ReturnType<typeof import('@/hooks/useCategorias').useUploadCategoriaThumbnail>
 }) {
-  const [file, setFile]         = useState<File | null>(null)
-  const [uploading, setUploading] = useState(false)
-  const [progress, setProgress]   = useState(0)
-  const [error, setError]         = useState<string | null>(null)
-  const [fileObjectUrl, setFileObjectUrl] = useState<string | null>(null)
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- deriva la preview URL del File recibido
-    if (!file) { setFileObjectUrl(null); return }
-    const url = URL.createObjectURL(file)
-    setFileObjectUrl(url)
-    return () => URL.revokeObjectURL(url)
-  }, [file])
-
-  const handleUpload = async () => {
-    if (!file) return
-    setUploading(true); setError(null)
-    try {
-      await uploadThumbnail.mutateAsync({
-        nombre: cat.nombre,
-        file,
-        onUploadProgress: (ev) =>
-          setProgress(ev.total ? Math.round((ev.loaded / ev.total) * 100) : 50),
-      })
-      setFile(null)
-      onThumbnailSaved(cat.nombre)
-    } catch {
-      setError('No se pudo subir la imagen. Intenta de nuevo.')
-    } finally {
-      setUploading(false); setProgress(0)
-    }
-  }
-
-  const currentPreview = fileObjectUrl ?? cat.thumbnail_url ?? null
-
   return (
     <Card3D
       disabled
@@ -221,8 +184,8 @@ function CategoriaCard({ cat, conteo, onEdit, onDelete, onThumbnailSaved, upload
     >
       {/* Imagen */}
       <div className="relative aspect-video bg-bg-alt">
-        {currentPreview ? (
-          <img src={currentPreview} alt={cat.nombre} className="w-full h-full object-cover" loading="lazy" />
+        {cat.thumbnail_url ? (
+          <img src={cat.thumbnail_url} alt={cat.nombre} className="w-full h-full object-cover" loading="lazy" />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-text-muted/40">
             <ImageOff className="w-8 h-8" />
@@ -242,7 +205,7 @@ function CategoriaCard({ cat, conteo, onEdit, onDelete, onThumbnailSaved, upload
           <h3 className="text-sm font-bold text-text leading-snug">{cat.nombre}</h3>
           <div className="flex items-center gap-1 shrink-0">
             <button
-              onClick={() => onEdit({ nombre: cat.nombre, modulos: cat.modulos ?? [] })}
+              onClick={() => onEdit({ nombre: cat.nombre, modulos: cat.modulos ?? [], thumbnail_url: cat.thumbnail_url ?? null })}
               className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors"
               title="Editar categoría"
               aria-label={`Editar categoría ${cat.nombre}`}
@@ -262,46 +225,6 @@ function CategoriaCard({ cat, conteo, onEdit, onDelete, onThumbnailSaved, upload
 
         {/* Módulos a los que pertenece -- solo lectura, se edita desde "Editar categoría" */}
         <ModulosBadges modulos={cat.modulos ?? []} />
-
-        {/* Dropzone compacto */}
-        <ImageDropzone
-          onFile={setFile}
-          currentFile={file}
-          existingUrl={cat.thumbnail_url}
-          compact
-        />
-
-        {error && (
-          <p className="text-[0.65rem] text-red-500 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3 shrink-0" />{error}
-          </p>
-        )}
-
-        {file && (
-          <>
-            {uploading && (
-              <div className="space-y-1">
-                <div className="h-1.5 bg-bg-alt rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-primary-800 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
-                    transition={{ duration: 0.15 }}
-                  />
-                </div>
-                <p className="text-[0.6rem] text-text-muted text-right">{progress}%</p>
-              </div>
-            )}
-            <button
-              onClick={handleUpload}
-              disabled={uploading}
-              className="w-full flex items-center justify-center gap-2 py-2 bg-primary-800 text-white text-xs font-semibold rounded-xl hover:bg-primary-700 disabled:opacity-60 transition-colors"
-            >
-              {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-              {uploading ? 'Subiendo…' : 'Guardar imagen'}
-            </button>
-          </>
-        )}
       </div>
     </Card3D>
   )
@@ -322,9 +245,10 @@ export default function GestionCategorias() {
   const [newModulos, setNewModulos]   = useState<ModuloCategoria[]>(['documentos', 'mapas', 'geovisores'])
   const [newFile, setNewFile]         = useState<File | null>(null)
   const [newError, setNewError]       = useState<string | null>(null)
-  const [editTarget, setEditTarget]   = useState<{ nombre: string; modulos: ModuloCategoria[] } | null>(null)
+  const [editTarget, setEditTarget]   = useState<{ nombre: string; modulos: ModuloCategoria[]; thumbnail_url: string | null } | null>(null)
   const [editNombre, setEditNombre]   = useState('')
   const [editModulos, setEditModulos] = useState<ModuloCategoria[]>([])
+  const [editFile, setEditFile]       = useState<File | null>(null)
   const [editError, setEditError]     = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ nombre: string } | null>(null)
   const [toast, setToast]             = useState<string | null>(null)
@@ -362,8 +286,9 @@ export default function GestionCategorias() {
     setNewError(null)
   }
 
-  const openEdit = (target: { nombre: string; modulos: ModuloCategoria[] }) => {
-    setEditTarget(target); setEditNombre(target.nombre); setEditModulos(target.modulos); setEditError(null)
+  const openEdit = (target: { nombre: string; modulos: ModuloCategoria[]; thumbnail_url: string | null }) => {
+    setEditTarget(target); setEditNombre(target.nombre); setEditModulos(target.modulos)
+    setEditFile(null); setEditError(null)
   }
 
   const toggleEditModulo = (m: ModuloCategoria) => {
@@ -371,11 +296,12 @@ export default function GestionCategorias() {
     setEditError(null)
   }
 
-  // Un solo formulario para nombre y módulos -- antes eran dos acciones
-  // separadas (renombrar en un modal aparte, módulos en pills sueltos sobre
-  // la tarjeta) y no había forma de editar el módulo desde el mismo lugar.
-  // Si cambian ambos, el rename va primero (cambia la clave primaria) y el
-  // update de módulos usa el nombre nuevo.
+  // Un solo formulario para nombre, módulos e imagen -- antes eran acciones
+  // sueltas en distintos lugares (renombrar en un modal aparte, módulos en
+  // pills sobre la tarjeta, imagen en un dropzone también sobre la tarjeta)
+  // sin ningún formulario real donde verlas y cambiarlas juntas. Si el
+  // nombre cambia, el rename va primero (cambia la clave primaria) y el
+  // resto de mutaciones usan el nombre nuevo.
   const confirmEdit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!editTarget) return
@@ -390,6 +316,9 @@ export default function GestionCategorias() {
         editModulos.every((m) => editTarget.modulos.includes(m))
       if (!mismosModulos) {
         await updateModulos.mutateAsync({ nombre: nuevoNombre, modulos: editModulos })
+      }
+      if (editFile) {
+        await uploadThumbnail.mutateAsync({ nombre: nuevoNombre, file: editFile })
       }
       setToast(`Categoría "${nuevoNombre}" actualizada`)
       setEditTarget(null)
@@ -410,7 +339,7 @@ export default function GestionCategorias() {
   }
 
   const isSaving = createCategoria.isPending || uploadThumbnail.isPending
-  const isEditing = renameCategoria.isPending || updateModulos.isPending
+  const isEditing = renameCategoria.isPending || updateModulos.isPending || uploadThumbnail.isPending
 
   return (
     <div className="space-y-6">
@@ -517,8 +446,6 @@ export default function GestionCategorias() {
                 conteo={cat.conteo ?? CONTEO_VACIO}
                 onEdit={openEdit}
                 onDelete={setDeleteTarget}
-                onThumbnailSaved={(nombre) => setToast(`Imagen de "${nombre}" actualizada`)}
-                uploadThumbnail={uploadThumbnail}
               />
             ))}
           </AnimatePresence>
@@ -636,6 +563,18 @@ export default function GestionCategorias() {
                     ¿En qué módulo(s) va a aparecer? <span className="text-orange-500" aria-hidden="true">*</span>
                   </label>
                   <ModulosCheckboxList modulos={editModulos} onToggle={toggleEditModulo} disabled={isEditing} />
+                </div>
+
+                <div>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Imagen de portada <span className="font-normal normal-case tracking-normal text-text-muted">(opcional)</span>
+                  </label>
+                  <ImageDropzone
+                    onFile={setEditFile}
+                    currentFile={editFile}
+                    existingUrl={editTarget?.thumbnail_url ?? null}
+                    compact
+                  />
                 </div>
 
                 {editError && <p className="text-xs text-red-500">{editError}</p>}
