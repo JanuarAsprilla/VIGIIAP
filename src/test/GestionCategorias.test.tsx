@@ -423,40 +423,43 @@ describe('GestionCategorias — imagen de portada al crear', () => {
   })
 })
 
-describe('GestionCategorias — imagen de portada en una tarjeta existente', () => {
-  function getCardDropzoneInput(container: HTMLElement) {
+describe('GestionCategorias — imagen de portada desde el modal de editar', () => {
+  function getModalDropzoneInput(container: HTMLElement) {
     return container.querySelectorAll('input[type="file"]')[0] as HTMLInputElement
   }
 
-  test('subir una imagen a una categoría existente llama a la mutación y notifica', async () => {
+  test('subir una imagen al editar una categoría existente llama a la mutación y notifica', async () => {
     const uploadMutateAsync = vi.fn().mockResolvedValue(undefined)
     vi.mocked(useUploadCategoriaThumbnail).mockReturnValue({ mutateAsync: uploadMutateAsync, isPending: false } as unknown as ReturnType<typeof useUploadCategoriaThumbnail>)
 
     const user = userEvent.setup()
     const { container } = render(<GestionCategorias />)
+    await user.click(screen.getByTitle('Editar categoría'))
 
     const img = new File(['x'], 'nueva-portada.png', { type: 'image/png' })
-    const input = getCardDropzoneInput(container)
+    const input = getModalDropzoneInput(container)
     fireEvent.drop(input.closest('div')!, { dataTransfer: { files: [img] } })
-    await user.click(screen.getByText('Guardar imagen'))
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
 
     expect(uploadMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ nombre: 'Protocolos', file: img }))
-    expect(await screen.findByText('Imagen de "Protocolos" actualizada')).toBeInTheDocument()
+    expect(await screen.findByText('Categoría "Protocolos" actualizada')).toBeInTheDocument()
   })
 
-  test('si la subida de imagen falla, muestra el error inline en la tarjeta', async () => {
+  test('si la subida de imagen falla, muestra el error sin cerrar el modal', async () => {
     const uploadMutateAsync = vi.fn().mockRejectedValue(new Error('fail'))
     vi.mocked(useUploadCategoriaThumbnail).mockReturnValue({ mutateAsync: uploadMutateAsync, isPending: false } as unknown as ReturnType<typeof useUploadCategoriaThumbnail>)
 
     const user = userEvent.setup()
     const { container } = render(<GestionCategorias />)
+    await user.click(screen.getByTitle('Editar categoría'))
 
     const img = new File(['x'], 'nueva-portada.png', { type: 'image/png' })
-    const input = getCardDropzoneInput(container)
+    const input = getModalDropzoneInput(container)
     fireEvent.drop(input.closest('div')!, { dataTransfer: { files: [img] } })
-    await user.click(screen.getByText('Guardar imagen'))
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
 
-    expect(await screen.findByText('No se pudo subir la imagen. Intenta de nuevo.')).toBeInTheDocument()
+    expect(await screen.findByText('fail')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Nombre/i)).toBeInTheDocument()
   })
 })
 
