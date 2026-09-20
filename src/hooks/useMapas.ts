@@ -118,7 +118,7 @@ export function useUpdateMapa() {
   const qc = useQueryClient()
   return useMutation<void, Error, { id: string; formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ id, formData, onUploadProgress }) =>
-      api.put(`/mapas/${id}`, formData, { onUploadProgress }),
+      api.patch(`/mapas/${id}`, formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
   })
 }

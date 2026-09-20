@@ -204,13 +204,13 @@ describe('useCreateMapa', () => {
 describe('useUpdateMapa', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
-  test('calls PUT /mapas/:id', async () => {
-    vi.mocked(api.put).mockResolvedValue({ id: 5 })
+  test('calls PATCH /mapas/:id', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ id: 5 })
     const { result } = renderHook(() => useUpdateMapa(), { wrapper: makeWrapper() })
     const fd = new FormData()
 
     await act(async () => { await result.current.mutateAsync({ id: '5', formData: fd }) })
-    expect(api.put).toHaveBeenCalledWith('/mapas/5', fd, expect.any(Object))
+    expect(api.patch).toHaveBeenCalledWith('/mapas/5', fd, expect.any(Object))
   })
 })
 
