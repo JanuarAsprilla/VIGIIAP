@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import {
   Users, ClipboardList, FileText, Map as MapIcon,
   TrendingUp, TrendingDown, CheckCircle, XCircle,
-  ArrowRight, Zap, AlertTriangle, type LucideIcon,
+  ArrowRight, Zap, AlertTriangle, ShieldQuestion, type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { puedeVerModulo } from '@/lib/permisosModulo'
@@ -521,6 +521,31 @@ function QuickActions({ user }: { user: ReturnType<typeof useAuth>['user'] }) {
   )
 }
 
+// ── Sin módulos asignados — aviso explícito, no una pantalla en blanco ──
+// Un admin_sig recién creado (o al que le quitaron todo el acceso) no debe
+// llegar a un Dashboard vacío y pensar que algo se rompió: el mensaje deja
+// claro que es su estado normal mientras no tenga módulos delegados.
+function SinModulosAsignados() {
+  return (
+    <motion.div
+      {...fadeUp(0.1)}
+      className="flex flex-col items-center text-center gap-3 px-6 py-14 bg-[var(--card-bg)] border border-border/70 rounded-2xl"
+    >
+      <div className="w-12 h-12 bg-gold-500/10 rounded-full flex items-center justify-center">
+        <ShieldQuestion className="w-6 h-6 text-gold-500" aria-hidden="true" />
+      </div>
+      <div className="max-w-md">
+        <p className="text-sm font-bold text-text">Todavía no tienes ningún módulo asignado</p>
+        <p className="text-sm text-text-muted mt-1">
+          Esto no es un error — tu cuenta de Administrador SIG está activa, pero un Super Administrador
+          aún no te ha delegado acceso a ninguna sección del panel. Pídele que te lo asigne desde
+          Gestión de Administradores.
+        </p>
+      </div>
+    </motion.div>
+  )
+}
+
 export default function Dashboard() {
   const { user } = useAuth()
 
@@ -532,6 +557,7 @@ export default function Dashboard() {
   const verActividad   = puedeVerModulo(user, 'actividad')
   const esDelegado     = user?.rol === 'admin_sig'
   const modulosPropios = esDelegado ? (user?.modulos ?? []).filter((m) => m.puede_ver).length : null
+  const sinModulos     = esDelegado && modulosPropios === 0
 
   const { data: stats, isLoading: loadingStats, isError: statsError, refetch: refetchStats } = useAdminStats()
   const { data: tendencias, isLoading: loadingTendencias } = useDashboardTendencias()
@@ -557,39 +583,45 @@ export default function Dashboard() {
         </p>
       </motion.div>
 
-      {/* KPIs */}
-      {statsError && (
-        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-red/10 border border-red/25 rounded-xl text-sm text-red-dark">
-          <span>No se pudieron cargar las estadísticas del panel.</span>
-          <button onClick={() => refetchStats()} className="text-xs font-semibold underline shrink-0">Reintentar</button>
-        </div>
-      )}
-      <KPICards
-        stats={stats}
-        isLoading={loadingStats}
-        tendencias={tendencias}
-        tendenciasLoading={loadingTendencias}
-        user={user}
-      />
+      {sinModulos ? (
+        <SinModulosAsignados />
+      ) : (
+        <>
+          {/* KPIs */}
+          {statsError && (
+            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-red/10 border border-red/25 rounded-xl text-sm text-red-dark">
+              <span>No se pudieron cargar las estadísticas del panel.</span>
+              <button onClick={() => refetchStats()} className="text-xs font-semibold underline shrink-0">Reintentar</button>
+            </div>
+          )}
+          <KPICards
+            stats={stats}
+            isLoading={loadingStats}
+            tendencias={tendencias}
+            tendenciasLoading={loadingTendencias}
+            user={user}
+          />
 
-      {/* Alerta solicitudes */}
-      {verSolicitudes && <AlertasSolicitudes solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />}
+          {/* Alerta solicitudes */}
+          {verSolicitudes && <AlertasSolicitudes solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />}
 
-      {/* Quick Actions */}
-      <QuickActions user={user} />
+          {/* Quick Actions */}
+          <QuickActions user={user} />
 
-      {/* Main grid */}
-      {(verSolicitudes || verActividad || verUsuarios) && (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-          <div className="space-y-6">
-            {verSolicitudes && <SolicitudesPendientes solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />}
-            {verActividad && <ActividadReciente enabled={verActividad} />}
-          </div>
-          <div className="space-y-6">
-            {verUsuarios && <RolesChart usuarios={usuarios} isError={usrError} onRetry={refetchUsr} />}
-            {verSolicitudes && <SolicitudesChart solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />}
-          </div>
-        </div>
+          {/* Main grid */}
+          {(verSolicitudes || verActividad || verUsuarios) && (
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+              <div className="space-y-6">
+                {verSolicitudes && <SolicitudesPendientes solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />}
+                {verActividad && <ActividadReciente enabled={verActividad} />}
+              </div>
+              <div className="space-y-6">
+                {verUsuarios && <RolesChart usuarios={usuarios} isError={usrError} onRetry={refetchUsr} />}
+                {verSolicitudes && <SolicitudesChart solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

@@ -341,14 +341,28 @@ describe('Dashboard — personalización por permisos de módulo (admin_sig dele
     expect(useUsuariosList).toHaveBeenCalledWith(expect.anything(), false)
   })
 
-  test('un admin_sig sin ningún módulo habilitado no muestra la grilla principal ni las quick actions', async () => {
+  test('un admin_sig sin ningún módulo habilitado ve un aviso explícito en vez de una pantalla en blanco', async () => {
     authMock.user = { name: 'Delegado', rol: 'admin_sig', modulos: [] }
     renderPage()
 
     expect(await screen.findByText(/Acceso delegado a 0 módulos/)).toBeInTheDocument()
+    expect(screen.getByText('Todavía no tienes ningún módulo asignado')).toBeInTheDocument()
+    expect(screen.getByText(/no es un error/i)).toBeInTheDocument()
     expect(screen.queryByText('Solicitudes Pendientes')).not.toBeInTheDocument()
     expect(screen.queryByText('Distribución de Roles')).not.toBeInTheDocument()
     expect(screen.queryByText('Nuevo Usuario')).not.toBeInTheDocument()
+    expect(screen.queryByText('Usuarios Registrados')).not.toBeInTheDocument()
+  })
+
+  test('un admin_sig CON al menos un módulo no ve el aviso de "sin módulos asignados"', async () => {
+    authMock.user = {
+      name: 'Delegado', rol: 'admin_sig',
+      modulos: [{ modulo: 'actividad', puede_ver: true, puede_editar: false }],
+    }
+    renderPage()
+
+    await screen.findByText('Actividad Reciente')
+    expect(screen.queryByText('Todavía no tienes ningún módulo asignado')).not.toBeInTheDocument()
   })
 
   test('super_admin sigue viendo todo, sin el subtítulo de acceso delegado', async () => {

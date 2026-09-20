@@ -10,12 +10,15 @@ interface AdminSigUser {
 }
 type AdminUsersApiRes = { data?: AdminSigUser[] }
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ShieldCheck, UserPlus, Users, Activity, RefreshCw, X, KeyRound, Power, Trash2, Loader2, Eye, Pencil } from 'lucide-react'
+import {
+  ShieldCheck, UserPlus, Users, Activity, RefreshCw, X, KeyRound, Power, Trash2, Loader2, Eye, Pencil,
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { staggerContainer, staggerItem3D, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import api from '@/lib/api'
 import { MODULOS_CATALOGO, type ModuloClave, type PermisoModulo } from '@/lib/constants/modulos'
+import { GRUPOS_MODULOS, iconoDeModulo } from '@/lib/constants/modulosAgrupados'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { USUARIOS_KEYS } from '@/hooks/useUsuarios'
 
@@ -30,6 +33,25 @@ const guardarPermisos   = ({ id, permisos }: { id: string; permisos: PermisoModu
 
 function permisoDe(permisos: PermisoModulo[] | undefined, clave: ModuloClave) {
   return permisos?.find((p) => p.modulo === clave) ?? { modulo: clave, puede_ver: false, puede_editar: false }
+}
+
+function PermSwitch({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onChange}
+      className={`relative w-9 h-5 rounded-full transition-colors shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 ${
+        checked ? 'bg-primary-800' : 'bg-bg-alt border border-border'
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${checked ? 'translate-x-4' : 'translate-x-0.5'}`}
+      />
+    </button>
+  )
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -208,6 +230,11 @@ function PermisosModal({ admin, onClose, onSaved }: { admin: AdminSigUser; onClo
     }))
   }
 
+  const otorgarVerATodos = () => setPermisos((prev) => prev.map((p) => ({ ...p, puede_ver: true })))
+  const quitarTodoElAcceso = () => setPermisos((prev) => prev.map((p) => ({ ...p, puede_ver: false, puede_editar: false })))
+
+  const habilitados = permisos.filter((p) => p.puede_ver).length
+
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <motion.div
@@ -225,31 +252,57 @@ function PermisosModal({ admin, onClose, onSaved }: { admin: AdminSigUser; onClo
               <p className="text-xs text-text-muted">{admin.nombre}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-bg-alt transition-colors text-text-muted hover:text-text">
-            <X className="w-4 h-4" />
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-xs font-bold text-primary-700 bg-primary-500/10 px-2.5 py-1 rounded-full whitespace-nowrap">
+              {habilitados}/{MODULOS_CATALOGO.length} habilitados
+            </span>
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-bg-alt transition-colors text-text-muted hover:text-text">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 px-6 py-2.5 border-b border-border bg-bg-alt/30">
+          <button type="button" onClick={otorgarVerATodos} className="text-xs font-semibold text-primary-800 hover:text-primary-600 transition-colors">
+            Otorgar acceso a todo
+          </button>
+          <span className="text-border">·</span>
+          <button type="button" onClick={quitarTodoElAcceso} className="text-xs font-semibold text-red-dark hover:text-red-600 transition-colors">
+            Quitar todo el acceso
           </button>
         </div>
 
-        <div className="p-6 space-y-1 max-h-[60vh] overflow-y-auto">
-          <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-2 pb-2 text-[0.65rem] font-bold uppercase tracking-wide text-text-muted">
-            <span>Módulo</span>
-            <span className="w-14 text-center">Ver</span>
-            <span className="w-14 text-center">Editar</span>
-          </div>
-          {MODULOS_CATALOGO.map(({ clave, nombre }) => {
-            const p = permisos.find((x) => x.modulo === clave)!
-            return (
-              <div key={clave} className="grid grid-cols-[1fr_auto_auto] items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-bg-alt/60">
-                <span className="text-sm text-text">{nombre}</span>
-                <label className="w-14 flex justify-center cursor-pointer">
-                  <input type="checkbox" checked={p.puede_ver} onChange={() => toggle(clave, 'puede_ver')} aria-label={`Ver ${nombre}`} className="w-4 h-4 accent-primary-700" />
-                </label>
-                <label className="w-14 flex justify-center cursor-pointer">
-                  <input type="checkbox" checked={p.puede_editar} onChange={() => toggle(clave, 'puede_editar')} aria-label={`Editar ${nombre}`} className="w-4 h-4 accent-primary-700" />
-                </label>
+        <div className="p-6 space-y-5 max-h-[60vh] overflow-y-auto">
+          {GRUPOS_MODULOS.map(({ titulo, claves }) => (
+            <div key={titulo}>
+              <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-2 pb-2">
+                <span className="text-[0.65rem] font-bold uppercase tracking-wide text-text-muted">{titulo}</span>
+                <span className="w-14 text-center text-[0.6rem] font-bold uppercase tracking-wide text-text-muted">Ver</span>
+                <span className="w-14 text-center text-[0.6rem] font-bold uppercase tracking-wide text-text-muted">Editar</span>
               </div>
-            )
-          })}
+              <div className="space-y-0.5">
+                {claves.map((clave) => {
+                  const nombre = MODULOS_CATALOGO.find((m) => m.clave === clave)!.nombre
+                  const Icon = iconoDeModulo(clave)
+                  const p = permisos.find((x) => x.modulo === clave)!
+                  return (
+                    <div key={clave} className={`grid grid-cols-[1fr_auto_auto] items-center gap-2 px-2 py-2 rounded-lg transition-colors ${p.puede_ver ? 'bg-primary-500/5' : 'hover:bg-bg-alt/60'}`}>
+                      <span className="flex items-center gap-2.5 text-sm text-text min-w-0">
+                        <Icon className={`w-4 h-4 shrink-0 ${p.puede_ver ? 'text-primary-700' : 'text-text-muted'}`} aria-hidden="true" />
+                        <span className="truncate">{nombre}</span>
+                      </span>
+                      <span className="w-14 flex justify-center">
+                        <PermSwitch checked={p.puede_ver} onChange={() => toggle(clave, 'puede_ver')} label={`Ver ${nombre}`} />
+                      </span>
+                      <span className="w-14 flex justify-center">
+                        <PermSwitch checked={p.puede_editar} onChange={() => toggle(clave, 'puede_editar')} label={`Editar ${nombre}`} />
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="flex gap-3 px-6 py-4 border-t border-border">
