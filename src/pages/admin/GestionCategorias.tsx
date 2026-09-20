@@ -105,47 +105,50 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { 
 // ── Tarjeta de categoría ──────────────────────────────────────────────────────
 interface ConteoCategoria { docs: number; mapas: number; geovisores: number }
 
-const MODULO_LABEL: Record<keyof ConteoCategoria, string> = {
-  docs: 'documentos', mapas: 'mapas', geovisores: 'geovisores',
-}
-const MODULO_FILTROS: { key: keyof ConteoCategoria; label: string }[] = [
-  { key: 'docs', label: 'Documentos' },
-  { key: 'mapas', label: 'Mapas' },
-  { key: 'geovisores', label: 'Geovisores' },
-]
-
-// A qué módulos PERTENECE la categoría (declarado al crearla) -- distinto de
-// MODULO_FILTROS arriba, que filtra por uso real ya registrado. Este es el
-// que resuelve "no aparece para seleccionar a qué módulo va esa categoría".
+// A qué módulos PERTENECE la categoría (declarado al crearla/editarla) --
+// misma fuente para el filtro de arriba, las tarjetas y los formularios de
+// crear/editar, así "Filtrar por módulo" siempre coincide con lo que dice
+// cada tarjeta (antes el filtro miraba el conteo de uso real, no la
+// asignación, así que una categoría recién creada sin uso todavía
+// "desaparecía" del filtro aunque sí estuviera asignada a ese módulo).
 const MODULOS_CATEGORIA: { key: ModuloCategoria; label: string }[] = [
   { key: 'documentos', label: 'Documentos' },
   { key: 'mapas', label: 'Mapas' },
   { key: 'geovisores', label: 'Geovisores' },
 ]
 
-function ModulosPills({ modulos, onToggle, disabled }: { modulos: ModuloCategoria[]; onToggle: (m: ModuloCategoria) => void; disabled?: boolean }) {
+/** Checkboxes verticales -- más claro que pills clicables para un formulario. */
+function ModulosCheckboxList({ modulos, onToggle, disabled }: { modulos: ModuloCategoria[]; onToggle: (m: ModuloCategoria) => void; disabled?: boolean }) {
+  return (
+    <div className="space-y-2.5">
+      {MODULOS_CATEGORIA.map(({ key, label }) => (
+        <label key={key} className={`flex items-center gap-2.5 ${disabled ? 'opacity-50' : 'cursor-pointer'}`}>
+          <input
+            type="checkbox"
+            checked={modulos.includes(key)}
+            onChange={() => onToggle(key)}
+            disabled={disabled}
+            className="w-4 h-4 accent-primary-700"
+          />
+          <span className="text-sm text-text">{label}</span>
+        </label>
+      ))}
+    </div>
+  )
+}
+
+/** Badges de solo lectura en la tarjeta -- editar los módulos se hace desde "Editar categoría", no aquí. */
+function ModulosBadges({ modulos }: { modulos: ModuloCategoria[] }) {
+  if (modulos.length === 0) {
+    return <span className="text-[0.65rem] text-text-muted italic">Sin módulo asignado</span>
+  }
   return (
     <div className="flex flex-wrap gap-1.5">
-      {MODULOS_CATEGORIA.map(({ key, label }) => {
-        const activo = modulos.includes(key)
-        return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onToggle(key)}
-            disabled={disabled}
-            aria-pressed={activo}
-            aria-label={`Módulo ${label}${activo ? ' (asignado)' : ''}`}
-            className={`text-[0.65rem] font-semibold px-2.5 py-1 rounded-full border transition-colors disabled:opacity-50 ${
-              activo
-                ? 'bg-primary-500/12 text-primary-700 border-primary-500/30'
-                : 'bg-bg-alt text-text-muted border-border hover:border-primary-400'
-            }`}
-          >
-            {label}
-          </button>
-        )
-      })}
+      {MODULOS_CATEGORIA.filter(({ key }) => modulos.includes(key)).map(({ key, label }) => (
+        <span key={key} className="text-[0.65rem] font-semibold px-2.5 py-1 rounded-full bg-primary-500/12 text-primary-700 border border-primary-500/30">
+          {label}
+        </span>
+      ))}
     </div>
   )
 }
@@ -160,15 +163,13 @@ function resumenConteo({ docs, mapas, geovisores }: ConteoCategoria): string {
   return partes.length > 0 ? partes.join(' · ') : '0 elementos'
 }
 
-function CategoriaCard({ cat, conteo, onRename, onDelete, onThumbnailSaved, uploadThumbnail, onToggleModulo, togglingModulos }: {
+function CategoriaCard({ cat, conteo, onEdit, onDelete, onThumbnailSaved, uploadThumbnail }: {
   cat: { nombre: string; descripcion?: string | null; thumbnail_url?: string | null; activo?: boolean; modulos?: ModuloCategoria[] }
   conteo: ConteoCategoria
-  onRename: (target: { nombre: string }) => void
+  onEdit: (target: { nombre: string; modulos: ModuloCategoria[] }) => void
   onDelete: (target: { nombre: string }) => void
   onThumbnailSaved: (nombre: string) => void
   uploadThumbnail: ReturnType<typeof import('@/hooks/useCategorias').useUploadCategoriaThumbnail>
-  onToggleModulo: (nombre: string, modulosActuales: ModuloCategoria[], modulo: ModuloCategoria) => void
-  togglingModulos: boolean
 }) {
   const [file, setFile]         = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -241,10 +242,10 @@ function CategoriaCard({ cat, conteo, onRename, onDelete, onThumbnailSaved, uplo
           <h3 className="text-sm font-bold text-text leading-snug">{cat.nombre}</h3>
           <div className="flex items-center gap-1 shrink-0">
             <button
-              onClick={() => onRename(cat)}
+              onClick={() => onEdit({ nombre: cat.nombre, modulos: cat.modulos ?? [] })}
               className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors"
-              title="Renombrar categoría"
-              aria-label={`Renombrar categoría ${cat.nombre}`}
+              title="Editar categoría"
+              aria-label={`Editar categoría ${cat.nombre}`}
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
@@ -259,12 +260,8 @@ function CategoriaCard({ cat, conteo, onRename, onDelete, onThumbnailSaved, uplo
           </div>
         </div>
 
-        {/* Módulos a los que pertenece -- click para asignar/quitar */}
-        <ModulosPills
-          modulos={cat.modulos ?? []}
-          disabled={togglingModulos}
-          onToggle={(m) => onToggleModulo(cat.nombre, cat.modulos ?? [], m)}
-        />
+        {/* Módulos a los que pertenece -- solo lectura, se edita desde "Editar categoría" */}
+        <ModulosBadges modulos={cat.modulos ?? []} />
 
         {/* Dropzone compacto */}
         <ImageDropzone
@@ -325,23 +322,23 @@ export default function GestionCategorias() {
   const [newModulos, setNewModulos]   = useState<ModuloCategoria[]>(['documentos', 'mapas', 'geovisores'])
   const [newFile, setNewFile]         = useState<File | null>(null)
   const [newError, setNewError]       = useState<string | null>(null)
-  const [renameTarget, setRenameTarget] = useState<{ nombre: string } | null>(null)
-  const [renameValue, setRenameValue]   = useState('')
-  const [renameError, setRenameError]   = useState<string | null>(null)
+  const [editTarget, setEditTarget]   = useState<{ nombre: string; modulos: ModuloCategoria[] } | null>(null)
+  const [editNombre, setEditNombre]   = useState('')
+  const [editModulos, setEditModulos] = useState<ModuloCategoria[]>([])
+  const [editError, setEditError]     = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ nombre: string } | null>(null)
   const [toast, setToast]             = useState<string | null>(null)
-  const [filtroModulo, setFiltroModulo] = useState<keyof ConteoCategoria | ''>('')
-  const [modulosTogglingDe, setModulosTogglingDe] = useState<string | null>(null)
+  const [filtroModulo, setFiltroModulo] = useState<ModuloCategoria | ''>('')
 
   const CONTEO_VACIO: ConteoCategoria = { docs: 0, mapas: 0, geovisores: 0 }
 
-  // Filtro por módulo -- ver qué categorías tienen al menos un elemento en
-  // documentos/mapas/geovisores (ej. para elegir una al configurar un geovisor
-  // nuevo, sin adivinar cuáles de las categorías ya la usan ahí). El conteo
-  // real viene calculado del servidor (GET /categorias), no se recalcula aquí.
+  // Filtro por módulo -- a qué módulo está ASIGNADA cada categoría (mismo
+  // campo que se edita en el formulario), no cuántos elementos ya tiene
+  // cargados -- así una categoría recién creada sin uso todavía sí aparece
+  // al filtrar por su módulo, en vez de "desaparecer" hasta que alguien la use.
   const categoriasFiltradas = !filtroModulo
     ? categorias
-    : categorias.filter((cat) => (cat.conteo?.[filtroModulo] ?? 0) > 0)
+    : categorias.filter((cat) => cat.modulos?.includes(filtroModulo))
 
   const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -365,43 +362,39 @@ export default function GestionCategorias() {
     setNewError(null)
   }
 
-  // No permite quitar el último módulo -- una categoría sin ninguno queda
-  // huérfana (el backend lo rechaza igual, pero evitar el viaje redondo es
-  // mejor comunicación que un error después del clic).
-  const toggleModuloExistente = async (nombre: string, modulosActuales: ModuloCategoria[], modulo: ModuloCategoria) => {
-    const nuevos = modulosActuales.includes(modulo)
-      ? modulosActuales.filter((m) => m !== modulo)
-      : [...modulosActuales, modulo]
-    if (nuevos.length === 0) {
-      setToast('Una categoría debe pertenecer al menos a un módulo')
-      return
-    }
-    setModulosTogglingDe(nombre)
-    try {
-      await updateModulos.mutateAsync({ nombre, modulos: nuevos })
-    } catch {
-      setToast('No se pudieron actualizar los módulos')
-    } finally {
-      setModulosTogglingDe(null)
-    }
+  const openEdit = (target: { nombre: string; modulos: ModuloCategoria[] }) => {
+    setEditTarget(target); setEditNombre(target.nombre); setEditModulos(target.modulos); setEditError(null)
   }
 
-  const openRename = (target: { nombre: string }) => {
-    setRenameTarget(target); setRenameValue(target.nombre); setRenameError(null)
+  const toggleEditModulo = (m: ModuloCategoria) => {
+    setEditModulos((prev) => (prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]))
+    setEditError(null)
   }
 
-  const confirmRename = async (e: FormEvent<HTMLFormElement>) => {
+  // Un solo formulario para nombre y módulos -- antes eran dos acciones
+  // separadas (renombrar en un modal aparte, módulos en pills sueltos sobre
+  // la tarjeta) y no había forma de editar el módulo desde el mismo lugar.
+  // Si cambian ambos, el rename va primero (cambia la clave primaria) y el
+  // update de módulos usa el nombre nuevo.
+  const confirmEdit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!renameTarget) return
-    const nuevoNombre = renameValue.trim()
-    if (!nuevoNombre) { setRenameError('El nombre es obligatorio'); return }
-    if (nuevoNombre === renameTarget.nombre) { setRenameTarget(null); return }
+    if (!editTarget) return
+    const nuevoNombre = editNombre.trim()
+    if (!nuevoNombre) { setEditError('El nombre es obligatorio'); return }
+    if (editModulos.length === 0) { setEditError('Selecciona al menos un módulo'); return }
     try {
-      await renameCategoria.mutateAsync({ nombre: renameTarget.nombre, nuevoNombre })
-      setToast(`Categoría renombrada a "${nuevoNombre}"`)
-      setRenameTarget(null)
+      if (nuevoNombre !== editTarget.nombre) {
+        await renameCategoria.mutateAsync({ nombre: editTarget.nombre, nuevoNombre })
+      }
+      const mismosModulos = editModulos.length === editTarget.modulos.length &&
+        editModulos.every((m) => editTarget.modulos.includes(m))
+      if (!mismosModulos) {
+        await updateModulos.mutateAsync({ nombre: nuevoNombre, modulos: editModulos })
+      }
+      setToast(`Categoría "${nuevoNombre}" actualizada`)
+      setEditTarget(null)
     } catch (err) {
-      setRenameError(getApiErrorMessage(err, 'No se pudo renombrar la categoría'))
+      setEditError(getApiErrorMessage(err, 'No se pudo actualizar la categoría'))
     }
   }
 
@@ -417,6 +410,7 @@ export default function GestionCategorias() {
   }
 
   const isSaving = createCategoria.isPending || uploadThumbnail.isPending
+  const isEditing = renameCategoria.isPending || updateModulos.isPending
 
   return (
     <div className="space-y-6">
@@ -434,7 +428,7 @@ export default function GestionCategorias() {
             {isLoading
               ? 'Cargando…'
               : filtroModulo
-                ? `${categoriasFiltradas.length} de ${categorias.length} categorías con ${MODULO_LABEL[filtroModulo]}`
+                ? `${categoriasFiltradas.length} de ${categorias.length} categorías asignadas a ${MODULOS_CATEGORIA.find((m) => m.key === filtroModulo)?.label}`
                 : `${categorias.length} categorías registradas`}
           </p>
         </div>
@@ -455,7 +449,7 @@ export default function GestionCategorias() {
         </p>
       </motion.div>
 
-      {/* Filtro por módulo -- ¿qué categorías ya tienen algo en documentos/mapas/geovisores? */}
+      {/* Filtro por módulo -- ¿qué categorías están asignadas a cada módulo? */}
       {!isLoading && categorias.length > 0 && (
         <motion.div {...fadeUp(0.02)} className="flex flex-wrap items-center gap-2">
           <span className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mr-1">Filtrar por módulo</span>
@@ -469,7 +463,7 @@ export default function GestionCategorias() {
           >
             Todas
           </button>
-          {MODULO_FILTROS.map(({ key, label }) => (
+          {MODULOS_CATEGORIA.map(({ key, label }) => (
             <button key={key}
               onClick={() => setFiltroModulo(filtroModulo === key ? '' : key)}
               className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
@@ -504,7 +498,7 @@ export default function GestionCategorias() {
       {/* Sin resultados para el módulo elegido -- distinto del estado "no hay categorías" */}
       {!isLoading && categorias.length > 0 && categoriasFiltradas.length === 0 && (
         <div className="py-12 text-center text-sm text-text-muted">
-          Ninguna categoría tiene {MODULO_LABEL[filtroModulo as keyof ConteoCategoria]} todavía.
+          Ninguna categoría está asignada a {MODULOS_CATEGORIA.find((m) => m.key === filtroModulo)?.label} todavía.
         </div>
       )}
 
@@ -521,12 +515,10 @@ export default function GestionCategorias() {
                 key={cat.nombre}
                 cat={cat}
                 conteo={cat.conteo ?? CONTEO_VACIO}
-                onRename={openRename}
+                onEdit={openEdit}
                 onDelete={setDeleteTarget}
                 onThumbnailSaved={(nombre) => setToast(`Imagen de "${nombre}" actualizada`)}
                 uploadThumbnail={uploadThumbnail}
-                onToggleModulo={toggleModuloExistente}
-                togglingModulos={modulosTogglingDe === cat.nombre}
               />
             ))}
           </AnimatePresence>
@@ -576,7 +568,7 @@ export default function GestionCategorias() {
                   <p className="text-xs text-text-muted mb-2">
                     Define en qué formularios (Documentos, Mapas, Geovisores) va a poder elegirse esta categoría.
                   </p>
-                  <ModulosPills modulos={newModulos} onToggle={toggleNewModulo} />
+                  <ModulosCheckboxList modulos={newModulos} onToggle={toggleNewModulo} />
                 </div>
 
                 <div>
@@ -603,52 +595,60 @@ export default function GestionCategorias() {
         )}
       </AnimatePresence>
 
-      {/* Modal renombrar categoría */}
+      {/* Modal editar categoría -- nombre y módulos juntos en el mismo formulario */}
       <AnimatePresence>
-        {renameTarget && (
+        {editTarget && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-            onClick={(e) => { if (e.target === e.currentTarget && !renameCategoria.isPending) setRenameTarget(null) }}
+            onClick={(e) => { if (e.target === e.currentTarget && !isEditing) setEditTarget(null) }}
           >
             <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-md">
               <div className="flex items-center justify-between px-6 py-5 border-b border-border">
                 <div>
-                  <h3 className="text-base font-bold text-text">Renombrar categoría</h3>
+                  <h3 className="text-base font-bold text-text">Editar categoría</h3>
                   <p className="text-xs text-text-muted mt-0.5">
-                    Se actualiza en Mapas, Documentos y Geovisores que la usen.
+                    El nombre se actualiza en Mapas, Documentos y Geovisores que la usen.
                   </p>
                 </div>
-                <button onClick={() => setRenameTarget(null)} disabled={renameCategoria.isPending}
+                <button onClick={() => setEditTarget(null)} disabled={isEditing}
                   className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors disabled:opacity-40">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <form onSubmit={confirmRename} className="p-6 space-y-4">
+              <form onSubmit={confirmEdit} className="p-6 space-y-4">
                 <div>
-                  <label htmlFor="gc-rename" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                    Nuevo nombre <span className="text-orange-500" aria-hidden="true">*</span>
+                  <label htmlFor="gc-edit-nombre" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Nombre <span className="text-orange-500" aria-hidden="true">*</span>
                   </label>
                   <input
-                    id="gc-rename"
+                    id="gc-edit-nombre"
                     type="text"
-                    value={renameValue}
+                    value={editNombre}
                     autoFocus
-                    onChange={(e) => { setRenameValue(e.target.value); setRenameError(null) }}
-                    className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${renameError ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                    onChange={(e) => { setEditNombre(e.target.value); setEditError(null) }}
+                    className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${editError ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
                   />
-                  {renameError && <p className="text-xs text-red-500 mt-1">{renameError}</p>}
                 </div>
 
+                <div>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    ¿En qué módulo(s) va a aparecer? <span className="text-orange-500" aria-hidden="true">*</span>
+                  </label>
+                  <ModulosCheckboxList modulos={editModulos} onToggle={toggleEditModulo} disabled={isEditing} />
+                </div>
+
+                {editError && <p className="text-xs text-red-500">{editError}</p>}
+
                 <div className="flex gap-3 pt-1">
-                  <button type="button" onClick={() => setRenameTarget(null)} disabled={renameCategoria.isPending}
+                  <button type="button" onClick={() => setEditTarget(null)} disabled={isEditing}
                     className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 disabled:opacity-40 transition-colors">
                     Cancelar
                   </button>
-                  <button type="submit" disabled={renameCategoria.isPending}
+                  <button type="submit" disabled={isEditing}
                     className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors">
-                    {renameCategoria.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pencil className="w-4 h-4" />}
-                    {renameCategoria.isPending ? 'Guardando…' : 'Renombrar'}
+                    {isEditing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pencil className="w-4 h-4" />}
+                    {isEditing ? 'Guardando…' : 'Guardar cambios'}
                   </button>
                 </div>
               </form>

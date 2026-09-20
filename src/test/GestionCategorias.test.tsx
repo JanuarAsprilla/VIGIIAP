@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import GestionCategorias from '@/pages/admin/GestionCategorias'
@@ -103,23 +103,24 @@ describe('GestionCategorias — crear categoría', () => {
   })
 })
 
-describe('GestionCategorias — renombrar categoría', () => {
-  test('abre el modal con el nombre actual precargado y llama a la mutación con el nuevo nombre', async () => {
+describe('GestionCategorias — editar categoría', () => {
+  test('abre el modal con el nombre y los módulos actuales precargados, y llama a renombrar', async () => {
     const mutateAsync = vi.fn().mockResolvedValue(undefined)
     vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
 
     const user = userEvent.setup()
     render(<GestionCategorias />)
-    await user.click(screen.getByTitle('Renombrar categoría'))
+    await user.click(screen.getByTitle('Editar categoría'))
 
-    expect(screen.getByLabelText(/Nuevo nombre/i)).toHaveValue('Protocolos')
+    expect(screen.getByLabelText(/^Nombre/i)).toHaveValue('Protocolos')
+    expect(screen.getByRole('checkbox', { name: 'Documentos' })).toBeChecked()
 
-    await user.clear(screen.getByLabelText(/Nuevo nombre/i))
-    await user.type(screen.getByLabelText(/Nuevo nombre/i), 'Protocolos Ambientales')
-    await user.click(screen.getByRole('button', { name: /^Renombrar$/i }))
+    await user.clear(screen.getByLabelText(/^Nombre/i))
+    await user.type(screen.getByLabelText(/^Nombre/i), 'Protocolos Ambientales')
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
 
     expect(mutateAsync).toHaveBeenCalledWith({ nombre: 'Protocolos', nuevoNombre: 'Protocolos Ambientales' })
-    expect(await screen.findByText('Categoría renombrada a "Protocolos Ambientales"')).toBeInTheDocument()
+    expect(await screen.findByText('Categoría "Protocolos Ambientales" actualizada')).toBeInTheDocument()
   })
 
   test('un nombre vacío muestra error y no llama a la mutación', async () => {
@@ -128,24 +129,45 @@ describe('GestionCategorias — renombrar categoría', () => {
 
     const user = userEvent.setup()
     render(<GestionCategorias />)
-    await user.click(screen.getByTitle('Renombrar categoría'))
-    await user.clear(screen.getByLabelText(/Nuevo nombre/i))
-    await user.click(screen.getByRole('button', { name: /^Renombrar$/i }))
+    await user.click(screen.getByTitle('Editar categoría'))
+    await user.clear(screen.getByLabelText(/^Nombre/i))
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
 
     expect(await screen.findByText('El nombre es obligatorio')).toBeInTheDocument()
     expect(mutateAsync).not.toHaveBeenCalled()
   })
 
-  test('si el nombre no cambió, cierra el modal sin llamar a la mutación', async () => {
-    const mutateAsync = vi.fn()
-    vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
+  test('si nada cambió, no llama a ninguna mutación pero cierra el modal', async () => {
+    const renameMutate = vi.fn()
+    const modulosMutate = vi.fn()
+    vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync: renameMutate, isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
+    vi.mocked(useUpdateModulosCategoria).mockReturnValue({ mutateAsync: modulosMutate, isPending: false } as unknown as ReturnType<typeof useUpdateModulosCategoria>)
 
     const user = userEvent.setup()
     render(<GestionCategorias />)
-    await user.click(screen.getByTitle('Renombrar categoría'))
-    await user.click(screen.getByRole('button', { name: /^Renombrar$/i }))
+    await user.click(screen.getByTitle('Editar categoría'))
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
 
-    expect(mutateAsync).not.toHaveBeenCalled()
+    expect(renameMutate).not.toHaveBeenCalled()
+    expect(modulosMutate).not.toHaveBeenCalled()
+  })
+
+  test('cambiar nombre y módulos a la vez llama a ambas mutaciones, con el nombre nuevo en los módulos', async () => {
+    const renameMutate = vi.fn().mockResolvedValue(undefined)
+    const modulosMutate = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync: renameMutate, isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
+    vi.mocked(useUpdateModulosCategoria).mockReturnValue({ mutateAsync: modulosMutate, isPending: false } as unknown as ReturnType<typeof useUpdateModulosCategoria>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByTitle('Editar categoría'))
+    await user.clear(screen.getByLabelText(/^Nombre/i))
+    await user.type(screen.getByLabelText(/^Nombre/i), 'Protocolos Ambientales')
+    await user.click(screen.getByRole('checkbox', { name: 'Documentos' }))
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
+
+    expect(renameMutate).toHaveBeenCalledWith({ nombre: 'Protocolos', nuevoNombre: 'Protocolos Ambientales' })
+    expect(modulosMutate).toHaveBeenCalledWith({ nombre: 'Protocolos Ambientales', modulos: ['mapas', 'geovisores'] })
   })
 
   test('un error del servidor (nombre duplicado) se muestra sin cerrar el modal', async () => {
@@ -154,26 +176,43 @@ describe('GestionCategorias — renombrar categoría', () => {
 
     const user = userEvent.setup()
     render(<GestionCategorias />)
-    await user.click(screen.getByTitle('Renombrar categoría'))
-    await user.clear(screen.getByLabelText(/Nuevo nombre/i))
-    await user.type(screen.getByLabelText(/Nuevo nombre/i), 'Hidrología')
-    await user.click(screen.getByRole('button', { name: /^Renombrar$/i }))
+    await user.click(screen.getByTitle('Editar categoría'))
+    await user.clear(screen.getByLabelText(/^Nombre/i))
+    await user.type(screen.getByLabelText(/^Nombre/i), 'Hidrología')
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
 
     expect(await screen.findByText('Ya existe una categoría con ese nombre')).toBeInTheDocument()
-    expect(screen.getByLabelText(/Nuevo nombre/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Nombre/i)).toBeInTheDocument()
   })
 
-  test('cancelar no llama a la mutación de renombrado', async () => {
+  test('quitar todos los módulos muestra error y no llama a la mutación', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useUpdateModulosCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useUpdateModulosCategoria>)
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [makeCategoria({ modulos: ['documentos'] })], isLoading: false,
+    } as unknown as ReturnType<typeof useCategoriasList>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByTitle('Editar categoría'))
+    await user.click(screen.getByRole('checkbox', { name: 'Documentos' }))
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
+
+    expect(await screen.findByText('Selecciona al menos un módulo')).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('cancelar no llama a ninguna mutación', async () => {
     const mutateAsync = vi.fn()
     vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
 
     const user = userEvent.setup()
     render(<GestionCategorias />)
-    await user.click(screen.getByTitle('Renombrar categoría'))
+    await user.click(screen.getByTitle('Editar categoría'))
     await user.click(screen.getByRole('button', { name: 'Cancelar' }))
 
     expect(mutateAsync).not.toHaveBeenCalled()
-    expect(screen.queryByLabelText(/Nuevo nombre/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Nombre/i)).not.toBeInTheDocument()
   })
 })
 
@@ -267,17 +306,22 @@ describe('GestionCategorias — listado', () => {
 })
 
 describe('GestionCategorias — filtro por módulo', () => {
+  // Regresión: el filtro debe reflejar a qué módulo está ASIGNADA la
+  // categoría (mismo campo que se edita en el formulario), no cuántos
+  // elementos ya tiene cargados -- antes usaba el conteo de uso real, así
+  // que una categoría recién creada y asignada, pero sin uso todavía,
+  // "desaparecía" al filtrar por su propio módulo.
   function setupTresCategorias() {
     vi.mocked(useCategoriasList).mockReturnValue({
       data: [
-        makeCategoria({ nombre: 'Hidrología', conteo: { docs: 0, mapas: 1, geovisores: 0 } }),
-        makeCategoria({ nombre: 'Geología', conteo: { docs: 0, mapas: 0, geovisores: 1 } }),
-        makeCategoria({ nombre: 'Sin uso' }),
+        makeCategoria({ nombre: 'Hidrología', modulos: ['mapas'] }),
+        makeCategoria({ nombre: 'Geología', modulos: ['geovisores'] }),
+        makeCategoria({ nombre: 'Sin asignar', modulos: [] }),
       ], isLoading: false,
     } as unknown as ReturnType<typeof useCategoriasList>)
   }
 
-  test('filtrar por Geovisores solo muestra la categoría con al menos un geovisor', async () => {
+  test('filtrar por Geovisores solo muestra la categoría asignada a geovisores', async () => {
     setupTresCategorias()
     const user = userEvent.setup()
     render(<GestionCategorias />)
@@ -286,10 +330,10 @@ describe('GestionCategorias — filtro por módulo', () => {
 
     expect(screen.getByText('Geología')).toBeInTheDocument()
     expect(screen.queryByText('Hidrología')).not.toBeInTheDocument()
-    expect(screen.queryByText('Sin uso')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sin asignar')).not.toBeInTheDocument()
   })
 
-  test('filtrar por Mapas solo muestra la categoría con al menos un mapa', async () => {
+  test('filtrar por Mapas solo muestra la categoría asignada a mapas', async () => {
     setupTresCategorias()
     const user = userEvent.setup()
     render(<GestionCategorias />)
@@ -298,6 +342,19 @@ describe('GestionCategorias — filtro por módulo', () => {
 
     expect(screen.getByText('Hidrología')).toBeInTheDocument()
     expect(screen.queryByText('Geología')).not.toBeInTheDocument()
+  })
+
+  test('una categoría recién creada (sin uso todavía) sí aparece al filtrar por su módulo asignado', async () => {
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [makeCategoria({ nombre: 'Nueva sin uso', modulos: ['documentos'], conteo: { docs: 0, mapas: 0, geovisores: 0 } })],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useCategoriasList>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByRole('button', { name: 'Documentos' }))
+
+    expect(screen.getByText('Nueva sin uso')).toBeInTheDocument()
   })
 
   test('volver a "Todas" quita el filtro', async () => {
@@ -310,19 +367,19 @@ describe('GestionCategorias — filtro por módulo', () => {
 
     expect(screen.getByText('Hidrología')).toBeInTheDocument()
     expect(screen.getByText('Geología')).toBeInTheDocument()
-    expect(screen.getByText('Sin uso')).toBeInTheDocument()
+    expect(screen.getByText('Sin asignar')).toBeInTheDocument()
   })
 
   test('un filtro sin ninguna categoría coincidente muestra el estado vacío específico', async () => {
     vi.mocked(useCategoriasList).mockReturnValue({
-      data: [makeCategoria({ nombre: 'Sin uso' })], isLoading: false,
+      data: [makeCategoria({ nombre: 'Sin asignar', modulos: [] })], isLoading: false,
     } as unknown as ReturnType<typeof useCategoriasList>)
 
     const user = userEvent.setup()
     render(<GestionCategorias />)
     await user.click(screen.getByRole('button', { name: 'Documentos' }))
 
-    expect(screen.getByText('Ninguna categoría tiene documentos todavía.')).toBeInTheDocument()
+    expect(screen.getByText('Ninguna categoría está asignada a Documentos todavía.')).toBeInTheDocument()
   })
 
   test('hacer clic de nuevo en el mismo filtro lo quita (toggle)', async () => {
@@ -334,7 +391,7 @@ describe('GestionCategorias — filtro por módulo', () => {
     await user.click(screen.getByRole('button', { name: 'Geovisores' }))
 
     expect(screen.getByText('Hidrología')).toBeInTheDocument()
-    expect(screen.getByText('Sin uso')).toBeInTheDocument()
+    expect(screen.getByText('Sin asignar')).toBeInTheDocument()
   })
 })
 
@@ -403,12 +460,10 @@ describe('GestionCategorias — imagen de portada en una tarjeta existente', () 
   })
 })
 
-describe('GestionCategorias — a qué módulos pertenece', () => {
+describe('GestionCategorias — a qué módulos pertenece (crear)', () => {
   test('al crear, exige seleccionar al menos un módulo', async () => {
     const mutateAsync = vi.fn()
     vi.mocked(useCreateCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateCategoria>)
-    // Sin categorías existentes -- así los botones "Módulo X" del formulario
-    // de creación no compiten con los de una tarjeta ya en pantalla.
     vi.mocked(useCategoriasList).mockReturnValue({ data: [], isLoading: false } as unknown as ReturnType<typeof useCategoriasList>)
 
     const user = userEvent.setup()
@@ -416,9 +471,9 @@ describe('GestionCategorias — a qué módulos pertenece', () => {
     await user.click(screen.getByRole('button', { name: /Nueva categoría/i }))
     await user.type(screen.getByLabelText(/Nombre/i), 'Sensores')
     // Los 3 módulos vienen preseleccionados por defecto -- se destildan los 3.
-    await user.click(screen.getByRole('button', { name: 'Módulo Documentos (asignado)' }))
-    await user.click(screen.getByRole('button', { name: 'Módulo Mapas (asignado)' }))
-    await user.click(screen.getByRole('button', { name: 'Módulo Geovisores (asignado)' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Documentos' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Mapas' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Geovisores' }))
     await user.click(screen.getByRole('button', { name: /Crear categoría/i }))
 
     expect(await screen.findByText('Selecciona a qué módulo(s) pertenece')).toBeInTheDocument()
@@ -434,39 +489,37 @@ describe('GestionCategorias — a qué módulos pertenece', () => {
     render(<GestionCategorias />)
     await user.click(screen.getByRole('button', { name: /Nueva categoría/i }))
     await user.type(screen.getByLabelText(/Nombre/i), 'Sensores')
-    await user.click(screen.getByRole('button', { name: 'Módulo Documentos (asignado)' }))
-    await user.click(screen.getByRole('button', { name: 'Módulo Mapas (asignado)' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Documentos' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Mapas' }))
     await user.click(screen.getByRole('button', { name: /Crear categoría/i }))
 
     expect(mutateAsync).toHaveBeenCalledWith({ nombre: 'Sensores', modulos: ['geovisores'] })
   })
+})
 
-  test('en una tarjeta existente, clic en un módulo llama a la mutación con el nuevo conjunto', async () => {
-    const mutateAsync = vi.fn().mockResolvedValue(undefined)
-    vi.mocked(useUpdateModulosCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useUpdateModulosCategoria>)
+describe('GestionCategorias — módulos asignados en la tarjeta (solo lectura)', () => {
+  test('muestra los módulos asignados como badges, no como controles clicables', () => {
     vi.mocked(useCategoriasList).mockReturnValue({
-      data: [makeCategoria({ modulos: ['documentos'] })], isLoading: false,
+      data: [makeCategoria({ modulos: ['documentos', 'mapas'] })], isLoading: false,
     } as unknown as ReturnType<typeof useCategoriasList>)
 
-    const user = userEvent.setup()
     render(<GestionCategorias />)
-    await user.click(screen.getByRole('button', { name: 'Módulo Mapas' }))
+    const card = screen.getByText('Protocolos').closest('.rounded-2xl') as HTMLElement
 
-    expect(mutateAsync).toHaveBeenCalledWith({ nombre: 'Protocolos', modulos: ['documentos', 'mapas'] })
+    expect(within(card).getByText('Documentos')).toBeInTheDocument()
+    expect(within(card).getByText('Mapas')).toBeInTheDocument()
+    expect(within(card).queryByText('Geovisores')).not.toBeInTheDocument()
+    // Las etiquetas son <span>, no botones -- se editan desde "Editar categoría", no clicando acá.
+    expect(within(card).getByText('Documentos').tagName).toBe('SPAN')
   })
 
-  test('en una tarjeta existente, no permite quitar el último módulo', async () => {
-    const mutateAsync = vi.fn()
-    vi.mocked(useUpdateModulosCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useUpdateModulosCategoria>)
+  test('sin ningún módulo asignado, muestra el aviso en vez de badges vacíos', () => {
     vi.mocked(useCategoriasList).mockReturnValue({
-      data: [makeCategoria({ modulos: ['documentos'] })], isLoading: false,
+      data: [makeCategoria({ modulos: [] })], isLoading: false,
     } as unknown as ReturnType<typeof useCategoriasList>)
 
-    const user = userEvent.setup()
     render(<GestionCategorias />)
-    await user.click(screen.getByRole('button', { name: 'Módulo Documentos (asignado)' }))
 
-    expect(await screen.findByText('Una categoría debe pertenecer al menos a un módulo')).toBeInTheDocument()
-    expect(mutateAsync).not.toHaveBeenCalled()
+    expect(screen.getByText('Sin módulo asignado')).toBeInTheDocument()
   })
 })
