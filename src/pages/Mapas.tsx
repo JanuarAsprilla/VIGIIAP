@@ -12,7 +12,7 @@ import { useCategoriasList } from '@/hooks/useCategorias'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { isTrustedUrl } from '@/lib/trustedUrl'
-import { descargarUrl } from '@/pages/documentos/documentos.utils'
+import { descargarUrl, forceDownload } from '@/pages/documentos/documentos.utils'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { cardEnter3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
@@ -87,11 +87,12 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
                     <Eye className="w-4 h-4" />
                     Abrir PDF
                   </a>
-                  <a href={descargarUrl('mapa', map.id, 'archivo_pdf')}
+                  <button type="button"
+                    onClick={() => forceDownload(descargarUrl('mapa', map.id, 'archivo_pdf'), `${sanitizeFilename(map.title)}.pdf`)}
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800/10 border border-primary-800/20 text-primary-600 rounded-lg text-sm font-semibold hover:bg-primary-800/15 transition-colors">
                     <Download className="w-4 h-4" />
                     Descargar
-                  </a>
+                  </button>
                 </div>
               </div>
             ) : null}
@@ -102,11 +103,12 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
 
         {trustedFileUrl && isImage && (
           <div className="px-6 py-4 border-t border-border flex justify-end gap-3">
-            <a href={trustedFileUrl} download
+            <button type="button"
+              onClick={() => forceDownload(trustedFileUrl, `${sanitizeFilename(map.title)}.${extFromUrl(map.archivo_img_url, 'jpg')}`)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
               <Download className="w-4 h-4" />
               Descargar imagen
-            </a>
+            </button>
           </div>
         )}
       </motion.div>
@@ -114,27 +116,14 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
   )
 }
 
-async function forceDownload(url: string): Promise<void> {
-  if (!url) return
-  if (!isTrustedUrl(url)) {
-    if (import.meta.env.DEV) console.error('[VIGIIAP] Descarga bloqueada — origen no permitido:', url)
-    return
-  }
-  const filename = url.split('?')[0].split('/').pop() || 'archivo'
-  try {
-    const res  = await fetch(url)
-    const blob = await res.blob()
-    const tmp  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href     = tmp
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(tmp)
-  } catch {
-    window.open(url, '_blank', 'noopener,noreferrer')
-  }
+// Nombre de archivo para descargas -- nunca el nombre interno de almacenamiento
+// (una key con hash/UUID), siempre el título real del mapa que ve el usuario.
+function sanitizeFilename(name: string): string {
+  return name.replace(/[/\\?%*:|"<>]/g, '-').trim() || 'mapa'
+}
+function extFromUrl(url: string | null | undefined, fallback: string): string {
+  const match = url?.split('?')[0].match(/\.([a-zA-Z0-9]+)$/)
+  return match ? match[1] : fallback
 }
 
 /* Paleta oficial IIAP — categorías de mapas */
@@ -161,8 +150,9 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
   const handleDownload = async (campo: 'archivo_pdf' | 'archivo_img', field: 'pdf' | 'img') => {
     if (downloadingField) return
     setDownloadingField(field)
+    const ext = campo === 'archivo_pdf' ? 'pdf' : extFromUrl(map.archivo_img_url, 'jpg')
     try {
-      await forceDownload(`${import.meta.env.VITE_API_URL ?? '/api'}/descargar/mapa/${map.id}?campo=${campo}`)
+      await forceDownload(descargarUrl('mapa', map.id, campo), `${sanitizeFilename(map.title)}.${ext}`)
     } finally {
       setDownloadingField(null)
     }

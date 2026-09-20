@@ -5,6 +5,12 @@ import type { ReactNode, HTMLAttributes } from 'react'
 import Mapas from '@/pages/Mapas'
 import type { MapaData } from '@/hooks/useMapas'
 
+vi.mock('@/pages/documentos/documentos.utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/pages/documentos/documentos.utils')>()
+  return { ...actual, forceDownload: vi.fn() }
+})
+import { forceDownload } from '@/pages/documentos/documentos.utils'
+
 vi.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...p }: HTMLAttributes<HTMLDivElement>) => <div {...p}>{children}</div>,
@@ -55,15 +61,15 @@ describe('Mapas — descarga de archivos', () => {
     URL.revokeObjectURL  = vi.fn()
   })
 
-  test('tres clics rápidos en "Descargar PDF" disparan un solo fetch, y el botón se deshabilita mientras está en curso', async () => {
+  test('tres clics rápidos en "Descargar PDF" disparan una sola descarga, y el botón se deshabilita mientras está en curso', async () => {
     vi.mocked(useMapasList).mockReturnValue({
       data: { data: [makeMap()], meta: { total: 1 } },
       isLoading: false, isError: false,
     } as unknown as ReturnType<typeof useMapasList>)
 
-    let resolveFetch!: (v: { blob: () => Promise<Blob> }) => void
-    const fetchSpy = vi.spyOn(window, 'fetch').mockImplementation(
-      () => new Promise((resolve) => { resolveFetch = resolve as typeof resolveFetch }),
+    let resolveDownload!: () => void
+    vi.mocked(forceDownload).mockImplementation(
+      () => new Promise((resolve) => { resolveDownload = resolve }),
     )
 
     render(<Mapas />)
@@ -74,14 +80,31 @@ describe('Mapas — descarga de archivos', () => {
     await user.click(btn)
     await user.click(btn)
 
-    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(forceDownload).toHaveBeenCalledTimes(1)
     expect(btn).toBeDisabled()
 
-    resolveFetch({ blob: () => Promise.resolve(new Blob(['contenido'])) })
+    resolveDownload()
     await waitFor(() => expect(btn).not.toBeDisabled())
 
     await user.click(btn)
-    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    expect(forceDownload).toHaveBeenCalledTimes(2)
+  })
+
+  test('"Descargar PDF" en la tarjeta usa el título real del mapa como nombre de archivo', async () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMap({ titulo: 'Cobertura Nariño', title: 'Cobertura Nariño' })], meta: { total: 1 } },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+    vi.mocked(forceDownload).mockResolvedValue(undefined)
+
+    render(<Mapas />)
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: /Descargar PDF/i }))
+
+    expect(forceDownload).toHaveBeenCalledWith(
+      expect.stringContaining('/descargar/mapa/1'),
+      'Cobertura Nariño.pdf',
+    )
   })
 })
 
@@ -117,6 +140,23 @@ describe('Mapas — modal de vista previa', () => {
     await user.click(screen.getByRole('button', { name: /Visualizar/i }))
 
     expect(screen.getByRole('link', { name: /Abrir PDF/i })).toHaveAttribute('href', '/api/v1/descargar/mapa/1?campo=archivo_pdf')
+  })
+
+  test('"Descargar" en un mapa PDF usa el título real del mapa como nombre de archivo, no el nombre interno de almacenamiento', async () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMap({ titulo: 'Zonificación Río Atrato', title: 'Zonificación Río Atrato', archivo_pdf_url: 'https://r2.example.com/mapa.pdf', formats: ['PDF'] })], meta: { total: 1 } },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<Mapas />)
+    await user.click(screen.getByRole('button', { name: /Visualizar/i }))
+    await user.click(screen.getByRole('button', { name: /^Descargar$/i }))
+
+    expect(forceDownload).toHaveBeenCalledWith(
+      expect.stringContaining('/descargar/mapa/1'),
+      'Zonificación Río Atrato.pdf',
+    )
   })
 
   test('"Visualizar" en un mapa con imagen abre el modal con la imagen embebida', async () => {
