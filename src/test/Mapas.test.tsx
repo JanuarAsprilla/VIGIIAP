@@ -236,3 +236,25 @@ describe('Mapas — estados de carga y error', () => {
     expect(screen.getByText(/Error al cargar mapas/i)).toBeInTheDocument()
   })
 })
+
+describe('Mapas — columnas de la cuadrícula', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    localStorage.clear()
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMap()], meta: { total: 1 } }, isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+  })
+
+  test('por defecto usa 3 columnas y elegir otra queda marcada y se recuerda', async () => {
+    const user = userEvent.setup()
+    render(<Mapas />)
+
+    expect(screen.getByRole('button', { name: '3 columnas' })).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(screen.getByRole('button', { name: '1 columna' }))
+    expect(screen.getByRole('button', { name: '1 columna' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '3 columnas' })).toHaveAttribute('aria-pressed', 'false')
+    expect(localStorage.getItem('vigiiap:mapas-cols')).toBe('1')
+  })
+})
