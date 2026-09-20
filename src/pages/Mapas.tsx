@@ -10,6 +10,7 @@ import type { MapaData } from '@/hooks/useMapas'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { isTrustedUrl } from '@/lib/trustedUrl'
+import { descargarUrl } from '@/pages/documentos/documentos.utils'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { cardEnter3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
@@ -57,16 +58,16 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
           </button>
         </div>
 
-        {trustedFileUrl ? (
+        {fileUrl ? (
           <div className="w-full">
-            {isImage ? (
+            {isImage && trustedFileUrl ? (
               <div className="p-4 flex justify-center bg-bg-alt">
                 <img src={trustedFileUrl} alt={map.title}
                   width={1200} height={675}
                   loading="eager"
                   className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-sm" />
               </div>
-            ) : (
+            ) : !isImage ? (
               <div className="p-8 flex flex-col items-center gap-4 text-center">
                 <div className="w-16 h-16 rounded-xl flex items-center justify-center bg-red-50">
                   <FileText className="w-8 h-8 text-red-500" />
@@ -76,19 +77,22 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
                   <p className="text-xs text-text-muted">{map.category} · {map.year}</p>
                 </div>
                 <div className="flex gap-3">
-                  <a href={trustedFileUrl} target="_blank" rel="noopener noreferrer"
+                  {/* El PDF vive en el bucket privado -- se abre vía el proxy de
+                      descarga del backend (verifica visibilidad + URL prefirmada),
+                      nunca con la URL cruda de almacenamiento. */}
+                  <a href={descargarUrl('mapa', map.id, 'archivo_pdf')} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
                     <Eye className="w-4 h-4" />
                     Abrir PDF
                   </a>
-                  <a href={trustedFileUrl} download
+                  <a href={descargarUrl('mapa', map.id, 'archivo_pdf')}
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800/10 border border-primary-800/20 text-primary-600 rounded-lg text-sm font-semibold hover:bg-primary-800/15 transition-colors">
                     <Download className="w-4 h-4" />
                     Descargar
                   </a>
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         ) : (
           <div className="p-10 text-center text-text-muted text-sm">Archivo no disponible</div>
