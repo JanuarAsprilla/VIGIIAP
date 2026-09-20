@@ -14,18 +14,10 @@ import { fadeUpSm, panelAnim, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import CategoryCombobox from '@/components/admin/CategoryCombobox'
 import { useDocumentosList, useCreateDocumento, useUpdateDocumento, useDeleteDocumento } from '@/hooks/useDocumentos'
-import { useCategoriasList } from '@/hooks/useCategorias'
+import { useCategoriasList, useCreateCategoria } from '@/hooks/useCategorias'
 
 const fadeUp = fadeUpSm
 
-// Lista base de categorías — actúa como sugerencia inicial.
-// Las nuevas categorías creadas desde el formulario se reflejan automáticamente
-// en esta lista y en las tarjetas del módulo público de Documentos.
-const BASE_CATEGORIES = [
-  'Cartografía', 'Estudios Ambientales', 'Normativa', 'Informes Técnicos',
-  'Biodiversidad', 'Hidrología', 'Protocolos Ambientales',
-  'Bibliografía Técnica', 'Análisis de Tendencias', 'Formatos y Plantillas',
-]
 const TIPOS = ['PDF', 'Word', 'Excel']
 
 const ACCEPT: Record<string, string> = {
@@ -230,6 +222,7 @@ export default function GestionDocumentos() {
   const createDocumento = useCreateDocumento()
   const updateDocumento = useUpdateDocumento()
   const deleteDocumento = useDeleteDocumento()
+  const createCategoria = useCreateCategoria()
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<DocumentoData | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -301,6 +294,13 @@ export default function GestionDocumentos() {
       : undefined
 
     try {
+      // Si la categoría escrita en el combobox no existe todavía en la tabla
+      // compartida, se crea (asignada al módulo Documentos) antes de guardar --
+      // de lo contrario queda como texto libre sin fila real en categorias,
+      // sin miniatura y sin aparecer en Gestión de Categorías.
+      if (!allCategories.includes(form.categoria)) {
+        await createCategoria.mutateAsync({ nombre: form.categoria, modulos: ['documentos'] })
+      }
       if (editing) {
         await updateDocumento.mutateAsync({ id: editing.id, formData: payload, onUploadProgress })
       } else {
@@ -328,14 +328,14 @@ export default function GestionDocumentos() {
     }
   }
 
-  // Todas las categorías: base (sugerencias curadas) + las que ya existen en
-  // documentos cargados + las de la tabla categorias que ya tengan al menos
-  // un documento -- una categoría usada solo por Mapas o Geovisores no debe
-  // ofrecerse acá (ver conteo por módulo en categorias.service.js).
+  // Todas las categorías: las que ya existen en documentos cargados (por si
+  // una quedó huérfana tras borrarse de la tabla categorias, que el documento
+  // ya guardado no pierda su valor) + las asignadas explícitamente al módulo
+  // "documentos" (ver categorias.modulos, migración 048) -- una categoría
+  // asignada solo a Mapas o Geovisores no debe ofrecerse acá.
   const allCategories = [...new Set([
-    ...BASE_CATEGORIES,
     ...docs.map((d) => d.categoria).filter(Boolean),
-    ...categorias.filter((c) => (c.conteo?.docs ?? 0) > 0).map((c) => c.nombre),
+    ...categorias.filter((c) => c.modulos?.includes('documentos')).map((c) => c.nombre),
   ])].sort((a, b) => a.localeCompare(b))
 
 
@@ -612,7 +612,7 @@ export default function GestionDocumentos() {
                       onChange={(cat) => setForm((f) => ({ ...f, categoria: cat }))}
                       options={allCategories}
                     />
-                    {form.categoria && !BASE_CATEGORIES.includes(form.categoria) && (
+                    {form.categoria && !allCategories.includes(form.categoria) && (
                       <p className="text-[0.65rem] text-primary-700 mt-1 flex items-center gap-1">
                         <Tag className="w-3 h-3" />
                         Nueva categoría — se creará automáticamente al guardar

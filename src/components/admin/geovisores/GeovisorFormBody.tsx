@@ -120,8 +120,9 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
   // Categorías del módulo compartido — geovisores.categoria tiene FK a
   // categorias(nombre) en el backend, así que solo se puede elegir entre
   // estas o crear una nueva explícitamente (ver handleSubmit). El combobox
-  // (abajo) solo sugiere las que ya tienen algún geovisor -- una categoría
-  // usada solo por Documentos o Mapas no debe ofrecerse acá.
+  // (abajo) solo sugiere las asignadas explícitamente al módulo "geovisores"
+  // (ver categorias.modulos, migración 048) -- una categoría asignada solo a
+  // Documentos o Mapas no debe ofrecerse acá.
   const { data: categoriasCompartidas = [] } = useCategoriasList({ admin: 'true' })
   const createCategoria = useCreateCategoria()
 
@@ -269,7 +270,9 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
       if (payload.categoria && !categoriasCompartidas.some(
         (c) => c.nombre.toLowerCase() === payload.categoria!.toLowerCase(),
       )) {
-        await createCategoria.mutateAsync(payload.categoria)
+        // Creada desde el formulario de Geovisores -- se asigna a ese módulo
+        // (editable después desde Gestión de Categorías si también aplica a otros).
+        await createCategoria.mutateAsync({ nombre: payload.categoria, modulos: ['geovisores'] })
       }
       const geovisorId = editing
         ? (await updateGeovisor.mutateAsync({ id: editing.id, data: payload })).id
@@ -342,7 +345,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                     id="gv-categoria"
                     value={form.categoria}
                     onChange={(cat) => setForm((f) => ({ ...f, categoria: cat }))}
-                    options={categoriasCompartidas.filter((c) => (c.conteo?.geovisores ?? 0) > 0).map((c) => c.nombre)}
+                    options={categoriasCompartidas.filter((c) => c.modulos?.includes('geovisores')).map((c) => c.nombre)}
                   />
                 </div>
               </div>

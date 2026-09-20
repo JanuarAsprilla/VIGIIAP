@@ -28,9 +28,11 @@ vi.mock('@/hooks/useCategorias', () => ({
   useUploadCategoriaThumbnail: vi.fn(),
   useRenameCategoria: vi.fn(),
   useDeleteCategoria: vi.fn(),
+  useUpdateModulosCategoria: vi.fn(),
 }))
 import {
   useCategoriasList, useCreateCategoria, useUploadCategoriaThumbnail, useRenameCategoria, useDeleteCategoria,
+  useUpdateModulosCategoria,
 } from '@/hooks/useCategorias'
 
 // El conteo por módulo ahora lo calcula el servidor (ver categorias.service.js)
@@ -39,6 +41,7 @@ import {
 function makeCategoria(overrides: Record<string, unknown> = {}) {
   return {
     nombre: 'Protocolos', descripcion: '', thumbnail_url: null, activo: true,
+    modulos: ['documentos', 'mapas', 'geovisores'],
     conteo: { docs: 0, mapas: 0, geovisores: 0 },
     ...overrides,
   }
@@ -55,6 +58,7 @@ beforeEach(() => {
   vi.mocked(useUploadCategoriaThumbnail).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUploadCategoriaThumbnail>)
   vi.mocked(useRenameCategoria).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useRenameCategoria>)
   vi.mocked(useDeleteCategoria).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useDeleteCategoria>)
+  vi.mocked(useUpdateModulosCategoria).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue(undefined), isPending: false } as unknown as ReturnType<typeof useUpdateModulosCategoria>)
 })
 
 describe('GestionCategorias — crear categoría', () => {
@@ -81,7 +85,7 @@ describe('GestionCategorias — crear categoría', () => {
     await user.type(screen.getByLabelText(/Nombre/i), '  Informes Técnicos  ')
     await user.click(screen.getByRole('button', { name: /Crear categoría/i }))
 
-    expect(mutateAsync).toHaveBeenCalledWith('Informes Técnicos')
+    expect(mutateAsync).toHaveBeenCalledWith({ nombre: 'Informes Técnicos', modulos: ['documentos', 'mapas', 'geovisores'] })
   })
 
   test('un error del servidor al crear muestra el mensaje sin cerrar el formulario', async () => {
@@ -356,7 +360,7 @@ describe('GestionCategorias — imagen de portada al crear', () => {
     fireEvent.drop(input.closest('div')!, { dataTransfer: { files: [img] } })
     await user.click(screen.getByRole('button', { name: /Crear categoría/i }))
 
-    expect(mutateAsync).toHaveBeenCalledWith('Sensores')
+    expect(mutateAsync).toHaveBeenCalledWith({ nombre: 'Sensores', modulos: ['documentos', 'mapas', 'geovisores'] })
     expect(uploadMutateAsync).toHaveBeenCalledWith({ nombre: 'Sensores', file: img })
     expect(await screen.findByText('Categoría "Sensores" creada')).toBeInTheDocument()
   })
@@ -396,5 +400,73 @@ describe('GestionCategorias — imagen de portada en una tarjeta existente', () 
     await user.click(screen.getByText('Guardar imagen'))
 
     expect(await screen.findByText('No se pudo subir la imagen. Intenta de nuevo.')).toBeInTheDocument()
+  })
+})
+
+describe('GestionCategorias — a qué módulos pertenece', () => {
+  test('al crear, exige seleccionar al menos un módulo', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useCreateCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateCategoria>)
+    // Sin categorías existentes -- así los botones "Módulo X" del formulario
+    // de creación no compiten con los de una tarjeta ya en pantalla.
+    vi.mocked(useCategoriasList).mockReturnValue({ data: [], isLoading: false } as unknown as ReturnType<typeof useCategoriasList>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByRole('button', { name: /Nueva categoría/i }))
+    await user.type(screen.getByLabelText(/Nombre/i), 'Sensores')
+    // Los 3 módulos vienen preseleccionados por defecto -- se destildan los 3.
+    await user.click(screen.getByRole('button', { name: 'Módulo Documentos (asignado)' }))
+    await user.click(screen.getByRole('button', { name: 'Módulo Mapas (asignado)' }))
+    await user.click(screen.getByRole('button', { name: 'Módulo Geovisores (asignado)' }))
+    await user.click(screen.getByRole('button', { name: /Crear categoría/i }))
+
+    expect(await screen.findByText('Selecciona a qué módulo(s) pertenece')).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('al crear, se puede restringir a un solo módulo', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ nombre: 'Sensores' })
+    vi.mocked(useCreateCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateCategoria>)
+    vi.mocked(useCategoriasList).mockReturnValue({ data: [], isLoading: false } as unknown as ReturnType<typeof useCategoriasList>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByRole('button', { name: /Nueva categoría/i }))
+    await user.type(screen.getByLabelText(/Nombre/i), 'Sensores')
+    await user.click(screen.getByRole('button', { name: 'Módulo Documentos (asignado)' }))
+    await user.click(screen.getByRole('button', { name: 'Módulo Mapas (asignado)' }))
+    await user.click(screen.getByRole('button', { name: /Crear categoría/i }))
+
+    expect(mutateAsync).toHaveBeenCalledWith({ nombre: 'Sensores', modulos: ['geovisores'] })
+  })
+
+  test('en una tarjeta existente, clic en un módulo llama a la mutación con el nuevo conjunto', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useUpdateModulosCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useUpdateModulosCategoria>)
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [makeCategoria({ modulos: ['documentos'] })], isLoading: false,
+    } as unknown as ReturnType<typeof useCategoriasList>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByRole('button', { name: 'Módulo Mapas' }))
+
+    expect(mutateAsync).toHaveBeenCalledWith({ nombre: 'Protocolos', modulos: ['documentos', 'mapas'] })
+  })
+
+  test('en una tarjeta existente, no permite quitar el último módulo', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useUpdateModulosCategoria).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useUpdateModulosCategoria>)
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [makeCategoria({ modulos: ['documentos'] })], isLoading: false,
+    } as unknown as ReturnType<typeof useCategoriasList>)
+
+    const user = userEvent.setup()
+    render(<GestionCategorias />)
+    await user.click(screen.getByRole('button', { name: 'Módulo Documentos (asignado)' }))
+
+    expect(await screen.findByText('Una categoría debe pertenecer al menos a un módulo')).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
   })
 })

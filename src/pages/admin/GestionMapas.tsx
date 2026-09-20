@@ -14,12 +14,11 @@ import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import CategoryCombobox from '@/components/admin/CategoryCombobox'
 import ThumbnailDropzone from '@/components/ui/ThumbnailDropzone'
 import { useMapasList, useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa } from '@/hooks/useMapas'
-import { useCategoriasList } from '@/hooks/useCategorias'
+import { useCategoriasList, useCreateCategoria } from '@/hooks/useCategorias'
 import { isTrustedUrl } from '@/lib/trustedUrl'
 
 const fadeUp = fadeUpSm
 
-const BASE_TEMATICAS = ['Hidrología', 'Cartografía Base', 'Biodiversidad', 'Zonificación', 'Infraestructura', 'Riesgo']
 const FORMATOS  = ['PDF', 'IMG', 'Geovisor']
 
 const ACCEPT: Record<string, string | null> = {
@@ -302,6 +301,7 @@ export default function GestionMapas() {
   const updateMapa = useUpdateMapa()
   const toggleActivo = useToggleMapaActivo()
   const deleteMapa = useDeleteMapa()
+  const createCategoria = useCreateCategoria()
 
   const [search, setSearch] = useState('')
   const [filtroTematica, setFiltroTematica] = useState('')
@@ -320,15 +320,15 @@ export default function GestionMapas() {
 
   const isSubmitting = createMapa.isPending || updateMapa.isPending
 
-  // Todas las temáticas: base + las ya usadas en mapas cargados + las de la
-  // tabla categorias compartida, pero solo las que ya tienen al menos un
-  // mapa -- una categoría usada solo por Documentos o Geovisores no debe
-  // ofrecerse acá (ver conteo por módulo en categorias.service.js).
+  // Todas las temáticas: las ya usadas en mapas cargados (por si una quedó
+  // huérfana tras borrarse de la tabla categorias) + las asignadas
+  // explícitamente al módulo "mapas" (ver categorias.modulos, migración 048)
+  // -- una categoría asignada solo a Documentos o Geovisores no debe
+  // ofrecerse acá.
   const { data: categoriasCompartidas = [] } = useCategoriasList({ admin: 'true' })
   const allTematicas = [...new Set([
-    ...BASE_TEMATICAS,
     ...mapas.map((m) => m.tematica).filter(Boolean),
-    ...categoriasCompartidas.filter((c) => (c.conteo?.mapas ?? 0) > 0).map((c) => c.nombre),
+    ...categoriasCompartidas.filter((c) => c.modulos?.includes('mapas')).map((c) => c.nombre),
   ])].sort((a, b) => a.localeCompare(b))
 
   const filtered = mapas.filter((m) => {
@@ -445,6 +445,13 @@ export default function GestionMapas() {
       : undefined
 
     try {
+      // Si la temática escrita en el combobox no existe todavía en la tabla
+      // compartida, se crea (asignada al módulo Mapas) antes de guardar --
+      // de lo contrario queda como texto libre sin fila real en categorias,
+      // sin miniatura y sin aparecer en Gestión de Categorías.
+      if (!allTematicas.includes(form.tematica)) {
+        await createCategoria.mutateAsync({ nombre: form.tematica, modulos: ['mapas'] })
+      }
       if (editing) {
         await updateMapa.mutateAsync({ id: editing.id, formData: payload, onUploadProgress })
         setToast(`Mapa "${form.nombre}" actualizado correctamente`)
@@ -738,7 +745,7 @@ export default function GestionMapas() {
                       onChange={(t) => setForm((f) => ({ ...f, tematica: t }))}
                       options={allTematicas}
                     />
-                    {form.tematica && !BASE_TEMATICAS.includes(form.tematica) && (
+                    {form.tematica && !allTematicas.includes(form.tematica) && (
                       <p className="text-[0.65rem] text-primary-700 mt-1 flex items-center gap-1">
                         <Tag className="w-3 h-3" />Nueva categoría — se creará al guardar
                       </p>

@@ -39,8 +39,9 @@ import {
 
 vi.mock('@/hooks/useCategorias', () => ({
   useCategoriasList: vi.fn(() => ({ data: [] })),
+  useCreateCategoria: vi.fn(),
 }))
-import { useCategoriasList } from '@/hooks/useCategorias'
+import { useCategoriasList, useCreateCategoria } from '@/hooks/useCategorias'
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -68,6 +69,9 @@ beforeEach(() => {
   vi.mocked(useDeleteMapa).mockReturnValue({
     mutateAsync: vi.fn(), isPending: false,
   } as unknown as ReturnType<typeof useDeleteMapa>)
+  vi.mocked(useCreateCategoria).mockReturnValue({
+    mutateAsync: vi.fn().mockResolvedValue({ nombre: 'Nueva' }), isPending: false,
+  } as unknown as ReturnType<typeof useCreateCategoria>)
 })
 
 async function openCreateModal() {
@@ -172,14 +176,14 @@ describe('GestionMapas — guarda de doble envío', () => {
 })
 
 // Regresión: antes se ofrecían TODAS las categorías del sistema, aunque
-// solo las usara Documentos o Geovisores -- ahora solo se sugieren las que
-// ya tienen al menos un mapa (ver conteo por módulo, categorias.service.js).
+// solo las usara Documentos o Geovisores -- ahora solo se sugieren las
+// asignadas explícitamente al módulo "mapas" (ver categorias.modulos, migración 048).
 describe('GestionMapas — categoría por módulo', () => {
   test('no sugiere una categoría usada solo por otro módulo (Documentos/Geovisores)', async () => {
     vi.mocked(useCategoriasList).mockReturnValue({
       data: [
-        { nombre: 'Solo en Documentos', conteo: { docs: 2, mapas: 0, geovisores: 0 } },
-        { nombre: 'Zonificación Costera', conteo: { docs: 0, mapas: 3, geovisores: 0 } },
+        { nombre: 'Solo en Documentos', modulos: ['documentos'] },
+        { nombre: 'Zonificación Costera', modulos: ['mapas'] },
       ],
     } as unknown as ReturnType<typeof useCategoriasList>)
 

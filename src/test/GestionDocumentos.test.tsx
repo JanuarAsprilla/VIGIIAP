@@ -29,8 +29,9 @@ import {
 
 vi.mock('@/hooks/useCategorias', () => ({
   useCategoriasList: vi.fn(() => ({ data: [] })),
+  useCreateCategoria: vi.fn(),
 }))
-import { useCategoriasList } from '@/hooks/useCategorias'
+import { useCategoriasList, useCreateCategoria } from '@/hooks/useCategorias'
 
 function makeDoc(overrides: Partial<DocumentoData> = {}): DocumentoData {
   return {
@@ -57,6 +58,12 @@ beforeEach(() => {
   vi.mocked(useDeleteDocumento).mockReturnValue({
     mutateAsync: vi.fn(), isPending: false,
   } as unknown as ReturnType<typeof useDeleteDocumento>)
+  vi.mocked(useCreateCategoria).mockReturnValue({
+    mutateAsync: vi.fn().mockResolvedValue({ nombre: 'Nueva' }), isPending: false,
+  } as unknown as ReturnType<typeof useCreateCategoria>)
+  vi.mocked(useCategoriasList).mockReturnValue({
+    data: [{ nombre: 'Cartografía', modulos: ['documentos'] }],
+  } as unknown as ReturnType<typeof useCategoriasList>)
 })
 
 async function openCreateModal() {
@@ -181,16 +188,16 @@ describe('GestionDocumentos — categoría', () => {
   })
 
   // Regresión: antes se ofrecían TODAS las categorías del sistema, aunque
-  // solo las usara Mapas o Geovisores -- ahora solo se sugieren las que ya
-  // tienen al menos un documento (ver conteo por módulo, categorias.service.js).
+  // solo las usara Mapas o Geovisores -- ahora solo se sugieren las asignadas
+  // explícitamente al módulo "documentos" (ver categorias.modulos, migración 048).
   test('no sugiere una categoría usada solo por otro módulo (Mapas/Geovisores)', async () => {
     // mockReturnValue (no ...Once): el componente vuelve a llamar al hook al
     // re-renderizar cuando se abre el modal -- un valor "once" ya estaría
     // consumido para ese momento.
     vi.mocked(useCategoriasList).mockReturnValue({
       data: [
-        { nombre: 'Solo en Mapas', conteo: { docs: 0, mapas: 3, geovisores: 0 } },
-        { nombre: 'Sensores Remotos', conteo: { docs: 2, mapas: 0, geovisores: 0 } },
+        { nombre: 'Solo en Mapas', modulos: ['mapas'] },
+        { nombre: 'Sensores Remotos', modulos: ['documentos'] },
       ],
     } as unknown as ReturnType<typeof useCategoriasList>)
 

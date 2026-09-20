@@ -7,12 +7,14 @@ import {
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, staggerContainer } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
+import type { ModuloCategoria } from '@/types'
 import {
   useCategoriasList,
   useCreateCategoria,
   useUploadCategoriaThumbnail,
   useRenameCategoria,
   useDeleteCategoria,
+  useUpdateModulosCategoria,
 } from '@/hooks/useCategorias'
 
 const fadeUp = fadeUpSm
@@ -112,6 +114,42 @@ const MODULO_FILTROS: { key: keyof ConteoCategoria; label: string }[] = [
   { key: 'geovisores', label: 'Geovisores' },
 ]
 
+// A qué módulos PERTENECE la categoría (declarado al crearla) -- distinto de
+// MODULO_FILTROS arriba, que filtra por uso real ya registrado. Este es el
+// que resuelve "no aparece para seleccionar a qué módulo va esa categoría".
+const MODULOS_CATEGORIA: { key: ModuloCategoria; label: string }[] = [
+  { key: 'documentos', label: 'Documentos' },
+  { key: 'mapas', label: 'Mapas' },
+  { key: 'geovisores', label: 'Geovisores' },
+]
+
+function ModulosPills({ modulos, onToggle, disabled }: { modulos: ModuloCategoria[]; onToggle: (m: ModuloCategoria) => void; disabled?: boolean }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {MODULOS_CATEGORIA.map(({ key, label }) => {
+        const activo = modulos.includes(key)
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onToggle(key)}
+            disabled={disabled}
+            aria-pressed={activo}
+            aria-label={`Módulo ${label}${activo ? ' (asignado)' : ''}`}
+            className={`text-[0.65rem] font-semibold px-2.5 py-1 rounded-full border transition-colors disabled:opacity-50 ${
+              activo
+                ? 'bg-primary-500/12 text-primary-700 border-primary-500/30'
+                : 'bg-bg-alt text-text-muted border-border hover:border-primary-400'
+            }`}
+          >
+            {label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 /** "3 docs · 2 mapas · 1 geovisor" -- omite los tipos en cero, salvo si todo está en cero. */
 function resumenConteo({ docs, mapas, geovisores }: ConteoCategoria): string {
   const partes = [
@@ -122,7 +160,16 @@ function resumenConteo({ docs, mapas, geovisores }: ConteoCategoria): string {
   return partes.length > 0 ? partes.join(' · ') : '0 elementos'
 }
 
-function CategoriaCard({ cat, conteo, onRename, onDelete, onThumbnailSaved, uploadThumbnail }: { cat: { nombre: string; descripcion?: string | null; thumbnail_url?: string | null; activo?: boolean }; conteo: ConteoCategoria; onRename: (target: { nombre: string }) => void; onDelete: (target: { nombre: string }) => void; onThumbnailSaved: (nombre: string) => void; uploadThumbnail: ReturnType<typeof import('@/hooks/useCategorias').useUploadCategoriaThumbnail> }) {
+function CategoriaCard({ cat, conteo, onRename, onDelete, onThumbnailSaved, uploadThumbnail, onToggleModulo, togglingModulos }: {
+  cat: { nombre: string; descripcion?: string | null; thumbnail_url?: string | null; activo?: boolean; modulos?: ModuloCategoria[] }
+  conteo: ConteoCategoria
+  onRename: (target: { nombre: string }) => void
+  onDelete: (target: { nombre: string }) => void
+  onThumbnailSaved: (nombre: string) => void
+  uploadThumbnail: ReturnType<typeof import('@/hooks/useCategorias').useUploadCategoriaThumbnail>
+  onToggleModulo: (nombre: string, modulosActuales: ModuloCategoria[], modulo: ModuloCategoria) => void
+  togglingModulos: boolean
+}) {
   const [file, setFile]         = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress]   = useState(0)
@@ -212,6 +259,13 @@ function CategoriaCard({ cat, conteo, onRename, onDelete, onThumbnailSaved, uplo
           </div>
         </div>
 
+        {/* Módulos a los que pertenece -- click para asignar/quitar */}
+        <ModulosPills
+          modulos={cat.modulos ?? []}
+          disabled={togglingModulos}
+          onToggle={(m) => onToggleModulo(cat.nombre, cat.modulos ?? [], m)}
+        />
+
         {/* Dropzone compacto */}
         <ImageDropzone
           onFile={setFile}
@@ -264,9 +318,11 @@ export default function GestionCategorias() {
   const uploadThumbnail   = useUploadCategoriaThumbnail()
   const renameCategoria   = useRenameCategoria()
   const deleteCategoria   = useDeleteCategoria()
+  const updateModulos     = useUpdateModulosCategoria()
 
   const [showNew, setShowNew]         = useState(false)
   const [newName, setNewName]         = useState('')
+  const [newModulos, setNewModulos]   = useState<ModuloCategoria[]>(['documentos', 'mapas', 'geovisores'])
   const [newFile, setNewFile]         = useState<File | null>(null)
   const [newError, setNewError]       = useState<string | null>(null)
   const [renameTarget, setRenameTarget] = useState<{ nombre: string } | null>(null)
@@ -275,6 +331,7 @@ export default function GestionCategorias() {
   const [deleteTarget, setDeleteTarget] = useState<{ nombre: string } | null>(null)
   const [toast, setToast]             = useState<string | null>(null)
   const [filtroModulo, setFiltroModulo] = useState<keyof ConteoCategoria | ''>('')
+  const [modulosTogglingDe, setModulosTogglingDe] = useState<string | null>(null)
 
   const CONTEO_VACIO: ConteoCategoria = { docs: 0, mapas: 0, geovisores: 0 }
 
@@ -289,16 +346,43 @@ export default function GestionCategorias() {
   const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!newName.trim()) { setNewError('El nombre es obligatorio'); return }
+    if (newModulos.length === 0) { setNewError('Selecciona a qué módulo(s) pertenece'); return }
     setNewError(null)
     try {
-      const created = await createCategoria.mutateAsync(newName.trim())
+      const created = await createCategoria.mutateAsync({ nombre: newName.trim(), modulos: newModulos })
       if (newFile) {
         await uploadThumbnail.mutateAsync({ nombre: created.nombre, file: newFile })
       }
       setToast(`Categoría "${created.nombre}" creada`)
-      setShowNew(false); setNewName(''); setNewFile(null)
+      setShowNew(false); setNewName(''); setNewModulos(['documentos', 'mapas', 'geovisores']); setNewFile(null)
     } catch (err) {
       setNewError(getApiErrorMessage(err, 'No se pudo crear la categoría'))
+    }
+  }
+
+  const toggleNewModulo = (m: ModuloCategoria) => {
+    setNewModulos((prev) => (prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]))
+    setNewError(null)
+  }
+
+  // No permite quitar el último módulo -- una categoría sin ninguno queda
+  // huérfana (el backend lo rechaza igual, pero evitar el viaje redondo es
+  // mejor comunicación que un error después del clic).
+  const toggleModuloExistente = async (nombre: string, modulosActuales: ModuloCategoria[], modulo: ModuloCategoria) => {
+    const nuevos = modulosActuales.includes(modulo)
+      ? modulosActuales.filter((m) => m !== modulo)
+      : [...modulosActuales, modulo]
+    if (nuevos.length === 0) {
+      setToast('Una categoría debe pertenecer al menos a un módulo')
+      return
+    }
+    setModulosTogglingDe(nombre)
+    try {
+      await updateModulos.mutateAsync({ nombre, modulos: nuevos })
+    } catch {
+      setToast('No se pudieron actualizar los módulos')
+    } finally {
+      setModulosTogglingDe(null)
     }
   }
 
@@ -355,7 +439,7 @@ export default function GestionCategorias() {
           </p>
         </div>
         <button
-          onClick={() => { setShowNew(true); setNewName(''); setNewFile(null); setNewError(null) }}
+          onClick={() => { setShowNew(true); setNewName(''); setNewModulos(['documentos', 'mapas', 'geovisores']); setNewFile(null); setNewError(null) }}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors shrink-0"
         >
           <Plus className="w-4 h-4" /> Nueva categoría
@@ -441,6 +525,8 @@ export default function GestionCategorias() {
                 onDelete={setDeleteTarget}
                 onThumbnailSaved={(nombre) => setToast(`Imagen de "${nombre}" actualizada`)}
                 uploadThumbnail={uploadThumbnail}
+                onToggleModulo={toggleModuloExistente}
+                togglingModulos={modulosTogglingDe === cat.nombre}
               />
             ))}
           </AnimatePresence>
@@ -481,6 +567,16 @@ export default function GestionCategorias() {
                     className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${newError ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
                   />
                   {newError && <p className="text-xs text-red-500 mt-1">{newError}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    ¿En qué módulo(s) va a aparecer? <span className="text-orange-500" aria-hidden="true">*</span>
+                  </label>
+                  <p className="text-xs text-text-muted mb-2">
+                    Define en qué formularios (Documentos, Mapas, Geovisores) va a poder elegirse esta categoría.
+                  </p>
+                  <ModulosPills modulos={newModulos} onToggle={toggleNewModulo} />
                 </div>
 
                 <div>

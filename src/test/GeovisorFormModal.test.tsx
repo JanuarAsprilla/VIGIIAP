@@ -526,14 +526,14 @@ describe('GeovisorFormModal — miniatura (ThumbnailDropzone)', () => {
 })
 
 // Regresión: antes se ofrecían TODAS las categorías del sistema, aunque
-// solo las usara Documentos o Mapas -- ahora solo se sugieren las que ya
-// tienen al menos un geovisor (ver conteo por módulo, categorias.service.js).
+// solo las usara Documentos o Mapas -- ahora solo se sugieren las asignadas
+// explícitamente al módulo "geovisores" (ver categorias.modulos, migración 048).
 describe('GeovisorFormModal — categoría por módulo', () => {
   test('no sugiere una categoría usada solo por otro módulo (Documentos/Mapas)', async () => {
     vi.mocked(useCategoriasList).mockReturnValue({
       data: [
-        { nombre: 'Solo en Documentos', conteo: { docs: 2, mapas: 0, geovisores: 0 } },
-        { nombre: 'Hidrografía Regional', conteo: { docs: 0, mapas: 0, geovisores: 1 } },
+        { nombre: 'Solo en Documentos', modulos: ['documentos'] },
+        { nombre: 'Hidrografía Regional', modulos: ['geovisores'] },
       ],
     } as unknown as ReturnType<typeof useCategoriasList>)
 
