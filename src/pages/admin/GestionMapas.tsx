@@ -7,7 +7,7 @@ import {
   Plus, Search, X, Edit2, Trash2, Eye, EyeOff,
   Layers, Send, Upload, CheckCircle, AlertCircle,
   FileText, Image, Link as LinkIcon, Loader2, MapPin,
-  ExternalLink, Globe, Users, ShieldCheck, Tag,
+  ExternalLink, Globe, Users, ShieldCheck,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
@@ -19,7 +19,6 @@ import { isTrustedUrl } from '@/lib/trustedUrl'
 
 const fadeUp = fadeUpSm
 
-const BASE_TEMATICAS = ['Hidrología', 'Cartografía Base', 'Biodiversidad', 'Zonificación', 'Infraestructura', 'Riesgo']
 const FORMATOS  = ['PDF', 'IMG', 'Geovisor']
 
 const ACCEPT: Record<string, string | null> = {
@@ -320,15 +319,15 @@ export default function GestionMapas() {
 
   const isSubmitting = createMapa.isPending || updateMapa.isPending
 
-  // Todas las temáticas: base + las ya usadas en mapas cargados + las de la
-  // tabla categorias compartida, pero solo las que ya tienen al menos un
-  // mapa -- una categoría usada solo por Documentos o Geovisores no debe
-  // ofrecerse acá (ver conteo por módulo en categorias.service.js).
+  // Todas las temáticas: las ya usadas en mapas cargados (por si una quedó
+  // huérfana tras borrarse de la tabla categorias) + las asignadas
+  // explícitamente al módulo "mapas" (ver categorias.modulos, migración 048)
+  // -- una categoría asignada solo a Documentos o Geovisores no debe
+  // ofrecerse acá.
   const { data: categoriasCompartidas = [] } = useCategoriasList({ admin: 'true' })
   const allTematicas = [...new Set([
-    ...BASE_TEMATICAS,
     ...mapas.map((m) => m.tematica).filter(Boolean),
-    ...categoriasCompartidas.filter((c) => (c.conteo?.mapas ?? 0) > 0).map((c) => c.nombre),
+    ...categoriasCompartidas.filter((c) => c.modulos?.includes('mapas')).map((c) => c.nombre),
   ])].sort((a, b) => a.localeCompare(b))
 
   const filtered = mapas.filter((m) => {
@@ -391,7 +390,7 @@ export default function GestionMapas() {
   const validate = () => {
     const e: FormErrors = {}
     if (!form.nombre.trim()) e.nombre = 'El nombre del mapa es obligatorio'
-    if (!form.tematica.trim()) e.tematica = 'Selecciona o escribe una categoría'
+    if (!form.tematica.trim()) e.tematica = 'Selecciona una categoría'
     if (form.formato !== 'Geovisor' && !editing && !uploadedFile)
       e.archivo = 'Debes seleccionar el archivo del mapa para continuar'
     if (form.formato === 'Geovisor' && !form.url.trim()) {
@@ -738,11 +737,6 @@ export default function GestionMapas() {
                       onChange={(t) => setForm((f) => ({ ...f, tematica: t }))}
                       options={allTematicas}
                     />
-                    {form.tematica && !BASE_TEMATICAS.includes(form.tematica) && (
-                      <p className="text-[0.65rem] text-primary-700 mt-1 flex items-center gap-1">
-                        <Tag className="w-3 h-3" />Nueva categoría — se creará al guardar
-                      </p>
-                    )}
                     {formErrors.tematica && (
                       <p className="text-xs text-red-500 mt-1">{formErrors.tematica}</p>
                     )}

@@ -57,6 +57,9 @@ beforeEach(() => {
   vi.mocked(useDeleteDocumento).mockReturnValue({
     mutateAsync: vi.fn(), isPending: false,
   } as unknown as ReturnType<typeof useDeleteDocumento>)
+  vi.mocked(useCategoriasList).mockReturnValue({
+    data: [{ nombre: 'Cartografía', modulos: ['documentos'] }],
+  } as unknown as ReturnType<typeof useCategoriasList>)
 })
 
 async function openCreateModal() {
@@ -79,7 +82,7 @@ describe('GestionDocumentos — validación del formulario', () => {
     await user.click(screen.getByRole('button', { name: /Registrar documento/i }))
 
     expect(await screen.findByText('El nombre del documento es obligatorio')).toBeInTheDocument()
-    expect(screen.getByText('Selecciona o escribe una categoría')).toBeInTheDocument()
+    expect(screen.getByText('Selecciona una categoría')).toBeInTheDocument()
     expect(screen.getByText('Debes seleccionar el archivo del documento para continuar')).toBeInTheDocument()
   })
 
@@ -103,7 +106,7 @@ describe('GestionDocumentos — validación del formulario', () => {
     await user.click(screen.getByRole('button', { name: /Registrar documento/i }))
 
     expect(await screen.findByText('El nombre del documento es obligatorio')).toBeInTheDocument()
-    expect(screen.getByText('Selecciona o escribe una categoría')).toBeInTheDocument()
+    expect(screen.getByText('Selecciona una categoría')).toBeInTheDocument()
   })
 })
 
@@ -163,39 +166,42 @@ describe('GestionDocumentos — dropzone de archivo', () => {
 })
 
 describe('GestionDocumentos — categoría', () => {
-  test('escribir una categoría nueva ofrece crearla al vuelo', async () => {
+  // Regresión: la categoría solo se puede ELEGIR entre las ya asignadas al
+  // módulo Documentos desde Gestión de Categorías -- ya no se puede crear
+  // una nueva al vuelo escribiéndola en este combobox (ver CategoryCombobox.tsx).
+  test('escribir un nombre que no existe no la crea ni la asigna, solo filtra', async () => {
     const user = await openCreateModal()
-    await user.type(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'), 'Sensores Remotos')
+    await user.type(screen.getByPlaceholderText('Selecciona una categoría…'), 'Sensores Remotos')
 
-    expect(screen.getByText(/Crear categoría:/)).toBeInTheDocument()
-    await user.click(screen.getByText(/Crear categoría:/))
-    expect(screen.getByText('Nueva categoría — se creará automáticamente al guardar')).toBeInTheDocument()
+    expect(screen.queryByText(/Crear categoría/i)).not.toBeInTheDocument()
+    expect(screen.getByText('Ninguna categoría coincide con la búsqueda.')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Selecciona una categoría…')).toHaveValue('Sensores Remotos')
   })
 
   test('seleccionar una categoría existente de la lista la asigna', async () => {
     const user = await openCreateModal()
-    await user.click(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'))
+    await user.click(screen.getByPlaceholderText('Selecciona una categoría…'))
     await user.click(screen.getByText('Cartografía'))
 
-    expect(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…')).toHaveValue('Cartografía')
+    expect(screen.getByPlaceholderText('Selecciona una categoría…')).toHaveValue('Cartografía')
   })
 
   // Regresión: antes se ofrecían TODAS las categorías del sistema, aunque
-  // solo las usara Mapas o Geovisores -- ahora solo se sugieren las que ya
-  // tienen al menos un documento (ver conteo por módulo, categorias.service.js).
+  // solo las usara Mapas o Geovisores -- ahora solo se sugieren las asignadas
+  // explícitamente al módulo "documentos" (ver categorias.modulos, migración 048).
   test('no sugiere una categoría usada solo por otro módulo (Mapas/Geovisores)', async () => {
     // mockReturnValue (no ...Once): el componente vuelve a llamar al hook al
     // re-renderizar cuando se abre el modal -- un valor "once" ya estaría
     // consumido para ese momento.
     vi.mocked(useCategoriasList).mockReturnValue({
       data: [
-        { nombre: 'Solo en Mapas', conteo: { docs: 0, mapas: 3, geovisores: 0 } },
-        { nombre: 'Sensores Remotos', conteo: { docs: 2, mapas: 0, geovisores: 0 } },
+        { nombre: 'Solo en Mapas', modulos: ['mapas'] },
+        { nombre: 'Sensores Remotos', modulos: ['documentos'] },
       ],
     } as unknown as ReturnType<typeof useCategoriasList>)
 
     const user = await openCreateModal()
-    await user.click(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'))
+    await user.click(screen.getByPlaceholderText('Selecciona una categoría…'))
 
     expect(screen.getByText('Sensores Remotos')).toBeInTheDocument()
     expect(screen.queryByText('Solo en Mapas')).not.toBeInTheDocument()
@@ -225,7 +231,7 @@ describe('GestionDocumentos — creación con datos válidos', () => {
     const file = new File(['contenido'], 'mapa.pdf', { type: 'application/pdf' })
     await user.upload(getFileInputHelper(container), file)
     await user.type(screen.getByLabelText(/Nombre del documento/i), 'Mapa de cobertura 2025')
-    await user.click(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'))
+    await user.click(screen.getByPlaceholderText('Selecciona una categoría…'))
     await user.click(screen.getByText('Cartografía'))
     await user.click(screen.getByRole('button', { name: /^Registrar documento$/i }))
 
@@ -250,7 +256,7 @@ describe('GestionDocumentos — creación con datos válidos', () => {
     const file = new File(['contenido'], 'mapa.pdf', { type: 'application/pdf' })
     await user.upload(getFileInputHelper(container), file)
     await user.type(screen.getByLabelText(/Nombre del documento/i), 'Mapa X')
-    await user.click(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'))
+    await user.click(screen.getByPlaceholderText('Selecciona una categoría…'))
     await user.click(screen.getByText('Cartografía'))
     await user.click(screen.getByRole('button', { name: /^Registrar documento$/i }))
 

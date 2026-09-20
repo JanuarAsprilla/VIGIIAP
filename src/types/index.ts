@@ -297,11 +297,17 @@ export interface TemaCapas {
 
 // ─── Categorías ───────────────────────────────────────────────────────────────
 
+export type ModuloCategoria = 'documentos' | 'mapas' | 'geovisores'
+
 export interface Categoria {
   nombre: string
   descripcion?: string | null
   thumbnail_url?: string | null
   activo?: boolean
+  // A qué módulos pertenece la categoría -- declarado explícitamente al
+  // crearla (ver migración 048 en el backend), ya no se infiere del uso real.
+  // Ausente en respuestas antiguas que no vengan de GET /categorias, de ahí opcional.
+  modulos?: ModuloCategoria[]
   // Conteo real por módulo, calculado en el servidor (ver categorias.service.js) --
   // ausente en respuestas antiguas que no vengan de GET /categorias (ej. el propio
   // POST/PATCH de creación/renombrado no lo devuelve), de ahí opcional.

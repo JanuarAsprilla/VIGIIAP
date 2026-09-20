@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Categoria } from '@/types'
+import type { Categoria, ModuloCategoria } from '@/types'
 import api from '@/lib/api'
 
 const KEYS = {
@@ -24,9 +24,22 @@ export function useCategoriasList(params: Record<string, unknown> = {}) {
 
 export function useCreateCategoria() {
   const qc = useQueryClient()
-  return useMutation<{ nombre: string; [key: string]: unknown }, Error, string>({
-    mutationFn: (nombre) => api.post('/categorias', { nombre }),
+  return useMutation<{ nombre: string; [key: string]: unknown }, Error, { nombre: string; modulos: ModuloCategoria[] }>({
+    mutationFn: ({ nombre, modulos }) => api.post('/categorias', { nombre, modulos }),
     onSuccess:  () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  })
+}
+
+export function useUpdateModulosCategoria() {
+  const qc = useQueryClient()
+  return useMutation<{ nombre: string; [key: string]: unknown }, Error, { nombre: string; modulos: ModuloCategoria[] }>({
+    mutationFn: ({ nombre, modulos }) => api.patch(`/categorias/${encodeURIComponent(nombre)}/modulos`, { modulos }),
+    onSuccess:  () => {
+      qc.invalidateQueries({ queryKey: KEYS.all })
+      qc.invalidateQueries({ queryKey: ['documentos'] })
+      qc.invalidateQueries({ queryKey: ['mapas'] })
+      qc.invalidateQueries({ queryKey: ['geovisores'] })
+    },
   })
 }
 

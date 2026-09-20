@@ -37,7 +37,7 @@ import {
   useCreateUsuario, useUpdateUsuarioRol, useToggleActivo,
   useDeleteUsuario, useUpdatePerfil, useUpdatePassword, useUpdateAvatar,
 } from '@/hooks/useUsuarios'
-import { useCreateCategoria, useDeleteCategoria, useUploadCategoriaThumbnail } from '@/hooks/useCategorias'
+import { useCreateCategoria, useDeleteCategoria, useUploadCategoriaThumbnail, useUpdateModulosCategoria } from '@/hooks/useCategorias'
 import { useCreateGeovisor, useUpdateGeovisor, useToggleGeovisorActivo, useDeleteGeovisor } from '@/hooks/useGeovisores'
 import {
   useCreateConexionGeoserver, useUpdateConexionGeoserver, useDeleteConexionGeoserver,
@@ -494,12 +494,24 @@ describe('useUpdateAvatar', () => {
 describe('useCreateCategoria', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
-  test('calls POST /categorias with nombre', async () => {
+  test('calls POST /categorias with nombre and modulos', async () => {
     vi.mocked(api.post).mockResolvedValue({ id: 1, nombre: 'Nueva' })
     const { result } = renderHook(() => useCreateCategoria(), { wrapper: makeWrapper() })
 
-    await act(async () => { await result.current.mutateAsync('Nueva categoría') })
-    expect(api.post).toHaveBeenCalledWith('/categorias', { nombre: 'Nueva categoría' })
+    await act(async () => { await result.current.mutateAsync({ nombre: 'Nueva categoría', modulos: ['documentos', 'mapas'] }) })
+    expect(api.post).toHaveBeenCalledWith('/categorias', { nombre: 'Nueva categoría', modulos: ['documentos', 'mapas'] })
+  })
+})
+
+describe('useUpdateModulosCategoria', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls PATCH /categorias/:nombre/modulos (URL-encoded)', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ nombre: 'Flora', modulos: ['mapas'] })
+    const { result } = renderHook(() => useUpdateModulosCategoria(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync({ nombre: 'Flora Marina', modulos: ['mapas'] }) })
+    expect(api.patch).toHaveBeenCalledWith('/categorias/Flora%20Marina/modulos', { modulos: ['mapas'] })
   })
 })
 
