@@ -187,6 +187,40 @@ describe('GestionAdmins — permisos por módulo', () => {
       { permisos: expect.arrayContaining([expect.objectContaining({ modulo: 'mapas', puede_ver: true, puede_editar: false })]) },
     )
   })
+
+  test('el contador de módulos habilitados refleja el estado inicial y se actualiza al togglear', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Editar módulos de Ana Restrepo/i }))
+
+    expect(screen.getByText('1/11 habilitados')).toBeInTheDocument()
+    await user.click(screen.getByLabelText('Ver Usuarios'))
+    expect(screen.getByText('2/11 habilitados')).toBeInTheDocument()
+  })
+
+  test('"Otorgar acceso a todo" marca Ver en todos los módulos', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Editar módulos de Ana Restrepo/i }))
+
+    await user.click(screen.getByRole('button', { name: 'Otorgar acceso a todo' }))
+
+    expect(screen.getByText('11/11 habilitados')).toBeInTheDocument()
+    expect(screen.getByLabelText('Ver Usuarios')).toBeChecked()
+    expect(screen.getByLabelText('Ver Errores')).toBeChecked()
+  })
+
+  test('"Quitar todo el acceso" desmarca Ver y Editar en todos los módulos', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Editar módulos de Ana Restrepo/i }))
+    expect(screen.getByLabelText('Ver Mapas')).toBeChecked()
+
+    await user.click(screen.getByRole('button', { name: 'Quitar todo el acceso' }))
+
+    expect(screen.getByText('0/11 habilitados')).toBeInTheDocument()
+    expect(screen.getByLabelText('Ver Mapas')).not.toBeChecked()
+  })
 })
 
 describe('GestionAdmins — activar/desactivar y eliminar', () => {
