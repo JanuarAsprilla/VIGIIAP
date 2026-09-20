@@ -479,9 +479,21 @@ export default function GestionMapas() {
     try {
       if (editing) {
         await updateMapa.mutateAsync({ id: editing.id, formData: payload, onUploadProgress })
+        // "Publicar en el portal público" es un campo aparte (activo), no lo
+        // cubre el PATCH de arriba -- si cambió, se aplica con el mismo
+        // endpoint que usa el ícono de ojo en la tarjeta.
+        if (form.visible !== editing.visible) {
+          await toggleActivo.mutateAsync({ id: editing.id, activo: form.visible })
+        }
         setToast(`Mapa "${form.nombre}" actualizado correctamente`)
       } else {
-        await createMapa.mutateAsync({ formData: payload, onUploadProgress })
+        const nuevo = await createMapa.mutateAsync({ formData: payload, onUploadProgress })
+        // Un mapa nuevo siempre se crea publicado (activo=true) -- si el
+        // usuario destildó "Publicar en el portal público", se despublica
+        // justo después de crearlo.
+        if (!form.visible) {
+          await toggleActivo.mutateAsync({ id: nuevo.id, activo: false })
+        }
         setToast(`Mapa "${form.nombre}" registrado correctamente`)
       }
       setShowModal(false)
