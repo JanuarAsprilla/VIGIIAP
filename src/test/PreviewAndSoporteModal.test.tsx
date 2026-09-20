@@ -33,7 +33,7 @@ describe('PreviewModal — tipos de archivo', () => {
     const doc: DocItem = { id: 'd1', name: 'Informe.pdf', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/informe.pdf', resumen: '' }
     const user = userEvent.setup()
     render(<PreviewModal doc={doc} categoryTitle="Cartografía" onClose={onClose} />)
-    expect(screen.getByText('Visualizar PDF')).toHaveAttribute('href', '/informe.pdf')
+    expect(screen.getByText('Visualizar PDF')).toHaveAttribute('href', expect.stringContaining('/descargar/documento/d1'))
     await user.click(screen.getByText('Descargar'))
     expect(forceDownload).toHaveBeenCalledWith(expect.stringContaining('/descargar/documento/d1'), 'Informe.pdf.pdf')
   })

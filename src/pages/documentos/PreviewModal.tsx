@@ -87,9 +87,9 @@ export function PreviewModal({ doc, categoryTitle, onClose }: PreviewModalProps)
           <p className="px-6 pt-4 text-sm text-text-muted leading-relaxed">{doc.resumen}</p>
         )}
 
-        {trustedUrl ? (
+        {doc.url ? (
           <div className="w-full">
-            {isImage ? (
+            {isImage && trustedUrl ? (
               <div className="p-4 flex justify-center bg-bg-alt">
                 <img src={trustedUrl} alt={doc.name} loading="eager"
                   className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-sm" />
@@ -104,7 +104,10 @@ export function PreviewModal({ doc, categoryTitle, onClose }: PreviewModalProps)
                   <p className="text-xs text-text-muted">{categoryTitle}</p>
                 </div>
                 <div className="flex gap-3">
-                  <a href={trustedUrl} target="_blank" rel="noopener noreferrer"
+                  {/* El archivo vive en el bucket privado -- se abre vía el proxy de
+                      descarga del backend (verifica visibilidad + URL prefirmada),
+                      nunca con la URL cruda de almacenamiento. */}
+                  <a href={descargarUrl('documento', doc.id)} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
                     <Eye className="w-4 h-4" />
                     Visualizar PDF

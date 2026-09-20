@@ -107,7 +107,7 @@ describe('Mapas — modal de vista previa', () => {
     render(<Mapas />)
     await user.click(screen.getByRole('button', { name: /Visualizar/i }))
 
-    expect(screen.getByRole('link', { name: /Abrir PDF/i })).toHaveAttribute('href', 'https://r2.example.com/mapa.pdf')
+    expect(screen.getByRole('link', { name: /Abrir PDF/i })).toHaveAttribute('href', '/api/v1/descargar/mapa/1?campo=archivo_pdf')
   })
 
   test('"Visualizar" en un mapa con imagen abre el modal con la imagen embebida', async () => {
