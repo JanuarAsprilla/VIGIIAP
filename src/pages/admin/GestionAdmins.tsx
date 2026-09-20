@@ -12,14 +12,13 @@ type AdminUsersApiRes = { data?: AdminSigUser[] }
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ShieldCheck, UserPlus, Users, Activity, RefreshCw, X, KeyRound, Power, Trash2, Loader2, Eye, Pencil,
-  ClipboardList, FileText, Map, MapPinned, Server, Tag, Settings, AlertTriangle, FileBarChart,
-  type LucideIcon,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { staggerContainer, staggerItem3D, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import api from '@/lib/api'
 import { MODULOS_CATALOGO, type ModuloClave, type PermisoModulo } from '@/lib/constants/modulos'
+import { GRUPOS_MODULOS, iconoDeModulo } from '@/lib/constants/modulosAgrupados'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { USUARIOS_KEYS } from '@/hooks/useUsuarios'
 
@@ -35,28 +34,6 @@ const guardarPermisos   = ({ id, permisos }: { id: string; permisos: PermisoModu
 function permisoDe(permisos: PermisoModulo[] | undefined, clave: ModuloClave) {
   return permisos?.find((p) => p.modulo === clave) ?? { modulo: clave, puede_ver: false, puede_editar: false }
 }
-
-// ── Catálogo visual de módulos — mismo agrupamiento que el sidebar admin
-// (AdminSidebar.tsx), para que asignar permisos se sienta como el mismo mapa
-// mental que navegar el panel, no una lista plana sin contexto.
-const MODULO_ICON: Record<ModuloClave, LucideIcon> = {
-  usuarios: Users,
-  solicitudes: ClipboardList,
-  documentos: FileText,
-  mapas: Map,
-  geovisores: MapPinned,
-  conexiones_geoserver: Server,
-  categorias: Tag,
-  configuracion: Settings,
-  actividad: Activity,
-  errores: AlertTriangle,
-  reportes: FileBarChart,
-}
-
-const GRUPOS_MODULOS: { titulo: string; claves: ModuloClave[] }[] = [
-  { titulo: 'Gestión', claves: ['usuarios', 'solicitudes', 'documentos', 'mapas', 'geovisores', 'conexiones_geoserver', 'categorias'] },
-  { titulo: 'Sistema', claves: ['configuracion', 'actividad', 'errores', 'reportes'] },
-]
 
 function PermSwitch({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
   return (
@@ -306,7 +283,7 @@ function PermisosModal({ admin, onClose, onSaved }: { admin: AdminSigUser; onClo
               <div className="space-y-0.5">
                 {claves.map((clave) => {
                   const nombre = MODULOS_CATALOGO.find((m) => m.clave === clave)!.nombre
-                  const Icon = MODULO_ICON[clave]
+                  const Icon = iconoDeModulo(clave)
                   const p = permisos.find((x) => x.modulo === clave)!
                   return (
                     <div key={clave} className={`grid grid-cols-[1fr_auto_auto] items-center gap-2 px-2 py-2 rounded-lg transition-colors ${p.puede_ver ? 'bg-primary-500/5' : 'hover:bg-bg-alt/60'}`}>
