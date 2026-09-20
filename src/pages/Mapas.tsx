@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Map, Filter, ChevronLeft, ChevronRight, X,
@@ -166,83 +166,111 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
     }
   }
 
+  // Tarjeta de imagen completa (como el panel admin): la miniatura nunca se
+  // recorta -- object-contain, cualquiera que sea su proporción -- y las
+  // acciones quedan en un panel que aparece al pasar el mouse o al hacer
+  // clic (para touch), en vez de ocupar espacio fijo siempre visible.
+  const [expanded, setExpanded] = useState(false)
+
   return (
     <Card3D
       {...cardEnter3D(index)}
       glow={`${colors.accent}38`}
       intensity={5}
-      className="group bg-[var(--card-bg)] border border-border/70 rounded-2xl overflow-hidden flex flex-col"
+      className="group/card relative h-64 bg-[var(--card-bg)] border border-border/70 rounded-2xl overflow-hidden cursor-pointer"
       whileHover={{ y: -4 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
+      aria-label={`${map.title}, ${map.category}. Clic para ver opciones.`}
+      onClick={() => setExpanded((v) => !v)}
+      onKeyDown={(e: ReactKeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded((v) => !v) } }}
     >
-
-      {/* Visual header */}
-      <div className="relative h-44 overflow-hidden bg-bg-alt shrink-0">
-        {map.thumbnail_url ? (
-          <img src={map.thumbnail_url} alt={map.title}
-            width={320} height={176}
-            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
-            loading="lazy" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center relative overflow-hidden"
-            style={{ background: `linear-gradient(135deg, ${colors.accent}14 0%, ${colors.accent}06 100%)` }}>
-            <div className="absolute inset-0 opacity-[0.06]"
-              style={{
-                backgroundImage: `radial-gradient(circle, ${colors.accent} 1px, transparent 1px)`,
-                backgroundSize: '18px 18px',
-              }} />
-            <div className="relative flex flex-col items-center gap-2">
-              <Map className="w-14 h-14" style={{ color: colors.accent, opacity: 0.22 }} />
-              <span className="text-[0.6rem] font-bold uppercase tracking-widest"
-                style={{ color: colors.accent, opacity: 0.35 }}>
-                {map.category}
-              </span>
-            </div>
+      {/* Miniatura de fondo -- completa, sin recortar */}
+      {map.thumbnail_url ? (
+        <img src={map.thumbnail_url} alt=""
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-contain bg-bg-alt group-hover/card:scale-105 transition-transform duration-500" />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden"
+          style={{ background: `linear-gradient(135deg, ${colors.accent}14 0%, ${colors.accent}06 100%)` }}>
+          <div className="absolute inset-0 opacity-[0.06]"
+            style={{
+              backgroundImage: `radial-gradient(circle, ${colors.accent} 1px, transparent 1px)`,
+              backgroundSize: '18px 18px',
+            }} />
+          <div className="relative flex flex-col items-center gap-2">
+            <Map className="w-14 h-14" style={{ color: colors.accent, opacity: 0.22 }} />
+            <span className="text-[0.6rem] font-bold uppercase tracking-widest"
+              style={{ color: colors.accent, opacity: 0.35 }}>
+              {map.category}
+            </span>
           </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+        </div>
+      )}
 
-        {/* Year badge top-left */}
+      {/* Degradado permanente -- legibilidad del texto siempre visible */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/10 pointer-events-none" />
+
+      {/* Badges superiores */}
+      <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
         {map.year && (
-          <span className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 bg-black/50 backdrop-blur-sm text-white text-[0.65rem] font-bold rounded-lg">
+          <span className="flex items-center gap-1 px-2 py-1 bg-black/50 backdrop-blur-sm text-white text-[0.65rem] font-bold rounded-lg">
             <Calendar className="w-3 h-3" />
             {map.year}
           </span>
         )}
-
-        {/* Format badges top-right */}
-        <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
+        <div className="flex flex-col gap-1 items-end">
           {hasPdf && <span className="px-2 py-0.5 bg-red text-white text-[0.6rem] font-bold uppercase rounded">PDF</span>}
           {hasImg && <span className="px-2 py-0.5 bg-gold-400 text-primary-900 text-[0.6rem] font-bold uppercase rounded">IMG</span>}
           {hasGeovisor && <span className="px-2 py-0.5 bg-primary-800 text-white text-[0.6rem] font-bold uppercase rounded">Geovisor</span>}
         </div>
       </div>
 
-      {/* Body */}
-      <div className="p-5 flex flex-col flex-1">
-        <span className={`self-start text-[0.6rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 ${colors.pill}`}>
+      {/* Categoría + título -- siempre visibles */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-none">
+        <span className={`inline-block text-[0.6rem] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-1.5 ${colors.pill}`}>
           {map.category}
         </span>
-        <h3 className="text-sm font-bold text-text leading-snug mb-2 line-clamp-2 flex-1">{map.title}</h3>
+        <p className="text-sm font-bold text-white leading-snug line-clamp-2">{map.title}</p>
+      </div>
+
+      {/* Panel de acciones -- revelado al pasar el mouse o al hacer clic */}
+      <div
+        className={`absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col justify-end p-4 transition-opacity duration-250 ${
+          expanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover/card:opacity-100 group-hover/card:pointer-events-auto'
+        }`}
+      >
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setExpanded(false) }}
+          className="absolute top-3 right-3 p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+          aria-label="Cerrar opciones"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        <span className={`self-start text-[0.6rem] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-2 ${colors.pill}`}>
+          {map.category}
+        </span>
+        <p className="text-sm font-bold text-white leading-snug">{map.title}</p>
         {map.excerpt && (
-          <p className="text-xs text-text-muted leading-relaxed line-clamp-2 mb-4">{map.excerpt}</p>
+          <p className="text-xs text-white/70 leading-relaxed line-clamp-2 mt-1">{map.excerpt}</p>
         )}
 
-        {/* Actions -- "Visualizar" es la acción principal (botón sólido); las
-            demás usan un color de reposo propio en vez de solo aparecer al
-            hover, para que se distingan de entrada sobre fondo blanco. */}
-        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border/60 mt-auto">
+        <div className="flex flex-wrap items-center gap-2 mt-3">
           {hasPdf && (
-            <button onClick={() => onPreview?.(map, 'PDF')}
-              className="flex-1 min-w-[8rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-white bg-primary-800 rounded-lg shadow-sm hover:bg-primary-700 hover:shadow-md transition-all">
+            <button onClick={(e) => { e.stopPropagation(); onPreview?.(map, 'PDF') }}
+              className="flex-1 min-w-[7rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-600 transition-colors">
               <Eye className="w-3.5 h-3.5" />
               Visualizar
             </button>
           )}
           {hasPdf && (
-            <button onClick={() => handleDownload('archivo_pdf', 'pdf')}
+            <button onClick={(e) => { e.stopPropagation(); handleDownload('archivo_pdf', 'pdf') }}
               disabled={downloadingField !== null}
-              className="flex-1 min-w-[8rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-red-600 border border-red-200 bg-red-50/60 rounded-lg hover:border-red-300 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:pointer-events-none">
+              className="flex-1 min-w-[7rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-white bg-red-600/90 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:pointer-events-none">
               {downloadingField === 'pdf'
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 : <Download className="w-3.5 h-3.5" />}
@@ -250,16 +278,16 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
             </button>
           )}
           {hasImg && (
-            <button onClick={() => onPreview?.(map, 'IMG')}
-              className="flex-1 min-w-[8rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-white bg-primary-800 rounded-lg shadow-sm hover:bg-primary-700 hover:shadow-md transition-all">
+            <button onClick={(e) => { e.stopPropagation(); onPreview?.(map, 'IMG') }}
+              className="flex-1 min-w-[7rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-600 transition-colors">
               <Eye className="w-3.5 h-3.5" />
               Visualizar
             </button>
           )}
           {hasImg && (
-            <button onClick={() => handleDownload('archivo_img', 'img')}
+            <button onClick={(e) => { e.stopPropagation(); handleDownload('archivo_img', 'img') }}
               disabled={downloadingField !== null}
-              className="flex-1 min-w-[8rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-gold-500 border border-gold-400/50 bg-gold-400/10 rounded-lg hover:bg-gold-400/20 transition-colors disabled:opacity-50 disabled:pointer-events-none">
+              className="flex-1 min-w-[7rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-primary-900 bg-gold-400 rounded-lg hover:bg-gold-300 transition-colors disabled:opacity-50 disabled:pointer-events-none">
               {downloadingField === 'img'
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 : <Download className="w-3.5 h-3.5" />}
@@ -267,8 +295,8 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
             </button>
           )}
           {hasGeovisor && (
-            <a href={geovisorHref} target="_blank" rel="noopener noreferrer"
-              className="flex-1 min-w-[8rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-primary-700 border border-primary-800/25 rounded-lg bg-primary-800/10 hover:bg-primary-800/15 transition-colors no-underline">
+            <a href={geovisorHref} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+              className="flex-1 min-w-[7rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-white bg-white/10 rounded-lg hover:bg-white/20 transition-colors no-underline">
               <Globe className="w-3.5 h-3.5" />
               Geovisor
             </a>

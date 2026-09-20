@@ -90,7 +90,7 @@ describe('Mapas — filtro de formato', () => {
     const formatoSelect = screen.getAllByRole('combobox')[1]
     await user.selectOptions(formatoSelect, 'PDF')
 
-    expect(screen.getByText('Mapa PDF')).toBeInTheDocument()
+    expect(screen.getAllByText('Mapa PDF').length).toBeGreaterThan(0)
   })
 })
 
@@ -206,12 +206,12 @@ describe('Mapas — geovisor y paginación', () => {
 
     const user = userEvent.setup()
     render(<Mapas />)
-    expect(screen.getByText('Mapa 0')).toBeInTheDocument()
-    expect(screen.queryByText('Mapa 6')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Mapa 0').length).toBeGreaterThan(0)
+    expect(screen.queryAllByText('Mapa 6')).toHaveLength(0)
 
     await user.click(screen.getByRole('button', { name: '2' }))
-    expect(screen.getByText('Mapa 6')).toBeInTheDocument()
-    expect(screen.queryByText('Mapa 0')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Mapa 6').length).toBeGreaterThan(0)
+    expect(screen.queryAllByText('Mapa 0')).toHaveLength(0)
   })
 })
 
