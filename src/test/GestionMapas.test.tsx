@@ -343,6 +343,28 @@ describe('GestionMapas — edición y eliminación', () => {
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ id: 'm1' }))
   })
 
+  test('quitar la miniatura y guardar le pide al backend borrarla (thumbnail_url vacío), no solo la esconde localmente', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useUpdateMapa).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useUpdateMapa>)
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMapa({ thumbnail_url: 'https://vigiiap.iiap.org.co/files/vigiiap-files-public/mapas/thumbnails/old.jpg' })], meta: { total: 1 } },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Editar'))
+    await user.click(screen.getByRole('button', { name: 'Quitar' }))
+    await user.click(screen.getByRole('button', { name: /^Guardar cambios$/i }))
+
+    const call = mutateAsync.mock.calls[0][0] as { formData: FormData }
+    expect(call.formData.get('thumbnail_url')).toBe('')
+    expect(call.formData.get('thumbnail')).toBeNull()
+  })
+
   test('confirmar eliminación llama a la mutación con el id y muestra el toast', async () => {
     const mutateAsync = vi.fn().mockResolvedValue(undefined)
     vi.mocked(useDeleteMapa).mockReturnValue({
@@ -456,5 +478,18 @@ describe('GestionMapas — creación con datos válidos', () => {
     expect(call.formData.get('categoria')).toBe('Riesgo')
     expect(call.formData.get('archivo_pdf')).toBeInstanceOf(File)
     expect(await screen.findByText('Mapa "Mapa de riesgo" registrado correctamente')).toBeInTheDocument()
+  })
+})
+
+describe('GestionMapas — columnas de la lista', () => {
+  beforeEach(() => { vi.clearAllMocks(); localStorage.clear() })
+
+  test('elegir "2 columnas" queda marcado y se recuerda en este navegador', async () => {
+    const user = userEvent.setup()
+    render(<GestionMapas />)
+
+    await user.click(screen.getByRole('button', { name: '2 columnas' }))
+    expect(screen.getByRole('button', { name: '2 columnas' })).toHaveAttribute('aria-pressed', 'true')
+    expect(localStorage.getItem('vigiiap:admin-mapas-cols')).toBe('2')
   })
 })

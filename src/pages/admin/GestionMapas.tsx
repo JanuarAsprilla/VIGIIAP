@@ -8,6 +8,7 @@ import {
   Layers, Send, Upload, CheckCircle, AlertCircle,
   FileText, Image, Link as LinkIcon, Loader2, MapPin,
   ExternalLink, Globe, Users, ShieldCheck,
+  Rows, Columns2, Columns3,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
@@ -310,6 +311,14 @@ export default function GestionMapas() {
   const [formErrors, setFormErrors] = useState<FormErrors>({})
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadedThumb, setUploadedThumb] = useState<File | null>(null)
+  // Distingue "el usuario nunca tocó la miniatura" (uploadedThumb null desde el
+  // montaje -- no enviar nada, deja la que ya había) de "el usuario le dio
+  // Quitar explícitamente" (sí hay que decirle al backend que la borre).
+  const [thumbRemoved, setThumbRemoved] = useState(false)
+  const handleThumbChange = (f: File | null) => {
+    setUploadedThumb(f)
+    setThumbRemoved(f === null)
+  }
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
@@ -338,14 +347,37 @@ export default function GestionMapas() {
   })
 
   const listRef = useRef<HTMLDivElement>(null)
-  const [cols, setCols] = useState(() => (typeof window !== 'undefined' && window.innerWidth >= 1024) ? 2 : 1)
+
+  // Columnas: el usuario elige 1/2/3 (se guarda por navegador), pero nunca se
+  // fuerzan más columnas de las que la pantalla actual puede mostrar bien --
+  // en un celular, aunque haya elegido "3", igual se ve en 1 columna.
+  const COLS_STORAGE_KEY = 'vigiiap:admin-mapas-cols'
+  const [preferredCols, setPreferredCols] = useState<1 | 2 | 3>(() => {
+    if (typeof window === 'undefined') return 2
+    const raw = Number(window.localStorage.getItem(COLS_STORAGE_KEY))
+    return raw === 1 || raw === 2 || raw === 3 ? raw : 2
+  })
+  const [viewportMaxCols, setViewportMaxCols] = useState<1 | 2 | 3>(() => {
+    if (typeof window === 'undefined') return 2
+    if (window.innerWidth >= 1280) return 3
+    if (window.innerWidth >= 1024) return 2
+    return 1
+  })
 
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 1024px)')
-    const handler = (e: MediaQueryListEvent) => setCols(e.matches ? 2 : 1)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
+    const mqXl = window.matchMedia('(min-width: 1280px)')
+    const mqLg = window.matchMedia('(min-width: 1024px)')
+    const update = () => setViewportMaxCols(mqXl.matches ? 3 : mqLg.matches ? 2 : 1)
+    mqXl.addEventListener('change', update)
+    mqLg.addEventListener('change', update)
+    return () => { mqXl.removeEventListener('change', update); mqLg.removeEventListener('change', update) }
   }, [])
+
+  const cols = Math.min(preferredCols, viewportMaxCols) as 1 | 2 | 3
+  const changeCols = (n: 1 | 2 | 3) => {
+    setPreferredCols(n)
+    try { window.localStorage.setItem(COLS_STORAGE_KEY, String(n)) } catch { /* localStorage no disponible */ }
+  }
 
   const rows = useMemo(() => {
     const result: MapaData[][] = []
@@ -367,7 +399,7 @@ export default function GestionMapas() {
 
   const openCreate = () => {
     setEditing(null); setForm(EMPTY_FORM); setFormErrors({})
-    setUploadedFile(null); setUploadedThumb(null); setUploadError(null); setSubmitError(null)
+    setUploadedFile(null); setUploadedThumb(null); setThumbRemoved(false); setUploadError(null); setSubmitError(null)
     setUploadProgress(null); setShowModal(true)
   }
 
@@ -383,7 +415,7 @@ export default function GestionMapas() {
       url:         m.url || '',
       visibilidad: m.visibilidad ?? 'publico',
     })
-    setFormErrors({}); setUploadedFile(null); setUploadedThumb(null); setUploadError(null)
+    setFormErrors({}); setUploadedFile(null); setUploadedThumb(null); setThumbRemoved(false); setUploadError(null)
     setSubmitError(null); setUploadProgress(null); setShowModal(true)
   }
 
@@ -421,6 +453,7 @@ export default function GestionMapas() {
     payload.append('visibilidad', form.visibilidad)
     if (form.descripcion.trim()) payload.append('descripcion', form.descripcion)
     if (uploadedThumb) payload.append('thumbnail', uploadedThumb)
+    else if (thumbRemoved) payload.append('thumbnail_url', '')
 
     if (uploadedFile) {
       payload.append(form.formato === 'PDF' ? 'archivo_pdf' : 'archivo_img', uploadedFile)
@@ -522,13 +555,30 @@ export default function GestionMapas() {
         ))}
       </motion.div>
 
-      {/* Search */}
-      <motion.div {...fadeUp(0.1)} className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-        <input type="text" aria-label="Buscar mapas por nombre o autor" placeholder="Buscar mapa por nombre o autor…"
-          value={search} onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
-        />
+      {/* Search + columnas */}
+      <motion.div {...fadeUp(0.1)} className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+          <input type="text" aria-label="Buscar mapas por nombre o autor" placeholder="Buscar mapa por nombre o autor…"
+            value={search} onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+          />
+        </div>
+        <div role="group" aria-label="Columnas de la lista" className="flex items-center gap-1 p-1 bg-[var(--card-bg)] border border-border rounded-xl shrink-0">
+          {([
+            { n: 1 as const, Icon: Rows,     label: '1 columna' },
+            { n: 2 as const, Icon: Columns2, label: '2 columnas' },
+            { n: 3 as const, Icon: Columns3, label: '3 columnas' },
+          ]).map(({ n, Icon, label }) => (
+            <button key={n} type="button" onClick={() => changeCols(n)} title={label} aria-label={label}
+              aria-pressed={preferredCols === n}
+              className={`p-2 rounded-lg transition-colors ${
+                preferredCols === n ? 'bg-primary-800 text-white' : 'text-text-muted hover:bg-bg-alt hover:text-text'
+              }`}>
+              <Icon className="w-4 h-4" />
+            </button>
+          ))}
+        </div>
       </motion.div>
 
       {/* Error state */}
@@ -581,7 +631,7 @@ export default function GestionMapas() {
                     width: '100%',
                     transform: `translateY(${vRow.start - virtualizer.options.scrollMargin}px)`,
                   }}
-                  className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4"
+                  className={`grid gap-4 pb-4 ${cols === 3 ? 'grid-cols-3' : cols === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}
                 >
                   {rowItems.map((m) => (
                     <motion.div key={m.id} {...fadeUpSm()}>
@@ -692,7 +742,7 @@ export default function GestionMapas() {
                 )}
 
                 {/* Thumbnail opcional */}
-                <ThumbnailDropzone onFile={setUploadedThumb} existing={editing?.thumbnail_url ?? null} />
+                <ThumbnailDropzone onFile={handleThumbChange} existing={thumbRemoved ? null : (editing?.thumbnail_url ?? null)} />
 
                 {/* Nombre del mapa */}
                 <div>

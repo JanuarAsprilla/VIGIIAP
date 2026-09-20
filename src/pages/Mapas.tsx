@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Map, Filter, ChevronLeft, ChevronRight, X,
   FileText, Globe, Loader2, Eye, Download, Calendar,
+  Rows, Columns2, Columns3,
 } from 'lucide-react'
 import { MAP_CATEGORIES, MAP_FORMATS, MAP_YEARS } from '@/lib/constants'
 import { useMapasList } from '@/hooks/useMapas'
@@ -339,6 +340,25 @@ export default function Mapas() {
   const [previewFormat, setPreviewFormat] = useState<string | null>(null)
   const PER_PAGE = 6
 
+  // Columnas de la cuadrícula -- elegible por el usuario y recordado en este
+  // navegador. En pantallas angostas siempre cae a 1 columna sin importar la
+  // preferencia (las clases responsivas de Tailwind ya lo garantizan).
+  const COLS_STORAGE_KEY = 'vigiiap:mapas-cols'
+  const [cols, setCols] = useState<1 | 2 | 3>(() => {
+    if (typeof window === 'undefined') return 3
+    const raw = Number(window.localStorage.getItem(COLS_STORAGE_KEY))
+    return raw === 1 || raw === 2 || raw === 3 ? raw : 3
+  })
+  const changeCols = (n: 1 | 2 | 3) => {
+    setCols(n)
+    try { window.localStorage.setItem(COLS_STORAGE_KEY, String(n)) } catch { /* localStorage no disponible */ }
+  }
+  const COLS_GRID_CLASS: Record<1 | 2 | 3, string> = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-1 md:grid-cols-2',
+    3: 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3',
+  }
+
   // ── Datos reales ─────────────────────────────────────────────────────────────
   const { data, isLoading, isError } = useMapasList({
     categoria: filters.category || undefined,
@@ -443,10 +463,29 @@ export default function Mapas() {
           </div>
         </motion.div>
       ) : pagedMaps.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {pagedMaps.map((map, i) => (
-            <MapCard key={map.id} map={map} index={i} onPreview={handlePreview} />
-          ))}
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <div role="group" aria-label="Columnas de la cuadrícula" className="flex items-center gap-1 p-1 bg-[var(--card-bg)] border border-border rounded-xl">
+              {([
+                { n: 1 as const, Icon: Rows,     label: '1 columna' },
+                { n: 2 as const, Icon: Columns2, label: '2 columnas' },
+                { n: 3 as const, Icon: Columns3, label: '3 columnas' },
+              ]).map(({ n, Icon, label }) => (
+                <button key={n} type="button" onClick={() => changeCols(n)} title={label} aria-label={label}
+                  aria-pressed={cols === n}
+                  className={`p-2 rounded-lg transition-colors ${
+                    cols === n ? 'bg-primary-800 text-white' : 'text-text-muted hover:bg-bg-alt hover:text-text'
+                  }`}>
+                  <Icon className="w-4 h-4" />
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className={`grid ${COLS_GRID_CLASS[cols]} gap-6`}>
+            {pagedMaps.map((map, i) => (
+              <MapCard key={map.id} map={map} index={i} onPreview={handlePreview} />
+            ))}
+          </div>
         </div>
       ) : (
         <motion.div {...fadeUp(0.1)} className="py-20 flex flex-col items-center gap-4">
