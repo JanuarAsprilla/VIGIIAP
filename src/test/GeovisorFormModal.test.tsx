@@ -33,7 +33,6 @@ import { useCreateGeovisor, useUpdateGeovisor, useUploadGeovisorThumbnail } from
 
 vi.mock('@/hooks/useCategorias', () => ({
   useCategoriasList: vi.fn(() => ({ data: [] })),
-  useCreateCategoria: () => ({ mutateAsync: vi.fn() }),
 }))
 import { useCategoriasList } from '@/hooks/useCategorias'
 
@@ -424,12 +423,16 @@ describe('GeovisorFormModal — todos los campos opcionales se envían', () => {
   test('completar información general, mapa, color y presentación llega intacto al payload', async () => {
     const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
     vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [{ nombre: 'Geología', modulos: ['geovisores'] }],
+    } as unknown as ReturnType<typeof useCategoriasList>)
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
 
     await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
     await user.type(screen.getByLabelText(/^Subtítulo/i), 'Unidades litoestratigráficas')
-    await user.type(screen.getByLabelText(/^Categoría/i), 'Geología')
+    await user.click(screen.getByLabelText(/^Categoría/i))
+    await user.click(screen.getByText('Geología'))
     await user.type(screen.getByLabelText(/^Descripción/i), 'Descripción completa')
     await user.type(screen.getByLabelText(/^Cita sugerida/i), 'IIAP (2026)')
 

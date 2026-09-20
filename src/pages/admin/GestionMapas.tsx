@@ -7,14 +7,14 @@ import {
   Plus, Search, X, Edit2, Trash2, Eye, EyeOff,
   Layers, Send, Upload, CheckCircle, AlertCircle,
   FileText, Image, Link as LinkIcon, Loader2, MapPin,
-  ExternalLink, Globe, Users, ShieldCheck, Tag,
+  ExternalLink, Globe, Users, ShieldCheck,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import CategoryCombobox from '@/components/admin/CategoryCombobox'
 import ThumbnailDropzone from '@/components/ui/ThumbnailDropzone'
 import { useMapasList, useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa } from '@/hooks/useMapas'
-import { useCategoriasList, useCreateCategoria } from '@/hooks/useCategorias'
+import { useCategoriasList } from '@/hooks/useCategorias'
 import { isTrustedUrl } from '@/lib/trustedUrl'
 
 const fadeUp = fadeUpSm
@@ -301,7 +301,6 @@ export default function GestionMapas() {
   const updateMapa = useUpdateMapa()
   const toggleActivo = useToggleMapaActivo()
   const deleteMapa = useDeleteMapa()
-  const createCategoria = useCreateCategoria()
 
   const [search, setSearch] = useState('')
   const [filtroTematica, setFiltroTematica] = useState('')
@@ -391,7 +390,7 @@ export default function GestionMapas() {
   const validate = () => {
     const e: FormErrors = {}
     if (!form.nombre.trim()) e.nombre = 'El nombre del mapa es obligatorio'
-    if (!form.tematica.trim()) e.tematica = 'Selecciona o escribe una categoría'
+    if (!form.tematica.trim()) e.tematica = 'Selecciona una categoría'
     if (form.formato !== 'Geovisor' && !editing && !uploadedFile)
       e.archivo = 'Debes seleccionar el archivo del mapa para continuar'
     if (form.formato === 'Geovisor' && !form.url.trim()) {
@@ -445,13 +444,6 @@ export default function GestionMapas() {
       : undefined
 
     try {
-      // Si la temática escrita en el combobox no existe todavía en la tabla
-      // compartida, se crea (asignada al módulo Mapas) antes de guardar --
-      // de lo contrario queda como texto libre sin fila real en categorias,
-      // sin miniatura y sin aparecer en Gestión de Categorías.
-      if (!allTematicas.includes(form.tematica)) {
-        await createCategoria.mutateAsync({ nombre: form.tematica, modulos: ['mapas'] })
-      }
       if (editing) {
         await updateMapa.mutateAsync({ id: editing.id, formData: payload, onUploadProgress })
         setToast(`Mapa "${form.nombre}" actualizado correctamente`)
@@ -745,11 +737,6 @@ export default function GestionMapas() {
                       onChange={(t) => setForm((f) => ({ ...f, tematica: t }))}
                       options={allTematicas}
                     />
-                    {form.tematica && !allTematicas.includes(form.tematica) && (
-                      <p className="text-[0.65rem] text-primary-700 mt-1 flex items-center gap-1">
-                        <Tag className="w-3 h-3" />Nueva categoría — se creará al guardar
-                      </p>
-                    )}
                     {formErrors.tematica && (
                       <p className="text-xs text-red-500 mt-1">{formErrors.tematica}</p>
                     )}

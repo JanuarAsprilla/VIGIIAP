@@ -39,9 +39,8 @@ import {
 
 vi.mock('@/hooks/useCategorias', () => ({
   useCategoriasList: vi.fn(() => ({ data: [] })),
-  useCreateCategoria: vi.fn(),
 }))
-import { useCategoriasList, useCreateCategoria } from '@/hooks/useCategorias'
+import { useCategoriasList } from '@/hooks/useCategorias'
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -69,9 +68,9 @@ beforeEach(() => {
   vi.mocked(useDeleteMapa).mockReturnValue({
     mutateAsync: vi.fn(), isPending: false,
   } as unknown as ReturnType<typeof useDeleteMapa>)
-  vi.mocked(useCreateCategoria).mockReturnValue({
-    mutateAsync: vi.fn().mockResolvedValue({ nombre: 'Nueva' }), isPending: false,
-  } as unknown as ReturnType<typeof useCreateCategoria>)
+  vi.mocked(useCategoriasList).mockReturnValue({
+    data: [{ nombre: 'Cartografía', modulos: ['mapas'] }, { nombre: 'Riesgo', modulos: ['mapas'] }],
+  } as unknown as ReturnType<typeof useCategoriasList>)
 })
 
 async function openCreateModal() {
@@ -79,6 +78,12 @@ async function openCreateModal() {
   render(<GestionMapas />)
   await user.click(screen.getByRole('button', { name: /Ingresar nuevo mapa/i }))
   return user
+}
+
+// La categoría solo se elige de la lista -- ya no se puede escribir una nueva.
+async function selectCategoria(user: ReturnType<typeof userEvent.setup>, nombre: string) {
+  await user.click(screen.getByPlaceholderText('Selecciona una categoría…'))
+  await user.click(screen.getByText(nombre))
 }
 
 function makeMapa(overrides: Partial<MapaData> = {}): MapaData {
@@ -100,7 +105,7 @@ describe('GestionMapas — validación del formulario', () => {
     await user.click(screen.getByRole('button', { name: /Registrar mapa/i }))
 
     expect(await screen.findByText('El nombre del mapa es obligatorio')).toBeInTheDocument()
-    expect(screen.getByText('Selecciona o escribe una categoría')).toBeInTheDocument()
+    expect(screen.getByText('Selecciona una categoría')).toBeInTheDocument()
     expect(screen.getByText('Debes seleccionar el archivo del mapa para continuar')).toBeInTheDocument()
   })
 
@@ -136,7 +141,7 @@ describe('GestionMapas — validación del formulario', () => {
     const user = await openCreateModal()
     await user.click(screen.getByRole('button', { name: 'Geovisor' }))
     await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa geovisor de prueba')
-    await user.type(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'), 'Cartografía')
+    await selectCategoria(user, 'Cartografía')
     await user.type(screen.getByLabelText(/URL del Geovisor/i), 'https://geovisor.iiap.org.co/mapa')
     await user.click(screen.getByRole('button', { name: /Registrar mapa/i }))
 
@@ -152,7 +157,7 @@ describe('GestionMapas — validación del formulario', () => {
     const user = await openCreateModal()
     await user.click(screen.getByRole('button', { name: 'Geovisor' }))
     await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa geovisor de prueba')
-    await user.type(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'), 'Cartografía')
+    await selectCategoria(user, 'Cartografía')
     await user.type(screen.getByLabelText(/URL del Geovisor/i), 'https://geovisor.iiap.org.co/mapa')
     await user.clear(screen.getByLabelText('Año'))
     await user.type(screen.getByLabelText('Año'), '1500')
@@ -188,7 +193,7 @@ describe('GestionMapas — categoría por módulo', () => {
     } as unknown as ReturnType<typeof useCategoriasList>)
 
     const user = await openCreateModal()
-    await user.click(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'))
+    await user.click(screen.getByPlaceholderText('Selecciona una categoría…'))
 
     expect(screen.getByText('Zonificación Costera')).toBeInTheDocument()
     expect(screen.queryByText('Solo en Documentos')).not.toBeInTheDocument()
@@ -442,7 +447,7 @@ describe('GestionMapas — creación con datos válidos', () => {
     const file = new File(['contenido'], 'mapa.pdf', { type: 'application/pdf' })
     await user.upload(getFileInput(container), file)
     await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa de riesgo')
-    await user.type(screen.getByPlaceholderText('Selecciona o escribe una categoría nueva…'), 'Riesgo')
+    await selectCategoria(user, 'Riesgo')
     await user.click(screen.getByRole('button', { name: /^Registrar mapa$/i }))
 
     expect(mutateAsync).toHaveBeenCalledTimes(1)

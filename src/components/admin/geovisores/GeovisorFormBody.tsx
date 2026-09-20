@@ -8,7 +8,7 @@ import { panelAnim } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
 import { useCreateGeovisor, useUpdateGeovisor, useUploadGeovisorThumbnail } from '@/hooks/useGeovisores'
-import { useCategoriasList, useCreateCategoria } from '@/hooks/useCategorias'
+import { useCategoriasList } from '@/hooks/useCategorias'
 import Switch from '@/components/ui/Switch'
 import ThumbnailDropzone from '@/components/ui/ThumbnailDropzone'
 import AccordionSection from './AccordionSection'
@@ -118,13 +118,12 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
   const { data: conexiones = [] } = useConexionesGeoserverList()
   const { data: workspaces = [], isFetching: loadingWorkspaces } = useWorkspacesDeConexion(form.conexionGeoserverId || null)
   // Categorías del módulo compartido — geovisores.categoria tiene FK a
-  // categorias(nombre) en el backend, así que solo se puede elegir entre
-  // estas o crear una nueva explícitamente (ver handleSubmit). El combobox
-  // (abajo) solo sugiere las asignadas explícitamente al módulo "geovisores"
-  // (ver categorias.modulos, migración 048) -- una categoría asignada solo a
-  // Documentos o Mapas no debe ofrecerse acá.
+  // categorias(nombre) en el backend. Solo se puede ELEGIR entre las ya
+  // asignadas explícitamente al módulo "geovisores" desde Gestión de
+  // Categorías (ver categorias.modulos, migración 048) -- este formulario no
+  // crea categorías nuevas, y una asignada solo a Documentos o Mapas no debe
+  // ofrecerse acá.
   const { data: categoriasCompartidas = [] } = useCategoriasList({ admin: 'true' })
-  const createCategoria = useCreateCategoria()
 
   const createGeovisor = useCreateGeovisor()
   const updateGeovisor = useUpdateGeovisor()
@@ -263,17 +262,6 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
     const payload = validate()
     if (!payload) return
     try {
-      // Si la categoría escrita en el combobox no existe todavía en la tabla
-      // compartida, se crea antes de guardar — de lo contrario la FK de
-      // geovisores.categoria hace fallar el guardado con un error crudo de
-      // Postgres en vez de uno claro.
-      if (payload.categoria && !categoriasCompartidas.some(
-        (c) => c.nombre.toLowerCase() === payload.categoria!.toLowerCase(),
-      )) {
-        // Creada desde el formulario de Geovisores -- se asigna a ese módulo
-        // (editable después desde Gestión de Categorías si también aplica a otros).
-        await createCategoria.mutateAsync({ nombre: payload.categoria, modulos: ['geovisores'] })
-      }
       const geovisorId = editing
         ? (await updateGeovisor.mutateAsync({ id: editing.id, data: payload })).id
         : (await createGeovisor.mutateAsync(payload)).id
