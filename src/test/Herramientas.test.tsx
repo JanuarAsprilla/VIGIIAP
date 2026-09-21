@@ -46,8 +46,26 @@ describe('Herramientas — grilla y filtrado', () => {
   test('muestra las 7 herramientas y el resumen de actividad sin búsqueda', () => {
     render(<Herramientas />)
     expect(screen.getByText('Herramienta: Calculadora')).toBeInTheDocument()
-    expect(screen.getByText('Herramienta: Panel Chocó')).toBeInTheDocument()
+    // Panel Chocó es "focusable" — en la grilla se ve su tarjeta lanzadora, no su
+    // contenido (que solo se monta al abrirlo, ver siguiente test).
+    expect(screen.getByText('Panel de Análisis Territorial — Chocó Biogeográfico')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Abrir panel completo/i })).toBeInTheDocument()
+    expect(screen.queryByText('Herramienta: Panel Chocó')).not.toBeInTheDocument()
     expect(screen.getByText('Resumen de Actividad')).toBeInTheDocument()
+  })
+
+  test('abrir una herramienta focusable la muestra a pantalla completa y "Volver" regresa a la grilla', async () => {
+    const user = userEvent.setup()
+    render(<Herramientas />)
+
+    await user.click(screen.getByRole('button', { name: /Abrir panel completo/i }))
+    expect(screen.getByText('Herramienta: Panel Chocó')).toBeInTheDocument()
+    expect(screen.queryByText('Herramienta: Calculadora')).not.toBeInTheDocument()
+    expect(screen.queryByText('Resumen de Actividad')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Volver a Herramientas/i }))
+    expect(screen.queryByText('Herramienta: Panel Chocó')).not.toBeInTheDocument()
+    expect(screen.getByText('Herramienta: Calculadora')).toBeInTheDocument()
   })
 
   test('filtra herramientas por título o categoría según la búsqueda global', () => {

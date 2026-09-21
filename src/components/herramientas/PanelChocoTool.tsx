@@ -1,6 +1,4 @@
 import { lazy, Suspense } from 'react'
-import { BarChart3 } from 'lucide-react'
-import ToolCard from './ToolCard'
 
 // Carga perezosa: Chart.js + los datasets territoriales no deben ir en el chunk
 // compartido de /herramientas, que las demás herramientas (livianas) sí cargan siempre.
@@ -18,18 +16,12 @@ function PanelChocoSkeleton() {
   )
 }
 
+// Contenido puro, sin ToolCard/tilt — se muestra a pantalla completa cuando el
+// usuario abre la herramienta desde HerramientaLauncherCard, no dentro de la grilla.
 export default function PanelChocoTool() {
   return (
-    <ToolCard
-      tag="Reportes"
-      title="Panel de Análisis Territorial — Chocó Biogeográfico"
-      icon={BarChart3}
-      color="gold"
-      index={6}
-    >
-      <Suspense fallback={<PanelChocoSkeleton />}>
-        <PanelChocoBiogeografico />
-      </Suspense>
-    </ToolCard>
+    <Suspense fallback={<PanelChocoSkeleton />}>
+      <PanelChocoBiogeografico />
+    </Suspense>
   )
 }

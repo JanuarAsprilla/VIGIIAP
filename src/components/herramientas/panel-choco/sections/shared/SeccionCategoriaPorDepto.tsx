@@ -9,6 +9,7 @@ interface SeccionCategoriaPorDeptoProps {
   deptos: string[]
   series: CategoriaDeptoSerie[]
   unidad?: string
+  etiquetaMetrica?: string
 }
 
 interface FilaCategoria {
@@ -20,8 +21,9 @@ interface FilaCategoria {
 /** Vista compartida para datasets con varias categorías por departamento (RUNAP,
  * humedales, páramos) — barras apiladas por depto + torta de totales por categoría +
  * tabla. Distinta de SeccionEntidadSimple a propósito: aquí cada depto tiene N valores
- * (uno por categoría), no uno solo. */
-export default function SeccionCategoriaPorDepto({ deptos, series, unidad = 'Ha' }: SeccionCategoriaPorDeptoProps) {
+ * (uno por categoría), no uno solo. `etiquetaMetrica` evita que "Área" quede hardcodeado
+ * cuando la métrica no es área (ej. población en habitantes) — ver PoblacionEtnias.tsx. */
+export default function SeccionCategoriaPorDepto({ deptos, series, unidad = 'Ha', etiquetaMetrica = 'Área' }: SeccionCategoriaPorDeptoProps) {
   const totalesPorCategoria = series.map((s) => s.datos.reduce((acc, v) => acc + v, 0))
   const totalGeneral = totalesPorCategoria.reduce((acc, v) => acc + v, 0)
   const colores = series.map((s, i) => s.color ?? colorDepto(i))
@@ -35,7 +37,7 @@ export default function SeccionCategoriaPorDepto({ deptos, series, unidad = 'Ha'
   const columnas: ColumnaTabla<FilaCategoria>[] = [
     { key: 'nombre', label: 'Categoría', render: (f) => f.nombre },
     {
-      key: 'total', label: `Área (${unidad})`, align: 'right',
+      key: 'total', label: `${etiquetaMetrica} (${unidad})`, align: 'right',
       render: (f) => f.total.toLocaleString('es-CO', { maximumFractionDigits: 1 }),
       valorOrden: (f) => f.total,
     },
@@ -50,7 +52,7 @@ export default function SeccionCategoriaPorDepto({ deptos, series, unidad = 'Ha'
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-[var(--card-bg)] border border-border rounded-xl p-5">
-          <h3 className="text-sm font-bold text-text mb-3">Área por departamento y categoría ({unidad})</h3>
+          <h3 className="text-sm font-bold text-text mb-3">{etiquetaMetrica} por departamento y categoría ({unidad})</h3>
           <GraficoBarrasApiladas
             labels={deptos}
             series={series.map((s, i) => ({ label: s.nombre, datos: s.datos, color: colores[i] }))}
@@ -58,7 +60,7 @@ export default function SeccionCategoriaPorDepto({ deptos, series, unidad = 'Ha'
           />
         </div>
         <div className="bg-[var(--card-bg)] border border-border rounded-xl p-5">
-          <h3 className="text-sm font-bold text-text mb-3">Porcentaje de área por categoría</h3>
+          <h3 className="text-sm font-bold text-text mb-3">Porcentaje de {etiquetaMetrica.toLowerCase()} por categoría</h3>
           <div style={{ height: 300 }}>
             <Pie
               data={{

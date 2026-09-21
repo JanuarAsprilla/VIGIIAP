@@ -52,7 +52,7 @@ export default function PoblacionEtnias() {
           Población total: {deptosPob.reduce((acc, d) => acc + d.total, 0).toLocaleString('es-CO')} habitantes
           en el Chocó Biogeográfico.
         </p>
-        <SeccionEntidadSimple entidades={entidadesPoblacion} etiquetaColumnaNombre="Departamento" />
+        <SeccionEntidadSimple entidades={entidadesPoblacion} etiquetaColumnaNombre="Departamento" etiquetaMetrica="Población" unidad="hab" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -94,7 +94,7 @@ export default function PoblacionEtnias() {
 
       <div>
         <h3 className="text-sm font-bold text-text mb-3">Grupos étnicos por departamento</h3>
-        <SeccionCategoriaPorDepto deptos={etnia.map((d) => d.name)} series={seriesEtnia} unidad="hab" />
+        <SeccionCategoriaPorDepto deptos={etnia.map((d) => d.name)} series={seriesEtnia} unidad="hab" etiquetaMetrica="Población" />
       </div>
     </div>
   )

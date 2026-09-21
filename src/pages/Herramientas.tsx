@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PlusCircle, SearchX } from 'lucide-react'
+import { ArrowLeft, BarChart3, PlusCircle, SearchX } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { fadeUp, staggerContainer, staggerItem3D } from '@/lib/animations'
@@ -13,13 +13,17 @@ import AnalizadorSuperposicion from '@/components/herramientas/AnalizadorSuperpo
 import Geoformularios          from '@/components/herramientas/Geoformularios'
 import AplicacionesMoviles     from '@/components/herramientas/AplicacionesMoviles'
 import PanelChocoTool           from '@/components/herramientas/PanelChocoTool'
+import HerramientaLauncherCard  from '@/components/herramientas/HerramientaLauncherCard'
 import ResumenActividad        from '@/components/herramientas/ResumenActividad'
 import SolicitarHerramientaModal from '@/components/herramientas/SolicitarHerramientaModal'
 
 // Registro de herramientas — añadir aquí cuando el backend provea nuevas.
-// `wide: true` hace que la tarjeta ocupe las dos columnas del grid — para
-// herramientas con su propia navegación interna (varias secciones/pestañas)
-// en vez de un formulario compacto.
+// `focusable: true` es para herramientas con su propia navegación interna
+// (varias secciones/pestañas) en vez de un formulario compacto: en la grilla
+// se muestran como una tarjeta lanzadora (HerramientaLauncherCard, sin tilt —
+// interactuar con pestañas/filtros mientras la tarjeta se inclina es un
+// problema real, no solo estético) y al abrirse ocupan toda la página, sin
+// competir por espacio con las demás herramientas.
 const TOOLS_META = [
   { id: 'calculadora',    tag: 'Geometría',        title: 'Calculadora de Áreas y Perímetros', Component: CalculadoraAreas       },
   { id: 'buffers',        tag: 'Procesamiento',     title: 'Generador de Buffers',               Component: GeneradorBuffers        },
@@ -27,15 +31,38 @@ const TOOLS_META = [
   { id: 'superposicion',  tag: 'Análisis Espacial', title: 'Analizador de Superposición',        Component: AnalizadorSuperposicion },
   { id: 'geoformularios', tag: 'Captura en Campo',  title: 'Geoformularios',                     Component: Geoformularios          },
   { id: 'apps-moviles',   tag: 'Movilidad',         title: 'Aplicaciones Móviles',               Component: AplicacionesMoviles     },
-  { id: 'panel-choco',    tag: 'Reportes',          title: 'Panel de Análisis Territorial — Chocó Biogeográfico', Component: PanelChocoTool, wide: true },
+  {
+    id: 'panel-choco', tag: 'Reportes', title: 'Panel de Análisis Territorial — Chocó Biogeográfico',
+    description: 'Titulación colectiva, cuencas, RUNAP, humedales, páramos, ciénagas y población del Chocó Biogeográfico — 8 secciones con gráficas y tablas por departamento.',
+    icon: BarChart3, color: 'gold' as const, Component: PanelChocoTool, focusable: true,
+  },
 ]
 
 export default function Herramientas() {
   const { query }                    = useSearch()
   const [showSolicitar, setShowSolicitar] = useState(false)
+  const [herramientaAbiertaId, setHerramientaAbiertaId] = useState<string | null>(null)
   const { toasts, toast, dismiss }   = useToast()
 
   const filteredTools = TOOLS_META.filter((t) => matches([t.title, t.tag], query))
+  const herramientaAbierta = TOOLS_META.find((t) => t.id === herramientaAbiertaId)
+
+  if (herramientaAbierta) {
+    return (
+      <div className="space-y-6">
+        <button
+          onClick={() => setHerramientaAbiertaId(null)}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-text-muted hover:text-primary-800 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+          Volver a Herramientas
+        </button>
+        <h1 className="page-header-title">{herramientaAbierta.title}</h1>
+        {React.createElement(herramientaAbierta.Component as React.ComponentType<{ onToast?: typeof toast }>, { onToast: toast })}
+        <ToastContainer toasts={toasts} dismiss={dismiss} />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -67,9 +94,20 @@ export default function Herramientas() {
           initial="initial" animate="animate"
           className="grid grid-cols-1 lg:grid-cols-2 gap-6"
         >
-          {filteredTools.map(({ id, Component, wide }) => (
-            <motion.div key={id} variants={staggerItem3D} className={wide ? 'lg:col-span-2' : undefined}>
-              {React.createElement(Component as React.ComponentType<{ onToast?: typeof toast }>, { onToast: toast })}
+          {filteredTools.map((tool) => (
+            <motion.div key={tool.id} variants={staggerItem3D}>
+              {tool.focusable ? (
+                <HerramientaLauncherCard
+                  tag={tool.tag}
+                  title={tool.title}
+                  description={tool.description ?? ''}
+                  icon={tool.icon!}
+                  color={tool.color}
+                  onAbrir={() => setHerramientaAbiertaId(tool.id)}
+                />
+              ) : (
+                React.createElement(tool.Component as React.ComponentType<{ onToast?: typeof toast }>, { onToast: toast })
+              )}
             </motion.div>
           ))}
         </motion.div>
