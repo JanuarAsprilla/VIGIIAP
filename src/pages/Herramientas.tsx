@@ -12,11 +12,14 @@ import ConversorCoordenadas    from '@/components/herramientas/ConversorCoordena
 import AnalizadorSuperposicion from '@/components/herramientas/AnalizadorSuperposicion'
 import Geoformularios          from '@/components/herramientas/Geoformularios'
 import AplicacionesMoviles     from '@/components/herramientas/AplicacionesMoviles'
-import TablerosControl         from '@/components/herramientas/TablerosControl'
+import PanelChocoTool           from '@/components/herramientas/PanelChocoTool'
 import ResumenActividad        from '@/components/herramientas/ResumenActividad'
 import SolicitarHerramientaModal from '@/components/herramientas/SolicitarHerramientaModal'
 
-// Registro de herramientas — añadir aquí cuando el backend provea nuevas
+// Registro de herramientas — añadir aquí cuando el backend provea nuevas.
+// `wide: true` hace que la tarjeta ocupe las dos columnas del grid — para
+// herramientas con su propia navegación interna (varias secciones/pestañas)
+// en vez de un formulario compacto.
 const TOOLS_META = [
   { id: 'calculadora',    tag: 'Geometría',        title: 'Calculadora de Áreas y Perímetros', Component: CalculadoraAreas       },
   { id: 'buffers',        tag: 'Procesamiento',     title: 'Generador de Buffers',               Component: GeneradorBuffers        },
@@ -24,7 +27,7 @@ const TOOLS_META = [
   { id: 'superposicion',  tag: 'Análisis Espacial', title: 'Analizador de Superposición',        Component: AnalizadorSuperposicion },
   { id: 'geoformularios', tag: 'Captura en Campo',  title: 'Geoformularios',                     Component: Geoformularios          },
   { id: 'apps-moviles',   tag: 'Movilidad',         title: 'Aplicaciones Móviles',               Component: AplicacionesMoviles     },
-  { id: 'tableros',       tag: 'Reportes',          title: 'Tableros de Control',                Component: TablerosControl         },
+  { id: 'panel-choco',    tag: 'Reportes',          title: 'Panel de Análisis Territorial — Chocó Biogeográfico', Component: PanelChocoTool, wide: true },
 ]
 
 export default function Herramientas() {
@@ -64,8 +67,8 @@ export default function Herramientas() {
           initial="initial" animate="animate"
           className="grid grid-cols-1 lg:grid-cols-2 gap-6"
         >
-          {filteredTools.map(({ id, Component }) => (
-            <motion.div key={id} variants={staggerItem3D}>
+          {filteredTools.map(({ id, Component, wide }) => (
+            <motion.div key={id} variants={staggerItem3D} className={wide ? 'lg:col-span-2' : undefined}>
               {React.createElement(Component as React.ComponentType<{ onToast?: typeof toast }>, { onToast: toast })}
             </motion.div>
           ))}

@@ -26,7 +26,7 @@ vi.mock('@/components/herramientas/ConversorCoordenadas', () => ({ default: () =
 vi.mock('@/components/herramientas/AnalizadorSuperposicion', () => ({ default: () => <div>Herramienta: Superposición</div> }))
 vi.mock('@/components/herramientas/Geoformularios', () => ({ default: () => <div>Herramienta: Geoformularios</div> }))
 vi.mock('@/components/herramientas/AplicacionesMoviles', () => ({ default: () => <div>Herramienta: Apps Móviles</div> }))
-vi.mock('@/components/herramientas/TablerosControl', () => ({ default: () => <div>Herramienta: Tableros</div> }))
+vi.mock('@/components/herramientas/PanelChocoTool', () => ({ default: () => <div>Herramienta: Panel Chocó</div> }))
 vi.mock('@/components/herramientas/ResumenActividad', () => ({ default: () => <div>Resumen de Actividad</div> }))
 vi.mock('@/components/herramientas/SolicitarHerramientaModal', () => ({
   default: ({ onClose }: { onClose: () => void }) => (
@@ -46,7 +46,7 @@ describe('Herramientas — grilla y filtrado', () => {
   test('muestra las 7 herramientas y el resumen de actividad sin búsqueda', () => {
     render(<Herramientas />)
     expect(screen.getByText('Herramienta: Calculadora')).toBeInTheDocument()
-    expect(screen.getByText('Herramienta: Tableros')).toBeInTheDocument()
+    expect(screen.getByText('Herramienta: Panel Chocó')).toBeInTheDocument()
     expect(screen.getByText('Resumen de Actividad')).toBeInTheDocument()
   })
 
