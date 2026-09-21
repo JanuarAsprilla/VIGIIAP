@@ -11,13 +11,16 @@ import { formatDate } from '@/lib/dateUtils'
 // (verde, gold/orange, magenta) ya está repartido entre auth/usuarios/
 // solicitudes/documentos/mapas.
 export const MODULO_STYLES: Record<string, string> = {
-  auth:        'bg-primary-500/12 text-primary-500',
-  usuarios:    'bg-magenta/12 text-magenta',
-  admin:       'bg-pink/12 text-pink',
-  solicitudes: 'bg-gold-400/12 text-gold-400',
-  mapas:       'bg-primary-700/10 text-primary-700',
-  documentos:  'bg-gold-500/12 text-gold-500',
-  sistema:     'bg-bg-alt text-text-muted',
+  auth:           'bg-primary-500/12 text-primary-500',
+  usuarios:       'bg-magenta/12 text-magenta',
+  admin:          'bg-pink/12 text-pink',
+  solicitudes:    'bg-gold-400/12 text-gold-400',
+  mapas:          'bg-primary-700/10 text-primary-700',
+  documentos:     'bg-gold-500/12 text-gold-500',
+  categorias:     'bg-teal-600/10 text-teal-700',
+  geovisores:     'bg-blue-600/10 text-blue-700',
+  notificaciones: 'bg-amber-600/10 text-amber-700',
+  sistema:        'bg-bg-alt text-text-muted',
 }
 
 export const ACCION_LABEL: Record<string, { label: string; badge: string }> = {
@@ -40,6 +43,18 @@ export const ACCION_LABEL: Record<string, { label: string; badge: string }> = {
   update_documento:        { label: 'Editar documento',     badge: 'bg-gold-500/12 text-gold-500'  },
   delete_documento:        { label: 'Eliminar documento',   badge: 'bg-red/10 text-red-dark'       },
   rate_limit_auto_scale:   { label: 'Límite de tráfico ajustado', badge: 'bg-bg-alt text-text-muted' },
+  // Eventos de seguridad de auth que antes no quedaban registrados en
+  // absoluto (logout, 2FA, recuperación de contraseña, sesiones) -- ver
+  // registrarAuditoria() en auth.controller.js / twoFactor.controller.js /
+  // sessions.controller.js / auth.service.js.
+  logout:                          { label: 'Logout',                    badge: 'bg-bg-alt text-text-muted' },
+  email_verificado:                { label: 'Email verificado',          badge: 'bg-primary-500/12 text-primary-500' },
+  password_recuperacion_solicitada: { label: 'Recuperación solicitada',  badge: 'bg-gold-500/12 text-gold-500' },
+  password_reset:                  { label: 'Contraseña restablecida',   badge: 'bg-gold-500/12 text-gold-500' },
+  '2fa_activado':                  { label: '2FA activado',              badge: 'bg-primary-500/12 text-primary-500' },
+  '2fa_desactivado':                { label: '2FA desactivado',          badge: 'bg-red/10 text-red-dark' },
+  sesion_revocada:                 { label: 'Sesión revocada',           badge: 'bg-gold-500/12 text-gold-500' },
+  todas_sesiones_revocadas:        { label: 'Todas las sesiones revocadas', badge: 'bg-red/10 text-red-dark' },
 }
 
 export interface AuditLogRaw {

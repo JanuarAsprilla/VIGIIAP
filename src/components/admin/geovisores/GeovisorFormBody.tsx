@@ -109,6 +109,14 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
   const [errors, setErrors] = useState<FormErrors>({})
   const [filtroCapa, setFiltroCapa] = useState('')
   const [uploadedThumb, setUploadedThumb] = useState<File | null>(null)
+  // Distingue "nunca se tocó la miniatura" de "se quitó explícitamente" --
+  // ThumbnailDropzone llama onFile(null) solo desde el botón "Quitar", nunca
+  // al montarse, así que cualquier onFile(null) es una remoción real.
+  const [thumbRemoved, setThumbRemoved] = useState(false)
+  const handleThumbChange = (f: File | null) => {
+    setUploadedThumb(f)
+    setThumbRemoved(f === null)
+  }
   // Al editar, los temas con capas ya elegidas empiezan abiertos — si no, el
   // admin tendría que expandirlos a mano solo para ver su propia selección.
   const [temasExpandidos, setTemasExpandidos] = useState<Set<string>>(
@@ -268,6 +276,8 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
 
       if (uploadedThumb) {
         await uploadThumbnail.mutateAsync({ id: geovisorId, file: uploadedThumb })
+      } else if (thumbRemoved) {
+        await uploadThumbnail.mutateAsync({ id: geovisorId, file: null })
       }
 
       onSaved(`Geovisor "${payload.titulo}" ${editing ? 'actualizado' : 'creado'}`)
@@ -347,7 +357,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                 <input id="gv-cita" type="text" value={form.cita}
                   onChange={(e) => setForm((f) => ({ ...f, cita: e.target.value }))} className={inputCls()} />
               </div>
-              <ThumbnailDropzone label="Portada del geovisor" onFile={setUploadedThumb} existing={form.thumbnailUrl || null} />
+              <ThumbnailDropzone label="Portada del geovisor" onFile={handleThumbChange} existing={thumbRemoved ? null : (form.thumbnailUrl || null)} />
             </AccordionSection>
 
             <AccordionSection n={2} title="Conexión y capas" hint="Elige de dónde vienen los datos y qué mostrar" icon={Globe} defaultOpen>

@@ -91,10 +91,13 @@ export function useUpdateGeovisor() {
 
 export function useUploadGeovisorThumbnail() {
   const qc = useQueryClient()
-  return useMutation<GeovisorRaw, Error, { id: string; file: File; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
+  // file null = quitar la miniatura -- se envía el multipart sin el campo
+  // "thumbnail", que el backend interpreta como orden de borrarla (ver
+  // uploadThumbnail() en geovisores.controller.js).
+  return useMutation<GeovisorRaw, Error, { id: string; file: File | null; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ id, file, onUploadProgress }) => {
       const fd = new FormData()
-      fd.append('thumbnail', file)
+      if (file) fd.append('thumbnail', file)
       return api.post(`/geovisores/${id}/thumbnail`, fd, { onUploadProgress })
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),

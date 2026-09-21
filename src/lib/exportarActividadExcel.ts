@@ -41,16 +41,22 @@ function normalizar(r: AuditExportRaw): FilaActividad {
 export interface OpcionesExportarActividad {
   filtroModulo?: string
   busqueda?: string
+  desde?: string
+  hasta?: string
 }
 
 /**
  * Exporta el registro de actividad COMPLETO (hasta 10.000 eventos, vía
  * /admin/export/audit) en vez de solo la página de 10 filas visible en
  * pantalla -- una tabla de 10 filas no sirve para ningún análisis real.
- * Aplica los mismos filtros de módulo/búsqueda que la vista actual.
+ * Aplica los mismos filtros de módulo/búsqueda/fechas que la vista actual --
+ * el rango de fechas se manda al backend (dateFilter ya lo soporta), no se
+ * filtra en el cliente, para no traer de más innecesariamente.
  */
 export async function exportarActividadExcel(opciones: OpcionesExportarActividad = {}): Promise<void> {
-  const crudo = await api.get('/admin/export/audit', { params: { formato: 'json' } }) as AuditExportRaw[]
+  const crudo = await api.get('/admin/export/audit', {
+    params: { formato: 'json', desde: opciones.desde, hasta: opciones.hasta },
+  }) as AuditExportRaw[]
   let filas = crudo.map(normalizar)
 
   if (opciones.filtroModulo) {

@@ -3,6 +3,12 @@ import { AlertTriangle, RefreshCw } from 'lucide-react'
 
 interface ErrorBoundaryProps {
   children?: React.ReactNode
+  // Para envolver contenido decorativo/no esencial (ej. un modelo 3D que
+  // puede fallar a cargar por una red inestable o un deploy a medio
+  // completar) -- un fallo ahí no debe mostrar la pantalla de error de
+  // página completa, solo desaparecer en silencio. undefined = fallback
+  // por defecto (pantalla de error completa, comportamiento original).
+  fallback?: React.ReactNode
 }
 
 interface ErrorBoundaryState {
@@ -37,6 +43,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
 
   render() {
     if (!this.state.hasError) return this.props.children
+    if (this.props.fallback !== undefined) return this.props.fallback
 
     return (
       <div role="alert" className="min-h-[50vh] flex items-center justify-center p-8">
