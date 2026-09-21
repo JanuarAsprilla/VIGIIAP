@@ -314,6 +314,23 @@ export interface Categoria {
   conteo?: { docs: number; mapas: number; geovisores: number }
 }
 
+// ─── Herramientas ───────────────────────────────────────────────────────────────
+
+/** Contenido administrable de una herramienta de /herramientas (backend,
+ *  tabla `herramientas`). El componente real, ícono y color siguen siendo
+ *  código -- ver el registro estático en src/lib/herramientasRegistro.tsx,
+ *  que mapea `clave` a esos detalles de implementación. */
+export interface Herramienta {
+  clave: string
+  titulo: string
+  descripcion?: string | null
+  tag: string
+  activa: boolean
+  orden: number
+  creado_en?: string
+  actualizado_en?: string
+}
+
 // ─── Notificaciones ───────────────────────────────────────────────────────────
 
 export interface Notificacion {

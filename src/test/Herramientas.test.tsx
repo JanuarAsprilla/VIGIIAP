@@ -2,6 +2,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
+import { BarChart3 } from 'lucide-react'
 import Herramientas from '@/pages/Herramientas'
 
 vi.mock('framer-motion', () => {
@@ -20,8 +21,13 @@ vi.mock('framer-motion', () => {
 let searchQuery = ''
 vi.mock('@/contexts/SearchContext', () => ({ useSearch: () => ({ query: searchQuery, setQuery: vi.fn() }) }))
 
-vi.mock('@/components/herramientas/ConversorCoordenadas', () => ({ default: () => <div>Herramienta: Conversor</div> }))
-vi.mock('@/components/herramientas/PanelChocoTool', () => ({ default: () => <div>Herramienta: Panel Chocó</div> }))
+let catalogoItems: unknown[] = []
+let catalogoLoading = false
+let catalogoError = false
+vi.mock('@/hooks/useHerramientasCatalogo', () => ({
+  useHerramientasCatalogo: () => ({ items: catalogoItems, isLoading: catalogoLoading, isError: catalogoError }),
+}))
+
 vi.mock('@/components/herramientas/ResumenActividad', () => ({ default: () => <div>Resumen de Actividad</div> }))
 vi.mock('@/components/herramientas/SolicitarHerramientaModal', () => ({
   default: ({ onClose }: { onClose: () => void }) => (
@@ -32,9 +38,21 @@ vi.mock('@/components/herramientas/SolicitarHerramientaModal', () => ({
   ),
 }))
 
+const CATALOGO_BASE = [
+  { clave: 'conversor', titulo: 'Conversor de Coordenadas', tag: 'Geodésico', activa: true, orden: 0, focusable: false, Component: () => <div>Herramienta: Conversor</div> },
+  {
+    clave: 'panel-choco', titulo: 'Panel de Análisis Territorial — Chocó Biogeográfico', tag: 'Reportes',
+    descripcion: 'Descripción del panel', activa: true, orden: 1, focusable: true, icon: BarChart3, color: 'gold' as const,
+    Component: () => <div>Herramienta: Panel Chocó</div>,
+  },
+]
+
 beforeEach(() => {
   vi.clearAllMocks()
   searchQuery = ''
+  catalogoItems = CATALOGO_BASE
+  catalogoLoading = false
+  catalogoError = false
 })
 
 describe('Herramientas — grilla y filtrado', () => {
@@ -47,6 +65,13 @@ describe('Herramientas — grilla y filtrado', () => {
     expect(screen.getByRole('button', { name: /Abrir panel completo/i })).toBeInTheDocument()
     expect(screen.queryByText('Herramienta: Panel Chocó')).not.toBeInTheDocument()
     expect(screen.getByText('Resumen de Actividad')).toBeInTheDocument()
+  })
+
+  test('mientras carga, muestra el esqueleto en vez de la grilla', () => {
+    catalogoLoading = true
+    render(<Herramientas />)
+    expect(screen.getByRole('status', { name: /Cargando herramientas/i })).toBeInTheDocument()
+    expect(screen.queryByText('Herramienta: Conversor')).not.toBeInTheDocument()
   })
 
   test('abrir una herramienta focusable la muestra a pantalla completa y "Volver" regresa a la grilla', async () => {
@@ -81,6 +106,23 @@ describe('Herramientas — grilla y filtrado', () => {
     render(<Herramientas />)
     expect(screen.getByText(/No se encontraron herramientas para/i)).toBeInTheDocument()
     expect(screen.getByText('"inexistente-xyz"')).toBeInTheDocument()
+  })
+
+  // Regresión: antes de distinguir "sin catálogo" de "sin resultados de
+  // búsqueda", un catálogo vacío o inalcanzable mostraba el confuso
+  // 'No se encontraron herramientas para ""' sin haber buscado nada.
+  test('catálogo vacío sin búsqueda activa muestra un mensaje distinto al de "sin resultados"', () => {
+    catalogoItems = []
+    render(<Herramientas />)
+    expect(screen.getByText('No hay herramientas disponibles todavía.')).toBeInTheDocument()
+    expect(screen.queryByText(/No se encontraron herramientas para/i)).not.toBeInTheDocument()
+  })
+
+  test('catálogo inalcanzable (isError) muestra el mensaje de error, no el de catálogo vacío', () => {
+    catalogoItems = []
+    catalogoError = true
+    render(<Herramientas />)
+    expect(screen.getByText(/No se pudo cargar el catálogo de herramientas/i)).toBeInTheDocument()
   })
 
   test('Solicitar herramienta abre el modal y cerrarlo lo oculta', async () => {

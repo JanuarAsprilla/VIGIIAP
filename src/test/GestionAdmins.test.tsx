@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import GestionAdmins from '@/pages/admin/GestionAdmins'
+import { MODULOS_CATALOGO } from '@/lib/constants/modulos'
 
 vi.mock('framer-motion', () => {
   const cache = new Map<string, (p: Record<string, unknown>) => ReactNode>()
@@ -193,9 +194,10 @@ describe('GestionAdmins — permisos por módulo', () => {
     renderPage()
     await user.click(await screen.findByRole('button', { name: /Editar módulos de Ana Restrepo/i }))
 
-    expect(screen.getByText('1/11 habilitados')).toBeInTheDocument()
+    const total = MODULOS_CATALOGO.length
+    expect(screen.getByText(`1/${total} habilitados`)).toBeInTheDocument()
     await user.click(screen.getByLabelText('Ver Usuarios'))
-    expect(screen.getByText('2/11 habilitados')).toBeInTheDocument()
+    expect(screen.getByText(`2/${total} habilitados`)).toBeInTheDocument()
   })
 
   test('"Otorgar acceso a todo" marca Ver en todos los módulos', async () => {
@@ -205,7 +207,7 @@ describe('GestionAdmins — permisos por módulo', () => {
 
     await user.click(screen.getByRole('button', { name: 'Otorgar acceso a todo' }))
 
-    expect(screen.getByText('11/11 habilitados')).toBeInTheDocument()
+    expect(screen.getByText(`${MODULOS_CATALOGO.length}/${MODULOS_CATALOGO.length} habilitados`)).toBeInTheDocument()
     expect(screen.getByLabelText('Ver Usuarios')).toBeChecked()
     expect(screen.getByLabelText('Ver Errores')).toBeChecked()
   })
@@ -218,7 +220,7 @@ describe('GestionAdmins — permisos por módulo', () => {
 
     await user.click(screen.getByRole('button', { name: 'Quitar todo el acceso' }))
 
-    expect(screen.getByText('0/11 habilitados')).toBeInTheDocument()
+    expect(screen.getByText(`0/${MODULOS_CATALOGO.length} habilitados`)).toBeInTheDocument()
     expect(screen.getByLabelText('Ver Mapas')).not.toBeChecked()
   })
 })

@@ -1,51 +1,36 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, BarChart3, PlusCircle, SearchX } from 'lucide-react'
+import { AlertCircle, ArrowLeft, PlusCircle, SearchX } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { fadeUp, staggerContainer, staggerItem3D } from '@/lib/animations'
 import { useToast, ToastContainer } from '@/components/Toast'
+import { useHerramientasCatalogo, type HerramientaCatalogo } from '@/hooks/useHerramientasCatalogo'
 
-import ConversorCoordenadas    from '@/components/herramientas/ConversorCoordenadas'
-import PanelChocoTool           from '@/components/herramientas/PanelChocoTool'
 import HerramientaLauncherCard  from '@/components/herramientas/HerramientaLauncherCard'
 import ResumenActividad        from '@/components/herramientas/ResumenActividad'
 import SolicitarHerramientaModal from '@/components/herramientas/SolicitarHerramientaModal'
 
-// Registro de herramientas — añadir aquí cuando el backend provea nuevas.
-// Calculadora de Áreas, Generador de Buffers, Analizador de Superposición,
-// Geoformularios y Aplicaciones Móviles se retiraron (2026-09-21): eran
-// maquetas sin función real o vaporware ("En desarrollo"/"Próximamente" sin
-// ningún backend detrás) — Calculadora además duplicaba, peor, la medición
-// de área geodésica real que ya existe en el Geovisor
-// (components/geovisor-viewer/HerramientasDibujo.tsx + lib/geo/areaUtils.ts).
-// Ver PR #187 para el análisis completo. Próximo paso: módulo de
-// administración real de herramientas (tabla + admin UI) en vez de este
-// registro hardcodeado.
-//
-// `focusable: true` es para herramientas con su propia navegación interna
-// (varias secciones/pestañas) en vez de un formulario compacto: en la grilla
-// se muestran como una tarjeta lanzadora (HerramientaLauncherCard, sin tilt —
-// interactuar con pestañas/filtros mientras la tarjeta se inclina es un
-// problema real, no solo estético) y al abrirse ocupan toda la página, sin
-// competir por espacio con las demás herramientas.
-const TOOLS_META = [
-  { id: 'conversor', tag: 'Geodésico', title: 'Conversor de Coordenadas', Component: ConversorCoordenadas },
-  {
-    id: 'panel-choco', tag: 'Reportes', title: 'Panel de Análisis Territorial — Chocó Biogeográfico',
-    description: 'Titulación colectiva, cuencas, RUNAP, humedales, páramos, ciénagas y población del Chocó Biogeográfico — 8 secciones con gráficas y tablas por departamento.',
-    icon: BarChart3, color: 'gold' as const, Component: PanelChocoTool, focusable: true,
-  },
-]
+function GridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse" role="status" aria-label="Cargando herramientas">
+      {[0, 1].map((i) => <div key={i} className="h-64 bg-bg-alt rounded-xl" />)}
+    </div>
+  )
+}
 
 export default function Herramientas() {
   const { query }                    = useSearch()
   const [showSolicitar, setShowSolicitar] = useState(false)
   const [herramientaAbiertaId, setHerramientaAbiertaId] = useState<string | null>(null)
   const { toasts, toast, dismiss }   = useToast()
+  const { items: herramientas, isLoading, isError } = useHerramientasCatalogo()
 
-  const filteredTools = TOOLS_META.filter((t) => matches([t.title, t.tag], query))
-  const herramientaAbierta = TOOLS_META.find((t) => t.id === herramientaAbiertaId)
+  const filteredTools = herramientas.filter((t) => matches([t.titulo, t.tag], query))
+  // Distinto de "sin resultados de búsqueda" (query no vacío): esto es el
+  // catálogo real vacío o inalcanzable, no algo que el usuario tecleó mal.
+  const sinCatalogo = !isLoading && herramientas.length === 0
+  const herramientaAbierta = herramientas.find((t) => t.clave === herramientaAbiertaId)
 
   if (herramientaAbierta) {
     return (
@@ -57,8 +42,8 @@ export default function Herramientas() {
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           Volver a Herramientas
         </button>
-        <h1 className="page-header-title">{herramientaAbierta.title}</h1>
-        {React.createElement(herramientaAbierta.Component as React.ComponentType<{ onToast?: typeof toast }>, { onToast: toast })}
+        <h1 className="page-header-title">{herramientaAbierta.titulo}</h1>
+        {React.createElement(herramientaAbierta.Component, { onToast: toast })}
         <ToastContainer toasts={toasts} dismiss={dismiss} />
       </div>
     )
@@ -88,25 +73,36 @@ export default function Herramientas() {
       </motion.div>
 
       {/* Tools grid */}
-      {filteredTools.length > 0 ? (
+      {isLoading ? (
+        <GridSkeleton />
+      ) : sinCatalogo ? (
+        <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
+          <AlertCircle className="w-10 h-10 mx-auto mb-3 opacity-30" aria-hidden="true" />
+          <p className="text-sm">
+            {isError
+              ? 'No se pudo cargar el catálogo de herramientas. Intenta de nuevo en unos minutos.'
+              : 'No hay herramientas disponibles todavía.'}
+          </p>
+        </motion.div>
+      ) : filteredTools.length > 0 ? (
         <motion.div
           variants={staggerContainer(0.07, 0.08)}
           initial="initial" animate="animate"
           className="grid grid-cols-1 lg:grid-cols-2 gap-6"
         >
-          {filteredTools.map((tool) => (
-            <motion.div key={tool.id} variants={staggerItem3D}>
+          {filteredTools.map((tool: HerramientaCatalogo) => (
+            <motion.div key={tool.clave} variants={staggerItem3D}>
               {tool.focusable ? (
                 <HerramientaLauncherCard
                   tag={tool.tag}
-                  title={tool.title}
-                  description={tool.description ?? ''}
+                  title={tool.titulo}
+                  description={tool.descripcion ?? ''}
                   icon={tool.icon!}
                   color={tool.color}
-                  onAbrir={() => setHerramientaAbiertaId(tool.id)}
+                  onAbrir={() => setHerramientaAbiertaId(tool.clave)}
                 />
               ) : (
-                React.createElement(tool.Component as React.ComponentType<{ onToast?: typeof toast }>, { onToast: toast })
+                React.createElement(tool.Component, { onToast: toast })
               )}
             </motion.div>
           ))}

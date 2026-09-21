@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, ClipboardList,
   FileText, Map, Settings, Activity, X,
   LogOut, Globe, Shield, Tag, ShieldCheck, Trash2, FileBarChart, AlertTriangle,
-  MapPinned, Server,
+  MapPinned, Server, Wrench,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/lib/constants/roles'
@@ -38,6 +38,7 @@ const NAV_SECTIONS: { label: string; links: NavLinkDef[] }[] = [
       { label: 'Geovisores',   path: '/admin/geovisores',  icon: MapPinned,   modulo: 'geovisores' as ModuloClave },
       { label: 'Conexiones GeoServer', path: '/admin/conexiones-geoserver', icon: Server, modulo: 'conexiones_geoserver' as ModuloClave },
       { label: 'Categorías',   path: '/admin/categorias',  icon: Tag,         modulo: 'categorias' as ModuloClave },
+      { label: 'Herramientas', path: '/admin/herramientas', icon: Wrench,     modulo: 'herramientas' as ModuloClave },
     ],
   },
   {
