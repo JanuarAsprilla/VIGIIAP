@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Trash2, Pencil, CheckCircle, Globe, Layers, MapPinned,
-  ShieldAlert, Power, Search,
+  ShieldAlert, Power, Search, X, AlertTriangle, Rows, Columns2, Columns3,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, staggerContainer, staggerItem } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
@@ -14,6 +14,13 @@ import type { GeovisorRaw } from '@/types'
 import GeovisorFormModal from '@/components/admin/geovisores/GeovisorFormModal'
 
 const fadeUp = fadeUpSm
+
+const COLS_STORAGE_KEY = 'vigiiap:admin-geovisores-cols'
+const COLS_GRID_CLASS: Record<1 | 2 | 3, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-1 md:grid-cols-2',
+  3: 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3',
+}
 
 const VISIBILIDAD_PILL: Record<string, string> = {
   publico:     'bg-primary-700/10 text-primary-700',
@@ -39,70 +46,133 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
   )
 }
 
-function GeovisorRow({ geovisor, conexionNombre, onEdit, onToggle, onDelete, toggling }: {
+// Misma tarjeta "full-bleed" que MapaCard (GestionMapas.tsx) -- miniatura o
+// gradiente de respaldo llenando toda la tarjeta, clic para revelar el panel
+// de detalle y acciones, en vez de la fila plana anterior que no mostraba
+// ninguna miniatura ni distinguía visualmente un geovisor de otro.
+function GeovisorCard({
+  geovisor, conexionNombre, expanded, onToggleExpand, onEdit, onToggle, onDelete, toggling,
+}: {
   geovisor: GeovisorRaw
   conexionNombre: string
+  expanded: boolean
+  onToggleExpand: () => void
   onEdit: () => void
   onToggle: () => void
   onDelete: () => void
   toggling: boolean
 }) {
+  const totalWorkspaces = geovisor.workspacesGeoserver?.length ?? 0
+
   return (
     <motion.div
       variants={staggerItem}
       layout
-      className={`bg-[var(--card-bg)] border rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-colors ${
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
+      aria-label={`${geovisor.titulo}. Clic para ver detalle y acciones.`}
+      onClick={onToggleExpand}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleExpand() } }}
+      className={`group/card relative h-64 rounded-2xl overflow-hidden cursor-pointer border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ring-offset-background ${
         geovisor.activo ? 'border-border/70' : 'border-border/40 opacity-70'
       }`}
     >
-      <div className="w-11 h-11 rounded-xl bg-primary-800/10 flex items-center justify-center shrink-0">
-        <MapPinned className="w-5 h-5 text-primary-800" aria-hidden="true" />
-      </div>
+      {geovisor.thumbnailUrl ? (
+        <img src={geovisor.thumbnailUrl} alt=""
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover bg-bg-alt group-hover/card:scale-105 transition-transform duration-500" />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary-800 to-primary-950">
+          <MapPinned className="w-12 h-12 text-white/25" aria-hidden="true" />
+        </div>
+      )}
 
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-bold text-text truncate">{geovisor.titulo}</h3>
-          <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${VISIBILIDAD_PILL[geovisor.visibilidad] ?? ''}`}>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10 pointer-events-none" />
+
+      <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+          <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white bg-black/40 backdrop-blur-sm`}>
             {VISIBILIDAD_LABEL[geovisor.visibilidad] ?? geovisor.visibilidad}
           </span>
           {geovisor.categoria && (
-            <span className="text-[0.6rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-bg-alt text-text-muted">
+            <span className="text-[0.6rem] font-semibold px-1.5 py-0.5 rounded border border-white/30 text-white bg-black/30 backdrop-blur-sm">
               {geovisor.categoria}
             </span>
           )}
+          {!geovisor.activo && (
+            <span className="text-[0.6rem] font-semibold px-1.5 py-0.5 rounded bg-white/90 text-text-muted">Inactivo</span>
+          )}
         </div>
-        <p className="text-xs text-text-muted mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-          <span className="flex items-center gap-1"><Globe className="w-3 h-3" />{conexionNombre}</span>
-          <span className="flex items-center gap-1"><Layers className="w-3 h-3" />
-            {geovisor.workspacesGeoserver.length
-              ? `${geovisor.workspacesGeoserver.length} workspace${geovisor.workspacesGeoserver.length === 1 ? '' : 's'}`
-              : 'Todos los workspaces de la conexión'}
-          </span>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onToggle() }}
+          disabled={toggling}
+          className={`shrink-0 p-1.5 rounded-lg bg-black/30 backdrop-blur-sm transition-colors disabled:opacity-40 ${
+            geovisor.activo ? 'text-green-400 hover:bg-black/50' : 'text-white/70 hover:bg-black/50'
+          }`}
+          title={geovisor.activo ? 'Desactivar' : 'Activar'}
+        >
+          <Power className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        <p className="text-sm font-bold text-white leading-tight line-clamp-2">{geovisor.titulo}</p>
+        <p className="text-xs text-white/70 mt-1 flex items-center gap-1">
+          <Globe className="w-3 h-3 shrink-0" />
+          <span className="truncate">{conexionNombre}</span>
         </p>
       </div>
 
-      <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-center">
-        <button onClick={onToggle} disabled={toggling} title={geovisor.activo ? 'Desactivar' : 'Activar'}
-          className={`p-1.5 rounded-lg transition-colors disabled:opacity-40 ${
-            geovisor.activo ? 'text-green-700 hover:bg-green-700/10' : 'text-text-muted hover:bg-bg-alt'
-          }`}>
-          <Power className="w-3.5 h-3.5" />
+      <div
+        className={`absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col justify-end p-4 transition-opacity duration-250 ${
+          expanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onToggleExpand() }}
+          className="absolute top-3 right-3 p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+          aria-label="Cerrar detalle"
+        >
+          <X className="w-4 h-4" />
         </button>
-        <button onClick={onEdit} title="Editar"
-          className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors">
-          <Pencil className="w-3.5 h-3.5" />
-        </button>
-        <button onClick={onDelete} title="Eliminar"
-          className="p-1.5 rounded-lg text-text-muted hover:text-red-dark hover:bg-red/10 transition-colors">
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+
+        <span className={`self-start text-[0.6rem] font-semibold px-1.5 py-0.5 rounded mb-2 ${VISIBILIDAD_PILL[geovisor.visibilidad] ?? 'bg-white/10 text-white'}`}>
+          {VISIBILIDAD_LABEL[geovisor.visibilidad] ?? geovisor.visibilidad}
+        </span>
+        <p className="text-sm font-bold text-white leading-tight">{geovisor.titulo}</p>
+        <p className="text-xs text-white/60 mt-0.5 flex items-center gap-1">
+          <Layers className="w-3 h-3 shrink-0" />
+          {totalWorkspaces
+            ? `${totalWorkspaces} workspace${totalWorkspaces === 1 ? '' : 's'}`
+            : 'Todos los workspaces de la conexión'}
+        </p>
+
+        <div className="flex items-center gap-2 mt-3">
+          <button type="button"
+            onClick={(e) => { e.stopPropagation(); onEdit() }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/10 text-white hover:bg-white/20 transition-colors">
+            <Pencil className="w-3.5 h-3.5" /> Editar
+          </button>
+          <button type="button"
+            onClick={(e) => { e.stopPropagation(); onDelete() }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red/20 text-white hover:bg-red/30 transition-colors">
+            <Trash2 className="w-3.5 h-3.5" /> Eliminar
+          </button>
+        </div>
       </div>
     </motion.div>
   )
 }
 
 export default function GestionGeovisores() {
-  const { data, isLoading } = useGeovisoresList()
+  // isError sin manejar antes: si la petición fallaba (429, 500, sesión
+  // expirada a medio cargar...), la lista simplemente se veía vacía sin
+  // ninguna pista de que hubo un error -- indistinguible de "no hay
+  // geovisores" para quien lo ve. Ahora se distingue y se puede reintentar.
+  const { data, isLoading, isError, refetch, isRefetching } = useGeovisoresList()
   const { data: conexiones = [] } = useConexionesGeoserverList()
   const geovisores = data?.data ?? []
 
@@ -115,18 +185,31 @@ export default function GestionGeovisores() {
   const [toast, setToast]               = useState<string | null>(null)
   const [search, setSearch]             = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
+  const [expandedId, setExpandedId]     = useState<string | null>(null)
+
+  const [cols, setCols] = useState<1 | 2 | 3>(() => {
+    if (typeof window === 'undefined') return 3
+    const raw = Number(window.localStorage.getItem(COLS_STORAGE_KEY))
+    return raw === 1 || raw === 2 || raw === 3 ? raw : 3
+  })
+  const changeCols = (n: 1 | 2 | 3) => {
+    setCols(n)
+    try { window.localStorage.setItem(COLS_STORAGE_KEY, String(n)) } catch { /* localStorage no disponible */ }
+  }
 
   const conexionNombrePorId = Object.fromEntries(conexiones.map((c) => [c.id, c.nombre]))
 
   const categoriasConGeovisores = [...new Set(geovisores.map((g) => g.categoria).filter(Boolean))]
     .sort((a, b) => a!.localeCompare(b!))
 
-  const filtered = geovisores.filter((g) => {
-    const q = search.toLowerCase()
-    const matchQ = !q || g.titulo.toLowerCase().includes(q)
-    const matchC = !filtroCategoria || g.categoria === filtroCategoria
-    return matchQ && matchC
-  })
+  const filtered = geovisores
+    .filter((g) => {
+      const q = search.toLowerCase()
+      const matchQ = !q || g.titulo.toLowerCase().includes(q)
+      const matchC = !filtroCategoria || g.categoria === filtroCategoria
+      return matchQ && matchC
+    })
+    .sort((a, b) => a.titulo.localeCompare(b.titulo))
 
   const openCreate = () => { setEditing(null); setShowForm(true) }
   const openEdit = (geovisor: GeovisorRaw) => { setEditing(geovisor); setShowForm(true) }
@@ -199,6 +282,20 @@ export default function GestionGeovisores() {
         </motion.div>
       )}
 
+      {isError && (
+        <motion.div {...fadeUp(0.04)} className="flex items-start gap-3 p-4 bg-red/8 border border-red/20 rounded-xl">
+          <AlertTriangle className="w-4 h-4 text-red-dark mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <p className="text-xs text-red-dark font-semibold">No se pudieron cargar los geovisores</p>
+            <p className="text-xs text-red-dark/80 mt-0.5">Puede ser un problema temporal de conexión o de permisos. Intenta de nuevo.</p>
+          </div>
+          <button onClick={() => refetch()} disabled={isRefetching}
+            className="text-xs font-semibold text-red-dark underline underline-offset-2 disabled:opacity-50 shrink-0">
+            {isRefetching ? 'Reintentando…' : 'Reintentar'}
+          </button>
+        </motion.div>
+      )}
+
       {!isLoading && conexiones.length === 0 && (
         <motion.div {...fadeUp(0.04)} className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/25 rounded-xl">
           <ShieldAlert className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
@@ -233,21 +330,42 @@ export default function GestionGeovisores() {
       )}
 
       {filtered.length > 0 && (
-        <motion.div variants={staggerContainer(0.05, 0.06)} initial="initial" animate="animate" className="space-y-3">
-          <AnimatePresence mode="popLayout">
-            {filtered.map((geovisor) => (
-              <GeovisorRow
-                key={geovisor.id}
-                geovisor={geovisor}
-                conexionNombre={conexionNombrePorId[geovisor.conexionGeoserverId] ?? 'Conexión desconocida'}
-                onEdit={() => openEdit(geovisor)}
-                onToggle={() => handleToggle(geovisor)}
-                onDelete={() => setDeleteTarget(geovisor)}
-                toggling={toggleActivo.isPending}
-              />
-            ))}
-          </AnimatePresence>
-        </motion.div>
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <div role="group" aria-label="Columnas de la cuadrícula" className="flex items-center gap-1 p-1 bg-[var(--card-bg)] border border-border rounded-xl">
+              {([
+                { n: 1 as const, Icon: Rows,     label: '1 columna' },
+                { n: 2 as const, Icon: Columns2, label: '2 columnas' },
+                { n: 3 as const, Icon: Columns3, label: '3 columnas' },
+              ]).map(({ n, Icon, label }) => (
+                <button key={n} type="button" onClick={() => changeCols(n)} title={label} aria-label={label}
+                  aria-pressed={cols === n}
+                  className={`p-2 rounded-lg transition-colors ${
+                    cols === n ? 'bg-primary-800 text-white' : 'text-text-muted hover:bg-bg-alt hover:text-text'
+                  }`}>
+                  <Icon className="w-4 h-4" />
+                </button>
+              ))}
+            </div>
+          </div>
+          <motion.div variants={staggerContainer(0.05, 0.06)} initial="initial" animate="animate" className={`grid ${COLS_GRID_CLASS[cols]} gap-6`}>
+            <AnimatePresence mode="popLayout">
+              {filtered.map((geovisor) => (
+                <GeovisorCard
+                  key={geovisor.id}
+                  geovisor={geovisor}
+                  conexionNombre={conexionNombrePorId[geovisor.conexionGeoserverId] ?? 'Conexión desconocida'}
+                  expanded={expandedId === geovisor.id}
+                  onToggleExpand={() => setExpandedId((id) => (id === geovisor.id ? null : geovisor.id))}
+                  onEdit={() => openEdit(geovisor)}
+                  onToggle={() => handleToggle(geovisor)}
+                  onDelete={() => setDeleteTarget(geovisor)}
+                  toggling={toggleActivo.isPending}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        </div>
       )}
 
       <GeovisorFormModal
