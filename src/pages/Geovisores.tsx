@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Globe, Search, MapPinned, Users, ShieldCheck, Loader2 } from 'lucide-react'
+import {
+  Globe, Search, MapPinned, Users, ShieldCheck, Loader2, Rows, Columns2, Columns3,
+} from 'lucide-react'
 import { useGeovisoresPublico } from '@/hooks/useGeovisores'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
@@ -31,6 +34,11 @@ const VISIBILIDAD_BADGE: Partial<Record<GeovisorRaw['visibilidad'], { label: str
   acreditados: { label: 'Acreditados', Icon: ShieldCheck },
 }
 
+// Tarjeta "full-bleed" -- mismo lenguaje visual que MapCard (Mapas.tsx): la
+// miniatura (o el gradiente de respaldo) llena toda la tarjeta, con un
+// degradado permanente para legibilidad y el texto superpuesto, en vez del
+// patrón anterior de "imagen arriba + caja blanca abajo" que quedaba plano
+// para geovisores sin miniatura ni descripción (la mayoría, hoy).
 function GeovisorCard({ geovisor, index, colors }: { geovisor: GeovisorRaw; index: number; colors: { accent: string; pill: string } }) {
   const restringido = VISIBILIDAD_BADGE[geovisor.visibilidad]
 
@@ -39,50 +47,53 @@ function GeovisorCard({ geovisor, index, colors }: { geovisor: GeovisorRaw; inde
       {...cardEnter3D(index)}
       glow={`${colors.accent}38`}
       intensity={5}
-      className="group bg-[var(--card-bg)] border border-border/70 rounded-2xl overflow-hidden flex flex-col"
+      className="group/card relative h-64 bg-[var(--card-bg)] border border-border/70 rounded-2xl overflow-hidden"
       whileHover={{ y: -4 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
     >
-      <Link to={`/geovisores/${geovisor.slug}`} className="flex flex-col flex-1 no-underline text-inherit">
-        <div className="relative h-40 overflow-hidden bg-bg-alt shrink-0">
-          {geovisor.thumbnailUrl ? (
-            <img src={geovisor.thumbnailUrl} alt={geovisor.titulo}
-              width={320} height={160}
-              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
-              loading="lazy" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center relative overflow-hidden"
-              style={{ background: `linear-gradient(135deg, ${colors.accent}14 0%, ${colors.accent}06 100%)` }}>
-              <div className="absolute inset-0 opacity-[0.06]"
-                style={{
-                  backgroundImage: `radial-gradient(circle, ${colors.accent} 1px, transparent 1px)`,
-                  backgroundSize: '18px 18px',
-                }} />
-              <MapPinned className="relative w-12 h-12" style={{ color: colors.accent, opacity: 0.24 }} aria-hidden="true" />
-            </div>
+      <Link to={`/geovisores/${geovisor.slug}`} className="absolute inset-0 no-underline text-inherit"
+        aria-label={`${geovisor.titulo}${geovisor.categoria ? `, ${geovisor.categoria}` : ''}`}>
+        {geovisor.thumbnailUrl ? (
+          <img src={geovisor.thumbnailUrl} alt=""
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover bg-bg-alt group-hover/card:scale-105 transition-transform duration-500" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center overflow-hidden"
+            style={{ background: `linear-gradient(135deg, ${colors.accent}2e 0%, ${colors.accent}0a 100%)` }}>
+            <div className="absolute inset-0 opacity-[0.08]"
+              style={{
+                backgroundImage: `radial-gradient(circle, ${colors.accent} 1px, transparent 1px)`,
+                backgroundSize: '18px 18px',
+              }} />
+            <MapPinned className="relative w-14 h-14 group-hover/card:scale-110 transition-transform duration-500"
+              style={{ color: colors.accent, opacity: 0.3 }} aria-hidden="true" />
+          </div>
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10 pointer-events-none" />
+
+        <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
+          {geovisor.categoria && (
+            <span className="text-[0.6rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white bg-black/40 backdrop-blur-sm">
+              {geovisor.categoria}
+            </span>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
           {restringido && (
-            <span className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 bg-black/55 backdrop-blur-sm text-white text-[0.6rem] font-bold uppercase tracking-wide rounded-lg">
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-black/55 backdrop-blur-sm text-white text-[0.6rem] font-bold uppercase tracking-wide rounded-lg shrink-0">
               <restringido.Icon className="w-3 h-3" aria-hidden="true" />
               {restringido.label}
             </span>
           )}
         </div>
 
-        <div className="p-5 flex flex-col flex-1">
-          {geovisor.categoria && (
-            <span className={`self-start text-[0.6rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 ${colors.pill}`}>
-              {geovisor.categoria}
-            </span>
-          )}
-          <h3 className="text-sm font-bold text-text leading-snug mb-2 line-clamp-2">{geovisor.titulo}</h3>
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <p className="text-sm font-bold text-white leading-snug line-clamp-2">{geovisor.titulo}</p>
           {(geovisor.subtitulo || geovisor.descripcion) && (
-            <p className="text-xs text-text-muted leading-relaxed line-clamp-2 flex-1">
+            <p className="text-xs text-white/70 mt-1 line-clamp-2">
               {geovisor.subtitulo || geovisor.descripcion}
             </p>
           )}
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-700 mt-4 pt-3 border-t border-border/60">
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-white mt-3 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300">
             <Globe className="w-3.5 h-3.5" aria-hidden="true" />
             Abrir geovisor
           </span>
@@ -92,12 +103,33 @@ function GeovisorCard({ geovisor, index, colors }: { geovisor: GeovisorRaw; inde
   )
 }
 
+const COLS_STORAGE_KEY = 'vigiiap:geovisores-cols'
+const COLS_GRID_CLASS: Record<1 | 2 | 3, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-1 md:grid-cols-2',
+  3: 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3',
+}
+
 export default function Geovisores() {
   const { query } = useSearch()
   const { data, isLoading, isError } = useGeovisoresPublico()
   const geovisores = data?.data ?? []
 
-  const filtrados = geovisores.filter((g) => matches([g.titulo, g.categoria, g.subtitulo, g.descripcion], query))
+  // Columnas de la cuadrícula -- elegible y recordado en este navegador,
+  // igual que en Mapas (misma clave de patrón, distinto namespace).
+  const [cols, setCols] = useState<1 | 2 | 3>(() => {
+    if (typeof window === 'undefined') return 3
+    const raw = Number(window.localStorage.getItem(COLS_STORAGE_KEY))
+    return raw === 1 || raw === 2 || raw === 3 ? raw : 3
+  })
+  const changeCols = (n: 1 | 2 | 3) => {
+    setCols(n)
+    try { window.localStorage.setItem(COLS_STORAGE_KEY, String(n)) } catch { /* localStorage no disponible */ }
+  }
+
+  const filtrados = geovisores
+    .filter((g) => matches([g.titulo, g.categoria, g.subtitulo, g.descripcion], query))
+    .sort((a, b) => a.titulo.localeCompare(b.titulo))
 
   const grupos = new Map<string, GeovisorRaw[]>()
   filtrados.forEach((g) => {
@@ -150,6 +182,26 @@ export default function Geovisores() {
         </motion.div>
       )}
 
+      {!isLoading && !isError && filtrados.length > 0 && (
+        <div className="flex justify-end">
+          <div role="group" aria-label="Columnas de la cuadrícula" className="flex items-center gap-1 p-1 bg-[var(--card-bg)] border border-border rounded-xl">
+            {([
+              { n: 1 as const, Icon: Rows,     label: '1 columna' },
+              { n: 2 as const, Icon: Columns2, label: '2 columnas' },
+              { n: 3 as const, Icon: Columns3, label: '3 columnas' },
+            ]).map(({ n, Icon, label }) => (
+              <button key={n} type="button" onClick={() => changeCols(n)} title={label} aria-label={label}
+                aria-pressed={cols === n}
+                className={`p-2 rounded-lg transition-colors ${
+                  cols === n ? 'bg-primary-800 text-white' : 'text-text-muted hover:bg-bg-alt hover:text-text'
+                }`}>
+                <Icon className="w-4 h-4" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {categoriasOrdenadas.map((categoria, seccionIndex) => (
         <motion.section key={categoria} {...fadeUp(0.05 + seccionIndex * 0.03)} className="space-y-4">
           <h2 className="text-lg font-bold text-text flex items-center gap-2">
@@ -158,7 +210,7 @@ export default function Geovisores() {
               ({grupos.get(categoria)!.length})
             </span>
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className={`grid ${COLS_GRID_CLASS[cols]} gap-6`}>
             {grupos.get(categoria)!.map((geovisor, i) => (
               <GeovisorCard key={geovisor.id} geovisor={geovisor} index={i} colors={colorDeCategoria(categoria)} />
             ))}

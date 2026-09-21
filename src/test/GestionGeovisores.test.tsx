@@ -79,7 +79,9 @@ beforeEach(() => {
 describe('GestionGeovisores — listado', () => {
   test('muestra el título del geovisor y el nombre de su conexión', () => {
     render(<GestionGeovisores />)
-    expect(screen.getByText('Geología del Chocó')).toBeInTheDocument()
+    // La tarjeta muestra el título tanto en la etiqueta siempre visible como
+    // en el panel de detalle (oculto hasta expandir) -- ambas coinciden con el texto.
+    expect(screen.getAllByText('Geología del Chocó').length).toBeGreaterThan(0)
     expect(screen.getByText('GeoServer institucional')).toBeInTheDocument()
   })
 
@@ -88,6 +90,25 @@ describe('GestionGeovisores — listado', () => {
     render(<GestionGeovisores />)
     expect(screen.getByRole('button', { name: /Nuevo geovisor/i })).toBeDisabled()
     expect(screen.getByText(/Todavía no hay ninguna conexión GeoServer registrada/i)).toBeInTheDocument()
+  })
+})
+
+describe('GestionGeovisores — estado de error', () => {
+  // Antes, un fallo de la petición (429, sesión a medio expirar, etc.) hacía
+  // que la lista se viera igual que "no hay geovisores" -- sin ninguna
+  // señal visible del error. Regresión para que quede distinguible.
+  test('un error de carga muestra un aviso explícito y un botón de reintentar, no una lista vacía silenciosa', async () => {
+    const refetch = vi.fn()
+    vi.mocked(useGeovisoresList).mockReturnValue({
+      data: undefined, isLoading: false, isError: true, refetch, isRefetching: false,
+    } as unknown as ReturnType<typeof useGeovisoresList>)
+
+    const user = userEvent.setup()
+    render(<GestionGeovisores />)
+
+    expect(screen.getByText('No se pudieron cargar los geovisores')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Reintentar/i }))
+    expect(refetch).toHaveBeenCalled()
   })
 })
 
@@ -104,6 +125,12 @@ describe('GestionGeovisores — activar/desactivar', () => {
   })
 })
 
+// Editar/Eliminar viven dentro del panel de detalle de la tarjeta, revelado
+// solo al hacer clic en ella (mismo patrón que MapaCard en GestionMapas).
+function expandirTarjeta(user: ReturnType<typeof userEvent.setup>, titulo: string) {
+  return user.click(screen.getByRole('button', { name: new RegExp(`^${titulo}\\. Clic para ver detalle`) }))
+}
+
 describe('GestionGeovisores — eliminar', () => {
   test('confirmar elimina el geovisor seleccionado', async () => {
     const mutateAsync = vi.fn().mockResolvedValue(undefined)
@@ -111,7 +138,8 @@ describe('GestionGeovisores — eliminar', () => {
 
     const user = userEvent.setup()
     render(<GestionGeovisores />)
-    await user.click(screen.getByTitle('Eliminar'))
+    await expandirTarjeta(user, 'Geología del Chocó')
+    await user.click(screen.getByRole('button', { name: /Eliminar/i }))
     await user.click(screen.getByRole('button', { name: /Sí, eliminar/i }))
 
     expect(mutateAsync).toHaveBeenCalledWith('geovisor-1')
@@ -123,7 +151,8 @@ describe('GestionGeovisores — eliminar', () => {
 
     const user = userEvent.setup()
     render(<GestionGeovisores />)
-    await user.click(screen.getByTitle('Eliminar'))
+    await expandirTarjeta(user, 'Geología del Chocó')
+    await user.click(screen.getByRole('button', { name: /Eliminar/i }))
     await user.click(screen.getByRole('button', { name: /Cancelar/i }))
 
     expect(mutateAsync).not.toHaveBeenCalled()
@@ -135,7 +164,8 @@ describe('GestionGeovisores — editar', () => {
   test('el botón Editar abre el formulario precargado con los datos del geovisor', async () => {
     const user = userEvent.setup()
     render(<GestionGeovisores />)
-    await user.click(screen.getByTitle('Editar'))
+    await expandirTarjeta(user, 'Geología del Chocó')
+    await user.click(screen.getByRole('button', { name: /Editar/i }))
 
     expect(screen.getByRole('heading', { name: 'Editar geovisor' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Título/i)).toHaveValue('Geología del Chocó')
@@ -219,12 +249,12 @@ describe('GestionGeovisores — buscador y filtro por categoría', () => {
     const user = userEvent.setup()
     render(<GestionGeovisores />)
 
-    expect(screen.getByText('Geología del Chocó')).toBeInTheDocument()
-    expect(screen.getByText('Hidrología Amazónica')).toBeInTheDocument()
+    expect(screen.getAllByText('Geología del Chocó').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Hidrología Amazónica').length).toBeGreaterThan(0)
 
     await user.type(screen.getByLabelText(/Buscar geovisor por título/i), 'hidro')
     expect(screen.queryByText('Geología del Chocó')).not.toBeInTheDocument()
-    expect(screen.getByText('Hidrología Amazónica')).toBeInTheDocument()
+    expect(screen.getAllByText('Hidrología Amazónica').length).toBeGreaterThan(0)
 
     await user.clear(screen.getByLabelText(/Buscar geovisor por título/i))
     await user.type(screen.getByLabelText(/Buscar geovisor por título/i), 'no existe nada así')
@@ -238,11 +268,11 @@ describe('GestionGeovisores — buscador y filtro por categoría', () => {
 
     const pill = screen.getByRole('button', { name: 'Geología' })
     await user.click(pill)
-    expect(screen.getByText('Geología del Chocó')).toBeInTheDocument()
+    expect(screen.getAllByText('Geología del Chocó').length).toBeGreaterThan(0)
     expect(screen.queryByText('Hidrología Amazónica')).not.toBeInTheDocument()
 
     await user.click(pill)
-    expect(screen.getByText('Geología del Chocó')).toBeInTheDocument()
-    expect(screen.getByText('Hidrología Amazónica')).toBeInTheDocument()
+    expect(screen.getAllByText('Geología del Chocó').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Hidrología Amazónica').length).toBeGreaterThan(0)
   })
 })
