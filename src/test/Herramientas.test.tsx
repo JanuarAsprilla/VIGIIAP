@@ -20,12 +20,7 @@ vi.mock('framer-motion', () => {
 let searchQuery = ''
 vi.mock('@/contexts/SearchContext', () => ({ useSearch: () => ({ query: searchQuery, setQuery: vi.fn() }) }))
 
-vi.mock('@/components/herramientas/CalculadoraAreas', () => ({ default: () => <div>Herramienta: Calculadora</div> }))
-vi.mock('@/components/herramientas/GeneradorBuffers', () => ({ default: () => <div>Herramienta: Buffers</div> }))
 vi.mock('@/components/herramientas/ConversorCoordenadas', () => ({ default: () => <div>Herramienta: Conversor</div> }))
-vi.mock('@/components/herramientas/AnalizadorSuperposicion', () => ({ default: () => <div>Herramienta: Superposición</div> }))
-vi.mock('@/components/herramientas/Geoformularios', () => ({ default: () => <div>Herramienta: Geoformularios</div> }))
-vi.mock('@/components/herramientas/AplicacionesMoviles', () => ({ default: () => <div>Herramienta: Apps Móviles</div> }))
 vi.mock('@/components/herramientas/PanelChocoTool', () => ({ default: () => <div>Herramienta: Panel Chocó</div> }))
 vi.mock('@/components/herramientas/ResumenActividad', () => ({ default: () => <div>Resumen de Actividad</div> }))
 vi.mock('@/components/herramientas/SolicitarHerramientaModal', () => ({
@@ -43,9 +38,9 @@ beforeEach(() => {
 })
 
 describe('Herramientas — grilla y filtrado', () => {
-  test('muestra las 7 herramientas y el resumen de actividad sin búsqueda', () => {
+  test('muestra las 2 herramientas y el resumen de actividad sin búsqueda', () => {
     render(<Herramientas />)
-    expect(screen.getByText('Herramienta: Calculadora')).toBeInTheDocument()
+    expect(screen.getByText('Herramienta: Conversor')).toBeInTheDocument()
     // Panel Chocó es "focusable" — en la grilla se ve su tarjeta lanzadora, no su
     // contenido (que solo se monta al abrirlo, ver siguiente test).
     expect(screen.getByText('Panel de Análisis Territorial — Chocó Biogeográfico')).toBeInTheDocument()
@@ -60,23 +55,23 @@ describe('Herramientas — grilla y filtrado', () => {
 
     await user.click(screen.getByRole('button', { name: /Abrir panel completo/i }))
     expect(screen.getByText('Herramienta: Panel Chocó')).toBeInTheDocument()
-    expect(screen.queryByText('Herramienta: Calculadora')).not.toBeInTheDocument()
+    expect(screen.queryByText('Herramienta: Conversor')).not.toBeInTheDocument()
     expect(screen.queryByText('Resumen de Actividad')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /Volver a Herramientas/i }))
     expect(screen.queryByText('Herramienta: Panel Chocó')).not.toBeInTheDocument()
-    expect(screen.getByText('Herramienta: Calculadora')).toBeInTheDocument()
+    expect(screen.getByText('Herramienta: Conversor')).toBeInTheDocument()
   })
 
   test('filtra herramientas por título o categoría según la búsqueda global', () => {
-    searchQuery = 'coordenadas'
+    searchQuery = 'reportes'
     render(<Herramientas />)
-    expect(screen.getByText('Herramienta: Conversor')).toBeInTheDocument()
-    expect(screen.queryByText('Herramienta: Calculadora')).not.toBeInTheDocument()
+    expect(screen.getByText('Panel de Análisis Territorial — Chocó Biogeográfico')).toBeInTheDocument()
+    expect(screen.queryByText('Herramienta: Conversor')).not.toBeInTheDocument()
   })
 
   test('oculta el resumen de actividad mientras hay una búsqueda activa', () => {
-    searchQuery = 'buffers'
+    searchQuery = 'conversor'
     render(<Herramientas />)
     expect(screen.queryByText('Resumen de Actividad')).not.toBeInTheDocument()
   })

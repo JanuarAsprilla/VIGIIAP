@@ -6,18 +6,23 @@ import { matches } from '@/lib/search'
 import { fadeUp, staggerContainer, staggerItem3D } from '@/lib/animations'
 import { useToast, ToastContainer } from '@/components/Toast'
 
-import CalculadoraAreas       from '@/components/herramientas/CalculadoraAreas'
-import GeneradorBuffers        from '@/components/herramientas/GeneradorBuffers'
 import ConversorCoordenadas    from '@/components/herramientas/ConversorCoordenadas'
-import AnalizadorSuperposicion from '@/components/herramientas/AnalizadorSuperposicion'
-import Geoformularios          from '@/components/herramientas/Geoformularios'
-import AplicacionesMoviles     from '@/components/herramientas/AplicacionesMoviles'
 import PanelChocoTool           from '@/components/herramientas/PanelChocoTool'
 import HerramientaLauncherCard  from '@/components/herramientas/HerramientaLauncherCard'
 import ResumenActividad        from '@/components/herramientas/ResumenActividad'
 import SolicitarHerramientaModal from '@/components/herramientas/SolicitarHerramientaModal'
 
 // Registro de herramientas — añadir aquí cuando el backend provea nuevas.
+// Calculadora de Áreas, Generador de Buffers, Analizador de Superposición,
+// Geoformularios y Aplicaciones Móviles se retiraron (2026-09-21): eran
+// maquetas sin función real o vaporware ("En desarrollo"/"Próximamente" sin
+// ningún backend detrás) — Calculadora además duplicaba, peor, la medición
+// de área geodésica real que ya existe en el Geovisor
+// (components/geovisor-viewer/HerramientasDibujo.tsx + lib/geo/areaUtils.ts).
+// Ver PR #187 para el análisis completo. Próximo paso: módulo de
+// administración real de herramientas (tabla + admin UI) en vez de este
+// registro hardcodeado.
+//
 // `focusable: true` es para herramientas con su propia navegación interna
 // (varias secciones/pestañas) en vez de un formulario compacto: en la grilla
 // se muestran como una tarjeta lanzadora (HerramientaLauncherCard, sin tilt —
@@ -25,12 +30,7 @@ import SolicitarHerramientaModal from '@/components/herramientas/SolicitarHerram
 // problema real, no solo estético) y al abrirse ocupan toda la página, sin
 // competir por espacio con las demás herramientas.
 const TOOLS_META = [
-  { id: 'calculadora',    tag: 'Geometría',        title: 'Calculadora de Áreas y Perímetros', Component: CalculadoraAreas       },
-  { id: 'buffers',        tag: 'Procesamiento',     title: 'Generador de Buffers',               Component: GeneradorBuffers        },
-  { id: 'conversor',      tag: 'Geodésico',         title: 'Conversor de Coordenadas',           Component: ConversorCoordenadas    },
-  { id: 'superposicion',  tag: 'Análisis Espacial', title: 'Analizador de Superposición',        Component: AnalizadorSuperposicion },
-  { id: 'geoformularios', tag: 'Captura en Campo',  title: 'Geoformularios',                     Component: Geoformularios          },
-  { id: 'apps-moviles',   tag: 'Movilidad',         title: 'Aplicaciones Móviles',               Component: AplicacionesMoviles     },
+  { id: 'conversor', tag: 'Geodésico', title: 'Conversor de Coordenadas', Component: ConversorCoordenadas },
   {
     id: 'panel-choco', tag: 'Reportes', title: 'Panel de Análisis Territorial — Chocó Biogeográfico',
     description: 'Titulación colectiva, cuencas, RUNAP, humedales, páramos, ciénagas y población del Chocó Biogeográfico — 8 secciones con gráficas y tablas por departamento.',
