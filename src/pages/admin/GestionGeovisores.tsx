@@ -4,7 +4,7 @@ import {
   Plus, Trash2, Pencil, CheckCircle, Globe, Layers, MapPinned,
   ShieldAlert, Power, Search, X, AlertTriangle, Rows, Columns2, Columns3,
 } from 'lucide-react'
-import { fadeUpSm, panelAnim, staggerContainer, staggerItem } from '@/lib/animations'
+import { fadeUpSm, panelAnim } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
 import {
   useGeovisoresList, useToggleGeovisorActivo, useDeleteGeovisor,
@@ -66,8 +66,7 @@ function GeovisorCard({
 
   return (
     <motion.div
-      variants={staggerItem}
-      layout
+      {...fadeUp(0)}
       role="button"
       tabIndex={0}
       aria-expanded={expanded}
@@ -348,23 +347,31 @@ export default function GestionGeovisores() {
               ))}
             </div>
           </div>
-          <motion.div variants={staggerContainer(0.05, 0.06)} initial="initial" animate="animate" className={`grid ${COLS_GRID_CLASS[cols]} gap-6`}>
-            <AnimatePresence mode="popLayout">
-              {filtered.map((geovisor) => (
-                <GeovisorCard
-                  key={geovisor.id}
-                  geovisor={geovisor}
-                  conexionNombre={conexionNombrePorId[geovisor.conexionGeoserverId] ?? 'Conexión desconocida'}
-                  expanded={expandedId === geovisor.id}
-                  onToggleExpand={() => setExpandedId((id) => (id === geovisor.id ? null : geovisor.id))}
-                  onEdit={() => openEdit(geovisor)}
-                  onToggle={() => handleToggle(geovisor)}
-                  onDelete={() => setDeleteTarget(geovisor)}
-                  toggling={toggleActivo.isPending}
-                />
-              ))}
-            </AnimatePresence>
-          </motion.div>
+          {/* Grid sin animación de entrada (antes usaba staggerContainer +
+              AnimatePresence mode="popLayout" + layout en cada tarjeta):
+              en producción, con un solo geovisor, la tarjeta quedaba
+              invisible -- sin ningún error en consola, lo que apunta a la
+              animación quedándose "pegada" en su estado inicial
+              (opacity:0) en vez de resolver a animate. El toggle de
+              columnas (no animado) sí se veía siempre, confirmando que el
+              bloque en sí renderizaba bien. Se prefiere una grilla simple y
+              confiable sobre una animación de entrada que puede fallar en
+              silencio. */}
+          <div className={`grid ${COLS_GRID_CLASS[cols]} gap-6`}>
+            {filtered.map((geovisor) => (
+              <GeovisorCard
+                key={geovisor.id}
+                geovisor={geovisor}
+                conexionNombre={conexionNombrePorId[geovisor.conexionGeoserverId] ?? 'Conexión desconocida'}
+                expanded={expandedId === geovisor.id}
+                onToggleExpand={() => setExpandedId((id) => (id === geovisor.id ? null : geovisor.id))}
+                onEdit={() => openEdit(geovisor)}
+                onToggle={() => handleToggle(geovisor)}
+                onDelete={() => setDeleteTarget(geovisor)}
+                toggling={toggleActivo.isPending}
+              />
+            ))}
+          </div>
         </div>
       )}
 
