@@ -3,7 +3,7 @@ import { getApiErrorMessage } from '@/lib/apiError'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Trash2, Pencil, X, CheckCircle, ArrowUp, ArrowDown,
-  Loader2, Wrench, Eye, EyeOff, AlertCircle,
+  Loader2, Wrench, Eye, EyeOff, AlertCircle, Globe, Users,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, staggerContainer } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
@@ -12,7 +12,12 @@ import {
   useReordenarHerramientas, useEliminarHerramienta, type CrearHerramientaInput,
 } from '@/hooks/useHerramientas'
 import { REGISTRO_HERRAMIENTAS } from '@/lib/herramientasRegistro'
-import type { Herramienta } from '@/types'
+import type { Herramienta, VisibilidadHerramienta } from '@/types'
+
+const VISIBILIDAD_META: Record<VisibilidadHerramienta, { label: string; icon: typeof Globe }> = {
+  publico:  { label: 'Público',  icon: Globe },
+  usuarios: { label: 'Usuarios de la plataforma', icon: Users },
+}
 
 const fadeUp = fadeUpSm
 
@@ -42,6 +47,8 @@ interface HerramientaCardProps {
 
 function HerramientaCard({ h, esPrimera, esUltima, onEditar, onEliminar, onMover, onToggleActiva, moviendose }: HerramientaCardProps) {
   const tieneComponente = h.clave in REGISTRO_HERRAMIENTAS
+  const visMeta = VISIBILIDAD_META[h.visibilidad]
+  const VisIcon = visMeta.icon
 
   return (
     <Card3D
@@ -78,6 +85,16 @@ function HerramientaCard({ h, esPrimera, esUltima, onEditar, onEliminar, onMover
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[0.6rem] font-bold uppercase tracking-widest text-text-muted">{h.tag}</span>
               <code className="text-[0.6rem] text-text-muted bg-bg-alt px-1.5 py-0.5 rounded">{h.clave}</code>
+              <span
+                className={`inline-flex items-center gap-1 text-[0.6rem] font-bold px-2 py-0.5 rounded-full border ${
+                  h.visibilidad === 'publico'
+                    ? 'text-primary-700 bg-primary-500/10 border-primary-500/25'
+                    : 'text-gold-600 bg-gold-300/10 border-gold-300/40'
+                }`}
+                title={h.visibilidad === 'publico' ? 'Visible para cualquiera, incluido visitante sin sesión' : 'Visible solo para usuarios con sesión iniciada'}
+              >
+                <VisIcon className="w-3 h-3" /> {visMeta.label}
+              </span>
               {!tieneComponente && (
                 <span className="inline-flex items-center gap-1 text-[0.6rem] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
                   <AlertCircle className="w-3 h-3" /> Sin componente
@@ -122,9 +139,10 @@ interface FormularioHerramientaState {
   titulo: string
   descripcion: string
   tag: string
+  visibilidad: VisibilidadHerramienta
 }
 
-const FORM_VACIO: FormularioHerramientaState = { clave: '', titulo: '', descripcion: '', tag: '' }
+const FORM_VACIO: FormularioHerramientaState = { clave: '', titulo: '', descripcion: '', tag: '', visibilidad: 'publico' }
 
 export default function GestionHerramientas() {
   const { data: herramientas = [], isLoading } = useHerramientasList(true)
@@ -153,7 +171,7 @@ export default function GestionHerramientas() {
 
   const abrirEditar = (h: Herramienta) => {
     setEditTarget(h)
-    setForm({ clave: h.clave, titulo: h.titulo, descripcion: h.descripcion ?? '', tag: h.tag })
+    setForm({ clave: h.clave, titulo: h.titulo, descripcion: h.descripcion ?? '', tag: h.tag, visibilidad: h.visibilidad })
     setFormError(null)
   }
 
@@ -166,7 +184,7 @@ export default function GestionHerramientas() {
     try {
       const datos: CrearHerramientaInput = {
         clave: form.clave, titulo: form.titulo.trim(), tag: form.tag.trim(),
-        descripcion: form.descripcion.trim() || null,
+        descripcion: form.descripcion.trim() || null, visibilidad: form.visibilidad,
       }
       await crear.mutateAsync(datos)
       setToast(`Herramienta "${datos.titulo}" publicada`)
@@ -184,7 +202,10 @@ export default function GestionHerramientas() {
     try {
       await actualizar.mutateAsync({
         clave: editTarget.clave,
-        cambios: { titulo: form.titulo.trim(), tag: form.tag.trim(), descripcion: form.descripcion.trim() || null },
+        cambios: {
+          titulo: form.titulo.trim(), tag: form.tag.trim(),
+          descripcion: form.descripcion.trim() || null, visibilidad: form.visibilidad,
+        },
       })
       setToast(`Herramienta "${form.titulo.trim()}" actualizada`)
       setEditTarget(null)
@@ -252,11 +273,13 @@ export default function GestionHerramientas() {
       <motion.div {...fadeUp(0.04)} className="flex items-start gap-3 p-4 bg-primary-500/10 border border-primary-500/25 rounded-xl">
         <Wrench className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
         <p className="text-xs text-primary-600">
-          Aquí controlas si una herramienta aparece en <strong>/herramientas</strong>, su orden y su descripción —
-          sin necesidad de un despliegue. El componente que la ejecuta sigue siendo código: solo puedes
-          publicar claves que un desarrollador ya haya integrado (columna "Sin componente" marca las que faltan).
-          Para las herramientas con navegación propia (como el Panel Chocó), título y descripción se ven en su
-          tarjeta pública; para herramientas simples, solo activar/ocultar y el orden tienen efecto visible ahí.
+          Aquí controlas si una herramienta aparece en <strong>/herramientas</strong>, su orden, su descripción y
+          quién puede verla — sin necesidad de un despliegue. "Público" la muestra a cualquiera, incluido un
+          visitante sin sesión; "Usuarios de la plataforma" la oculta a quien no tenga sesión iniciada. El
+          componente que la ejecuta sigue siendo código: solo puedes publicar claves que un desarrollador ya haya
+          integrado (columna "Sin componente" marca las que faltan). Para las herramientas con navegación propia
+          (como el Panel Chocó), título y descripción se ven en su tarjeta pública; para herramientas simples,
+          solo activar/ocultar, visibilidad y el orden tienen efecto visible ahí.
         </p>
       </motion.div>
 
@@ -338,6 +361,15 @@ export default function GestionHerramientas() {
                     className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 focus:border-primary-800 transition" />
                 </div>
                 <div>
+                  <label htmlFor="gh-vis" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Visibilidad</label>
+                  <select id="gh-vis" value={form.visibilidad}
+                    onChange={(e) => setForm((f) => ({ ...f, visibilidad: e.target.value as VisibilidadHerramienta }))}
+                    className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 focus:border-primary-800 transition">
+                    <option value="publico">Público — cualquiera, incluido visitante sin sesión</option>
+                    <option value="usuarios">Usuarios de la plataforma — requiere sesión iniciada</option>
+                  </select>
+                </div>
+                <div>
                   <label htmlFor="gh-desc" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
                     Descripción <span className="font-normal normal-case tracking-normal text-text-muted">(opcional)</span>
                   </label>
@@ -391,6 +423,15 @@ export default function GestionHerramientas() {
                   <input id="gh-e-tag" type="text" value={form.tag}
                     onChange={(e) => { setForm((f) => ({ ...f, tag: e.target.value })); setFormError(null) }}
                     className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 focus:border-primary-800 transition" />
+                </div>
+                <div>
+                  <label htmlFor="gh-e-vis" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Visibilidad</label>
+                  <select id="gh-e-vis" value={form.visibilidad}
+                    onChange={(e) => setForm((f) => ({ ...f, visibilidad: e.target.value as VisibilidadHerramienta }))}
+                    className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 focus:border-primary-800 transition">
+                    <option value="publico">Público — cualquiera, incluido visitante sin sesión</option>
+                    <option value="usuarios">Usuarios de la plataforma — requiere sesión iniciada</option>
+                  </select>
                 </div>
                 <div>
                   <label htmlFor="gh-e-desc" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Descripción</label>

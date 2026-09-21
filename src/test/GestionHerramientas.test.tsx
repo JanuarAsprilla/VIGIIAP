@@ -45,7 +45,7 @@ import {
 } from '@/hooks/useHerramientas'
 
 function makeHerramienta(overrides: Record<string, unknown> = {}) {
-  return { clave: 'conversor', titulo: 'Conversor de Coordenadas', descripcion: null, tag: 'Geodésico', activa: true, orden: 0, ...overrides }
+  return { clave: 'conversor', titulo: 'Conversor de Coordenadas', descripcion: null, tag: 'Geodésico', activa: true, visibilidad: 'publico', orden: 0, ...overrides }
 }
 
 const HERRAMIENTAS_BASE = [
@@ -115,7 +115,7 @@ describe('GestionHerramientas — publicar', () => {
     await user.type(screen.getByLabelText(/Tag/i), 'Procesamiento')
     await user.click(screen.getByRole('button', { name: /^Publicar$/i }))
 
-    expect(mutateAsync).toHaveBeenCalledWith({ clave: 'nueva-tool', titulo: 'Nueva', tag: 'Procesamiento', descripcion: null })
+    expect(mutateAsync).toHaveBeenCalledWith({ clave: 'nueva-tool', titulo: 'Nueva', tag: 'Procesamiento', descripcion: null, visibilidad: 'publico' })
   })
 
   test('sin claves disponibles, el botón de publicar queda deshabilitado', () => {
@@ -129,7 +129,7 @@ describe('GestionHerramientas — publicar', () => {
 })
 
 describe('GestionHerramientas — activar/ocultar', () => {
-  test('clic en el ícono de visibilidad llama a actualizar con activa invertida', async () => {
+  test('clic en el ícono de ojo llama a actualizar con activa invertida', async () => {
     const mutateAsync = vi.fn().mockResolvedValue(undefined)
     vi.mocked(useActualizarHerramienta).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useActualizarHerramienta>)
 
@@ -138,6 +138,38 @@ describe('GestionHerramientas — activar/ocultar', () => {
     await user.click(screen.getByRole('button', { name: /Ocultar Conversor de Coordenadas/i }))
 
     expect(mutateAsync).toHaveBeenCalledWith({ clave: 'conversor', cambios: { activa: false } })
+  })
+})
+
+describe('GestionHerramientas — editar y visibilidad', () => {
+  test('muestra la insignia de visibilidad de cada herramienta', () => {
+    vi.mocked(useHerramientasList).mockReturnValue({
+      data: [makeHerramienta(), makeHerramienta({ clave: 'panel-choco', titulo: 'Panel Chocó', visibilidad: 'usuarios', orden: 1 })],
+      isLoading: false,
+    } as unknown as ReturnType<typeof useHerramientasList>)
+    render(<GestionHerramientas />)
+    expect(screen.getByText('Público')).toBeInTheDocument()
+    expect(screen.getByText('Usuarios de la plataforma')).toBeInTheDocument()
+  })
+
+  test('editar precarga la visibilidad actual y permite cambiarla', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useActualizarHerramienta).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useActualizarHerramienta>)
+
+    const user = userEvent.setup()
+    render(<GestionHerramientas />)
+    await user.click(screen.getByRole('button', { name: /Editar Conversor de Coordenadas/i }))
+
+    const select = screen.getByLabelText(/Visibilidad/i) as HTMLSelectElement
+    expect(select.value).toBe('publico')
+
+    await user.selectOptions(select, 'usuarios')
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
+
+    expect(mutateAsync).toHaveBeenCalledWith({
+      clave: 'conversor',
+      cambios: { titulo: 'Conversor de Coordenadas', tag: 'Geodésico', descripcion: null, visibilidad: 'usuarios' },
+    })
   })
 })
 

@@ -320,12 +320,20 @@ export interface Categoria {
  *  tabla `herramientas`). El componente real, ícono y color siguen siendo
  *  código -- ver el registro estático en src/lib/herramientasRegistro.tsx,
  *  que mapea `clave` a esos detalles de implementación. */
+/** 'publico' (cualquiera, incluido visitante anónimo) o 'usuarios' (exige
+ *  sesión con un rol que no sea visitante/publico) -- mismo campo/valores
+ *  que mapas/documentos/geovisores/categorias (sin el tercer valor
+ *  'acreditados' de esos módulos, específico de descargas por link directo
+ *  y sin sentido para una tarjeta de catálogo). */
+export type VisibilidadHerramienta = 'publico' | 'usuarios'
+
 export interface Herramienta {
   clave: string
   titulo: string
   descripcion?: string | null
   tag: string
   activa: boolean
+  visibilidad: VisibilidadHerramienta
   orden: number
   creado_en?: string
   actualizado_en?: string

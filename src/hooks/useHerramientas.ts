@@ -26,6 +26,7 @@ export interface CrearHerramientaInput {
   titulo: string
   descripcion?: string | null
   tag: string
+  visibilidad?: Herramienta['visibilidad']
   orden?: number
 }
 
@@ -39,7 +40,7 @@ export function useCrearHerramienta() {
 
 export interface ActualizarHerramientaInput {
   clave: string
-  cambios: Partial<Pick<Herramienta, 'titulo' | 'descripcion' | 'tag' | 'activa' | 'orden'>>
+  cambios: Partial<Pick<Herramienta, 'titulo' | 'descripcion' | 'tag' | 'activa' | 'visibilidad' | 'orden'>>
 }
 
 export function useActualizarHerramienta() {
