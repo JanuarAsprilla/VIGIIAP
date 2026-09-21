@@ -56,4 +56,19 @@ describe('ErrorBoundary', () => {
     await user.click(screen.getByRole('button', { name: /Intentar de nuevo/i }))
     expect(screen.getByText('Recuperado')).toBeInTheDocument()
   })
+
+  // Regresión: un fondo decorativo (ej. el modelo 3D del hero) que falla al
+  // cargar no debe mostrar la pantalla de error de página completa -- con
+  // fallback={null} desaparece en silencio en vez de tumbar toda la sección.
+  test('con fallback={null}, un error no muestra la UI de error completa', () => {
+    render(<ErrorBoundary fallback={null}><Bomb throwError /></ErrorBoundary>)
+    expect(screen.queryByText('Ocurrió un error inesperado')).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  test('con un fallback custom, lo renderiza en vez de la UI por defecto', () => {
+    render(<ErrorBoundary fallback={<div>Fondo no disponible</div>}><Bomb throwError /></ErrorBoundary>)
+    expect(screen.getByText('Fondo no disponible')).toBeInTheDocument()
+    expect(screen.queryByText('Ocurrió un error inesperado')).not.toBeInTheDocument()
+  })
 })

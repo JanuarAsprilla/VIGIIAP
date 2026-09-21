@@ -9,6 +9,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { CinematicChocoScene } from './CinematicChocoScene'
 import MarqueeStrip from './MarqueeStrip'
+import ErrorBoundary from './ErrorBoundary'
 
 // ── Polígono oficial del Chocó Biogeográfico ──────────────────────────────────
 // Coordenadas UTM Zona 17N en kilómetros, trazadas del mapa oficial IIAP/IGAC.
@@ -365,9 +366,15 @@ function Scene({ isDark, prefersReduced, scrollYProgress, mountCinematic }: {
 }) {
   if (mountCinematic) {
     return (
-      <Suspense fallback={null}>
-        <CinematicChocoScene scrollYProgress={scrollYProgress} isDark={isDark} />
-      </Suspense>
+      // fallback={null} -- si el .glb falla en cargar (red inestable, un
+      // deploy a medio completar truncando la descarga), este fondo
+      // decorativo simplemente no aparece; sin este boundary local, el error
+      // se propagaba hasta el ErrorBoundary global y tumbaba toda la home.
+      <ErrorBoundary fallback={null}>
+        <Suspense fallback={null}>
+          <CinematicChocoScene scrollYProgress={scrollYProgress} isDark={isDark} />
+        </Suspense>
+      </ErrorBoundary>
     )
   }
   return(
