@@ -16,7 +16,7 @@ vi.mock('framer-motion', () => {
   return { motion, AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</> }
 })
 
-const { authMock } = vi.hoisted(() => ({ authMock: { user: null as { rol: string } | null } }))
+const { authMock } = vi.hoisted(() => ({ authMock: { user: null as { rol: string; isVisitante?: boolean } | null } }))
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 vi.mock('@/hooks/useStats', () => ({ useAdminStats: vi.fn() }))
 import { useAdminStats } from '@/hooks/useStats'
@@ -44,6 +44,28 @@ describe('ResumenActividad', () => {
     render(<ResumenActividad />)
     expect(screen.getByText('Estadísticas disponibles para administradores.')).toBeInTheDocument()
     expect(screen.queryByText('42')).not.toBeInTheDocument()
+  })
+
+  // Regresión: público/visitante no debe ver ni siquiera el mensaje
+  // "restringido" -- ese aviso solo tiene sentido para staff autenticado que
+  // sabe que existe un panel admin; a un visitante anónimo solo le revela
+  // la existencia de estadísticas internas sin ningún beneficio.
+  test('sin sesión (usuario null), no renderiza nada', () => {
+    authMock.user = null
+    const { container } = render(<ResumenActividad />)
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  test('rol visitante (token temporal sin registro), no renderiza nada', () => {
+    authMock.user = { rol: 'publico', isVisitante: true }
+    const { container } = render(<ResumenActividad />)
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  test('rol publico (cuenta registrada de solo consulta), no renderiza nada', () => {
+    authMock.user = { rol: 'publico', isVisitante: false }
+    const { container } = render(<ResumenActividad />)
+    expect(container).toBeEmptyDOMElement()
   })
 
   test('un admin_sig ve las cifras reales de documentos y solicitudes', () => {
