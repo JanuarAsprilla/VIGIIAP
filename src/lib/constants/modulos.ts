@@ -8,6 +8,7 @@ export const MODULOS_CATALOGO = [
   { clave: 'geovisores',           nombre: 'Geovisores' },
   { clave: 'conexiones_geoserver', nombre: 'Conexiones GeoServer' },
   { clave: 'categorias',           nombre: 'Categorías' },
+  { clave: 'herramientas',         nombre: 'Herramientas' },
   { clave: 'configuracion',        nombre: 'Configuración' },
   { clave: 'actividad',            nombre: 'Actividad' },
   { clave: 'errores',              nombre: 'Errores' },

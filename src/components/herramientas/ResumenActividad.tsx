@@ -16,6 +16,13 @@ export default function ResumenActividad() {
       ]
     : null
 
+  // Público/visitante (sin sesión o rol público) no debe ver ni siquiera el
+  // mensaje "restringido" -- ese aviso solo tiene sentido para staff
+  // autenticado (investigador/técnico/institucional/admin) que sabe que el
+  // panel admin existe. Mostrárselo a un visitante anónimo solo revela la
+  // existencia de estadísticas internas sin ningún beneficio para él.
+  if (!user || user.isVisitante || user.rol === 'publico') return null
+
   return (
     <motion.div
       {...fadeUp(0.5)}
