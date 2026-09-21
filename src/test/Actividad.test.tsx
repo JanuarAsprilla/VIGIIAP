@@ -58,24 +58,21 @@ describe('Actividad — normalización de acciones', () => {
   })
 })
 
-describe('Actividad — búsqueda local', () => {
-  test('filtra por email, acción o descripción dentro de la página actual', async () => {
-    vi.mocked(api.get).mockResolvedValue({
-      data: [
-        makeLog({ id: '1', usuario_email: 'ana@iiap.gov.co', descripcion: 'Login exitoso' }),
-        makeLog({ id: '2', usuario_email: 'carlos@iiap.gov.co', accion: 'registro', descripcion: 'Nuevo registro' }),
-      ],
-      meta: { total: 2 },
-    })
-
+describe('Actividad — búsqueda', () => {
+  // La búsqueda es un parámetro real de la consulta al backend (con
+  // debounce), no un filtro sobre la página de 10 filas ya cargada --
+  // antes, buscar a alguien que no estuviera en esa página no encontraba
+  // nada, aunque sí tuviera actividad registrada.
+  test('tras el debounce, pide a la API con el término de búsqueda y reinicia a la página 1', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
     const user = userEvent.setup()
     renderPage()
-    await screen.findByText('ana@iiap.gov.co')
+    await screen.findByText('Login')
 
     await user.type(screen.getByPlaceholderText(/Buscar por usuario/i), 'carlos')
+    await new Promise((resolve) => setTimeout(resolve, 400))
 
-    expect(screen.queryByText('ana@iiap.gov.co')).not.toBeInTheDocument()
-    expect(screen.getByText('carlos@iiap.gov.co')).toBeInTheDocument()
+    expect(api.get).toHaveBeenCalledWith('/admin/audit', { params: expect.objectContaining({ q: 'carlos', offset: 0 }) })
   })
 })
 
@@ -147,9 +144,27 @@ describe('Actividad — exportar Excel', () => {
 
     await user.selectOptions(screen.getByRole('combobox'), 'usuarios')
     await user.type(screen.getByPlaceholderText(/Buscar por usuario/i), 'ana')
+    await new Promise((resolve) => setTimeout(resolve, 400)) // debounce de la búsqueda
     await user.click(screen.getByRole('button', { name: /Exportar Excel/i }))
 
-    expect(exportarActividadExcel).toHaveBeenCalledWith({ filtroModulo: 'usuarios', busqueda: 'ana' })
+    expect(exportarActividadExcel).toHaveBeenCalledWith({
+      filtroModulo: 'usuarios', busqueda: 'ana', desde: undefined, hasta: undefined,
+    })
+  })
+
+  test('exporta con el rango de fechas activo', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Login')
+
+    await user.type(screen.getByLabelText('Desde'), '2026-01-01')
+    await user.type(screen.getByLabelText('Hasta'), '2026-01-31')
+    await user.click(screen.getByRole('button', { name: /Exportar Excel/i }))
+
+    expect(exportarActividadExcel).toHaveBeenCalledWith(expect.objectContaining({
+      desde: '2026-01-01', hasta: '2026-01-31',
+    }))
   })
 
   test('un fallo al exportar muestra un mensaje de error', async () => {
