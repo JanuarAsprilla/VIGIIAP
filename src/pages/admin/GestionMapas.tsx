@@ -8,7 +8,7 @@ import {
   Layers, Send, Upload, CheckCircle, AlertCircle,
   FileText, Image, Link as LinkIcon, Loader2, MapPin,
   ExternalLink, Globe, Users, ShieldCheck,
-  Rows, Columns2, Columns3,
+  Rows, Columns2, Columns3, ChevronDown, Compass,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
@@ -39,10 +39,23 @@ const VISIBILIDAD = [
 ]
 const visMap = Object.fromEntries(VISIBILIDAD.map((v) => [v.value, v]))
 
+// Opciones de sistema de coordenadas en lenguaje llano -- nadie fuera del
+// equipo SIG memoriza códigos EPSG de memoria. "otro" revela un campo numérico.
+const EPSG_OPCIONES = [
+  { value: '', label: 'No especificado' },
+  { value: '4326', label: 'Coordenadas GPS estándar (WGS 84)' },
+  { value: '9377', label: 'Coordenadas oficiales de Colombia (MAGNA-SIRGAS)' },
+  { value: 'otro', label: 'Otro (indicar código EPSG)' },
+]
+
 const EMPTY_FORM = {
   nombre: '', tematica: '',
   descripcion: '', anio: String(new Date().getFullYear()),
   visible: true, formato: 'PDF', url: '', visibilidad: 'publico',
+  // Metadatos técnicos opcionales (ISO 19115 / IGAC) -- nunca bloquean el
+  // guardado, son campos de texto/número libres que viajan tal cual.
+  epsgOpcion: '', epsgOtro: '', escala: '', fuente: '',
+  bboxNorte: '', bboxSur: '', bboxEste: '', bboxOeste: '',
 }
 
 function formatBytes(bytes: number | null | undefined) {
@@ -315,6 +328,10 @@ export default function GestionMapas() {
   // montaje -- no enviar nada, deja la que ya había) de "el usuario le dio
   // Quitar explícitamente" (sí hay que decirle al backend que la borre).
   const [thumbRemoved, setThumbRemoved] = useState(false)
+  // Colapsado por defecto -- son datos de respaldo cartográfico (ISO 19115 /
+  // IGAC), nadie los necesita para simplemente publicar un mapa, así que no
+  // deben alargar ni intimidar el flujo simple por defecto.
+  const [showMetadatos, setShowMetadatos] = useState(false)
   const handleThumbChange = (f: File | null) => {
     setUploadedThumb(f)
     setThumbRemoved(f === null)
@@ -400,11 +417,13 @@ export default function GestionMapas() {
   const openCreate = () => {
     setEditing(null); setForm(EMPTY_FORM); setFormErrors({})
     setUploadedFile(null); setUploadedThumb(null); setThumbRemoved(false); setUploadError(null); setSubmitError(null)
-    setUploadProgress(null); setShowModal(true)
+    setUploadProgress(null); setShowMetadatos(false); setShowModal(true)
   }
 
   const openEdit = (m: MapaData) => {
     setEditing(m)
+    const epsgStr = m.epsg != null ? String(m.epsg) : ''
+    const epsgEsPreset = EPSG_OPCIONES.some((o) => o.value === epsgStr)
     setForm({
       nombre:      m.nombre,
       tematica:    m.tematica,
@@ -414,9 +433,21 @@ export default function GestionMapas() {
       formato:     m.formato ?? 'PDF',
       url:         m.url || '',
       visibilidad: m.visibilidad ?? 'publico',
+      epsgOpcion:  !epsgStr ? '' : epsgEsPreset ? epsgStr : 'otro',
+      epsgOtro:    !epsgStr || epsgEsPreset ? '' : epsgStr,
+      escala:      m.escala != null ? String(m.escala) : '',
+      fuente:      m.fuente ?? '',
+      bboxNorte:   m.bboxNorte != null ? String(m.bboxNorte) : '',
+      bboxSur:     m.bboxSur != null ? String(m.bboxSur) : '',
+      bboxEste:    m.bboxEste != null ? String(m.bboxEste) : '',
+      bboxOeste:   m.bboxOeste != null ? String(m.bboxOeste) : '',
     })
     setFormErrors({}); setUploadedFile(null); setUploadedThumb(null); setThumbRemoved(false); setUploadError(null)
-    setSubmitError(null); setUploadProgress(null); setShowModal(true)
+    setSubmitError(null); setUploadProgress(null)
+    // Si ya tiene algún metadato técnico cargado, se muestra abierto para
+    // que se vea de una vez -- si no, se deja colapsado como en creación.
+    setShowMetadatos(!!(m.epsg || m.escala || m.fuente || m.bboxNorte || m.bboxSur || m.bboxEste || m.bboxOeste))
+    setShowModal(true)
   }
 
   const validate = () => {
@@ -437,6 +468,18 @@ export default function GestionMapas() {
         e.url = 'La URL del Geovisor no es válida'
       }
     }
+    if (form.epsgOpcion === 'otro' && !form.epsgOtro.trim()) {
+      e.epsgOtro = 'Indica el código EPSG'
+    }
+    // Mismo criterio que el backend (createMapaSchema): si se dan ambos
+    // límites de un eje, el mayor debe ir primero -- error de mecanografía
+    // común al copiar coordenadas.
+    if (form.bboxNorte && form.bboxSur && Number(form.bboxNorte) <= Number(form.bboxSur)) {
+      e.bboxNorte = 'El límite norte debe ser mayor que el límite sur'
+    }
+    if (form.bboxEste && form.bboxOeste && Number(form.bboxEste) <= Number(form.bboxOeste)) {
+      e.bboxEste = 'El límite este debe ser mayor que el límite oeste'
+    }
     return e
   }
 
@@ -452,6 +495,19 @@ export default function GestionMapas() {
     payload.append('anio',        form.anio || String(new Date().getFullYear()))
     payload.append('visibilidad', form.visibilidad)
     if (form.descripcion.trim()) payload.append('descripcion', form.descripcion)
+
+    // Metadatos técnicos -- todos opcionales, se omiten del payload si están
+    // vacíos (el PATCH solo toca los campos presentes, ver update() en
+    // mapas.service.js). Al editar, borrar el valor de un campo lo limpia
+    // enviando '' explícito -- el backend lo coerciona a null.
+    const epsgFinal = form.epsgOpcion === 'otro' ? form.epsgOtro.trim() : form.epsgOpcion
+    if (epsgFinal || editing) payload.append('epsg', epsgFinal)
+    if (form.escala.trim() || editing) payload.append('escala', form.escala.trim())
+    if (form.fuente.trim() || editing) payload.append('fuente', form.fuente.trim())
+    if (form.bboxNorte.trim() || editing) payload.append('bbox_norte', form.bboxNorte.trim())
+    if (form.bboxSur.trim() || editing) payload.append('bbox_sur', form.bboxSur.trim())
+    if (form.bboxEste.trim() || editing) payload.append('bbox_este', form.bboxEste.trim())
+    if (form.bboxOeste.trim() || editing) payload.append('bbox_oeste', form.bboxOeste.trim())
     if (uploadedThumb) payload.append('thumbnail', uploadedThumb)
     else if (thumbRemoved) payload.append('thumbnail_url', '')
 
@@ -818,6 +874,120 @@ export default function GestionMapas() {
                     className="w-4 h-4 accent-primary-800" />
                   <span className="text-sm font-medium text-text">Publicar en el portal público</span>
                 </label>
+
+                {/* Metadatos técnicos -- colapsado por defecto, nada aquí es
+                    obligatorio ni afecta si el mapa se ve o se descarga bien.
+                    Es información de respaldo (de dónde salió el mapa, a qué
+                    escala, en qué sistema de coordenadas) útil si el IIAP
+                    necesita sustentarlo ante otra entidad. */}
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <button type="button" onClick={() => setShowMetadatos((v) => !v)}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-bg-alt transition-colors">
+                    <span className="flex items-center gap-2 text-sm font-medium text-text">
+                      <Compass className="w-4 h-4 text-text-muted" aria-hidden="true" />
+                      Metadatos técnicos <span className="text-text-muted font-normal">(opcional)</span>
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-text-muted transition-transform ${showMetadatos ? 'rotate-180' : ''}`} aria-hidden="true" />
+                  </button>
+                  {showMetadatos && (
+                    <div className="p-3 pt-1 space-y-3 border-t border-border">
+                      <p className="text-xs text-text-muted leading-relaxed">
+                        Información de respaldo sobre cómo se hizo este mapa — de dónde salieron los
+                        datos, a qué escala y en qué sistema de coordenadas. Nada de esto es obligatorio.
+                      </p>
+
+                      <div>
+                        <label htmlFor="gm-epsg" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                          Sistema de coordenadas
+                        </label>
+                        <select id="gm-epsg" value={form.epsgOpcion}
+                          onChange={(e) => setForm((f) => ({ ...f, epsgOpcion: e.target.value }))}
+                          className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition">
+                          {EPSG_OPCIONES.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                        {form.epsgOpcion === 'otro' && (
+                          <input type="number" min={1} value={form.epsgOtro}
+                            placeholder="Ej: 3116"
+                            onChange={(e) => setForm((f) => ({ ...f, epsgOtro: e.target.value }))}
+                            className={`w-full mt-2 px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.epsgOtro ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                          />
+                        )}
+                        {formErrors.epsgOtro && <p className="text-xs text-red-500 mt-1">{formErrors.epsgOtro}</p>}
+                      </div>
+
+                      <div>
+                        <label htmlFor="gm-escala" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                          Escala <span className="text-text-muted font-normal normal-case tracking-normal">(el número después de "1:")</span>
+                        </label>
+                        <input id="gm-escala" type="number" min={500} max={5000000} value={form.escala}
+                          placeholder="Ej: 100000 (para un mapa a escala 1:100.000)"
+                          onChange={(e) => setForm((f) => ({ ...f, escala: e.target.value }))}
+                          className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                        />
+                        {form.escala && Number(form.escala) > 0 && (
+                          <p className="text-[0.65rem] text-text-muted mt-1">Se guardará como 1:{Number(form.escala).toLocaleString('es-CO')}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label htmlFor="gm-fuente" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                          Fuente de los datos
+                        </label>
+                        <input id="gm-fuente" type="text" value={form.fuente}
+                          placeholder="Ej: Imágenes satelitales Sentinel-2 (2025), levantamiento propio IIAP…"
+                          onChange={(e) => setForm((f) => ({ ...f, fuente: e.target.value }))}
+                          className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                          Área que cubre el mapa
+                        </label>
+                        <p className="text-[0.65rem] text-text-muted mb-2 leading-relaxed">
+                          Las coordenadas de las 4 esquinas. Consejo: haz clic derecho sobre el punto en
+                          Google Maps y copia los números que aparecen arriba.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label htmlFor="gm-bbox-norte" className="block text-[0.6rem] font-semibold text-text-muted mb-1">Norte</label>
+                            <input id="gm-bbox-norte" type="number" step="any" min={-90} max={90} value={form.bboxNorte}
+                              placeholder="Ej: 5.55"
+                              onChange={(e) => setForm((f) => ({ ...f, bboxNorte: e.target.value }))}
+                              className={`w-full px-3 py-2 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.bboxNorte ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="gm-bbox-sur" className="block text-[0.6rem] font-semibold text-text-muted mb-1">Sur</label>
+                            <input id="gm-bbox-sur" type="number" step="any" min={-90} max={90} value={form.bboxSur}
+                              placeholder="Ej: 4.00"
+                              onChange={(e) => setForm((f) => ({ ...f, bboxSur: e.target.value }))}
+                              className="w-full px-3 py-2 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="gm-bbox-este" className="block text-[0.6rem] font-semibold text-text-muted mb-1">Este</label>
+                            <input id="gm-bbox-este" type="number" step="any" min={-180} max={180} value={form.bboxEste}
+                              placeholder="Ej: -76.00"
+                              onChange={(e) => setForm((f) => ({ ...f, bboxEste: e.target.value }))}
+                              className={`w-full px-3 py-2 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.bboxEste ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="gm-bbox-oeste" className="block text-[0.6rem] font-semibold text-text-muted mb-1">Oeste</label>
+                            <input id="gm-bbox-oeste" type="number" step="any" min={-180} max={180} value={form.bboxOeste}
+                              placeholder="Ej: -77.50"
+                              onChange={(e) => setForm((f) => ({ ...f, bboxOeste: e.target.value }))}
+                              className="w-full px-3 py-2 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                            />
+                          </div>
+                        </div>
+                        {formErrors.bboxNorte && <p className="text-xs text-red-500 mt-1">{formErrors.bboxNorte}</p>}
+                        {formErrors.bboxEste && <p className="text-xs text-red-500 mt-1">{formErrors.bboxEste}</p>}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
                 {/* Progreso de subida */}
                 {uploadProgress !== null && (

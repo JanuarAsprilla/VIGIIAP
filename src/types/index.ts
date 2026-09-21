@@ -34,6 +34,14 @@ export interface MapaRaw {
   visibilidad?: MapaVisibilidad
   creado_en: string
   autor?: string | null
+  // Metadatos técnicos opcionales (ISO 19115 / IGAC) -- ver mapas.schema.js.
+  epsg?: number | null
+  escala?: number | null
+  fuente?: string | null
+  bbox_norte?: number | null
+  bbox_sur?: number | null
+  bbox_este?: number | null
+  bbox_oeste?: number | null
 }
 
 export interface Mapa {
