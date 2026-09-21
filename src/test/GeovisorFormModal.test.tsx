@@ -526,6 +526,21 @@ describe('GeovisorFormModal — miniatura (ThumbnailDropzone)', () => {
 
     expect(uploadMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ id: 'editado-id', file }))
   })
+
+  test('al editar, quitar la miniatura y guardar le pide al backend borrarla (file null), no solo la esconde localmente', async () => {
+    const uploadMutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useUploadGeovisorThumbnail).mockReturnValue({ mutateAsync: uploadMutateAsync, isPending: false } as unknown as ReturnType<typeof useUploadGeovisorThumbnail>)
+    vi.mocked(useUpdateGeovisor).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue(makeGeovisor({ id: 'editado-id' })), isPending: false,
+    } as unknown as ReturnType<typeof useUpdateGeovisor>)
+
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={makeGeovisor({ id: 'editado-id' })} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.click(screen.getByText('Quitar'))
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
+
+    expect(uploadMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ id: 'editado-id', file: null }))
+  })
 })
 
 // Regresión: antes se ofrecían TODAS las categorías del sistema, aunque
