@@ -60,8 +60,16 @@ function normalizeMap(m: MapaRaw) {
     // ── campos para panel admin (GestionMapas.jsx) ──
     nombre:    m.titulo,
     tematica:  m.categoria,
-    escala:    '1:100.000',
     autor:     m.autor ?? '',
+    // Metadatos técnicos opcionales (ISO 19115 / IGAC) -- antes "escala" era
+    // un placeholder fijo ("1:100.000") sin relación con el dato real.
+    epsg:       m.epsg ?? null,
+    escala:     m.escala ?? null,
+    fuente:     m.fuente ?? null,
+    bboxNorte:  m.bbox_norte ?? null,
+    bboxSur:    m.bbox_sur ?? null,
+    bboxEste:   m.bbox_este ?? null,
+    bboxOeste:  m.bbox_oeste ?? null,
     fecha:     formatDate(m.creado_en),
     visible:   m.activo,
     formato:   m.geovisor_url && !m.archivo_pdf_url && !m.archivo_img_url

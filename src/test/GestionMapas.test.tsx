@@ -93,7 +93,8 @@ function makeMapa(overrides: Partial<MapaData> = {}): MapaData {
     archivo_img_url: null, geovisor_url: null, activo: true, visibilidad: 'publico', creado_en: '2025-01-01T00:00:00Z',
     title: 'Zonificación Chocó', category: 'Zonificación', categoryKey: 'zonificacion', excerpt: '', year: '2025',
     formats: ['PDF'], badge: 'PDF', badgeColor: 'primary', geovisorLink: '/geovisor', department: '',
-    nombre: 'Zonificación Chocó', tematica: 'Zonificación', escala: '1:100.000', autor: 'IIAP',
+    nombre: 'Zonificación Chocó', tematica: 'Zonificación', autor: 'IIAP',
+    epsg: null, escala: null, fuente: null, bboxNorte: null, bboxSur: null, bboxEste: null, bboxOeste: null,
     fecha: '01/01/2025', visible: true, formato: 'PDF', url: '', consultas: 0,
     ...overrides,
   }
@@ -548,6 +549,117 @@ describe('GestionMapas — creación con datos válidos', () => {
     expect(call.formData.get('categoria')).toBe('Riesgo')
     expect(call.formData.get('archivo_pdf')).toBeInstanceOf(File)
     expect(await screen.findByText('Mapa "Mapa de riesgo" registrado correctamente')).toBeInTheDocument()
+  })
+
+  test('los metadatos técnicos se envían en el payload cuando se completan', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useCreateMapa).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useCreateMapa>)
+
+    const user = userEvent.setup()
+    const { container } = render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Ingresar nuevo mapa/i }))
+
+    const file = new File(['contenido'], 'mapa.pdf', { type: 'application/pdf' })
+    await user.upload(getFileInput(container), file)
+    await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa de riesgo')
+    await selectCategoria(user, 'Riesgo')
+
+    await user.click(screen.getByRole('button', { name: /Metadatos técnicos/i }))
+    await user.selectOptions(screen.getByLabelText(/Sistema de coordenadas/i), '4326')
+    await user.type(screen.getByLabelText(/^Escala/i), '100000')
+    await user.type(screen.getByLabelText(/Fuente de los datos/i), 'Imágenes Sentinel-2')
+    await user.type(screen.getByLabelText('Norte'), '5.5')
+    await user.type(screen.getByLabelText('Sur'), '4.0')
+    await user.type(screen.getByLabelText('Este'), '-76')
+    await user.type(screen.getByLabelText('Oeste'), '-77.5')
+
+    await user.click(screen.getByRole('button', { name: /^Registrar mapa$/i }))
+
+    expect(mutateAsync).toHaveBeenCalledTimes(1)
+    const call = mutateAsync.mock.calls[0][0] as { formData: FormData }
+    expect(call.formData.get('epsg')).toBe('4326')
+    expect(call.formData.get('escala')).toBe('100000')
+    expect(call.formData.get('fuente')).toBe('Imágenes Sentinel-2')
+    expect(call.formData.get('bbox_norte')).toBe('5.5')
+    expect(call.formData.get('bbox_este')).toBe('-76')
+  })
+
+  test('"otro" código EPSG sin valor bloquea el envío con un error claro', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useCreateMapa).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useCreateMapa>)
+
+    const user = userEvent.setup()
+    const { container } = render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Ingresar nuevo mapa/i }))
+
+    const file = new File(['contenido'], 'mapa.pdf', { type: 'application/pdf' })
+    await user.upload(getFileInput(container), file)
+    await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa de riesgo')
+    await selectCategoria(user, 'Riesgo')
+
+    await user.click(screen.getByRole('button', { name: /Metadatos técnicos/i }))
+    await user.selectOptions(screen.getByLabelText(/Sistema de coordenadas/i), 'otro')
+    await user.click(screen.getByRole('button', { name: /^Registrar mapa$/i }))
+
+    expect(await screen.findByText('Indica el código EPSG')).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('norte menor o igual que sur bloquea el envío', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useCreateMapa).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useCreateMapa>)
+
+    const user = userEvent.setup()
+    const { container } = render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Ingresar nuevo mapa/i }))
+
+    const file = new File(['contenido'], 'mapa.pdf', { type: 'application/pdf' })
+    await user.upload(getFileInput(container), file)
+    await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa de riesgo')
+    await selectCategoria(user, 'Riesgo')
+
+    await user.click(screen.getByRole('button', { name: /Metadatos técnicos/i }))
+    await user.type(screen.getByLabelText('Norte'), '4.0')
+    await user.type(screen.getByLabelText('Sur'), '5.5')
+    await user.click(screen.getByRole('button', { name: /^Registrar mapa$/i }))
+
+    expect(await screen.findByText('El límite norte debe ser mayor que el límite sur')).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+})
+
+describe('GestionMapas — metadatos técnicos al editar', () => {
+  async function openEditModal() {
+    const user = userEvent.setup()
+    render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByRole('button', { name: /Editar/i }))
+    return user
+  }
+
+  test('colapsados por defecto si el mapa no tiene ninguno cargado', async () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMapa()], meta: { total: 1 } }, isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+    await openEditModal()
+
+    expect(screen.queryByLabelText(/Sistema de coordenadas/i)).not.toBeInTheDocument()
+  })
+
+  test('abiertos automáticamente si el mapa ya tiene algún metadato', async () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMapa({ epsg: 4326, escala: 100000 })], meta: { total: 1 } }, isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+    await openEditModal()
+
+    expect(screen.getByLabelText(/Sistema de coordenadas/i)).toHaveValue('4326')
+    expect(screen.getByLabelText(/^Escala/i)).toHaveValue(100000)
   })
 })
 
