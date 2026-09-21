@@ -195,6 +195,19 @@ describe('TopBar — panel de bienvenida se abre solo (reemplaza al antiguo Welc
     expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
     expect(screen.getByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
   })
+
+  test('se marca como visto en localStorage la primera vez que se abre solo', async () => {
+    renderTopBar()
+    await screen.findByRole('dialog', { name: /Bienvenido/i })
+    expect(localStorage.getItem('vigiiap:welcome-seen')).toBe('1')
+  })
+
+  test('no se abre solo en un montaje nuevo (recarga de página) si ya se vio antes en este navegador', async () => {
+    localStorage.setItem('vigiiap:welcome-seen', '1')
+    renderTopBar()
+    expect(screen.getByRole('button', { name: /Ingresar/i })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
+  })
 })
 
 describe('TopBar — usuario no verificado (visitante/público)', () => {

@@ -34,6 +34,11 @@ import Avatar               from './ui/Avatar'
 
 // ── Constantes de configuración ──
 
+// Clave de localStorage para no repetir el aviso de bienvenida en cada
+// recarga -- se marca la primera vez que se auto-abre para un visitante sin
+// sesión, y ya no vuelve a aparecer solo en este navegador.
+const WELCOME_SEEN_KEY = 'vigiiap:welcome-seen'
+
 const SEARCH_PLACEHOLDERS = {
   '/':            'Buscar módulos, documentos...',
   '/mapas':       'Buscar mapas, capas o territorios...',
@@ -216,18 +221,26 @@ export default function TopBar({ onMenuToggle, onOpenAuthModal }: {
     navigate(location.pathname + location.search, { replace: true, state: {} })
   }, [location.state, location.pathname, location.search, navigate])
 
-  // WelcomePanel (ver ese archivo) es el punto de entrada: se abre solo, una
-  // vez por montaje, para quien no tiene sesión, sin esperar a que haga clic
-  // en "Ingresar" — explica las dos formas de acceder antes de pedir
-  // credenciales. autoOpenedRef evita que se reabra si la persona lo cierra
-  // manualmente mientras sigue sin sesión.
+  // WelcomePanel (ver ese archivo) es el punto de entrada: se abre solo, la
+  // primera vez que alguien sin sesión entra al sitio desde este navegador,
+  // sin esperar a que haga clic en "Ingresar" — explica las dos formas de
+  // acceder antes de pedir credenciales. autoOpenedRef evita que se reabra
+  // si la persona lo cierra manualmente mientras sigue sin sesión, dentro de
+  // este mismo montaje; WELCOME_SEEN_KEY evita que vuelva a aparecer en una
+  // recarga de página o una visita nueva una vez que ya se mostró una vez.
   useEffect(() => {
     if (isAuthenticated) { consumePendingLoginRedirect(); return }
     if (initializing || autoOpenedRef.current) return
     autoOpenedRef.current = true
+    const yaSeVio = (() => {
+      try { return localStorage.getItem(WELCOME_SEEN_KEY) === '1' } catch { return false }
+    })()
     setActivePanel((prev) => {
       if (prev) return prev // ya decidido en este mismo flush (ver efecto de arriba)
-      return consumePendingLoginRedirect() ? 'login' : 'welcome'
+      if (consumePendingLoginRedirect()) return 'login'
+      if (yaSeVio) return null
+      try { localStorage.setItem(WELCOME_SEEN_KEY, '1') } catch { /* localStorage no disponible */ }
+      return 'welcome'
     })
   }, [initializing, isAuthenticated])
 
