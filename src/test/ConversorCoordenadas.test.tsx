@@ -25,80 +25,91 @@ vi.mock('@/components/ui/Card3D', () => ({
 
 beforeEach(() => { vi.clearAllMocks() })
 
-async function convertWgsToMagna(lat: string, lon: string) {
+async function convertirLote(texto: string) {
   const user = userEvent.setup()
   render(<ConversorCoordenadas />)
-  const latInput = screen.getByLabelText(/Latitud/i)
-  const lonInput = screen.getByLabelText(/Longitud/i)
-  await user.clear(latInput)
-  await user.type(latInput, lat)
-  await user.clear(lonInput)
-  await user.type(lonInput, lon)
+  const area = screen.getByLabelText(/Coordenadas a convertir/i)
+  await user.clear(area)
+  await user.type(area, texto, { skipClick: false })
   await user.click(screen.getByRole('button', { name: /Convertir/i }))
   return user
 }
 
-describe('ConversorCoordenadas — WGS84 a MAGNA', () => {
-  test('convierte coordenadas válidas dentro del territorio colombiano', async () => {
-    const expected = wgs84ToMagna(4.8213, -76.7324)
-    await convertWgsToMagna('4.8213', '-76.7324')
+describe('ConversorCoordenadas — lote WGS84 a MAGNA', () => {
+  test('convierte varias líneas a la vez', async () => {
+    const esperado1 = wgs84ToMagna(4.8213, -76.7324)
+    const esperado2 = wgs84ToMagna(5.6947, -76.6614)
+    await convertirLote('4.8213, -76.7324{enter}5.6947, -76.6614')
 
-    expect(await screen.findByText(`${expected.x.toLocaleString('es-CO', { maximumFractionDigits: 2 })} m`)).toBeInTheDocument()
-    expect(screen.getByText(`${expected.y.toLocaleString('es-CO', { maximumFractionDigits: 2 })} m`)).toBeInTheDocument()
+    expect(await screen.findByText('2 resultados')).toBeInTheDocument()
+    expect(screen.getByText(`${esperado1.x.toLocaleString('es-CO', { maximumFractionDigits: 6 })}, ${esperado1.y.toLocaleString('es-CO', { maximumFractionDigits: 6 })}`)).toBeInTheDocument()
+    expect(screen.getByText(`${esperado2.x.toLocaleString('es-CO', { maximumFractionDigits: 6 })}, ${esperado2.y.toLocaleString('es-CO', { maximumFractionDigits: 6 })}`)).toBeInTheDocument()
   })
 
-  test('rechaza una latitud fuera del territorio colombiano', async () => {
-    await convertWgsToMagna('50', '-76.7324')
-    expect(await screen.findByText('Latitud fuera del territorio colombiano')).toBeInTheDocument()
+  test('acepta coordenadas separadas por tabulador (pegado desde Excel)', async () => {
+    const user = userEvent.setup()
+    render(<ConversorCoordenadas />)
+    const area = screen.getByLabelText(/Coordenadas a convertir/i)
+    await user.clear(area)
+    await user.click(area)
+    await user.paste('4.8213\t-76.7324')
+    await user.click(screen.getByRole('button', { name: /Convertir/i }))
+
+    expect(await screen.findByText('1 resultado')).toBeInTheDocument()
   })
 
-  test('rechaza una longitud fuera del territorio colombiano', async () => {
-    await convertWgsToMagna('4.8213', '10')
-    expect(await screen.findByText('Longitud fuera del territorio colombiano')).toBeInTheDocument()
+  test('una fila con latitud fuera de Colombia se marca como error sin bloquear las demás', async () => {
+    await convertirLote('50, -76.7324{enter}4.8213, -76.7324')
+
+    expect(await screen.findByText('2 resultados · 1 con error')).toBeInTheDocument()
+    expect(screen.getByText('Latitud fuera del territorio colombiano')).toBeInTheDocument()
   })
 
-  test('rechaza texto no numérico en vez de calcular con NaN', async () => {
-    await convertWgsToMagna('abc', '-76.7324')
-    expect(await screen.findByText('Ingresa valores numéricos válidos')).toBeInTheDocument()
+  test('una fila con texto no numérico se marca como error', async () => {
+    await convertirLote('abc, -76.7324')
+    expect(await screen.findByText(/Valores no numéricos/)).toBeInTheDocument()
   })
 
-  test('una latitud con coma decimal (formato es-CO) da el mismo resultado que con punto', async () => {
-    // parseFloat('4,8213') trunca en la coma y devuelve 4 — un error de
-    // precisión silencioso (4° en vez de 4.8213°), no un crash, así que hay
-    // que comparar el valor numérico real, no solo que no truene.
-    const expected = wgs84ToMagna(4.8213, -76.7324)
-    await convertWgsToMagna('4,8213', '-76,7324')
+  test('una fila con solo un valor se marca como error de formato', async () => {
+    await convertirLote('4.8213')
+    expect(await screen.findByText(/Se esperaban 2 valores/)).toBeInTheDocument()
+  })
 
-    expect(await screen.findByText(`${expected.x.toLocaleString('es-CO', { maximumFractionDigits: 2 })} m`)).toBeInTheDocument()
+  test('ignora líneas en blanco', async () => {
+    await convertirLote('4.8213, -76.7324{enter}{enter}5.6947, -76.6614')
+    expect(await screen.findByText('2 resultados')).toBeInTheDocument()
   })
 })
 
-describe('ConversorCoordenadas — MAGNA a WGS84', () => {
-  test('convierte X/Y con separador de miles y decimal en formato es-CO', async () => {
+describe('ConversorCoordenadas — lote MAGNA a WGS84', () => {
+  test('convierte X/Y en modo Magna → WGS84', async () => {
     const user = userEvent.setup()
     render(<ConversorCoordenadas />)
     await user.click(screen.getByRole('button', { name: /Magna → WGS84/i }))
 
-    const xInput = screen.getByLabelText(/X — Este/i)
-    const yInput = screen.getByLabelText(/Y — Norte/i)
-    await user.clear(xInput)
-    await user.type(xInput, '1.042.482,50')
-    await user.clear(yInput)
-    await user.type(yInput, '1.120.943,25')
+    const area = screen.getByLabelText(/Coordenadas a convertir/i)
+    await user.clear(area)
+    await user.type(area, '1042482, 1120943')
     await user.click(screen.getByRole('button', { name: /Convertir/i }))
 
-    expect(await screen.findByText('Latitud')).toBeInTheDocument()
+    expect(await screen.findByText('1 resultado')).toBeInTheDocument()
   })
+})
 
-  test('rechaza texto no numérico en X', async () => {
+describe('ConversorCoordenadas — exportar resultados', () => {
+  test('copiar resultados muestra confirmación', async () => {
+    // Mismo criterio que Errores.test.tsx: el shim de portapapeles de
+    // user-event puede tomar precedencia sobre este mock en jsdom, así que
+    // se valida el comportamiento observable, no la llamada interna.
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+      configurable: true,
+    })
+
     const user = userEvent.setup()
-    render(<ConversorCoordenadas />)
-    await user.click(screen.getByRole('button', { name: /Magna → WGS84/i }))
-    const xInput = screen.getByLabelText(/X — Este/i)
-    await user.clear(xInput)
-    await user.type(xInput, 'abc')
-    await user.click(screen.getByRole('button', { name: /Convertir/i }))
+    await convertirLote('4.8213, -76.7324')
+    await user.click(screen.getByRole('button', { name: /^Copiar$/i }))
 
-    expect(await screen.findByText('Ingresa valores numéricos válidos')).toBeInTheDocument()
+    expect(await screen.findByText('✓ Copiado')).toBeInTheDocument()
   })
 })
