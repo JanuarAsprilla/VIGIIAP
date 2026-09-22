@@ -22,7 +22,13 @@ interface FilaResultado {
 // con coma como separador de columna en un lote, así que el lote pide punto
 // decimal -- se explica en el hint junto al textarea.
 const SEPARADOR = /[,;\t\s]+/
-const MAX_LINEAS = 2000
+// La aritmética de la proyección es trivial (~20 operaciones por línea) --
+// 50.000 líneas se procesan en milisegundos, sin riesgo real de congelar la
+// pestaña. El tope existe solo para el caso patológico de pegar un archivo
+// entero por accidente, no para limitar un uso real (un dataset de
+// ocurrencias de un investigador puede tener fácilmente varios miles de
+// registros).
+const MAX_LINEAS = 50_000
 
 function parseNumero(token: string): number | null {
   const limpio = token.trim()
