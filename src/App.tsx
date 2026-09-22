@@ -10,6 +10,7 @@ import AdminLayout from './layouts/AdminLayout'
 import { RequireVerified, RequireAdmin, RequireSuperAdmin } from './components/RequireAuth'
 import ErrorBoundary from './components/ErrorBoundary'
 import Preloader from './components/Preloader'
+import MaintenancePage from './components/MaintenancePage'
 import {
   HomeSkeleton,
   MapasSkeleton,
@@ -106,6 +107,25 @@ function PageSpinner() {
 
 function AppRoutes() {
   const location = useLocation()
+
+  // Cualquier petición a una ruta de contenido público puede llegar a
+  // devolver { maintenance: true } si el super_admin activó modo
+  // mantenimiento (ver vigiiap:maintenance en src/lib/api.ts). Una vez
+  // detectado, se reemplaza toda la vista -- no tiene sentido dejar
+  // navegar por una plataforma que el propio backend está rechazando.
+  const [maintenanceMsg, setMaintenanceMsg] = useState<string | null>(null)
+  useEffect(() => {
+    function onMaintenance(e: Event) {
+      const detail = (e as CustomEvent<{ message: string }>).detail
+      setMaintenanceMsg(detail?.message || 'La plataforma está en mantenimiento. Vuelve a intentarlo más tarde.')
+    }
+    window.addEventListener('vigiiap:maintenance', onMaintenance)
+    return () => window.removeEventListener('vigiiap:maintenance', onMaintenance)
+  }, [])
+
+  if (maintenanceMsg) {
+    return <MaintenancePage mensaje={maintenanceMsg} />
+  }
 
   return (
     <ThemeProvider>

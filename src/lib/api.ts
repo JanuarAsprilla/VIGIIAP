@@ -143,6 +143,14 @@ api.interceptors.response.use(
       window.dispatchEvent(new CustomEvent('vigiiap:rate-limit', { detail: { message } }))
     }
 
+    // El backend gatea rutas de contenido público con { maintenance: true }
+    // cuando el super_admin activa modoMantenimiento (ver maintenanceGate en
+    // src/middlewares/maintenanceMode.js). admin_sig/super_admin autenticados
+    // nunca reciben esta respuesta -- el gate los deja pasar server-side.
+    if (status === 503 && err.response?.data?.maintenance === true) {
+      window.dispatchEvent(new CustomEvent('vigiiap:maintenance', { detail: { message } }))
+    }
+
     const error    = new Error(message) as Error & { status?: number; code?: string; fields?: unknown }
     error.status   = status
     error.code     = err.response?.data?.code   ?? null
