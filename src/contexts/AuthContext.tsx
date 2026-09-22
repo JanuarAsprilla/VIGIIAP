@@ -17,6 +17,11 @@ export interface AuthUser {
   initials: string
   institucion: string | null
   twoFactorEnabled?: boolean
+  // Solo presente para admin_sig/super_admin cuando el super_admin activó
+  // require2faAdmins en Configuración (ver getProfile en auth.service.js).
+  // true + twoFactorEnabled=false = el rol exige 2FA y el usuario aún no lo
+  // activó -- RequireAdmin lo redirige a /perfil hasta que lo complete.
+  require2FA?: boolean
   avatarUrl: string | null
   // false solo tras un primer login con Google/Microsoft sin institución (ver
   // src/modules/oauth/ en el backend) — dispara la alerta de completar perfil.
@@ -40,6 +45,7 @@ interface RawAuthUser {
   tipo?: string | null
   institucion?: string | null
   twoFactorEnabled?: boolean
+  require2FA?: boolean
   avatar_url?: string | null
   perfilCompleto?: boolean
   tema?: 'light' | 'dark' | null
@@ -98,6 +104,7 @@ function normalizeUser(raw: RawAuthUser): AuthUser {
       .toUpperCase(),
     institucion:       raw.institucion ?? null,
     twoFactorEnabled:  raw.twoFactorEnabled ?? false,
+    require2FA:        raw.require2FA,
     avatarUrl:         raw.avatar_url ?? null,
     perfilCompleto:    raw.perfilCompleto ?? true,
     tema:              raw.tema ?? null,

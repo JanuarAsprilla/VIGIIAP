@@ -64,6 +64,24 @@ describe('AuthProvider — rehydration on mount', () => {
     expect(result.current.isSuperAdmin).toBe(false)
     expect(result.current.isVisitante).toBe(false)
   })
+
+  test('propaga require2FA cuando el backend lo expone (admin_sig con 2FA obligatorio activo)', async () => {
+    vi.mocked(api.get).mockResolvedValue({ ...rawInvestigador, rol: 'admin_sig', require2FA: true })
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(result.current.initializing).toBe(false))
+
+    expect(result.current.user?.require2FA).toBe(true)
+  })
+
+  test('require2FA queda undefined para roles no-admin, mismo cuando el backend no lo envía', async () => {
+    vi.mocked(api.get).mockResolvedValue(rawInvestigador)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(result.current.initializing).toBe(false))
+
+    expect(result.current.user?.require2FA).toBeUndefined()
+  })
 })
 
 describe('AuthProvider — refreshProfile() ante errores transitorios', () => {

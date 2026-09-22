@@ -53,6 +53,7 @@ function renderGuard(Guard: () => ReactElement) {
         <Route path="/login" element={<div>Pantalla de login</div>} />
         <Route path="/" element={<div>Home pública</div>} />
         <Route path="/solicitar-acceso" element={<div>Solicitar acceso</div>} />
+        <Route path="/perfil" element={<div>Página de perfil</div>} />
       </Routes>
     </MemoryRouter>,
   )
@@ -94,6 +95,24 @@ describe('RequireAdmin', () => {
 
   test('renders the admin panel when isAdmin is true', () => {
     mockAuth({ isAuthenticated: true, isAdmin: true, user: makeUser('admin_sig') })
+    renderGuard(RequireAdmin)
+    expect(screen.getByText('Contenido protegido')).toBeInTheDocument()
+  })
+
+  test('redirects to /perfil when require2FA is true and 2FA is not enabled yet', () => {
+    mockAuth({
+      isAuthenticated: true, isAdmin: true,
+      user: { ...makeUser('admin_sig'), require2FA: true, twoFactorEnabled: false },
+    })
+    renderGuard(RequireAdmin)
+    expect(screen.getByText('Página de perfil')).toBeInTheDocument()
+  })
+
+  test('allows through when require2FA is true but 2FA is already enabled', () => {
+    mockAuth({
+      isAuthenticated: true, isAdmin: true,
+      user: { ...makeUser('admin_sig'), require2FA: true, twoFactorEnabled: true },
+    })
     renderGuard(RequireAdmin)
     expect(screen.getByText('Contenido protegido')).toBeInTheDocument()
   })

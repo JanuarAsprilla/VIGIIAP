@@ -45,7 +45,7 @@ export function RequireInvestigador() {
 
 /** Protege rutas exclusivas para Administrador SIG (también permite super_admin). */
 export function RequireAdmin() {
-  const { isAuthenticated, initializing, isAdmin } = useAuth()
+  const { isAuthenticated, initializing, isAdmin, user } = useAuth()
   const location = useLocation()
   if (initializing) return <AuthSpinner />
   if (!isAuthenticated) {
@@ -53,6 +53,12 @@ export function RequireAdmin() {
   }
   if (!isAdmin) {
     return <Navigate to="/" replace />
+  }
+  // require2FA lo activa el super_admin en Configuración > Seguridad. Se
+  // redirige a /perfil (donde ya vive la UI de activación) en vez de
+  // bloquear el login -- ver diseño en PR de política de contraseñas/2FA.
+  if (user?.require2FA && !user?.twoFactorEnabled) {
+    return <Navigate to="/perfil" state={{ requiere2FA: true }} replace />
   }
   return <Outlet />
 }
