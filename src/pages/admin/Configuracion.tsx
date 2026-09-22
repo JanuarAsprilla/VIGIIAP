@@ -5,7 +5,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import {
   Save, Globe, Bell, Shield, AlertTriangle, Scale,
   Mail, Phone, MapPin, CheckCircle, AlertCircle, ArrowRight,
-  Server, Send, Loader2, Eye, EyeOff, Gauge, Network,
+  Server, Send, Loader2, Eye, EyeOff, Gauge, Network, Lock,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -117,6 +117,16 @@ export default function Configuracion() {
     mensaje: 'El sistema estará en mantenimiento programado. Disculpe las molestias.',
   })
 
+  // Piso real (8) impuesto en el backend por strongPassword -- este valor
+  // solo puede exigir MÁS que eso, nunca menos (ver getPasswordMinLength en
+  // dynamicConfig.js). require2faAdmins bloquea el panel admin para
+  // admin_sig/super_admin sin 2FA activo hasta que lo activen en su Perfil.
+  const [seguridad, setSeguridad] = useState({
+    passwordExpiryDays: '90',
+    passwordMinLength: '8',
+    require2faAdmins: false,
+  })
+
   // mail_pass nunca llega del backend (ver redactConfig en admin.controller.js) —
   // arranca vacío siempre. Si la persona no escribe una nueva, no se manda en
   // el guardado, para no pisar la que ya está guardada con un string vacío.
@@ -178,6 +188,11 @@ export default function Configuracion() {
     setMantenimiento((m) => ({
       modoMantenimiento: remoteConfig.modoMantenimiento === 'true',
       mensaje: remoteConfig.mensajeMantenimiento ?? m.mensaje,
+    }))
+    setSeguridad((s) => ({
+      passwordExpiryDays: remoteConfig.passwordExpiryDays ?? s.passwordExpiryDays,
+      passwordMinLength:  remoteConfig.passwordMinLength  ?? s.passwordMinLength,
+      require2faAdmins:   remoteConfig.require2faAdmins   === undefined ? s.require2faAdmins : remoteConfig.require2faAdmins === 'true',
     }))
     if (remoteConfig.politicaPrivacidad !== undefined) {
       setPoliticaPrivacidad(remoteConfig.politicaPrivacidad ?? '')
@@ -242,6 +257,9 @@ export default function Configuracion() {
         cors_extra_origins:   avanzado.corsExtraOrigins,
         rate_limit_max:       avanzado.rateLimitMax,
         admin_email_fallback: avanzado.adminEmailFallback,
+        passwordExpiryDays: seguridad.passwordExpiryDays,
+        passwordMinLength:  seguridad.passwordMinLength,
+        require2faAdmins:   String(seguridad.require2faAdmins),
       } : {}),
     })
   }
@@ -412,6 +430,57 @@ export default function Configuracion() {
           ))}
         </div>
       </SectionCard>
+
+      {/* Seguridad — exclusivo super_admin: política de contraseña y 2FA
+          obligatorio para el panel admin. */}
+      {isSuperAdmin && (
+        <SectionCard title="Seguridad" icon={Lock} delay={0.23}>
+          <FieldRow label="Vigencia de contraseña" hint="Días antes de forzar el cambio de contraseña al iniciar sesión.">
+            <div className="flex items-center gap-2 max-w-[160px]">
+              <input
+                id="conf-password-expiry"
+                type="text"
+                inputMode="numeric"
+                placeholder="90"
+                value={seguridad.passwordExpiryDays}
+                onChange={(e) => setSeguridad((s) => ({ ...s, passwordExpiryDays: e.target.value.replace(/\D/g, '') }))}
+                className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+              />
+              <span className="text-xs text-text-muted shrink-0">días</span>
+            </div>
+          </FieldRow>
+          <hr className="border-border" />
+          <FieldRow label="Longitud mínima de contraseña" hint="No puede bajar de 8 caracteres — ese piso ya lo exige el sistema para toda cuenta.">
+            <div className="flex items-center gap-2 max-w-[160px]">
+              <input
+                id="conf-password-min-length"
+                type="text"
+                inputMode="numeric"
+                placeholder="8"
+                value={seguridad.passwordMinLength}
+                onChange={(e) => setSeguridad((s) => ({ ...s, passwordMinLength: e.target.value.replace(/\D/g, '') }))}
+                className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+              />
+              <span className="text-xs text-text-muted shrink-0">caracteres</span>
+            </div>
+          </FieldRow>
+          <hr className="border-border" />
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-text">Exigir 2FA a administradores</p>
+              <p className="text-xs text-text-muted mt-0.5">
+                Todo Administrador SIG y Super Administrador sin autenticación en dos pasos activa
+                queda bloqueado del panel hasta que la active en su Perfil.
+              </p>
+            </div>
+            <Toggle
+              checked={seguridad.require2faAdmins}
+              onChange={() => setSeguridad((s) => ({ ...s, require2faAdmins: !s.require2faAdmins }))}
+              label=""
+            />
+          </div>
+        </SectionCard>
+      )}
 
       {/* Correo (SMTP) — exclusivo super_admin: el instituto cambia de proveedor
           de correo de vez en cuando; esto reemplaza tener que tocar variables

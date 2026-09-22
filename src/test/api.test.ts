@@ -180,6 +180,34 @@ describe('api.ts — response interceptor', () => {
     )
   })
 
+  test('dispatches vigiiap:maintenance on a 503 with maintenance:true', async () => {
+    const api = await loadApi()
+    api.defaults.adapter = ((config: AxiosRequestConfig) => {
+      const err = new Error('503') as Error & { config: AxiosRequestConfig; response: unknown }
+      err.config   = config
+      err.response = { status: 503, data: { error: 'La plataforma está en mantenimiento.', maintenance: true } }
+      return Promise.reject(err)
+    }) as FakeAdapter
+
+    await expect(api.get('/mapas')).rejects.toThrow()
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'vigiiap:maintenance', detail: { message: 'La plataforma está en mantenimiento.' } }),
+    )
+  })
+
+  test('a plain 503 without maintenance:true does not dispatch vigiiap:maintenance', async () => {
+    const api = await loadApi()
+    api.defaults.adapter = ((config: AxiosRequestConfig) => {
+      const err = new Error('503') as Error & { config: AxiosRequestConfig; response: unknown }
+      err.config   = config
+      err.response = { status: 503, data: { error: 'Servicio no disponible' } }
+      return Promise.reject(err)
+    }) as FakeAdapter
+
+    await expect(api.get('/algo')).rejects.toThrow()
+    expect(dispatchSpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'vigiiap:maintenance' }))
+  })
+
   test('normalizes a non-string error payload to a generic message', async () => {
     const api = await loadApi()
     api.defaults.adapter = ((config: AxiosRequestConfig) => {

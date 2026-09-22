@@ -331,3 +331,64 @@ describe('Configuracion — Ajustes Avanzados (solo super_admin)', () => {
     }))
   })
 })
+
+describe('Configuracion — Seguridad (solo super_admin)', () => {
+  test('admin_sig no ve la sección', () => {
+    authMock.user = { name: 'Admin', role: 'Administrador SIG', rol: 'admin_sig' }
+    renderPage()
+    expect(screen.queryByText('Seguridad')).not.toBeInTheDocument()
+    authMock.user = { name: 'Root', role: 'Super Administrador', rol: 'super_admin' }
+  })
+
+  test('precarga los tres campos con la config remota', async () => {
+    vi.mocked(api.get).mockResolvedValue(
+      { passwordExpiryDays: '60', passwordMinLength: '12', require2faAdmins: 'true' },
+    )
+    renderPage()
+
+    expect(await screen.findByDisplayValue('60')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('12')).toBeInTheDocument()
+    const row = screen.getByText('Exigir 2FA a administradores').closest('.flex.items-center.justify-between')! as HTMLElement
+    expect(within(row).getByRole('switch')).toHaveAttribute('aria-checked', 'true')
+  })
+
+  test('sin config remota, usa los valores por defecto (90 días, 8 caracteres, 2FA no exigido)', async () => {
+    renderPage()
+
+    expect(await screen.findByDisplayValue('90')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('8')).toBeInTheDocument()
+    const row = screen.getByText('Exigir 2FA a administradores').closest('.flex.items-center.justify-between')! as HTMLElement
+    expect(within(row).getByRole('switch')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  test('el campo de longitud mínima solo acepta dígitos', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const input = await screen.findByDisplayValue('8')
+    await user.clear(input)
+    await user.type(input, 'a1b2c')
+    expect(input).toHaveValue('12')
+  })
+
+  test('guardar incluye los tres ajustes de seguridad en el payload', async () => {
+    vi.mocked(api.put).mockResolvedValue({})
+    const user = userEvent.setup()
+    renderPage()
+
+    const expiryInput = await screen.findByDisplayValue('90')
+    await user.clear(expiryInput)
+    await user.type(expiryInput, '45')
+
+    const row = screen.getByText('Exigir 2FA a administradores').closest('.flex.items-center.justify-between')! as HTMLElement
+    await user.click(within(row).getByRole('switch'))
+
+    await user.click(screen.getByRole('button', { name: /Guardar Cambios/i }))
+
+    expect(api.put).toHaveBeenCalledWith('/admin/configuracion', expect.objectContaining({
+      passwordExpiryDays: '45',
+      passwordMinLength: '8',
+      require2faAdmins: 'true',
+    }))
+  })
+})
