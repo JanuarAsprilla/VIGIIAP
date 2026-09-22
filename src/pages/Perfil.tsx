@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUI } from '@/contexts/UIContext'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useUpdatePassword, useUpdatePerfil, useUpdateAvatar } from '@/hooks/useUsuarios'
 import { useNotificacionPrefs, useUpdateNotificacionPref } from '@/hooks/useNotificacionPrefs'
 import { NOTIFICATION_ICONS, DEFAULT_NOTIFICATION_ICON, getNotificationColorClasses } from '@/lib/notificationIcons'
@@ -714,7 +714,15 @@ export default function Perfil() {
   const { user, logout, refreshProfile } = useAuth()
   const { density } = useUI()
   const navigate = useNavigate()
+  const location = useLocation()
   const updatePerfil = useUpdatePerfil()
+
+  // Llega desde RequireAdmin cuando el super_admin activó "2FA obligatorio
+  // para administradores" en Configuración y esta cuenta aún no lo tiene
+  // activado -- se le bloqueó el panel admin hasta que lo active aquí.
+  const requiere2FA = Boolean(
+    (location.state as { requiere2FA?: boolean } | null)?.requiere2FA,
+  ) && !user?.twoFactorEnabled
 
   // Cuentas no verificadas (publico/visitante) no pueden editar perfil ni cambiar
   // contraseña — el backend responde 403. Se muestran los datos en solo lectura.
@@ -763,9 +771,26 @@ export default function Perfil() {
         </p>
       </div>
 
+      {/* Aviso: 2FA obligatorio pendiente de activar */}
+      {requiere2FA && (
+        <motion.div
+          {...fadeUp(0)}
+          className="flex items-start gap-3 bg-gold-500/10 border border-gold-500/30 text-gold-700 rounded-2xl px-5 py-4"
+        >
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
+          <div>
+            <p className="text-sm font-bold">Activa la autenticación en dos pasos para continuar</p>
+            <p className="text-xs mt-0.5 opacity-90">
+              El administrador del sistema exige 2FA para cuentas con acceso al panel de administración.
+              Actívala en la sección &quot;Autenticación en dos pasos&quot; más abajo para volver a entrar.
+            </p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Avatar card */}
       <motion.div
-        {...fadeUp(0)}
+        {...fadeUp(0.02)}
         className="relative bg-[var(--card-bg)] border border-border/70 rounded-2xl p-6 flex items-center gap-5"
       >
         <AvatarUploader avatarUrl={user?.avatarUrl ?? null} initials={user?.initials} onUploaded={refreshProfile} />

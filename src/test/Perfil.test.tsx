@@ -68,12 +68,12 @@ const authMock = {
 }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 
-function renderPerfil() {
+function renderPerfil(initialEntries: Parameters<typeof MemoryRouter>[0]['initialEntries'] = ['/perfil']) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   return render(
     <QueryClientProvider client={qc}>
       <UIProvider>
-        <MemoryRouter><Perfil /></MemoryRouter>
+        <MemoryRouter initialEntries={initialEntries}><Perfil /></MemoryRouter>
       </UIProvider>
     </QueryClientProvider>,
   )
@@ -442,5 +442,35 @@ describe('Perfil — módulos delegados (admin_sig)', () => {
     renderPerfil()
 
     expect(await screen.findByText(/Aún no tienes ningún módulo delegado/)).toBeInTheDocument()
+  })
+})
+
+describe('Perfil — aviso de 2FA obligatorio pendiente (redirigido desde RequireAdmin)', () => {
+  test('muestra el aviso cuando llega con requiere2FA=true y aún no tiene 2FA activo', async () => {
+    authMock.user = {
+      ...authMock.user, rol: 'admin_sig', role: 'Administrador SIG', twoFactorEnabled: false,
+    } as typeof authMock.user & { twoFactorEnabled: boolean }
+
+    renderPerfil([{ pathname: '/perfil', state: { requiere2FA: true } }])
+
+    expect(await screen.findByText('Activa la autenticación en dos pasos para continuar')).toBeInTheDocument()
+  })
+
+  test('no muestra el aviso si ya tiene 2FA activo, aunque llegue con el state', async () => {
+    authMock.user = {
+      ...authMock.user, rol: 'admin_sig', role: 'Administrador SIG', twoFactorEnabled: true,
+    } as typeof authMock.user & { twoFactorEnabled: boolean }
+
+    renderPerfil([{ pathname: '/perfil', state: { requiere2FA: true } }])
+
+    await waitFor(() => expect(screen.getAllByText('Ana Restrepo').length).toBeGreaterThan(0))
+    expect(screen.queryByText('Activa la autenticación en dos pasos para continuar')).not.toBeInTheDocument()
+  })
+
+  test('no muestra el aviso en una visita normal sin ese state', async () => {
+    renderPerfil()
+
+    await waitFor(() => expect(screen.getAllByText('Ana Restrepo').length).toBeGreaterThan(0))
+    expect(screen.queryByText('Activa la autenticación en dos pasos para continuar')).not.toBeInTheDocument()
   })
 })
