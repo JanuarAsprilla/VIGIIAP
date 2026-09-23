@@ -57,3 +57,13 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </StrictMode>,
 )
+
+// El script inline en index.html usa esto para distinguir "React nunca llegó
+// a montar" (recargar una vez, es un caso irrecuperable de otro modo) de un
+// error posterior ya normal (el ErrorBoundary real, dentro de AppRoutes, se
+// encarga). render() lanza de forma síncrona si algo revienta en el primer
+// render sin un ErrorBoundary que lo atrape (AuthProvider/ThemeProvider
+// envuelven <Routes> desde afuera del único ErrorBoundary que existe) -- en
+// ese caso esta línea nunca se ejecuta, dejando la bandera en false.
+declare global { interface Window { __VIGIIAP_MOUNTED__?: boolean } }
+window.__VIGIIAP_MOUNTED__ = true

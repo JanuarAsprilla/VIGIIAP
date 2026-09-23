@@ -20,7 +20,19 @@
          listener en capture phase sobre window cubre además el fallo del
          script de entrada mismo, que no dispara ese evento por no ser un
          import() dinámico — se identifica por ser un <script type="module">,
-         ya que Vite no preserva atributos custom como `id` al reubicarlo. -->
+         ya que Vite no preserva atributos custom como `id` al reubicarlo.
+
+         Un tercer caso, antes sin cubrir: un error de EJECUCIÓN (no de
+         carga) durante el primer render de React -- AuthProvider,
+         ThemeProvider, etc. envuelven <Routes> desde AFUERA del
+         ErrorBoundary que vive dentro de AppRoutes, así que una excepción
+         ahí nunca llega a mostrar la UI de error, sube sin capturar hasta
+         window y deja #root vacío para siempre. Ese error dispara 'error'
+         con target === window (no un elemento de script), a diferencia de
+         un fallo de carga. window.__VIGIIAP_MOUNTED__ (fijado en main.tsx
+         justo después de renderizar) evita recargar por un error de
+         ejecución posterior, ya normal — con la app montada, ese camino
+         entero deja de aplicar y el ErrorBoundary real se encarga. -->
     <script>
       (function () {
         var KEY = 'vigiiap:chunk-reload-attempted'
@@ -34,7 +46,8 @@
         window.addEventListener('vite:preloadError', reloadOnce)
         window.addEventListener('error', function (event) {
           var t = event.target
-          if (t && t.tagName === 'SCRIPT' && t.type === 'module') reloadOnce()
+          if (t && t.tagName === 'SCRIPT' && t.type === 'module') { reloadOnce(); return }
+          if ((t === window || !t) && !window.__VIGIIAP_MOUNTED__) reloadOnce()
         }, true)
       })()
     </script>
