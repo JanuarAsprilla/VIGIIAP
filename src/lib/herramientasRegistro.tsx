@@ -1,7 +1,8 @@
-import { BarChart3, type LucideIcon } from 'lucide-react'
+import { BarChart3, MapPinCheck, type LucideIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
 import ConversorCoordenadas from '@/components/herramientas/ConversorCoordenadas'
 import PanelChocoTool from '@/components/herramientas/PanelChocoTool'
+import ValidadorCoordenadasTool from '@/components/herramientas/ValidadorCoordenadasTool'
 
 type AccentColor = 'primary' | 'orange' | 'gold' | 'green'
 
@@ -29,4 +30,5 @@ interface EntradaRegistro {
 export const REGISTRO_HERRAMIENTAS: Record<string, EntradaRegistro> = {
   conversor: { Component: ConversorCoordenadas },
   'panel-choco': { Component: PanelChocoTool, focusable: true, icon: BarChart3, color: 'gold' },
+  'validador-coordenadas': { Component: ValidadorCoordenadasTool, focusable: true, icon: MapPinCheck, color: 'primary' },
 }
