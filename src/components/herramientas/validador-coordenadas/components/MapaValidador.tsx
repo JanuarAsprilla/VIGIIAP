@@ -16,7 +16,7 @@ export interface MapaValidadorHandle {
   focusFila: (idx: number) => void
 }
 
-interface MapaValidadorProps {
+export interface MapaValidadorProps {
   filtrados: ItemFiltrado[]
   rows: FilaExcel[]
   colLat: string

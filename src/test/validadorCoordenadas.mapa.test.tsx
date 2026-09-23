@@ -9,7 +9,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { createRef } from 'react'
-import MapaValidador, { type MapaValidadorHandle } from '@/components/herramientas/validador-coordenadas/components/MapaValidador'
+import MapaValidador, { type MapaValidadorHandle, type MapaValidadorProps } from '@/components/herramientas/validador-coordenadas/components/MapaValidador'
 import { MUNICIPIOS_CHOCO } from '@/components/herramientas/validador-coordenadas/data/municipiosChoco.generated'
 import { precalcularCentroides } from '@/components/herramientas/validador-coordenadas/lib/validacion'
 import type { FilaExcel, FilaResultado, ItemFiltrado } from '@/components/herramientas/validador-coordenadas/types'
@@ -41,11 +41,11 @@ function resultado(overrides: Partial<FilaResultado> = {}): FilaResultado {
   return { estado: 'VÁLIDA', tipoError: '', observacion: 'obs', depDet: 'CHOCÓ', muniDet: 'Quibdó', codigoDivipola: '27001', latIntercambiada: false, distCentroideKm: 1.2, ...overrides }
 }
 
-function baseProps() {
+function baseProps(): MapaValidadorProps {
   const rows: FilaExcel[] = [{ lat: QUIBDO.lat, lon: QUIBDO.lon }]
   const filtrados: ItemFiltrado[] = [{ idx: 0, r: resultado() }]
   return {
-    filtrados, rows, colLat: 'lat', colLon: 'lon', formato: 'dd' as const, features,
+    filtrados, rows, colLat: 'lat', colLon: 'lon', formato: 'dd', features,
     modoAgregar: false, modoMedir: false, modoMover: false, puntoAMover: null,
     onSetPuntoAMover: vi.fn(), onAgregarPunto: vi.fn(), onMoverPunto: vi.fn(),
     onEditarPunto: vi.fn(), onEliminarPunto: vi.fn(), onConfirmarDuplicada: vi.fn(),
