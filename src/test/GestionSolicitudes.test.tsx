@@ -32,12 +32,11 @@ vi.mock('@/hooks/useSolicitudes', async (importOriginal) => {
     useResponderSolicitud: vi.fn(),
     useSolicitudArchivos: vi.fn(),
     useDeleteSolicitudArchivo: vi.fn(),
-    useDownloadSolicitudArchivo: vi.fn(),
   }
 })
 import {
   useSolicitudesAdmin, useUpdateEstadoSolicitud, useResponderSolicitud,
-  useSolicitudArchivos, useDeleteSolicitudArchivo, useDownloadSolicitudArchivo,
+  useSolicitudArchivos, useDeleteSolicitudArchivo,
 } from '@/hooks/useSolicitudes'
 
 function makeSolicitud(overrides: Partial<SolicitudData> = {}): SolicitudData {
@@ -59,7 +58,6 @@ beforeEach(() => {
   vi.mocked(useResponderSolicitud).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useResponderSolicitud>)
   vi.mocked(useSolicitudArchivos).mockReturnValue({ data: [] } as unknown as ReturnType<typeof useSolicitudArchivos>)
   vi.mocked(useDeleteSolicitudArchivo).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useDeleteSolicitudArchivo>)
-  vi.mocked(useDownloadSolicitudArchivo).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useDownloadSolicitudArchivo>)
 })
 
 describe('GestionSolicitudes — acciones según accionesValidas', () => {
@@ -286,9 +284,7 @@ describe('GestionSolicitudes — archivos adjuntos', () => {
     expect(screen.getByText('Sin documentos adjuntos')).toBeInTheDocument()
   })
 
-  test('con archivos, descargar abre el enlace generado', async () => {
-    const mutateAsync = vi.fn().mockResolvedValue({ url: 'https://cdn.example.com/a1.pdf' })
-    vi.mocked(useDownloadSolicitudArchivo).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useDownloadSolicitudArchivo>)
+  test('con archivos, descargar navega directo al endpoint de streaming (sin pedir antes una URL prefirmada)', async () => {
     vi.mocked(useSolicitudArchivos).mockReturnValue({ data: [makeArchivo()] } as unknown as ReturnType<typeof useSolicitudArchivos>)
 
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
@@ -297,8 +293,7 @@ describe('GestionSolicitudes — archivos adjuntos', () => {
     await user.click(screen.getByTitle('Ver detalle'))
     await user.click(screen.getByText('Descargar'))
 
-    expect(mutateAsync).toHaveBeenCalledWith({ solicitudId: 'mongo-1', archivoId: 'a1' })
-    expect(openSpy).toHaveBeenCalledWith('https://cdn.example.com/a1.pdf', '_blank', 'noopener,noreferrer')
+    expect(openSpy).toHaveBeenCalledWith('/api/v1/solicitudes/mongo-1/archivos/a1/download', '_blank', 'noopener,noreferrer')
     openSpy.mockRestore()
   })
 

@@ -29,7 +29,7 @@ import api from '@/lib/api'
 import {
   useCreateSolicitud, useUpdateEstadoSolicitud, useResponderSolicitud,
   useSolicitudArchivos, useUploadSolicitudArchivo, useDeleteSolicitudArchivo,
-  useDownloadSolicitudArchivo,
+  solicitudArchivoDescargaUrl,
 } from '@/hooks/useSolicitudes'
 import { useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa, useMapaBySlug } from '@/hooks/useMapas'
 import { useCreateDocumento, useUpdateDocumento, useDeleteDocumento, useDocumentoBySlug, useToggleActivoDocumento } from '@/hooks/useDocumentos'
@@ -171,18 +171,11 @@ describe('useDeleteSolicitudArchivo', () => {
   })
 })
 
-describe('useDownloadSolicitudArchivo', () => {
-  beforeEach(() => { vi.clearAllMocks() })
-
-  test('calls GET /solicitudes/:id/archivos/:archivoId/download', async () => {
-    vi.mocked(api.get).mockResolvedValue({ url: 'https://example.com/file.pdf' })
-    const { result } = renderHook(() => useDownloadSolicitudArchivo(), { wrapper: makeWrapper() })
-
-    await act(async () => {
-      await result.current.mutateAsync({ solicitudId: '1', archivoId: '5' })
-    })
-
-    expect(api.get).toHaveBeenCalledWith('/solicitudes/1/archivos/5/download')
+describe('solicitudArchivoDescargaUrl', () => {
+  // El endpoint reenvía el archivo directamente (stream) -- ya no hay un
+  // mutationFn que pida primero una URL prefirmada, ver useSolicitudes.ts.
+  test('construye la URL del endpoint de streaming', () => {
+    expect(solicitudArchivoDescargaUrl('1', '5')).toBe('/api/v1/solicitudes/1/archivos/5/download')
   })
 })
 

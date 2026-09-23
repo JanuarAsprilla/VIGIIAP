@@ -196,9 +196,11 @@ export function useDeleteSolicitudArchivo() {
   })
 }
 
-export function useDownloadSolicitudArchivo() {
-  return useMutation<{ url: string }, Error, { solicitudId: string; archivoId: string }>({
-    mutationFn: ({ solicitudId, archivoId }) =>
-      api.get(`/solicitudes/${solicitudId}/archivos/${archivoId}/download`),
-  })
+// El endpoint reenvía el archivo directamente (stream) en vez de devolver una
+// URL prefirmada -- así el navegador nunca ve el host/IP real del
+// almacenamiento S3. Por eso es una URL para abrir/navegar, no una mutación
+// que trae un JSON con un link (ver streamPrivateFile en el backend).
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api/v1'
+export function solicitudArchivoDescargaUrl(solicitudId: string, archivoId: string): string {
+  return `${API_BASE}/solicitudes/${solicitudId}/archivos/${archivoId}/download`
 }
