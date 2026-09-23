@@ -10,7 +10,7 @@ import { fadeUpSm, panelAnim, drawerAnim, EASE_OUT_EXPO } from '@/lib/animations
 import PaginationBar from '@/components/ui/PaginationBar'
 import Card3D from '@/components/ui/Card3D'
 import { ESTADO_API, useSolicitudesAdmin, useUpdateEstadoSolicitud, useResponderSolicitud,
-         useSolicitudArchivos, useDeleteSolicitudArchivo, useDownloadSolicitudArchivo } from '@/hooks/useSolicitudes'
+         useSolicitudArchivos, useDeleteSolicitudArchivo, solicitudArchivoDescargaUrl } from '@/hooks/useSolicitudes'
 import { useToast, ToastContainer } from '@/components/Toast'
 
 const fadeUp = fadeUpSm
@@ -54,7 +54,6 @@ export default function GestionSolicitudes() {
   const updateEstado      = useUpdateEstadoSolicitud()
   const responderMutation = useResponderSolicitud()
   const deleteArchivo     = useDeleteSolicitudArchivo()
-  const downloadArchivo   = useDownloadSolicitudArchivo()
   const { toasts, toast, dismiss } = useToast()
 
   const [selected, setSelected] = useState<SolicitudData | null>(null)
@@ -121,16 +120,11 @@ export default function GestionSolicitudes() {
     }
   }
 
-  const handleDownloadArchivo = async (archivo: ArchivoSolicitud) => {
+  // El endpoint reenvía el archivo directamente -- se navega ahí en vez de
+  // pedir primero un JSON con una URL prefirmada (ver solicitudArchivoDescargaUrl).
+  const handleDownloadArchivo = (archivo: ArchivoSolicitud) => {
     if (!selected) return
-    try {
-      const result = await downloadArchivo.mutateAsync({
-        solicitudId: selected._id, archivoId: archivo.id,
-      })
-      window.open(result.url, '_blank', 'noopener,noreferrer')
-    } catch {
-      toast('No se pudo generar el enlace de descarga', 'error')
-    }
+    window.open(solicitudArchivoDescargaUrl(selected._id, archivo.id), '_blank', 'noopener,noreferrer')
   }
 
   const handleDeleteArchivo = async (archivo: ArchivoSolicitud) => {
@@ -520,8 +514,7 @@ export default function GestionSolicitudes() {
                             {a.tamano_bytes ? `${(a.tamano_bytes / 1024).toFixed(0)} KB` : ''}
                           </span>
                           <button onClick={() => handleDownloadArchivo(a)}
-                            disabled={downloadArchivo.isPending}
-                            className="text-xs text-primary-700 hover:text-primary-900 font-medium ml-1 transition-colors disabled:opacity-50">
+                            className="text-xs text-primary-700 hover:text-primary-900 font-medium ml-1 transition-colors">
                             Descargar
                           </button>
                           <button onClick={() => setDeleteArchivoTarget(a)}
