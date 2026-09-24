@@ -1,5 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { lazy, Suspense, useState, useEffect } from 'react'
+import { MotionConfig } from 'framer-motion'
 import { AuthProvider } from './contexts/AuthContext'
 import { SearchProvider } from './contexts/SearchContext'
 import { UIProvider } from './contexts/UIContext'
@@ -129,6 +130,11 @@ function AppRoutes() {
   }
 
   return (
+    // reducedMotion="user" hace que TODAS las animaciones declarativas de
+    // Framer Motion (initial/animate/whileHover/etc.) en toda la app
+    // respeten prefers-reduced-motion automáticamente, sin tener que cablear
+    // el hook useReducedMotion en cada componente uno por uno.
+    <MotionConfig reducedMotion="user">
     <ThemeProvider>
     <AuthProvider>
     <ThemeSync />
@@ -234,6 +240,7 @@ function AppRoutes() {
     </UIProvider>
     </AuthProvider>
     </ThemeProvider>
+    </MotionConfig>
   )
 }
 
