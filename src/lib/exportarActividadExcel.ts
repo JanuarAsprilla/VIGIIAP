@@ -40,6 +40,7 @@ function normalizar(r: AuditExportRaw): FilaActividad {
 
 export interface OpcionesExportarActividad {
   filtroModulo?: string
+  filtroAccion?: string
   busqueda?: string
   desde?: string
   hasta?: string
@@ -57,7 +58,10 @@ export async function exportarActividadExcel(opciones: OpcionesExportarActividad
   const crudo = await api.get('/admin/export/audit', {
     params: { formato: 'json', desde: opciones.desde, hasta: opciones.hasta },
   }) as AuditExportRaw[]
-  let filas = crudo.map(normalizar)
+  const crudoFiltrado = opciones.filtroAccion
+    ? crudo.filter((r) => r.accion === opciones.filtroAccion)
+    : crudo
+  let filas = crudoFiltrado.map(normalizar)
 
   if (opciones.filtroModulo) {
     filas = filas.filter((f) => f.modulo === opciones.filtroModulo)

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
-import { useAuditLog, MODULO_STYLES } from '@/hooks/useAuditLog'
+import { useAuditLog, MODULO_STYLES, ACCION_LABEL } from '@/hooks/useAuditLog'
 import { exportarActividadExcel } from '@/lib/exportarActividadExcel'
 
 const fadeUp = fadeUpSm
@@ -22,6 +22,14 @@ const MODULOS_OPCIONES = [
   'categorias', 'geovisores', 'notificaciones', 'sistema',
 ]
 
+// El backend ya soportaba filtrar por accion= exacta (getAuditLog en
+// admin.service.js) -- no había ningún control de UI para usarlo, solo el
+// buscador de texto libre. Se ofrecen las acciones ya catalogadas en
+// ACCION_LABEL (con su etiqueta legible), ordenadas alfabéticamente.
+const ACCION_OPCIONES = Object.entries(ACCION_LABEL)
+  .map(([clave, { label }]) => ({ clave, label }))
+  .sort((a, b) => a.label.localeCompare(b.label, 'es'))
+
 /** Pestaña "Auditoría" de la pantalla de Actividad -- rastro de seguridad
  *  (quién hizo qué, ligado a usuario/IP). Distinto de la pestaña "Analítica"
  *  (comportamiento de navegación anónimo, ver AnaliticaTab.tsx). */
@@ -29,6 +37,7 @@ export default function AuditoriaTab() {
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('') // debounced -- ver useEffect abajo
   const [filtroModulo, setFiltroModulo] = useState('')
+  const [filtroAccion, setFiltroAccion] = useState('')
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
   const [page, setPage] = useState(1)
@@ -47,6 +56,7 @@ export default function AuditoriaTab() {
 
   const { data, isLoading, isError, refetch } = useAuditLog({
     modulo: filtroModulo || undefined,
+    accion: filtroAccion || undefined,
     q:      search || undefined,
     fechaDesde: fechaDesde || undefined,
     fechaHasta: fechaHasta ? `${fechaHasta}T23:59:59.999Z` : undefined,
@@ -64,6 +74,7 @@ export default function AuditoriaTab() {
     try {
       await exportarActividadExcel({
         filtroModulo: filtroModulo || undefined,
+        filtroAccion: filtroAccion || undefined,
         busqueda: search || undefined,
         desde: fechaDesde || undefined,
         hasta: fechaHasta || undefined,
@@ -108,12 +119,22 @@ export default function AuditoriaTab() {
           />
         </div>
         <select
+          aria-label="Módulo"
           value={filtroModulo}
           onChange={(e) => { setFiltroModulo(e.target.value); setPage(1) }}
           className="px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
         >
           <option value="">Todos los módulos</option>
           {MODULOS_OPCIONES.map((m) => <option key={m} value={m}>{m}</option>)}
+        </select>
+        <select
+          aria-label="Acción"
+          value={filtroAccion}
+          onChange={(e) => { setFiltroAccion(e.target.value); setPage(1) }}
+          className="px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition"
+        >
+          <option value="">Todas las acciones</option>
+          {ACCION_OPCIONES.map((a) => <option key={a.clave} value={a.clave}>{a.label}</option>)}
         </select>
         <label className="flex items-center gap-1.5 px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm text-text-muted">
           <Calendar className="w-4 h-4 shrink-0" />
