@@ -80,10 +80,15 @@ jobs:
             # Healthcheck contra nginx DENTRO del propio contenedor (no contra
             # el puerto publicado en el host, que puede variar según el compose
             # del servidor) -- nginx:alpine trae wget de BusyBox, no curl.
+            # 127.0.0.1 explícito, no "localhost": BusyBox wget en Alpine
+            # resuelve "localhost" a ::1 (IPv6) antes que a 127.0.0.1, y
+            # nginx con "listen 80;" solo escucha IPv4 -- da "Connection
+            # refused" siempre aunque el servidor esté sano (visto en un
+            # deploy real: la reversión automática se disparó de más).
             READY=0
             for i in $(seq 1 10); do
               sleep 2
-              if docker compose exec -T frontend wget -q --spider http://localhost/; then
+              if docker compose exec -T frontend wget -q --spider http://127.0.0.1/; then
                 READY=1
                 break
               fi
