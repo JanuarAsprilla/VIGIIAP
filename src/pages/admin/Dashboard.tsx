@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Users, ClipboardList, FileText, Map as MapIcon,
-  TrendingUp, TrendingDown, CheckCircle, XCircle,
+  CheckCircle, XCircle,
   ArrowRight, Zap, AlertTriangle, ShieldQuestion, type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -13,6 +13,7 @@ import type { ModuloClave } from '@/lib/constants/modulos'
 import { fadeUpSm, staggerContainer, staggerItem3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import Sparkline from '@/components/ui/Sparkline'
+import DeltaBadge from '@/components/ui/DeltaBadge'
 import {
   useAdminStats, useDashboardTendencias,
   type AdminStats, type TendenciaKPI, type DashboardTendencias,
@@ -37,19 +38,6 @@ interface KpiDef {
   /** Módulo del panel al que pertenece esta cifra — un admin_sig sin permiso de "ver" sobre él no debe verla. */
   modulo: ModuloClave
   icon: LucideIcon
-}
-
-function DeltaBadge({ pct }: { pct: number }) {
-  if (pct === 0) {
-    return <span className="text-[0.65rem] font-semibold text-text-faint">Sin cambios</span>
-  }
-  const up = pct > 0
-  return (
-    <span className={`inline-flex items-center gap-1 text-[0.65rem] font-semibold ${up ? 'text-green-600' : 'text-orange-500'}`}>
-      {up ? <TrendingUp className="w-3 h-3" aria-hidden="true" /> : <TrendingDown className="w-3 h-3" aria-hidden="true" />}
-      {up ? '+' : ''}{pct}%
-    </span>
-  )
 }
 
 function KPICards({
