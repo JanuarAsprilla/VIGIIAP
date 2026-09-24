@@ -19,13 +19,14 @@ interface ToolCardProps {
   children: ReactNode
   index: number
   demo?: boolean
+  tilt3D?: boolean
 }
 
 /**
  * Tarjeta contenedora para cada herramienta SIG — 3D tilt.
  * Responsabilidad única: layout visual + animación de entrada.
  */
-export default function ToolCard({ tag, title, icon: Icon, color, children, index, demo = false }: ToolCardProps) {
+export default function ToolCard({ tag, title, icon: Icon, color, children, index, demo = false, tilt3D = true }: ToolCardProps) {
   const styles = accentStyles[color] || accentStyles.primary
 
   return (
@@ -33,6 +34,7 @@ export default function ToolCard({ tag, title, icon: Icon, color, children, inde
       {...cardEnter3D(index)}
       glow={styles.glow}
       intensity={4}
+      disabled={!tilt3D}
       className={`bg-white border border-border/70 rounded-xl overflow-hidden border-t-2 ${styles.border}`}
       whileHover={{ y: -3 }}
       transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}

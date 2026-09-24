@@ -115,7 +115,7 @@ export default function ConversorCoordenadas() {
   }
 
   return (
-    <ToolCard tag="Geodésico" title="Conversor de Coordenadas" icon={ArrowLeftRight} color="gold" index={2}>
+    <ToolCard tag="Geodésico" title="Conversor de Coordenadas" icon={ArrowLeftRight} color="gold" index={2} tilt3D={false}>
       {/* Mode toggle */}
       <div className="flex gap-1 p-1 bg-bg-alt rounded-xl mb-4">
         {([
