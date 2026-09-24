@@ -11,6 +11,7 @@ import { RequireVerified, RequireAdmin, RequireSuperAdmin } from './components/R
 import ErrorBoundary from './components/ErrorBoundary'
 import Preloader from './components/Preloader'
 import MaintenancePage from './components/MaintenancePage'
+import AnalyticsTracker from './components/AnalyticsTracker'
 import {
   HomeSkeleton,
   MapasSkeleton,
@@ -133,6 +134,9 @@ function AppRoutes() {
     <ThemeSync />
     <UIProvider>
     <SearchProvider>
+      {/* Fuera del ErrorBoundary con key={location.key}: un error de render
+          en una ruta no debe interrumpir el registro de la navegación. */}
+      <AnalyticsTracker />
       {/* key={location.key} — resetea el ErrorBoundary en cada navegación,
           evitando que un error en una ruta deje la app pegada al navegar de vuelta */}
       <ErrorBoundary key={location.key}>

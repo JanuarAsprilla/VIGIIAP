@@ -15,7 +15,9 @@ Sus derechos como titular: Usted tiene derecho a conocer qué datos suyos tiene 
 
 Cómo ejercer sus derechos: Escriba a info@iiap.org.co indicando claramente el derecho que desea ejercer y el correo con el que está registrado. Las consultas se resuelven en un máximo de 10 días hábiles y los reclamos en un máximo de 15 días hábiles, plazos que la ley permite prorrogar hasta 8 días hábiles adicionales si se le informa oportunamente el motivo de la demora. Desde su perfil dentro de la plataforma también puede consultar y corregir directamente sus datos de contacto.
 
-Autorización y vigencia: Al marcar la casilla de aceptación en el formulario de solicitud de acceso, usted otorga autorización previa, expresa e informada para el tratamiento aquí descrito. Sus datos se conservan mientras su cuenta permanezca activa y el tiempo adicional que exijan obligaciones legales aplicables. El IIAP aplica medidas técnicas razonables para proteger su información (cifrado de contraseñas, control de acceso por roles, registros de auditoría), sin que ello constituya una garantía absoluta frente a cualquier incidente de seguridad.`
+Autorización y vigencia: Al marcar la casilla de aceptación en el formulario de solicitud de acceso, usted otorga autorización previa, expresa e informada para el tratamiento aquí descrito. Sus datos se conservan mientras su cuenta permanezca activa y el tiempo adicional que exijan obligaciones legales aplicables. El IIAP aplica medidas técnicas razonables para proteger su información (cifrado de contraseñas, control de acceso por roles, registros de auditoría), sin que ello constituya una garantía absoluta frente a cualquier incidente de seguridad.
+
+Analítica de uso: Para entender cómo se usa la plataforma y mejorarla, VIGIIAP registra de forma completamente anónima las páginas visitadas (ruta, tipo de dispositivo, navegador y sitio de referencia). Este registro nunca incluye su dirección IP ni su identidad, ni siquiera si tiene una sesión iniciada -- no es posible vincular esta información a una persona.`
 
 interface PublicConfig { politicaPrivacidad?: string | null }
 
