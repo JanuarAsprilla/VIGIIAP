@@ -94,6 +94,17 @@ export default function PoliticaPrivacidad() {
             desde la configuración de seguridad de esa cuenta.
           </p>
 
+          <h3 className="text-lg font-bold text-text">Visualización de mapas</h3>
+          <p>
+            Los módulos de mapas, geovisores y herramientas de coordenadas de VIGIA-IIAP cargan
+            capas base (imágenes de fondo del mapa) desde proveedores externos como OpenStreetMap,
+            Esri/ArcGIS Online y OpenTopoMap. Al visualizar un mapa, su dirección IP se envía
+            directamente a esos proveedores para descargar las imágenes correspondientes — es un
+            requisito técnico para mostrar el mapa, igual que cargar cualquier imagen de una página
+            web. VIGIA-IIAP no comparte con ellos ningún dato adicional de su cuenta ni de su
+            actividad en la plataforma.
+          </p>
+
           <h3 className="text-lg font-bold text-text">Contacto</h3>
           <p>Para consultas sobre el tratamiento de sus datos personales, escriba a <strong>info@iiap.org.co</strong> o comuníquese al teléfono +57 (4) 671 1127, Quibdó, Chocó, Colombia.</p>
         </div>
