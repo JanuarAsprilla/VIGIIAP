@@ -16,6 +16,7 @@
  */
 import { useRef, type ReactNode, type MouseEvent as ReactMouseEvent, type CSSProperties } from 'react'
 import { motion, useMotionValue, useTransform, useSpring, useMotionTemplate, type TargetAndTransition, type MotionStyle } from 'framer-motion'
+import { useReducedMotion } from '@/hooks/useReducedMotion'
 
 interface Card3DProps {
   children: ReactNode
@@ -34,7 +35,7 @@ export default function Card3D({
   className  = '',
   intensity  = 6,
   glare      = true,
-  disabled   = false,
+  disabled: disabledProp = false,
   glow       = null as string | null,
   whileHover = {},
   style      = {},
@@ -43,6 +44,11 @@ export default function Card3D({
   const ref    = useRef<HTMLDivElement>(null)
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
+  // El tilt viene de mouseX/mouseY vía useTransform/useSpring, no de un prop
+  // animate/whileHover -- MotionConfig(reducedMotion) no lo alcanza, así que
+  // se apaga explícitamente aquí.
+  const prefersReducedMotion = useReducedMotion()
+  const disabled = disabledProp || prefersReducedMotion
 
   // Tilt springs
   const rawRX  = useTransform(mouseY, [-0.5, 0.5], [intensity, -intensity])
