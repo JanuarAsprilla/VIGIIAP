@@ -390,7 +390,7 @@ export default function Configuracion() {
         </div>
         <hr className="border-border" />
         <Link
-          to="/admin/reportes"
+          to="/admin/actividad?tab=reportes"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-800 hover:text-primary-600 transition-colors no-underline"
         >
           Generar reporte de actividad (día, semana, mes o año)

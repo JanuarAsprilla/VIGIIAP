@@ -11,6 +11,7 @@ function makeReporte(overrides: Partial<ReporteData> = {}): ReporteData {
     mapas: { creados: 1, publicados: 1 },
     logins: { exitosos: 20, fallidos: 2 },
     actividadPorModulo: [{ modulo: 'auth', total: 3 }, { modulo: 'solicitudes', total: 15 }],
+    serieTiempo: { granularidad: 'dia', serie: [] },
     ...overrides,
   }
 }

@@ -570,7 +570,7 @@ const MODULO_PATH: Record<string, string> = {
   configuracion: '/admin/configuracion',
   actividad: '/admin/actividad',
   errores: '/admin/errores',
-  reportes: '/admin/reportes',
+  reportes: '/admin/actividad?tab=reportes',
 }
 
 function MisModulos({ modulos }: { modulos: PermisoModulo[] }) {
