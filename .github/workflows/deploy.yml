@@ -66,7 +66,38 @@ jobs:
           username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
+            set -e
             cd /root/vigiiap
+            # Se captura el image ID que corre AHORA (antes de pull) para poder
+            # revertir a él si el contenedor nuevo no levanta sano -- pull ya
+            # sobreescribe el tag :latest local, así que después ya no hay
+            # forma de recuperar cuál era "el anterior" sin haberlo guardado antes.
+            PREV_IMAGE=$(docker compose images -q frontend || true)
+
             docker compose pull frontend
             docker compose up -d frontend
-            docker image prune -f
+
+            # Healthcheck contra nginx DENTRO del propio contenedor (no contra
+            # el puerto publicado en el host, que puede variar según el compose
+            # del servidor) -- nginx:alpine trae wget de BusyBox, no curl.
+            READY=0
+            for i in $(seq 1 10); do
+              sleep 2
+              if docker compose exec -T frontend wget -q --spider http://localhost/; then
+                READY=1
+                break
+              fi
+            done
+
+            if [ "$READY" = "1" ]; then
+              echo "Healthcheck OK -- despliegue confirmado"
+              docker image prune -f
+              exit 0
+            fi
+
+            echo "Healthcheck FALLÓ tras 10 intentos -- revirtiendo a la imagen anterior"
+            if [ -n "$PREV_IMAGE" ]; then
+              docker tag "$PREV_IMAGE" ghcr.io/januarasprilla/vigiiap-frontend:latest
+              docker compose up -d frontend
+            fi
+            exit 1
