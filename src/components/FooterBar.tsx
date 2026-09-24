@@ -57,7 +57,7 @@ export default function Footer() {
             <FooterReveal delay={0}>
               {/* Logo */}
               <div className="flex items-center gap-2 mb-6">
-                <svg viewBox="0 0 50 50" fill="none" className="w-11 h-11">
+                <svg viewBox="0 0 50 50" fill="none" className="w-11 h-11" aria-hidden="true">
                   <rect
                     x="5" y="5" width="40" height="40" rx="5"
                     stroke="currentColor" strokeWidth="2"
