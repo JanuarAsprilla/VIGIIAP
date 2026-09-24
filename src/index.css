@@ -765,7 +765,9 @@ h1, h2, h3, .font-display {
   --nav-bg:                rgba(242,247,243,0.68);
   --nav-border:            rgba(26,86,50,0.12);
   --nav-text:              #1A2E22;
-  --nav-text-muted:        rgba(26,46,34,0.45);
+  /* 0.45 daba ~2.6:1 sobre el fondo del sidebar (falla WCAG AA) — 0.65 da ~4.7:1.
+     Mismo verde institucional, solo sube la opacidad del estado inactivo. */
+  --nav-text-muted:        rgba(26,46,34,0.65);
   --nav-text-locked:       rgba(26,46,34,0.22);
   --nav-active-pill:       rgba(26,86,50,0.10);
   --nav-active-border:     rgba(26,86,50,0.20);
@@ -817,7 +819,9 @@ h1, h2, h3, .font-display {
   /* ── BottomTabs ────────────────────────────────── */
   --tabs-bg:               rgba(255,255,255,0.72);
   --tabs-border:           rgba(26,86,50,0.10);
-  --tabs-text:             rgba(26,46,34,0.36);
+  /* 0.36 daba ~2.1:1 sobre el fondo de la barra (falla WCAG AA) — 0.65 da ~4.7:1.
+     Mismo verde institucional, solo sube la opacidad del estado inactivo. */
+  --tabs-text:             rgba(26,46,34,0.65);
   --tabs-active-text:      #1A5632;
   --tabs-active-bg:        rgba(26,86,50,0.08);
   --tabs-locked-text:      rgba(26,46,34,0.18);
@@ -915,7 +919,9 @@ h1, h2, h3, .font-display {
   --nav-bg:                linear-gradient(180deg,rgba(6,15,9,0.72) 0%,rgba(9,26,14,0.72) 55%,rgba(12,31,20,0.72) 100%);
   --nav-border:            rgba(0,152,70,0.14);
   --nav-text:              rgba(255,255,255,0.75);
-  --nav-text-muted:        rgba(255,255,255,0.38);
+  /* 0.38 daba ~3.5:1 sobre el fondo oscuro del sidebar (falla WCAG AA) —
+     0.55 da ~6.2:1, igual que --color-text-muted más arriba. */
+  --nav-text-muted:        rgba(255,255,255,0.55);
   --nav-text-locked:       rgba(255,255,255,0.22);
   --nav-active-pill:       rgba(0,152,70,0.28);
   --nav-active-border:     rgba(0,152,70,0.28);
@@ -963,7 +969,9 @@ h1, h2, h3, .font-display {
 
   --tabs-bg:               rgba(6,15,9,0.72);
   --tabs-border:           rgba(0,152,70,0.14);
-  --tabs-text:             rgba(255,255,255,0.38);
+  /* 0.38 daba ~3.5:1 sobre el fondo oscuro de la barra (falla WCAG AA) —
+     0.55 da ~6.2:1, igual que --color-text-muted más arriba. */
+  --tabs-text:             rgba(255,255,255,0.55);
   --tabs-active-text:      #4ade80;
   --tabs-active-bg:        rgba(0,152,70,0.18);
   --tabs-locked-text:      rgba(255,255,255,0.18);
