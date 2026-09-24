@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Tag } from 'lucide-react'
 
@@ -36,10 +36,14 @@ export default function CategoryCombobox({
 }: CategoryComboboxProps) {
   const [input, setInput] = useState(value || '')
   const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   const ref = useRef<HTMLDivElement>(null)
+  const listboxId = useId()
+  const optionId = (idx: number) => `${listboxId}-opt-${idx}`
 
   const commitAndClose = () => {
     setOpen(false)
+    setActiveIndex(-1)
     // Si lo que quedó escrito no corresponde a una opción real, se descarta
     // -- nunca se envía texto libre como si fuera una categoría elegida.
     setInput(value || '')
@@ -54,7 +58,32 @@ export default function CategoryCombobox({
     !input.trim() || c.toLowerCase().includes(input.toLowerCase())
   )
 
-  const select = (cat: string) => { onChange(cat); setInput(cat); setOpen(false) }
+  // El índice activo puede quedar fuera de rango al filtrar con cada tecla.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- reajuste derivado del filtrado, no un efecto de datos externos
+  useEffect(() => { if (activeIndex >= filtered.length) setActiveIndex(filtered.length ? 0 : -1) }, [filtered.length, activeIndex])
+
+  const select = (cat: string) => { onChange(cat); setInput(cat); setOpen(false); setActiveIndex(-1) }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') { commitAndClose(); return }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      if (!open) { setOpen(true); return }
+      setActiveIndex((i) => (filtered.length ? Math.min(i + 1, filtered.length - 1) : -1))
+      return
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex((i) => (filtered.length ? Math.max(i - 1, 0) : -1))
+      return
+    }
+    if (e.key === 'Enter') {
+      if (open && activeIndex >= 0 && filtered[activeIndex]) {
+        e.preventDefault()
+        select(filtered[activeIndex])
+      }
+    }
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -63,11 +92,16 @@ export default function CategoryCombobox({
         <input
           id={id}
           type="text"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={open}
+          aria-controls={listboxId}
+          aria-activedescendant={open && activeIndex >= 0 ? optionId(activeIndex) : undefined}
           value={input}
           placeholder={placeholder}
           onChange={(e) => { setInput(e.target.value); setOpen(true) }}
           onFocus={() => setOpen(true)}
-          onKeyDown={(e) => { if (e.key === 'Escape') commitAndClose() }}
+          onKeyDown={handleKeyDown}
           autoComplete="off"
           className="w-full pl-8 pr-8 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
         />
@@ -90,6 +124,8 @@ export default function CategoryCombobox({
             transition={{ duration: 0.15 }}
             className="absolute z-30 top-full mt-1 w-full bg-[var(--card-bg)] border border-border rounded-xl shadow-xl overflow-hidden"
             style={{ maxHeight: '14rem', overflowY: 'auto' }}
+            role="listbox"
+            id={listboxId}
           >
             {filtered.length > 0 ? (
               <>
@@ -98,14 +134,20 @@ export default function CategoryCombobox({
                     {existingLabel}
                   </span>
                 </div>
-                {filtered.map((cat) => (
+                {filtered.map((cat, idx) => (
                   <button
                     key={cat}
                     type="button"
+                    role="option"
+                    id={optionId(idx)}
+                    aria-selected={value === cat}
                     onClick={() => select(cat)}
+                    onMouseEnter={() => setActiveIndex(idx)}
                     className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${
                       value === cat
                         ? 'bg-primary-500/12 text-primary-700 font-semibold'
+                        : idx === activeIndex
+                        ? 'bg-bg-alt text-text'
                         : 'text-text hover:bg-bg-alt'
                     }`}
                   >

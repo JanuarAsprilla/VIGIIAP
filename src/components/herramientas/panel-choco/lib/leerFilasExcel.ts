@@ -1,4 +1,8 @@
-import ExcelJS from 'exceljs'
+// Import solo de tipos -- se borra por completo en el JS compilado. El valor
+// real de ExcelJS (929 kB / 256 kB gzip) se carga bajo demanda dentro de
+// leerFilasExcel(), no al abrir la herramienta, para no sumarlo al chunk que
+// se descarga solo por entrar al panel.
+import type ExcelJS from 'exceljs'
 import type { FilaExcel } from '../types'
 
 function celdaAValor(valor: ExcelJS.CellValue): string | number | undefined {
@@ -21,6 +25,7 @@ function celdaAValor(valor: ExcelJS.CellValue): string | number | undefined {
 type BufferXlsx = Parameters<InstanceType<typeof ExcelJS.Workbook>['xlsx']['load']>[0]
 
 export async function leerFilasExcel(file: File): Promise<FilaExcel[]> {
+  const { default: ExcelJS } = await import('exceljs')
   const buffer = await file.arrayBuffer()
   const workbook = new ExcelJS.Workbook()
   await workbook.xlsx.load(buffer as unknown as BufferXlsx)

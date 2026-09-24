@@ -7,7 +7,10 @@
  * vetada del proyecto (ver panel-choco/lib/leerFilasExcel.ts) y produce el
  * mismo resultado (mismas hojas, mismas columnas) sin esa exposición.
  */
-import ExcelJS from 'exceljs'
+// Import solo de tipos -- se borra por completo en el JS compilado. El valor
+// real de ExcelJS (929 kB / 256 kB gzip) se carga bajo demanda dentro de
+// leerExcelMejorHoja()/exportarResultados(), no al abrir la herramienta.
+import type ExcelJS from 'exceljs'
 import { descargarWorkbook } from '@/lib/excelInstitucional'
 import type { FilaExcel, FilaResultado } from '../types'
 import { limpiarCoord, ddToDms, ddToUtm } from './coordenadas'
@@ -48,6 +51,7 @@ export interface HojaLeida {
 
 /** Lee el archivo y elige la hoja con más filas de datos (normalmente la principal). */
 export async function leerExcelMejorHoja(file: File): Promise<HojaLeida> {
+  const { default: ExcelJS } = await import('exceljs')
   const buffer = await file.arrayBuffer()
   const workbook = new ExcelJS.Workbook()
   await workbook.xlsx.load(buffer as unknown as BufferXlsx)
@@ -136,6 +140,7 @@ export async function exportarResultados(
   rows: FilaExcel[], results: FilaResultado[], colLat: string, colLon: string,
   totalMunicipiosObjetivo: number, municipiosEncontrados: number,
 ): Promise<void> {
+  const { default: ExcelJS } = await import('exceljs')
   const salida = rows.map((row, i) => construirFilaSalida(row, results[i], colLat, colLon))
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'VIGIA — IIAP'
