@@ -197,10 +197,10 @@ describe('Configuracion — notificaciones y roles', () => {
     expect(screen.queryByText('Reporte semanal de actividad')).not.toBeInTheDocument()
   })
 
-  test('enlaza a /admin/reportes para generar el reporte de actividad', () => {
+  test('enlaza a la pestaña Reportes de Actividad para generar el reporte', () => {
     renderPage()
     const link = screen.getByRole('link', { name: /Generar reporte de actividad/i })
-    expect(link).toHaveAttribute('href', '/admin/reportes')
+    expect(link).toHaveAttribute('href', '/admin/actividad?tab=reportes')
   })
 })
 

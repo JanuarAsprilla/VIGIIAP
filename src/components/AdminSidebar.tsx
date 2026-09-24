@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Users, ClipboardList,
   FileText, Map, Settings, Activity, X,
-  LogOut, Globe, Shield, Tag, ShieldCheck, Trash2, FileBarChart, AlertTriangle,
+  LogOut, Globe, Shield, Tag, ShieldCheck, Trash2, AlertTriangle,
   MapPinned, Server, Wrench,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -18,7 +18,16 @@ interface NavLinkDef {
   path: string
   icon: ComponentType<{ className?: string }>
   end?: boolean
-  modulo?: ModuloClave
+  /** Un arreglo se trata como OR -- visible si el admin_sig tiene 'ver' en
+   *  al menos uno (ej. 'Actividad' agrupa las pantallas de los módulos
+   *  'actividad' y 'reportes' en pestañas, ver pages/admin/Actividad.tsx). */
+  modulo?: ModuloClave | ModuloClave[]
+}
+
+function puedeVerLink(user: Parameters<typeof puedeVerModulo>[0], modulo: NavLinkDef['modulo']): boolean {
+  if (!modulo) return true
+  const modulos = Array.isArray(modulo) ? modulo : [modulo]
+  return modulos.some((m) => puedeVerModulo(user, m))
 }
 
 const NAV_SECTIONS: { label: string; links: NavLinkDef[] }[] = [
@@ -45,9 +54,8 @@ const NAV_SECTIONS: { label: string; links: NavLinkDef[] }[] = [
     label: 'Sistema',
     links: [
       { label: 'Configuración', path: '/admin/configuracion', icon: Settings,      modulo: 'configuracion' as ModuloClave },
-      { label: 'Actividad',     path: '/admin/actividad',     icon: Activity,      modulo: 'actividad' as ModuloClave },
+      { label: 'Actividad',     path: '/admin/actividad',     icon: Activity,      modulo: ['actividad', 'reportes'] as ModuloClave[] },
       { label: 'Errores',       path: '/admin/errores',       icon: AlertTriangle, modulo: 'errores' as ModuloClave },
-      { label: 'Reportes',      path: '/admin/reportes',      icon: FileBarChart,  modulo: 'reportes' as ModuloClave },
     ],
   },
 ]
@@ -157,7 +165,7 @@ function SidebarContent({ onClose, onLogout, user }: { onClose: () => void; onLo
       {/* ── Navigation ── */}
       <nav className="flex-1 py-3 px-3 overflow-y-auto space-y-4">
         {NAV_SECTIONS.map((section) => {
-          const linksVisibles = section.links.filter((link) => !link.modulo || puedeVerModulo(user, link.modulo))
+          const linksVisibles = section.links.filter((link) => puedeVerLink(user, link.modulo))
           if (linksVisibles.length === 0) return null
           return (
             <div key={section.label}>

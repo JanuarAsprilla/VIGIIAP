@@ -132,6 +132,36 @@ describe('AdminSidebar — permisos por módulo (admin_sig delegado)', () => {
     expect(screen.getByText('Usuarios')).toBeInTheDocument()
     expect(screen.getByText('Documentos')).toBeInTheDocument()
   })
+
+  // "Actividad" agrupa las pestañas de los módulos 'actividad' y 'reportes'
+  // (ver pages/admin/Actividad.tsx) -- el enlace del sidebar debe verse con
+  // cualquiera de los dos, no solo cuando el admin_sig tiene ambos.
+  test('admin_sig con solo el módulo "reportes" (sin "actividad") sigue viendo el enlace Actividad', () => {
+    authMock.user = {
+      name: 'Delegado', role: ROLES.ADMIN, rol: 'admin_sig', initials: 'DL',
+      modulos: [{ modulo: 'reportes', puede_ver: true, puede_editar: false }],
+    }
+    renderSidebar(false)
+    expect(screen.getByText('Actividad')).toBeInTheDocument()
+  })
+
+  test('admin_sig con solo el módulo "actividad" (sin "reportes") sigue viendo el enlace Actividad', () => {
+    authMock.user = {
+      name: 'Delegado', role: ROLES.ADMIN, rol: 'admin_sig', initials: 'DL',
+      modulos: [{ modulo: 'actividad', puede_ver: true, puede_editar: false }],
+    }
+    renderSidebar(false)
+    expect(screen.getByText('Actividad')).toBeInTheDocument()
+  })
+
+  test('admin_sig sin "actividad" ni "reportes" no ve el enlace Actividad', () => {
+    authMock.user = {
+      name: 'Delegado', role: ROLES.ADMIN, rol: 'admin_sig', initials: 'DL',
+      modulos: [{ modulo: 'solicitudes', puede_ver: true, puede_editar: true }],
+    }
+    renderSidebar(false)
+    expect(screen.queryByText('Actividad')).not.toBeInTheDocument()
+  })
 })
 
 describe('AdminSidebar — usuario y cierre de sesión', () => {

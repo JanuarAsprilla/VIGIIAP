@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import Actividad from '@/pages/admin/Actividad'
+import AuditoriaTab from '@/pages/admin/AuditoriaTab'
 
 vi.mock('framer-motion', () => {
   const cache = new Map<string, (p: Record<string, unknown>) => ReactNode>()
@@ -31,7 +31,7 @@ import { exportarActividadExcel } from '@/lib/exportarActividadExcel'
 
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(<QueryClientProvider client={qc}><Actividad /></QueryClientProvider>)
+  return render(<QueryClientProvider client={qc}><AuditoriaTab /></QueryClientProvider>)
 }
 
 function makeLog(overrides: Record<string, unknown> = {}) {
@@ -44,7 +44,7 @@ function makeLog(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => { vi.clearAllMocks() })
 
-describe('Actividad — normalización de acciones', () => {
+describe('AuditoriaTab — normalización de acciones', () => {
   test('una acción conocida muestra su etiqueta legible', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeLog({ accion: 'delete_usuario' })], meta: { total: 1 } })
     renderPage()
@@ -58,7 +58,7 @@ describe('Actividad — normalización de acciones', () => {
   })
 })
 
-describe('Actividad — búsqueda', () => {
+describe('AuditoriaTab — búsqueda', () => {
   // La búsqueda es un parámetro real de la consulta al backend (con
   // debounce), no un filtro sobre la página de 10 filas ya cargada --
   // antes, buscar a alguien que no estuviera en esa página no encontraba
@@ -76,7 +76,7 @@ describe('Actividad — búsqueda', () => {
   })
 })
 
-describe('Actividad — estados', () => {
+describe('AuditoriaTab — estados', () => {
   test('sin eventos muestra el mensaje vacío explícito', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [], meta: { total: 0 } })
     renderPage()
@@ -96,7 +96,7 @@ describe('Actividad — estados', () => {
   })
 })
 
-describe('Actividad — filtro de módulo', () => {
+describe('AuditoriaTab — filtro de módulo', () => {
   test('cambiar el módulo reinicia a la página 1', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 25 } })
     const user = userEvent.setup()
@@ -109,7 +109,7 @@ describe('Actividad — filtro de módulo', () => {
   })
 })
 
-describe('Actividad — paginación', () => {
+describe('AuditoriaTab — paginación', () => {
   test('anterior está deshabilitado en la página 1, siguiente habilitado con más páginas', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 25 } })
     renderPage()
@@ -135,7 +135,7 @@ describe('Actividad — paginación', () => {
   })
 })
 
-describe('Actividad — exportar Excel', () => {
+describe('AuditoriaTab — exportar Excel', () => {
   test('exporta con los filtros de módulo y búsqueda activos', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
     const user = userEvent.setup()
