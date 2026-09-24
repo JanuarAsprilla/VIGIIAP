@@ -55,6 +55,16 @@ test.describe('Flujo usuario autenticado (investigador/publico)', () => {
     const content = await page.textContent('body');
     expect(content.toLowerCase()).toContain(USER_EMAIL.split('@')[0].toLowerCase());
   });
+
+  // RequireAdmin (src/components/RequireAuth.tsx) redirige a "/" cuando hay
+  // sesión activa pero el rol no es admin -- distinto del caso sin sesión
+  // (que va a /login). Es la mitad que faltaba del par de tests de
+  // autorización: ya existía el caso "sin sesión", faltaba "con sesión pero
+  // sin el rol correcto".
+  test('un usuario autenticado sin rol admin es redirigido fuera de /admin', async ({ page }) => {
+    await page.goto('/admin');
+    await expect(page).toHaveURL('/');
+  });
 });
 
 // ─── Flujos de administrador ──────────────────────────────────────────────────
