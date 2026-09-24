@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Line } from 'react-chartjs-2'
 import { Download, Loader2, AlertCircle, FileBarChart } from 'lucide-react'
 import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import { useReporte, type PeriodoReporte } from '@/hooks/useReportes'
 import { exportarReporteExcel } from '@/lib/exportarReporteExcel'
+import { KPI_SERIE_COLOR, KPI_SERIE_LABEL, LINE_CHART_OPTIONS } from '@/lib/reportesChartConfig'
 
 const fadeUp = fadeUpSm
 
@@ -25,7 +27,11 @@ function StatTile({ label, value }: { label: string; value: number }) {
   )
 }
 
-export default function Reportes() {
+/** Pestaña "Reportes" de la pantalla de Actividad -- reportes agregados por
+ *  período (día/semana/mes/año/rango) sobre audit_log, con evolución día a
+ *  día (u hora a hora si el período es "hoy"). Distinto de "Analítica de
+ *  Uso" (navegación anónima) y de "Auditoría" (rastro de seguridad crudo). */
+export default function ReportesTab() {
   const [periodo, setPeriodo] = useState<PeriodoReporte>('semana')
   const [desde, setDesde] = useState('')
   const [hasta, setHasta] = useState('')
@@ -48,17 +54,27 @@ export default function Reportes() {
 
   const rangoInvalido = periodo === 'custom' && desde && hasta && desde > hasta
 
+  const chartData = data ? {
+    labels: data.serieTiempo.serie.map((p) => p.etiqueta),
+    datasets: (Object.keys(KPI_SERIE_COLOR) as (keyof typeof KPI_SERIE_COLOR)[]).map((kpi) => ({
+      label: KPI_SERIE_LABEL[kpi],
+      data: data.serieTiempo.serie.map((p) => p[kpi]),
+      borderColor: KPI_SERIE_COLOR[kpi],
+      backgroundColor: `${KPI_SERIE_COLOR[kpi]}22`,
+      pointRadius: data.serieTiempo.serie.length > 60 ? 0 : 2.5,
+      pointHoverRadius: 4,
+      borderWidth: 2,
+      tension: 0.3,
+      fill: false,
+    })),
+  } : null
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <motion.div {...fadeUp(0)} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <span className="text-[0.7rem] font-bold uppercase tracking-widest" style={{ color: 'var(--hero-eyebrow-text)' }}>Administración</span>
-          <h1 className="font-display text-2xl font-bold text-text mt-0.5">Reportes de Actividad</h1>
-          <p className="text-sm text-text-muted mt-1">
-            {data ? `Del ${data.desde} al ${data.hasta}` : 'Elige un período para generar el reporte'}
-          </p>
-        </div>
+        <p className="text-sm text-text-muted">
+          {data ? `Del ${data.desde} al ${data.hasta}` : 'Elige un período para generar el reporte'}
+        </p>
         <button
           onClick={exportExcel}
           disabled={!data || isLoading || exportando}
@@ -139,6 +155,14 @@ export default function Reportes() {
           </div>
         ) : (
           <div className="space-y-6">
+            <div>
+              <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2.5">
+                Evolución {data.serieTiempo.granularidad === 'hora' ? 'por hora' : 'día a día'}
+              </p>
+              <div style={{ height: 260 }}>
+                {chartData && <Line data={chartData} options={LINE_CHART_OPTIONS} />}
+              </div>
+            </div>
             <div>
               <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2.5">Usuarios</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

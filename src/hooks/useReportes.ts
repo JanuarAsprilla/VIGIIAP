@@ -14,6 +14,20 @@ export interface ReporteModuloConteo {
   total: number
 }
 
+export interface ReportePuntoSerie {
+  etiqueta: string
+  usuarios: number
+  solicitudes: number
+  documentos: number
+  mapas: number
+}
+
+export interface ReporteSerieTiempo {
+  /** 'hora' solo para el período "hoy" (un solo día no da suficientes puntos para una serie diaria). */
+  granularidad: 'hora' | 'dia'
+  serie: ReportePuntoSerie[]
+}
+
 export interface ReporteData {
   periodo: PeriodoReporte
   desde: string
@@ -24,6 +38,7 @@ export interface ReporteData {
   mapas: { creados: number; publicados: number }
   logins: { exitosos: number; fallidos: number }
   actividadPorModulo: ReporteModuloConteo[]
+  serieTiempo: ReporteSerieTiempo
 }
 
 // El backend solo debe recibir 'desde'/'hasta' cuando periodo === 'custom' —

@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { lazy, Suspense, useState, useEffect } from 'react'
 import { MotionConfig } from 'framer-motion'
 import { AuthProvider } from './contexts/AuthContext'
@@ -60,7 +60,6 @@ const AdminActividad   = lazy(() => import('./pages/admin/Actividad'))
 const AdminErrores     = lazy(() => import('./pages/admin/Errores'))
 const AdminCategorias  = lazy(() => import('./pages/admin/GestionCategorias'))
 const AdminHerramientas = lazy(() => import('./pages/admin/GestionHerramientas'))
-const AdminReportes    = lazy(() => import('./pages/admin/Reportes'))
 const AdminGestionAdmins = lazy(() => import('./pages/admin/GestionAdmins'))
 const AdminPapelera      = lazy(() => import('./pages/admin/Papelera'))
 
@@ -222,7 +221,8 @@ function AppRoutes() {
               <Route path="/admin/errores"       element={<Suspense fallback={<GenericPageSkeleton />}><AdminErrores /></Suspense>} />
               <Route path="/admin/categorias"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminCategorias /></Suspense>} />
               <Route path="/admin/herramientas"  element={<Suspense fallback={<GenericPageSkeleton />}><AdminHerramientas /></Suspense>} />
-              <Route path="/admin/reportes"      element={<Suspense fallback={<GenericPageSkeleton />}><AdminReportes /></Suspense>} />
+              {/* "Reportes" era una pantalla aparte -- ahora es una pestaña de Actividad (ver pages/admin/Actividad.tsx) */}
+              <Route path="/admin/reportes"      element={<Navigate to="/admin/actividad?tab=reportes" replace />} />
 
               {/* ── Rutas exclusivas Super Admin ── */}
               <Route element={<RequireSuperAdmin />}>
