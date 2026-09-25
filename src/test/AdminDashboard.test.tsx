@@ -50,6 +50,19 @@ vi.mock('@/hooks/useAuditLog', async (importOriginal) => {
 })
 import { useAuditLog } from '@/hooks/useAuditLog'
 
+vi.mock('@/hooks/useAnalitica', () => ({ useAnaliticaResumen: vi.fn() }))
+import { useAnaliticaResumen } from '@/hooks/useAnalitica'
+
+vi.mock('@/hooks/useErrorLog', () => ({ useErrorLog: vi.fn() }))
+import { useErrorLog } from '@/hooks/useErrorLog'
+
+// react-chartjs-2 renderiza sobre <canvas>, que jsdom no soporta de verdad.
+vi.mock('react-chartjs-2', () => ({
+  Line: (props: { data: { datasets: { label: string }[] } }) => (
+    <div data-testid="line-chart" data-datasets={JSON.stringify(props.data.datasets.map((d) => d.label))} />
+  ),
+}))
+
 function makeSolicitud(overrides: Record<string, unknown> = {}) {
   return {
     id: 'SOL-001', _id: 'mongo-1', tipo: 'Certificación', subtipo: 'Uso de suelo',
@@ -96,6 +109,17 @@ beforeEach(() => {
   vi.mocked(useAuditLog).mockReturnValue({
     data: { data: [] }, isLoading: false, isError: false, refetch: vi.fn(),
   } as unknown as ReturnType<typeof useAuditLog>)
+  vi.mocked(useAnaliticaResumen).mockReturnValue({
+    data: {
+      paginasVistas: { serie7: [1,2,3,4,5,6,7], semanaActual: 28, semanaAnterior: 20, deltaPct: 40 },
+      visitantes:    { serie7: [1,1,1,1,1,1,1], semanaActual: 7,  semanaAnterior: 7,  deltaPct: 0 },
+      tasaRebotePct: 20, duracionPromedioSeg: 90,
+    },
+    isLoading: false, isError: false,
+  } as unknown as ReturnType<typeof useAnaliticaResumen>)
+  vi.mocked(useErrorLog).mockReturnValue({
+    data: { data: [] }, isLoading: false, isError: false,
+  } as unknown as ReturnType<typeof useErrorLog>)
 })
 
 describe('Dashboard — Distribución de Roles (regresión del fix de Módulo 4)', () => {
@@ -372,5 +396,70 @@ describe('Dashboard — personalización por permisos de módulo (admin_sig dele
     expect(await screen.findByText('Usuarios Registrados')).toBeInTheDocument()
     expect(screen.getByText('Distribución de Roles')).toBeInTheDocument()
     expect(screen.queryByText(/Acceso delegado/)).not.toBeInTheDocument()
+  })
+})
+
+describe('Dashboard — Tráfico y Uso', () => {
+  test('muestra la gráfica con páginas vistas y visitantes', async () => {
+    renderPage()
+    const chart = await screen.findByTestId('line-chart')
+    expect(JSON.parse(chart.getAttribute('data-datasets')!)).toEqual(['Páginas vistas', 'Visitantes únicos'])
+  })
+
+  test('un error de analítica muestra un mensaje sin romper el resto del dashboard', async () => {
+    vi.mocked(useAnaliticaResumen).mockReturnValue({
+      data: undefined, isLoading: false, isError: true,
+    } as unknown as ReturnType<typeof useAnaliticaResumen>)
+    renderPage()
+
+    expect(await screen.findByText('No se pudo cargar el tráfico de la plataforma.')).toBeInTheDocument()
+    expect(screen.getByText('Usuarios Registrados')).toBeInTheDocument()
+  })
+
+  test('un admin_sig sin el módulo "actividad" no ve la sección', async () => {
+    authMock.user = {
+      name: 'Delegado', rol: 'admin_sig',
+      modulos: [{ modulo: 'usuarios', puede_ver: true, puede_editar: false }],
+    }
+    renderPage()
+    await screen.findByText('Usuarios Registrados')
+    expect(screen.queryByText('Tráfico y Uso — Últimos 7 Días')).not.toBeInTheDocument()
+  })
+})
+
+describe('Dashboard — Salud del Sistema', () => {
+  test('sin errores críticos, muestra "Todo en orden"', async () => {
+    renderPage()
+    expect(await screen.findByText('Todo en orden')).toBeInTheDocument()
+  })
+
+  test('con errores críticos activos, muestra el conteo', async () => {
+    vi.mocked(useErrorLog).mockReturnValue({
+      data: {
+        data: [
+          { id: 1, statusCode: 500, ocurrencias: 3 },
+          { id: 2, statusCode: 503, ocurrencias: 2 },
+          { id: 3, statusCode: 400, ocurrencias: 1 },
+        ],
+      },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useErrorLog>)
+    renderPage()
+
+    const detalle = await screen.findByText(/tipos de error crítico/i)
+    expect(detalle.previousElementSibling?.textContent).toBe('2')
+    // 5 = 3 + 2 (las dos filas críticas) -- la fila 400 NO cuenta acá aunque
+    // sí sume al total de "Ocurrencias totales" en el Registro de Errores.
+    expect(detalle.textContent).toMatch(/^tipos de error críticos · 5 ocurrencias/)
+  })
+
+  test('un admin_sig sin el módulo "errores" no ve la sección', async () => {
+    authMock.user = {
+      name: 'Delegado', rol: 'admin_sig',
+      modulos: [{ modulo: 'usuarios', puede_ver: true, puede_editar: false }],
+    }
+    renderPage()
+    await screen.findByText('Usuarios Registrados')
+    expect(screen.queryByText('Salud del Sistema')).not.toBeInTheDocument()
   })
 })
