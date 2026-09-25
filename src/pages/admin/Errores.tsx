@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
+import { Doughnut, Bar } from 'react-chartjs-2'
 import {
   ChevronLeft, ChevronRight, Loader2, AlertCircle, AlertTriangle, ChevronDown, ChevronUp,
   Search, Copy, Check, ServerCrash, Clock, Repeat2, ShieldCheck,
@@ -8,9 +9,31 @@ import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import { useErrorLog, type ErrorLogData } from '@/hooks/useErrorLog'
 import { timeAgo } from '@/lib/dateUtils'
+import { SEVERIDAD_COLOR, DOUGHNUT_OPTIONS, HORIZONTAL_BAR_OPTIONS } from '@/lib/erroresChartConfig'
 
 const fadeUp = fadeUpSm
 const PAGE_SIZE = 10
+// Techo práctico para traer TODOS los tipos de error distintos (agrupados por
+// fingerprint, ver error_log) de una sola vez -- el resumen, los gráficos y
+// los filtros deben reflejar el registro completo, no solo la página que se
+// esté viendo. 200 tipos de error distintos recurrentes ya sería síntoma de
+// un sistema seriamente roto; es un techo generoso, no una paginación real.
+const LIMITE_COMPLETO = 200
+
+type Severidad = 'critico' | 'advertencia' | 'info'
+
+const SEVERIDAD_FILTROS: { clave: Severidad | 'todos'; label: string }[] = [
+  { clave: 'todos', label: 'Todos' },
+  { clave: 'critico', label: 'Críticos' },
+  { clave: 'advertencia', label: 'Advertencias' },
+  { clave: 'info', label: 'Info' },
+]
+
+function severidadClave(statusCode: number): Severidad {
+  if (statusCode >= 500) return 'critico'
+  if (statusCode >= 400) return 'advertencia'
+  return 'info'
+}
 
 const METODO_COLOR: Record<string, string> = {
   GET:    'bg-primary-700/10 text-primary-700',
@@ -107,32 +130,56 @@ export default function Errores() {
   const [page, setPage] = useState(1)
   const [expandido, setExpandido] = useState<number | null>(null)
   const [query, setQuery] = useState('')
+  const [severidadFiltro, setSeveridadFiltro] = useState<Severidad | 'todos'>('todos')
 
-  const { data, isLoading, isError, refetch } = useErrorLog({
-    limit:  PAGE_SIZE,
-    offset: (page - 1) * PAGE_SIZE,
-  })
+  // Un solo fetch del registro completo -- el resumen, los gráficos, el
+  // filtro de severidad y la paginación (ahora client-side) trabajan todos
+  // sobre el mismo conjunto de datos, sin la inconsistencia de mezclar un
+  // resumen "global" con una tabla paginada por el servidor.
+  const { data, isLoading, isError, refetch } = useErrorLog({ limit: LIMITE_COMPLETO })
 
-  const errores    = useMemo(() => data?.data ?? [], [data])
-  const total      = data?.meta?.total ?? 0
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const todosErrores = useMemo(() => data?.data ?? [], [data])
 
   const filtrados = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return errores
-    return errores.filter((e) => e.mensaje.toLowerCase().includes(q) || e.ruta.toLowerCase().includes(q))
-  }, [errores, query])
+    return todosErrores.filter((e) => {
+      const coincideTexto = !q || e.mensaje.toLowerCase().includes(q) || e.ruta.toLowerCase().includes(q)
+      const coincideSeveridad = severidadFiltro === 'todos' || severidadClave(e.statusCode) === severidadFiltro
+      return coincideTexto && coincideSeveridad
+    })
+  }, [todosErrores, query, severidadFiltro])
 
-  // Resumen de esta página -- la paginación es del servidor, así que no
-  // pretende ser un total global; en instalaciones pequeñas (como esta) la
-  // primera página ya cubre todos los errores registrados.
+  const total      = filtrados.length
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const errores    = useMemo(
+    () => filtrados.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filtrados, page],
+  )
+
   const resumen = useMemo(() => {
-    if (errores.length === 0) return null
-    const ocurrenciasTotales = errores.reduce((sum, e) => sum + e.ocurrencias, 0)
-    const criticos = errores.filter((e) => e.statusCode >= 500).length
-    const masFrecuente = errores.reduce((a, b) => (b.ocurrencias > a.ocurrencias ? b : a))
+    if (todosErrores.length === 0) return null
+    const ocurrenciasTotales = todosErrores.reduce((sum, e) => sum + e.ocurrencias, 0)
+    const criticos = todosErrores.filter((e) => e.statusCode >= 500).length
+    const masFrecuente = todosErrores.reduce((a, b) => (b.ocurrencias > a.ocurrencias ? b : a))
     return { ocurrenciasTotales, criticos, masFrecuente }
-  }, [errores])
+  }, [todosErrores])
+
+  const distribucionSeveridad = useMemo(() => {
+    const porSeveridad: Record<Severidad, number> = { critico: 0, advertencia: 0, info: 0 }
+    todosErrores.forEach((e) => { porSeveridad[severidadClave(e.statusCode)] += e.ocurrencias })
+    return porSeveridad
+  }, [todosErrores])
+
+  const topRutas = useMemo(() => {
+    const porRuta = new Map<string, number>()
+    todosErrores.forEach((e) => porRuta.set(e.ruta, (porRuta.get(e.ruta) ?? 0) + e.ocurrencias))
+    return Array.from(porRuta, ([ruta, ocurrencias]) => ({ ruta, ocurrencias }))
+      .sort((a, b) => b.ocurrencias - a.ocurrencias)
+      .slice(0, 6)
+  }, [todosErrores])
+
+  const hayDatosParaGraficos = todosErrores.length > 0
+    && (distribucionSeveridad.critico + distribucionSeveridad.advertencia + distribucionSeveridad.info) > 0
 
   return (
     <div className="space-y-6">
@@ -158,7 +205,7 @@ export default function Errores() {
             </div>
             <div>
               <p className="text-lg font-bold text-text leading-none">{resumen.criticos}</p>
-              <p className="text-[0.65rem] text-text-muted mt-1">Críticos (5xx) en esta página</p>
+              <p className="text-[0.65rem] text-text-muted mt-1">Tipos de error críticos (5xx)</p>
             </div>
           </div>
           <div className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-4 flex items-center gap-3">
@@ -167,7 +214,7 @@ export default function Errores() {
             </div>
             <div>
               <p className="text-lg font-bold text-text leading-none">{resumen.ocurrenciasTotales}</p>
-              <p className="text-[0.65rem] text-text-muted mt-1">Ocurrencias totales en esta página</p>
+              <p className="text-[0.65rem] text-text-muted mt-1">Ocurrencias totales registradas</p>
             </div>
           </div>
           <div className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-4 flex items-center gap-3 min-w-0">
@@ -182,14 +229,70 @@ export default function Errores() {
         </motion.div>
       )}
 
-      {/* Buscador */}
-      {!isLoading && !isError && errores.length > 0 && (
-        <motion.div {...fadeUp(0.05)} className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" aria-hidden="true" />
-          <input type="text" aria-label="Buscar error por mensaje o endpoint" placeholder="Buscar por mensaje o endpoint…"
-            value={query} onChange={(e) => setQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
-          />
+      {/* Gráficos -- distribución por severidad y rutas más afectadas, sobre
+          el registro completo (no solo la página visible de la tabla). */}
+      {!isLoading && !isError && hayDatosParaGraficos && (
+        <motion.div {...fadeUp(0.04)} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-text mb-4">Distribución por Severidad</h3>
+            <div style={{ height: 220 }}>
+              <Doughnut
+                data={{
+                  labels: ['Críticos (5xx)', 'Advertencias (4xx)', 'Info'],
+                  datasets: [{
+                    data: [distribucionSeveridad.critico, distribucionSeveridad.advertencia, distribucionSeveridad.info],
+                    backgroundColor: [SEVERIDAD_COLOR.critico, SEVERIDAD_COLOR.advertencia, SEVERIDAD_COLOR.info],
+                    borderColor: '#FFFFFF',
+                    borderWidth: 2,
+                  }],
+                }}
+                options={DOUGHNUT_OPTIONS}
+              />
+            </div>
+          </div>
+          <div className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-text mb-4">Rutas Más Afectadas</h3>
+            <div style={{ height: 220 }}>
+              <Bar
+                data={{
+                  labels: topRutas.map((r) => r.ruta),
+                  datasets: [{
+                    data: topRutas.map((r) => r.ocurrencias),
+                    backgroundColor: '#C12A2B',
+                    borderRadius: 4,
+                    maxBarThickness: 22,
+                  }],
+                }}
+                options={HORIZONTAL_BAR_OPTIONS}
+              />
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Buscador + filtro de severidad */}
+      {!isLoading && !isError && todosErrores.length > 0 && (
+        <motion.div {...fadeUp(0.05)} className="flex flex-wrap gap-3">
+          <div className="relative flex-1 min-w-48">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" aria-hidden="true" />
+            <input type="text" aria-label="Buscar error por mensaje o endpoint" placeholder="Buscar por mensaje o endpoint…"
+              value={query} onChange={(e) => { setQuery(e.target.value); setPage(1) }}
+              className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+            />
+          </div>
+          <div className="flex gap-1.5 bg-bg-alt/40 border border-border rounded-xl p-1.5">
+            {SEVERIDAD_FILTROS.map((f) => (
+              <button
+                key={f.clave}
+                onClick={() => { setSeveridadFiltro(f.clave); setPage(1) }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  severidadFiltro === f.clave ? 'bg-primary-800 text-white' : 'text-text-muted hover:text-text'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </motion.div>
       )}
 
@@ -219,18 +322,18 @@ export default function Errores() {
             </button>
           </div>
         )}
-        {!isLoading && !isError && errores.length === 0 && (
+        {!isLoading && !isError && todosErrores.length === 0 && (
           <div className="px-5 py-14 text-center">
             <ShieldCheck className="w-8 h-8 text-primary-400 mx-auto mb-2" aria-hidden="true" />
             <p className="text-sm text-text-muted">Sin errores registrados</p>
           </div>
         )}
-        {!isLoading && !isError && errores.length > 0 && filtrados.length === 0 && (
+        {!isLoading && !isError && todosErrores.length > 0 && filtrados.length === 0 && (
           <div className="px-5 py-14 text-center text-sm text-text-muted">
-            Ningún error coincide con "{query}"
+            {query ? `Ningún error coincide con "${query}"` : 'Ningún error coincide con este filtro'}
           </div>
         )}
-        {filtrados.map((e) => (
+        {errores.map((e) => (
           <Fragment key={e.id}>
             <ErrorRow e={e} expanded={expandido === e.id} onToggle={() => setExpandido(expandido === e.id ? null : e.id)} />
           </Fragment>
