@@ -16,6 +16,7 @@ import { matches } from '@/lib/search'
 import { usePlatformStats } from '@/hooks/usePlatformStats'
 import InstitutionalRevealSection from '@/components/InstitutionalRevealSection'
 import HeroBackdrop from '@/components/HeroBackdrop'
+import DeferUntilVisible from '@/components/ui/DeferUntilVisible'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -604,8 +605,14 @@ export default function Home() {
             <InstitutionalRevealSection />
             <HeroSection />
           </div>
-          {/* PlatformIntroSection: scrollytelling del territorio Chocó */}
-          <Suspense fallback={null}><PlatformIntroSection /></Suspense>
+          {/* PlatformIntroSection: scrollytelling del territorio Chocó --
+              carga el chunk de three.js (258kB gzip). DeferUntilVisible evita
+              descargarlo apenas monta Home si el usuario nunca llega a
+              hacer scroll hasta acá (placeholderHeight igual a los 300vh
+              reales de la sección, para no generar salto de layout). */}
+          <DeferUntilVisible placeholderHeight="300vh">
+            <Suspense fallback={null}><PlatformIntroSection /></Suspense>
+          </DeferUntilVisible>
           <DataPlatformSection />
           <ModuleShowcaseSection />
           <ForWhomSection />
