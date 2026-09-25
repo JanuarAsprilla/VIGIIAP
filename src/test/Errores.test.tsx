@@ -26,6 +26,11 @@ vi.mock('@/components/ui/Card3D', () => ({
 vi.mock('@/lib/api', () => ({ default: { get: vi.fn() } }))
 import api from '@/lib/api'
 
+vi.mock('react-chartjs-2', () => ({
+  Doughnut: () => <div data-testid="doughnut-chart" />,
+  Bar: () => <div data-testid="bar-chart" />,
+}))
+
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(<QueryClientProvider client={qc}><Errores /></QueryClientProvider>)
@@ -122,12 +127,23 @@ describe('Errores — detalle expandible', () => {
   })
 })
 
-describe('Errores — paginación', () => {
-  test('anterior deshabilitado en página 1, avanzar pide el siguiente offset', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [makeError()], meta: { total: 25 } })
+describe('Errores — paginación (client-side, sobre el registro completo)', () => {
+  function makeErrores(n: number) {
+    return Array.from({ length: n }, (_, i) => makeError({ id: i + 1, mensaje: `Error ${i + 1}`, ruta: `/api/v1/ruta-${i + 1}` }))
+  }
+
+  test('pide el registro completo de una sola vez, sin offset', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: makeErrores(3), meta: { total: 3 } })
+    renderPage()
+    await screen.findByText('/api/v1/ruta-1')
+    expect(api.get).toHaveBeenCalledWith('/admin/errores', { params: { limit: 200 } })
+  })
+
+  test('anterior deshabilitado en página 1, avanzar muestra la siguiente página', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: makeErrores(25), meta: { total: 25 } })
     const user = userEvent.setup()
     renderPage()
-    await screen.findAllByText('Connection timeout')
+    await screen.findByText('/api/v1/ruta-1')
 
     const [prev, next] = screen.getAllByRole('button').filter((b) =>
       b.querySelector('.lucide-chevron-left, .lucide-chevron-right'))
@@ -135,7 +151,64 @@ describe('Errores — paginación', () => {
 
     await user.click(next)
     expect(screen.getByText('Página 2 de 3 · 25 errores total')).toBeInTheDocument()
-    expect(api.get).toHaveBeenCalledWith('/admin/errores', { params: expect.objectContaining({ offset: 10 }) })
+    expect(screen.queryByText('/api/v1/ruta-1')).not.toBeInTheDocument()
+    expect(screen.getByText('/api/v1/ruta-11')).toBeInTheDocument()
+  })
+})
+
+describe('Errores — filtro por severidad', () => {
+  test('el filtro "Críticos" muestra solo errores 5xx', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [
+        makeError({ id: 1, mensaje: 'Fallo del servidor', status_code: 500 }),
+        makeError({ id: 2, mensaje: 'Petición inválida', status_code: 400 }),
+      ],
+      meta: { total: 2 },
+    })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findAllByText('Fallo del servidor')
+
+    await user.click(screen.getByRole('button', { name: 'Críticos' }))
+
+    expect(screen.getByRole('button', { name: /Fallo del servidor/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Petición inválida/i })).not.toBeInTheDocument()
+  })
+
+  test('volver a "Todos" restaura el listado completo', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [
+        makeError({ id: 1, mensaje: 'Fallo del servidor', status_code: 500 }),
+        makeError({ id: 2, mensaje: 'Petición inválida', status_code: 400 }),
+      ],
+      meta: { total: 2 },
+    })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findAllByText('Fallo del servidor')
+
+    await user.click(screen.getByRole('button', { name: 'Críticos' }))
+    await user.click(screen.getByRole('button', { name: 'Todos' }))
+
+    expect(screen.getByRole('button', { name: /Petición inválida/i })).toBeInTheDocument()
+  })
+})
+
+describe('Errores — gráficos', () => {
+  test('muestra los gráficos de distribución y rutas cuando hay datos', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeError()], meta: { total: 1 } })
+    renderPage()
+    expect(await screen.findByText('Distribución por Severidad')).toBeInTheDocument()
+    expect(screen.getByText('Rutas Más Afectadas')).toBeInTheDocument()
+    expect(screen.getByTestId('doughnut-chart')).toBeInTheDocument()
+    expect(screen.getByTestId('bar-chart')).toBeInTheDocument()
+  })
+
+  test('sin errores, no muestra la sección de gráficos', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [], meta: { total: 0 } })
+    renderPage()
+    await screen.findByText('Sin errores registrados')
+    expect(screen.queryByText('Distribución por Severidad')).not.toBeInTheDocument()
   })
 })
 
