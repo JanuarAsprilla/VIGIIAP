@@ -8,12 +8,13 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Legend,
   Tooltip,
   Filler,
 } from 'chart.js'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Legend, Tooltip, Filler)
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Legend, Tooltip, Filler)
 
 const FONT_BODY = "'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif"
 const COLOR_TEXTO_CHART = '#5A6675' // --color-text-muted
@@ -63,3 +64,61 @@ export const LINE_CHART_OPTIONS = {
     },
   },
 }
+
+// Barras horizontales de "Actividad por módulo" -- mismo criterio visual que
+// el gráfico de rutas de Errores (erroresChartConfig.ts), duplicado aquí a
+// propósito porque cada área de la pantalla de Actividad tiene su propio
+// archivo de configuración de gráficos.
+export const HORIZONTAL_BAR_OPTIONS = {
+  responsive: true,
+  maintainAspectRatio: false,
+  indexAxis: 'y' as const,
+  font: { family: FONT_BODY },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      titleFont: { family: FONT_BODY },
+      bodyFont: { family: FONT_BODY },
+      backgroundColor: '#1A1A2E',
+      padding: 10,
+      cornerRadius: 8,
+    },
+  },
+  scales: {
+    x: {
+      beginAtZero: true,
+      grid: { color: COLOR_GRID_CHART },
+      ticks: { font: { family: FONT_BODY, size: 11 }, color: COLOR_TEXTO_CHART, precision: 0 },
+    },
+    y: {
+      grid: { display: false },
+      ticks: { font: { family: FONT_BODY, size: 11 }, color: COLOR_TEXTO_CHART },
+    },
+  },
+}
+
+// Paleta cíclica para las barras de módulo -- la cantidad de módulos con
+// actividad varía por período, así que no hay un color fijo por módulo.
+export const MODULO_PALETTE = [
+  '#009846', '#F7AC42', '#185FA5', '#E51A4B', '#7C3AED', '#0EA5E9',
+  '#D97706', '#059669', '#DC2626', '#4F46E5', '#0891B2', '#65A30D',
+] as const
+
+// Acentos por tarjeta de estadística -- las 4 métricas que sí tienen serie
+// diaria (usuarios/solicitudes/documentos/mapas, ver KPI_SERIE_COLOR) usan el
+// mismo color que su línea en la gráfica de tendencia y llevan sparkline; sus
+// pares "creados/por admin/resueltas" usan un tono emparentado pero atenuado
+// porque no hay desglose diario para ellos.
+export const STAT_ACCENT = {
+  usuariosNuevos: KPI_SERIE_COLOR.usuarios,
+  usuariosAdmin: '#1A5632',
+  loginsExitosos: KPI_SERIE_COLOR.usuarios,
+  loginsFallidos: '#C12A2B',
+  solicitudesNuevas: KPI_SERIE_COLOR.solicitudes,
+  solicitudesResueltas: '#F08143',
+  solicitudesPendientes: '#5A6675',
+  documentosCreados: '#5A82A8',
+  documentosPublicados: KPI_SERIE_COLOR.documentos,
+  mapasCreados: '#B9527A',
+  mapasPublicados: KPI_SERIE_COLOR.mapas,
+} as const
