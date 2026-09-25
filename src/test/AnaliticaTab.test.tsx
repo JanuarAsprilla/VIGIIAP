@@ -17,6 +17,14 @@ vi.mock('framer-motion', () => {
   return { motion, AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</> }
 })
 
+// react-chartjs-2 renderiza sobre <canvas>, que jsdom no soporta de verdad
+// (getContext devuelve null) -- se mockea igual que en ReportesTab.test.tsx.
+vi.mock('react-chartjs-2', () => ({
+  Line: (props: { data: { labels: string[]; datasets: { label: string; data: number[] }[] } }) => (
+    <div data-testid="line-chart" data-labels={JSON.stringify(props.data.labels)} data-datasets={JSON.stringify(props.data.datasets.map((d) => d.label))} />
+  ),
+}))
+
 vi.mock('@/components/ui/Card3D', () => ({
   default: ({ children, className }: { children: ReactNode; className?: string }) =>
     <div className={className}>{children}</div>,
@@ -97,6 +105,15 @@ describe('AnaliticaTab — con datos reales en cada sección', () => {
     renderTab()
     expect(await screen.findByText('35%')).toBeInTheDocument()
     expect(screen.getByText('2m 05s')).toBeInTheDocument()
+  })
+
+  test('la gráfica de tendencia recibe las series de páginas vistas y visitantes', async () => {
+    renderTab()
+    const chart = await screen.findByTestId('line-chart')
+
+    expect(JSON.parse(chart.getAttribute('data-datasets')!)).toEqual(['Páginas vistas', 'Visitantes únicos'])
+    const labels = JSON.parse(chart.getAttribute('data-labels')!)
+    expect(labels).toHaveLength(7)
   })
 })
 
