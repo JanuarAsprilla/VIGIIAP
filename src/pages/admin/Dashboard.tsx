@@ -2,9 +2,10 @@ import { useState } from 'react'
 import type { SolicitudData } from '@/hooks/useSolicitudes'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { Line } from 'react-chartjs-2'
 import {
   Users, ClipboardList, FileText, Map as MapIcon,
-  CheckCircle, XCircle,
+  CheckCircle, XCircle, Eye, ServerCrash, ShieldCheck,
   ArrowRight, Zap, AlertTriangle, ShieldQuestion, type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -14,10 +15,13 @@ import { fadeUpSm, staggerContainer, staggerItem3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import Sparkline from '@/components/ui/Sparkline'
 import DeltaBadge from '@/components/ui/DeltaBadge'
+import { LINE_CHART_OPTIONS } from '@/lib/reportesChartConfig'
 import {
   useAdminStats, useDashboardTendencias,
   type AdminStats, type TendenciaKPI, type DashboardTendencias,
 } from '@/hooks/useStats'
+import { useAnaliticaResumen } from '@/hooks/useAnalitica'
+import { useErrorLog } from '@/hooks/useErrorLog'
 import {
   useSolicitudesAdmin, useUpdateEstadoSolicitud,
   ESTADO_LABEL, ESTADO_COLOR,
@@ -112,6 +116,130 @@ function KPICards({
           </motion.div>
         )
       })}
+    </motion.div>
+  )
+}
+
+// Últimos 7 días terminando hoy -- mismo criterio que serie7 en el backend
+// (getResumen de analitica.service.js), sin fechas explícitas en la
+// respuesta porque el cliente ya puede reconstruirlas a partir de "hoy".
+function etiquetasUltimos7Dias(): string[] {
+  const hoy = new Date()
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(hoy)
+    d.setDate(hoy.getDate() - (6 - i))
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })
+  })
+}
+
+// ── Tráfico y Uso — trae al Dashboard lo que ya calcula Analítica de Uso
+// (ver AnaliticaTab.tsx), como el resumen general que "hasta arriba" debe
+// reflejar toda la plataforma, no solo los módulos de gestión de contenido. ──
+function TraficoUso() {
+  const { data, isLoading, isError } = useAnaliticaResumen()
+
+  return (
+    <motion.div {...fadeUp(0.11)} className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5 lg:col-span-2">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-[var(--stats-bg)] border border-[var(--stats-border)] rounded-lg flex items-center justify-center">
+            <Eye className="w-3.5 h-3.5 text-[var(--stats-value)]" aria-hidden="true" />
+          </div>
+          <h3 className="text-sm font-bold text-text">Tráfico y Uso — Últimos 7 Días</h3>
+        </div>
+        <Link to="/admin/actividad?tab=analitica" className="text-xs font-semibold text-primary-800 hover:text-primary-600 no-underline flex items-center gap-1 shrink-0">
+          Ver detalle <ArrowRight className="w-3 h-3" />
+        </Link>
+      </div>
+      {isLoading && (
+        <div className="h-[200px] flex items-center justify-center">
+          <span className="inline-block w-32 h-6 bg-bg-alt rounded animate-pulse" />
+        </div>
+      )}
+      {isError && (
+        <p className="text-xs text-red-500 py-8 text-center">No se pudo cargar el tráfico de la plataforma.</p>
+      )}
+      {!isLoading && !isError && data && (
+        <div style={{ height: 200 }}>
+          <Line
+            data={{
+              labels: etiquetasUltimos7Dias(),
+              datasets: [
+                {
+                  label: 'Páginas vistas',
+                  data: data.paginasVistas.serie7,
+                  borderColor: '#009846',
+                  backgroundColor: '#00984622',
+                  pointRadius: 3,
+                  pointHoverRadius: 5,
+                  borderWidth: 2,
+                  tension: 0.3,
+                  fill: true,
+                },
+                {
+                  label: 'Visitantes únicos',
+                  data: data.visitantes.serie7,
+                  borderColor: '#F7AC42',
+                  backgroundColor: '#F7AC4222',
+                  pointRadius: 3,
+                  pointHoverRadius: 5,
+                  borderWidth: 2,
+                  tension: 0.3,
+                  fill: true,
+                },
+              ],
+            }}
+            options={LINE_CHART_OPTIONS}
+          />
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+// ── Salud del Sistema — reusa el registro de Errores, condensado a un
+// semáforo: nada que leer fila por fila desde el Dashboard, solo si hay algo
+// crítico que atender ahora mismo. ──
+function SaludSistema() {
+  const { data, isLoading, isError } = useErrorLog({ limit: 200 })
+  const errores = data?.data ?? []
+  const criticos = errores.filter((e) => e.statusCode >= 500).length
+  // Ocurrencias solo de los errores CRÍTICOS -- mezclar aquí el volumen de
+  // 4xx/otros (ruido normal de una API en producción) haría parecer más
+  // grave o más leve la situación de lo que el titular de arriba ya dice.
+  const ocurrenciasCriticas = errores.filter((e) => e.statusCode >= 500).reduce((sum, e) => sum + e.ocurrencias, 0)
+  const ok = !isError && criticos === 0
+
+  return (
+    <motion.div {...fadeUp(0.14)} className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5 flex flex-col">
+      <div className="flex items-center gap-2 mb-4">
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${ok ? 'bg-primary-700/10' : 'bg-red/10'}`}>
+          {ok ? <ShieldCheck className="w-3.5 h-3.5 text-primary-700" aria-hidden="true" /> : <ServerCrash className="w-3.5 h-3.5 text-red-dark" aria-hidden="true" />}
+        </div>
+        <h3 className="text-sm font-bold text-text">Salud del Sistema</h3>
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center text-center py-2">
+        {isLoading ? (
+          <span className="inline-block w-24 h-6 bg-bg-alt rounded animate-pulse" />
+        ) : isError ? (
+          <p className="text-xs text-red-500">No se pudo verificar</p>
+        ) : ok ? (
+          <>
+            <p className="text-2xl font-bold text-primary-700">Todo en orden</p>
+            <p className="text-xs text-text-muted mt-1">Sin errores críticos activos</p>
+          </>
+        ) : (
+          <>
+            <p className="text-3xl font-bold text-red-dark tabular">{criticos}</p>
+            <p className="text-xs text-text-muted mt-1">
+              tipo{criticos === 1 ? '' : 's'} de error crítico{criticos === 1 ? '' : 's'} · {ocurrenciasCriticas} ocurrencia{ocurrenciasCriticas === 1 ? '' : 's'}
+            </p>
+          </>
+        )}
+      </div>
+      <Link to="/admin/errores" className="text-xs font-semibold text-primary-800 hover:text-primary-600 no-underline flex items-center justify-center gap-1 pt-3 mt-2 border-t border-border/60">
+        Ver registro de errores <ArrowRight className="w-3 h-3" />
+      </Link>
     </motion.div>
   )
 }
@@ -543,6 +671,7 @@ export default function Dashboard() {
   const verUsuarios    = puedeVerModulo(user, 'usuarios')
   const verSolicitudes = puedeVerModulo(user, 'solicitudes')
   const verActividad   = puedeVerModulo(user, 'actividad')
+  const verErrores     = puedeVerModulo(user, 'errores')
   const esDelegado     = user?.rol === 'admin_sig'
   const modulosPropios = esDelegado ? (user?.modulos ?? []).filter((m) => m.puede_ver).length : null
   const sinModulos     = esDelegado && modulosPropios === 0
@@ -589,6 +718,15 @@ export default function Dashboard() {
             tendenciasLoading={loadingTendencias}
             user={user}
           />
+
+          {/* Tráfico de la plataforma + salud del sistema -- el resumen real
+              de "qué está pasando ahora", no solo conteos de contenido. */}
+          {(verActividad || verErrores) && (
+            <div className={`grid grid-cols-1 gap-4 ${verActividad && verErrores ? 'lg:grid-cols-3' : ''}`}>
+              {verActividad && <TraficoUso />}
+              {verErrores && <SaludSistema />}
+            </div>
+          )}
 
           {/* Alerta solicitudes */}
           {verSolicitudes && <AlertasSolicitudes solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />}
