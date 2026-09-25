@@ -169,6 +169,45 @@ button:not(:disabled), [role="button"]:not(:disabled) {
   letter-spacing: 0.08em;
 }
 
+/* Encabezado de sección dentro de un panel del admin (ej. "Tráfico y Uso",
+   "Distribución por Severidad") -- distinto de .card-title (que identifica
+   un ítem individual dentro de una lista, como el nombre de una categoría o
+   herramienta): esta clase existe para dar a una sección todo el peso
+   tipográfico que le corresponde frente al cuerpo del panel, en vez de
+   competir en tamaño con las mismas etiquetas de 12px del contenido. */
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: var(--color-text);
+}
+
+/* Cifra protagonista de un panel de métricas (KPI, StatTile, etc.) -- serif
+   + tabular-nums para que una columna de cifras alinee verticalmente como en
+   un reporte financiero, no como una tarjeta de producto SaaS. */
+.stat-figure {
+  font-family: var(--font-display);
+  font-size: clamp(1.875rem, 3.2vw, 2.5rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--color-text);
+}
+
+/* Etiqueta de dato bajo una cifra protagonista -- misma altura y peso que
+   .table-header, pero como rol semántico propio (no todo lo pequeño-y-
+   mayúscula del admin es un encabezado de tabla). */
+.data-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
 .table-cell {
   font-size: clamp(0.8rem, 1.5vw, 0.9rem);
 }

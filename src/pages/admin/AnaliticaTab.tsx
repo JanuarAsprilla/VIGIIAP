@@ -4,10 +4,8 @@ import {
   Eye, Users, LogOut, Clock, Loader2, AlertCircle,
   Smartphone, Tablet, Monitor, Globe, ArrowDownToLine, ArrowUpFromLine,
 } from 'lucide-react'
-import { fadeUpSm, staggerContainer, staggerItem3D } from '@/lib/animations'
-import Card3D from '@/components/ui/Card3D'
-import Sparkline from '@/components/ui/Sparkline'
-import DeltaBadge from '@/components/ui/DeltaBadge'
+import { fadeUpSm } from '@/lib/animations'
+import MetricPanel, { type Metric } from '@/components/ui/MetricPanel'
 import { LINE_CHART_OPTIONS } from '@/lib/reportesChartConfig'
 import {
   useAnaliticaResumen, usePaginasTop, useDispositivos, useFuentesTrafico, useEntradaSalida,
@@ -41,7 +39,7 @@ function TendenciaChart() {
 
   return (
     <motion.div {...fadeUp(0.08)} className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5">
-      <h3 className="text-sm font-bold text-text mb-4">Evolución — Últimos 7 Días</h3>
+      <h3 className="section-title mb-4">Evolución — Últimos 7 Días</h3>
       <EstadoCarga isLoading={isLoading} isError={isError} vacio={false} />
       {!isLoading && !isError && data && (
         <div style={{ height: 260 }}>
@@ -92,79 +90,28 @@ const DISPOSITIVO_LABEL: Record<DispositivoStat['dispositivo'], string> = {
 function KpiCards() {
   const { data, isLoading } = useAnaliticaResumen()
 
-  const tarjetas = [
+  const metrics: Metric[] = [
     {
-      label: 'Páginas Vistas', icon: Eye,
-      value: data?.paginasVistas.semanaActual, tendencia: data?.paginasVistas, flowLabel: 'esta semana',
+      label: 'Páginas Vistas', icon: Eye, loading: isLoading,
+      value: data?.paginasVistas.semanaActual ?? '—',
+      deltaPct: data?.paginasVistas.deltaPct,
+      sparkline: data?.paginasVistas.serie7,
     },
     {
-      label: 'Visitantes Únicos', icon: Users,
-      value: data?.visitantes.semanaActual, tendencia: data?.visitantes, flowLabel: 'esta semana',
+      label: 'Visitantes Únicos', icon: Users, loading: isLoading,
+      value: data?.visitantes.semanaActual ?? '—',
+      deltaPct: data?.visitantes.deltaPct,
+      sparkline: data?.visitantes.serie7,
     },
+    // Tasa de rebote y duración: snapshots sin serie de tendencia -- no tiene
+    // sentido una sparkline ni un delta de un porcentaje que no es acumulativo.
+    { label: 'Tasa de Rebote', icon: LogOut, loading: isLoading, value: `${data?.tasaRebotePct ?? 0}%` },
+    { label: 'Duración Promedio', icon: Clock, loading: isLoading, value: formatDuracion(data?.duracionPromedioSeg ?? 0) },
   ]
 
   return (
-    <motion.div variants={staggerContainer(0.07, 0.05)} initial="initial" animate="animate" className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      {tarjetas.map((kpi) => {
-        const Icon = kpi.icon
-        const dotColor = !kpi.tendencia || kpi.tendencia.deltaPct === 0
-          ? 'var(--stats-value)'
-          : kpi.tendencia.deltaPct > 0 ? 'var(--color-primary-600)' : 'var(--color-orange-500)'
-        return (
-          <motion.div key={kpi.label} variants={staggerItem3D}>
-            <Card3D glow="var(--stats-border)" intensity={4} className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5 relative overflow-hidden" whileHover={{ y: -3 }}>
-              <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, var(--stats-bg) 0%, transparent 70%)' }} />
-              <div className="flex items-start justify-between mb-3 relative">
-                <div className="w-9 h-9 bg-[var(--stats-bg)] border border-[var(--stats-border)] rounded-xl flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-[var(--stats-value)]" aria-hidden="true" />
-                </div>
-                {kpi.tendencia && <DeltaBadge pct={kpi.tendencia.deltaPct} />}
-              </div>
-              <div className="tabular font-display text-3xl font-bold text-text relative">
-                {isLoading ? <span className="inline-block w-10 h-7 bg-bg-alt rounded animate-pulse" /> : (kpi.value ?? '—')}
-              </div>
-              <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">{kpi.label}</p>
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/60 relative">
-                {isLoading ? (
-                  <span className="inline-block w-24 h-3 bg-bg-alt rounded animate-pulse" />
-                ) : kpi.tendencia ? (
-                  <>
-                    <span className="text-[0.68rem] text-text-muted">{kpi.flowLabel}</span>
-                    <Sparkline data={kpi.tendencia.serie7} endColor={dotColor} />
-                  </>
-                ) : <span className="text-[0.68rem] text-text-faint">Sin datos</span>}
-              </div>
-            </Card3D>
-          </motion.div>
-        )
-      })}
-
-      {/* Tasa de rebote y duración: snapshots sin serie de tendencia -- no
-          tiene sentido una sparkline de un porcentaje que no es acumulativo. */}
-      <motion.div variants={staggerItem3D}>
-        <Card3D glow="var(--stats-border)" intensity={4} className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5 relative overflow-hidden" whileHover={{ y: -3 }}>
-          <div className="w-9 h-9 bg-[var(--stats-bg)] border border-[var(--stats-border)] rounded-xl flex items-center justify-center mb-3">
-            <LogOut className="w-4 h-4 text-[var(--stats-value)]" aria-hidden="true" />
-          </div>
-          <div className="tabular font-display text-3xl font-bold text-text">
-            {isLoading ? <span className="inline-block w-10 h-7 bg-bg-alt rounded animate-pulse" /> : `${data?.tasaRebotePct ?? 0}%`}
-          </div>
-          <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">Tasa de Rebote</p>
-          <p className="text-[0.68rem] text-text-faint mt-3 pt-3 border-t border-border/60">Sesiones de 1 sola página</p>
-        </Card3D>
-      </motion.div>
-      <motion.div variants={staggerItem3D}>
-        <Card3D glow="var(--stats-border)" intensity={4} className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5 relative overflow-hidden" whileHover={{ y: -3 }}>
-          <div className="w-9 h-9 bg-[var(--stats-bg)] border border-[var(--stats-border)] rounded-xl flex items-center justify-center mb-3">
-            <Clock className="w-4 h-4 text-[var(--stats-value)]" aria-hidden="true" />
-          </div>
-          <div className="tabular font-display text-3xl font-bold text-text">
-            {isLoading ? <span className="inline-block w-10 h-7 bg-bg-alt rounded animate-pulse" /> : formatDuracion(data?.duracionPromedioSeg ?? 0)}
-          </div>
-          <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">Duración Promedio</p>
-          <p className="text-[0.68rem] text-text-faint mt-3 pt-3 border-t border-border/60">Por sesión</p>
-        </Card3D>
-      </motion.div>
+    <motion.div {...fadeUp(0.05)}>
+      <MetricPanel metrics={metrics} />
     </motion.div>
   )
 }
@@ -229,7 +176,7 @@ export default function AnaliticaTab({ desde, hasta }: AnaliticaTabProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Páginas más visitadas */}
         <motion.div {...fadeUp(0.1)} className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5">
-          <h3 className="text-sm font-bold text-text mb-4">Páginas Más Visitadas</h3>
+          <h3 className="section-title mb-4">Páginas Más Visitadas</h3>
           <EstadoCarga isLoading={paginasTop.isLoading} isError={paginasTop.isError} vacio={(paginasTop.data ?? []).length === 0} />
           {!paginasTop.isLoading && !paginasTop.isError && (paginasTop.data ?? []).length > 0 && (
             <div className="space-y-2.5">
@@ -254,7 +201,7 @@ export default function AnaliticaTab({ desde, hasta }: AnaliticaTabProps) {
 
         {/* Dispositivos */}
         <motion.div {...fadeUp(0.15)} className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5">
-          <h3 className="text-sm font-bold text-text mb-4">Dispositivos</h3>
+          <h3 className="section-title mb-4">Dispositivos</h3>
           <EstadoCarga isLoading={dispositivos.isLoading} isError={dispositivos.isError} vacio={(dispositivos.data ?? []).length === 0} />
           {!dispositivos.isLoading && !dispositivos.isError && (dispositivos.data ?? []).length > 0 && (
             <div className="space-y-3">
@@ -274,7 +221,7 @@ export default function AnaliticaTab({ desde, hasta }: AnaliticaTabProps) {
 
         {/* Fuentes de tráfico */}
         <motion.div {...fadeUp(0.2)} className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5">
-          <h3 className="text-sm font-bold text-text mb-4">Fuentes de Tráfico</h3>
+          <h3 className="section-title mb-4">Fuentes de Tráfico</h3>
           <EstadoCarga isLoading={fuentes.isLoading} isError={fuentes.isError} vacio={(fuentes.data ?? []).length === 0} />
           {!fuentes.isLoading && !fuentes.isError && (fuentes.data ?? []).length > 0 && (
             <div className="space-y-3">
@@ -287,7 +234,7 @@ export default function AnaliticaTab({ desde, hasta }: AnaliticaTabProps) {
 
         {/* Entrada / Salida */}
         <motion.div {...fadeUp(0.25)} className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5">
-          <h3 className="text-sm font-bold text-text mb-4">Entrada y Salida</h3>
+          <h3 className="section-title mb-4">Entrada y Salida</h3>
           <EstadoCarga isLoading={entradaSalida.isLoading} isError={entradaSalida.isError} vacio={false} />
           {!entradaSalida.isLoading && !entradaSalida.isError && entradaSalida.data && (
             <div className="grid grid-cols-2 gap-4">

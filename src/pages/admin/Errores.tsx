@@ -234,7 +234,7 @@ export default function Errores() {
       {!isLoading && !isError && hayDatosParaGraficos && (
         <motion.div {...fadeUp(0.04)} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5">
-            <h3 className="text-sm font-bold text-text mb-4">Distribución por Severidad</h3>
+            <h3 className="section-title mb-4">Distribución por Severidad</h3>
             <div style={{ height: 220 }}>
               <Doughnut
                 data={{
@@ -251,7 +251,7 @@ export default function Errores() {
             </div>
           </div>
           <div className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5">
-            <h3 className="text-sm font-bold text-text mb-4">Rutas Más Afectadas</h3>
+            <h3 className="section-title mb-4">Rutas Más Afectadas</h3>
             <div style={{ height: 220 }}>
               <Bar
                 data={{

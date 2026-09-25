@@ -41,7 +41,7 @@ function SectionCard({ title, icon: Icon, children, delay = 0 }: SectionCardProp
         <div className="w-7 h-7 bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg flex items-center justify-center">
           <Icon className="w-3.5 h-3.5 text-primary-700" />
         </div>
-        <h3 className="text-sm font-bold text-text">{title}</h3>
+        <h3 className="section-title">{title}</h3>
       </div>
       <div className="p-6 space-y-4">{children}</div>
     </Card3D>

@@ -238,7 +238,7 @@ describe('ReportesTab — comparación con el período anterior', () => {
     renderTab()
     await screen.findByText('Del 2026-08-25 al 2026-09-01')
 
-    const tarjetaPendientes = screen.getByText('Pendientes').closest('div.bg-bg-alt\\/40')
+    const tarjetaPendientes = screen.getByText('Pendientes').closest('div.flex-1')
     expect(tarjetaPendientes?.textContent).not.toMatch(/%/)
   })
 })

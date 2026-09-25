@@ -103,22 +103,3 @@ export const MODULO_PALETTE = [
   '#009846', '#F7AC42', '#185FA5', '#E51A4B', '#7C3AED', '#0EA5E9',
   '#D97706', '#059669', '#DC2626', '#4F46E5', '#0891B2', '#65A30D',
 ] as const
-
-// Acentos por tarjeta de estadística -- las 4 métricas que sí tienen serie
-// diaria (usuarios/solicitudes/documentos/mapas, ver KPI_SERIE_COLOR) usan el
-// mismo color que su línea en la gráfica de tendencia y llevan sparkline; sus
-// pares "creados/por admin/resueltas" usan un tono emparentado pero atenuado
-// porque no hay desglose diario para ellos.
-export const STAT_ACCENT = {
-  usuariosNuevos: KPI_SERIE_COLOR.usuarios,
-  usuariosAdmin: '#1A5632',
-  loginsExitosos: KPI_SERIE_COLOR.usuarios,
-  loginsFallidos: '#C12A2B',
-  solicitudesNuevas: KPI_SERIE_COLOR.solicitudes,
-  solicitudesResueltas: '#F08143',
-  solicitudesPendientes: '#5A6675',
-  documentosCreados: '#5A82A8',
-  documentosPublicados: KPI_SERIE_COLOR.documentos,
-  mapasCreados: '#B9527A',
-  mapasPublicados: KPI_SERIE_COLOR.mapas,
-} as const
