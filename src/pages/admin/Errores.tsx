@@ -7,9 +7,11 @@ import {
 } from 'lucide-react'
 import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
-import { useErrorLog, type ErrorLogData } from '@/hooks/useErrorLog'
+import { useErrorLog, useActualizarEstadoError, type ErrorLogData, type EstadoError } from '@/hooks/useErrorLog'
 import { timeAgo } from '@/lib/dateUtils'
 import { SEVERIDAD_COLOR, DOUGHNUT_OPTIONS, HORIZONTAL_BAR_OPTIONS } from '@/lib/erroresChartConfig'
+import { useAuth } from '@/contexts/AuthContext'
+import { puedeEditarModulo } from '@/lib/permisosModulo'
 
 const fadeUp = fadeUpSm
 const PAGE_SIZE = 10
@@ -28,6 +30,57 @@ const SEVERIDAD_FILTROS: { clave: Severidad | 'todos'; label: string }[] = [
   { clave: 'advertencia', label: 'Advertencias' },
   { clave: 'info', label: 'Info' },
 ]
+
+const ESTADO_LABEL: Record<EstadoError, string> = {
+  pendiente: 'Pendiente',
+  revisando: 'Revisando',
+  resuelto: 'Resuelto',
+}
+
+const ESTADO_ESTILO: Record<EstadoError, string> = {
+  pendiente: 'bg-red/10 text-red-dark border-red/25',
+  revisando: 'bg-gold-500/10 text-gold-500 border-gold-500/25',
+  resuelto: 'bg-primary-700/10 text-primary-700 border-primary-700/25',
+}
+
+const ESTADO_FILTROS: { clave: EstadoError | 'todos'; label: string }[] = [
+  { clave: 'todos', label: 'Todos' },
+  { clave: 'pendiente', label: 'Pendientes' },
+  { clave: 'revisando', label: 'Revisando' },
+  { clave: 'resuelto', label: 'Resueltos' },
+]
+
+/** Select de estado si el admin puede editar el módulo, o un badge de solo
+ *  lectura si no -- el control de seguimiento no debe fingir ser editable
+ *  para quien no tiene permiso de "editar" sobre errores. */
+function EstadoControl({ estado, onChange, disabled, cargando }: {
+  estado: EstadoError
+  onChange: (estado: EstadoError) => void
+  disabled: boolean
+  cargando: boolean
+}) {
+  if (disabled) {
+    return (
+      <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-2 py-1 rounded-full border shrink-0 ${ESTADO_ESTILO[estado]}`}>
+        {ESTADO_LABEL[estado]}
+      </span>
+    )
+  }
+  return (
+    <select
+      aria-label="Estado del error"
+      value={estado}
+      disabled={cargando}
+      onClick={(ev) => ev.stopPropagation()}
+      onChange={(ev) => onChange(ev.target.value as EstadoError)}
+      className={`text-[0.6rem] font-bold uppercase tracking-wider pl-2 pr-1 py-1 rounded-full border shrink-0 focus:outline-none focus:ring-2 focus:ring-primary-800/20 disabled:opacity-50 ${ESTADO_ESTILO[estado]}`}
+    >
+      {(Object.keys(ESTADO_LABEL) as EstadoError[]).map((k) => (
+        <option key={k} value={k}>{ESTADO_LABEL[k]}</option>
+      ))}
+    </select>
+  )
+}
 
 function severidadClave(statusCode: number): Severidad {
   if (statusCode >= 500) return 'critico'
@@ -71,45 +124,62 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
-function ErrorRow({ e, expanded, onToggle }: { e: ErrorLogData; expanded: boolean; onToggle: () => void }) {
+function ErrorRow({ e, expanded, onToggle, onCambiarEstado, puedeEditar, actualizandoEstado }: {
+  e: ErrorLogData
+  expanded: boolean
+  onToggle: () => void
+  onCambiarEstado: (id: number, estado: EstadoError) => void
+  puedeEditar: boolean
+  actualizandoEstado: boolean
+}) {
   const sev = severidad(e.statusCode)
   const metodoCls = METODO_COLOR[e.metodo] ?? 'bg-bg-alt text-text-muted'
   return (
     <div className="border-b border-border last:border-b-0">
-      <button
-        type="button"
-        onClick={onToggle}
-        disabled={!e.stack}
-        aria-expanded={e.stack ? expanded : undefined}
-        className="w-full flex items-start gap-3.5 px-5 py-4 text-left hover:bg-bg-alt/40 transition-colors disabled:cursor-default disabled:hover:bg-transparent"
-      >
-        <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${sev.color}`}>
-          <sev.Icon className="w-4 h-4" aria-hidden="true" />
+      <div className="w-full flex items-start gap-3.5 px-5 py-4 hover:bg-bg-alt/40 transition-colors">
+        <button
+          type="button"
+          onClick={onToggle}
+          disabled={!e.stack}
+          aria-expanded={e.stack ? expanded : undefined}
+          className="flex-1 min-w-0 flex items-start gap-3.5 text-left disabled:cursor-default"
+        >
+          <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${sev.color}`}>
+            <sev.Icon className="w-4 h-4" aria-hidden="true" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-semibold text-text">{e.mensaje}</p>
+              <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0 border ${sev.color}`}>
+                {e.statusCode}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-muted mt-1.5">
+              <span className={`font-mono font-bold text-[0.65rem] px-1.5 py-0.5 rounded ${metodoCls}`}>{e.metodo}</span>
+              <span className="font-mono truncate max-w-[18rem]">{e.ruta}</span>
+              <span className="flex items-center gap-1 shrink-0">
+                <Repeat2 className="w-3 h-3" aria-hidden="true" />{e.ocurrencias} {e.ocurrencias === 1 ? 'vez' : 'veces'}
+              </span>
+              <span className="flex items-center gap-1 shrink-0">
+                <Clock className="w-3 h-3" aria-hidden="true" />{timeAgo(e.ultimaVezIso)}
+              </span>
+            </div>
+          </div>
+        </button>
+        <div className="flex flex-col items-end gap-2 shrink-0 pt-0.5">
+          <EstadoControl
+            estado={e.estado}
+            onChange={(estado) => onCambiarEstado(e.id, estado)}
+            disabled={!puedeEditar}
+            cargando={actualizandoEstado}
+          />
+          {e.stack && (
+            <button type="button" onClick={onToggle} aria-label={expanded ? 'Contraer detalle' : 'Expandir detalle'} className="text-text-muted hover:text-primary-800 transition-colors">
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          )}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-text">{e.mensaje}</p>
-            <span className={`text-[0.6rem] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0 border ${sev.color}`}>
-              {e.statusCode}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text-muted mt-1.5">
-            <span className={`font-mono font-bold text-[0.65rem] px-1.5 py-0.5 rounded ${metodoCls}`}>{e.metodo}</span>
-            <span className="font-mono truncate max-w-[18rem]">{e.ruta}</span>
-            <span className="flex items-center gap-1 shrink-0">
-              <Repeat2 className="w-3 h-3" aria-hidden="true" />{e.ocurrencias} {e.ocurrencias === 1 ? 'vez' : 'veces'}
-            </span>
-            <span className="flex items-center gap-1 shrink-0">
-              <Clock className="w-3 h-3" aria-hidden="true" />{timeAgo(e.ultimaVezIso)}
-            </span>
-          </div>
-        </div>
-        {e.stack && (
-          <div className="text-text-muted shrink-0 mt-1.5">
-            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </div>
-        )}
-      </button>
+      </div>
       {expanded && e.stack && (
         <div className="px-5 pb-4">
           <div className="flex items-center justify-between mb-1.5">
@@ -119,6 +189,7 @@ function ErrorRow({ e, expanded, onToggle }: { e: ErrorLogData; expanded: boolea
           <pre className="text-xs font-mono text-text-muted bg-bg-alt/60 border border-border rounded-lg p-3 whitespace-pre-wrap break-all max-h-64 overflow-y-auto">{e.stack}</pre>
           <p className="text-[0.65rem] text-text-muted mt-2">
             Primera vez: {e.primeraVez} · Última vez: {e.ultimaVez}
+            {e.estadoActualizadoPor && ` · Estado actualizado por ${e.estadoActualizadoPor}${e.estadoActualizadoEn ? ` el ${e.estadoActualizadoEn}` : ''}`}
           </p>
         </div>
       )}
@@ -127,16 +198,20 @@ function ErrorRow({ e, expanded, onToggle }: { e: ErrorLogData; expanded: boolea
 }
 
 export default function Errores() {
+  const { user } = useAuth()
+  const puedeEditar = puedeEditarModulo(user, 'errores')
   const [page, setPage] = useState(1)
   const [expandido, setExpandido] = useState<number | null>(null)
   const [query, setQuery] = useState('')
   const [severidadFiltro, setSeveridadFiltro] = useState<Severidad | 'todos'>('todos')
+  const [estadoFiltro, setEstadoFiltro] = useState<EstadoError | 'todos'>('todos')
 
   // Un solo fetch del registro completo -- el resumen, los gráficos, el
   // filtro de severidad y la paginación (ahora client-side) trabajan todos
   // sobre el mismo conjunto de datos, sin la inconsistencia de mezclar un
   // resumen "global" con una tabla paginada por el servidor.
   const { data, isLoading, isError, refetch } = useErrorLog({ limit: LIMITE_COMPLETO })
+  const actualizarEstado = useActualizarEstadoError()
 
   const todosErrores = useMemo(() => data?.data ?? [], [data])
 
@@ -145,9 +220,10 @@ export default function Errores() {
     return todosErrores.filter((e) => {
       const coincideTexto = !q || e.mensaje.toLowerCase().includes(q) || e.ruta.toLowerCase().includes(q)
       const coincideSeveridad = severidadFiltro === 'todos' || severidadClave(e.statusCode) === severidadFiltro
-      return coincideTexto && coincideSeveridad
+      const coincideEstado = estadoFiltro === 'todos' || e.estado === estadoFiltro
+      return coincideTexto && coincideSeveridad && coincideEstado
     })
-  }, [todosErrores, query, severidadFiltro])
+  }, [todosErrores, query, severidadFiltro, estadoFiltro])
 
   const total      = filtrados.length
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
@@ -280,13 +356,26 @@ export default function Errores() {
               className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
             />
           </div>
-          <div className="flex gap-1.5 bg-bg-alt/40 border border-border rounded-xl p-1.5">
+          <div role="group" aria-label="Filtrar por severidad" className="flex gap-1.5 bg-bg-alt/40 border border-border rounded-xl p-1.5">
             {SEVERIDAD_FILTROS.map((f) => (
               <button
                 key={f.clave}
                 onClick={() => { setSeveridadFiltro(f.clave); setPage(1) }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                   severidadFiltro === f.clave ? 'bg-primary-800 text-white' : 'text-text-muted hover:text-text'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div role="group" aria-label="Filtrar por estado" className="flex gap-1.5 bg-bg-alt/40 border border-border rounded-xl p-1.5">
+            {ESTADO_FILTROS.map((f) => (
+              <button
+                key={f.clave}
+                onClick={() => { setEstadoFiltro(f.clave); setPage(1) }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  estadoFiltro === f.clave ? 'bg-primary-800 text-white' : 'text-text-muted hover:text-text'
                 }`}
               >
                 {f.label}
@@ -335,7 +424,14 @@ export default function Errores() {
         )}
         {errores.map((e) => (
           <Fragment key={e.id}>
-            <ErrorRow e={e} expanded={expandido === e.id} onToggle={() => setExpandido(expandido === e.id ? null : e.id)} />
+            <ErrorRow
+              e={e}
+              expanded={expandido === e.id}
+              onToggle={() => setExpandido(expandido === e.id ? null : e.id)}
+              onCambiarEstado={(id, estado) => actualizarEstado.mutate({ id, estado })}
+              puedeEditar={puedeEditar}
+              actualizandoEstado={actualizarEstado.isPending && actualizarEstado.variables?.id === e.id}
+            />
           </Fragment>
         ))}
         {/* Pagination */}
