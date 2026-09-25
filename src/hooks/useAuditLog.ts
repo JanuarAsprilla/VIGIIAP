@@ -55,6 +55,16 @@ export const ACCION_LABEL: Record<string, { label: string; badge: string }> = {
   '2fa_desactivado':                { label: '2FA desactivado',          badge: 'bg-red/10 text-red-dark' },
   sesion_revocada:                 { label: 'Sesión revocada',           badge: 'bg-gold-500/12 text-gold-500' },
   todas_sesiones_revocadas:        { label: 'Todas las sesiones revocadas', badge: 'bg-red/10 text-red-dark' },
+  // Antes caían al badge gris default (indistinguibles de un login normal)
+  // pese a ser justo los eventos que más importa poder detectar de un
+  // vistazo: refresh_token_reuse es la señal de un posible robo de token
+  // (ver auth.service.js), login_failed/login_blocked son intentos de
+  // acceso fallidos/bloqueados por fuerza bruta.
+  refresh_token_reuse:             { label: 'Reutilización de refresh token', badge: 'bg-red/10 text-red-dark' },
+  login_failed:                    { label: 'Login fallido',             badge: 'bg-gold-500/12 text-gold-500' },
+  login_blocked:                   { label: 'Login bloqueado',           badge: 'bg-red/10 text-red-dark' },
+  oauth_registro:                  { label: 'Registro OAuth',            badge: 'bg-primary-500/12 text-primary-500' },
+  oauth_login:                     { label: 'Login OAuth',               badge: 'bg-primary-500/12 text-primary-500' },
 }
 
 export interface AuditLogRaw {
