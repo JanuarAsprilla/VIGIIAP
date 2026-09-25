@@ -30,10 +30,19 @@ vi.mock('react-chartjs-2', () => ({
   Line: (props: { data: { labels: string[]; datasets: { label: string; data: number[] }[] } }) => (
     <div data-testid="line-chart" data-labels={JSON.stringify(props.data.labels)} data-datasets={JSON.stringify(props.data.datasets.map((d) => d.label))} />
   ),
+  Bar: (props: { data: { labels: string[]; datasets: { data: number[] }[] } }) => (
+    <div data-testid="bar-chart" data-labels={JSON.stringify(props.data.labels)} data-values={JSON.stringify(props.data.datasets[0].data)} />
+  ),
 }))
 
 vi.mock('@/lib/api', () => ({ default: { get: vi.fn() } }))
 import api from '@/lib/api'
+
+type ApiGetConfig = Parameters<typeof api.get>[1]
+/** El período anterior se pide con periodo=custom -- lo distinguimos así del período principal. */
+function paramsDe(config?: ApiGetConfig): Record<string, string> | undefined {
+  return config?.params as Record<string, string> | undefined
+}
 
 vi.mock('@/lib/exportarReporteExcel', () => ({ exportarReporteExcel: vi.fn().mockResolvedValue(undefined) }))
 import { exportarReporteExcel } from '@/lib/exportarReporteExcel'
@@ -111,8 +120,6 @@ describe('ReportesTab — métricas', () => {
 
     expect(await screen.findByText('7')).toBeInTheDocument() // usuarios nuevos
     expect(screen.getByText('5')).toBeInTheDocument() // solicitudes nuevas
-    expect(screen.getByText('solicitudes')).toBeInTheDocument()
-    expect(screen.getByText('auth')).toBeInTheDocument()
   })
 
   test('un error de carga muestra el mensaje y permite reintentar', async () => {
@@ -189,14 +196,49 @@ describe('ReportesTab — exportar Excel', () => {
 })
 
 describe('ReportesTab — actividad por módulo', () => {
-  test('ordena los módulos de mayor a menor actividad', async () => {
+  test('ordena los módulos de mayor a menor actividad y los pasa a la gráfica de barras', async () => {
     vi.mocked(api.get).mockResolvedValue(makeReporte({
+      // 'auth' no está en MODULOS_CATALOGO -- debe caer al valor crudo.
       actividadPorModulo: [{ modulo: 'auth', total: 3 }, { modulo: 'solicitudes', total: 15 }, { modulo: 'mapas', total: 8 }],
     }))
     renderTab()
+    const chart = await screen.findByTestId('bar-chart')
+
+    expect(JSON.parse(chart.getAttribute('data-labels')!)).toEqual(['Solicitudes', 'Mapas', 'auth'])
+    expect(JSON.parse(chart.getAttribute('data-values')!)).toEqual([15, 8, 3])
+  })
+
+  test('sin actividad por módulo, no renderiza la gráfica', async () => {
+    vi.mocked(api.get).mockResolvedValue(makeReporte({ actividadPorModulo: [] }))
+    renderTab()
+    await screen.findByText('Del 2026-08-25 al 2026-09-01')
+    expect(screen.queryByTestId('bar-chart')).not.toBeInTheDocument()
+  })
+})
+
+describe('ReportesTab — comparación con el período anterior', () => {
+  test('pide el período inmediatamente anterior, de igual duración, y muestra el delta', async () => {
+    vi.mocked(api.get).mockImplementation((_url, config) => {
+      const params = paramsDe(config)
+      if (params?.periodo === 'custom') {
+        expect(params).toEqual({ periodo: 'custom', desde: '2026-08-17', hasta: '2026-08-24' })
+        return Promise.resolve(makeReporte({ usuarios: { nuevos: 4, creadosPorAdmin: 1 } }))
+      }
+      return Promise.resolve(makeReporte()) // actual: usuarios.nuevos = 7
+    })
+    renderTab()
     await screen.findByText('Del 2026-08-25 al 2026-09-01')
 
-    const nombres = screen.getAllByText(/^(auth|solicitudes|mapas)$/).map((el) => el.textContent)
-    expect(nombres).toEqual(['solicitudes', 'mapas', 'auth'])
+    // (7 - 4) / 4 = +75%
+    expect(await screen.findByText('+75%')).toBeInTheDocument()
+  })
+
+  test('"Pendientes" no muestra variación -- es un conteo actual, no del período', async () => {
+    vi.mocked(api.get).mockResolvedValue(makeReporte())
+    renderTab()
+    await screen.findByText('Del 2026-08-25 al 2026-09-01')
+
+    const tarjetaPendientes = screen.getByText('Pendientes').closest('div.bg-bg-alt\\/40')
+    expect(tarjetaPendientes?.textContent).not.toMatch(/%/)
   })
 })

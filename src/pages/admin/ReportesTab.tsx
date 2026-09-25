@@ -1,14 +1,57 @@
-import { useState } from 'react'
+import { useState, type ComponentType } from 'react'
 import { motion } from 'framer-motion'
-import { Line } from 'react-chartjs-2'
-import { Download, Loader2, AlertCircle, FileBarChart } from 'lucide-react'
+import { Line, Bar } from 'react-chartjs-2'
+import {
+  Download, Loader2, AlertCircle, FileBarChart,
+  UserPlus, UserCog, LogIn, ShieldAlert, Inbox, FileCheck, Clock, FileText, MapPin, Map as MapIcon,
+} from 'lucide-react'
 import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
+import Sparkline from '@/components/ui/Sparkline'
+import DeltaBadge from '@/components/ui/DeltaBadge'
 import { useReporte, type PeriodoReporte } from '@/hooks/useReportes'
 import { exportarReporteExcel } from '@/lib/exportarReporteExcel'
-import { KPI_SERIE_COLOR, KPI_SERIE_LABEL, LINE_CHART_OPTIONS } from '@/lib/reportesChartConfig'
+import { MODULOS_CATALOGO } from '@/lib/constants/modulos'
+import {
+  KPI_SERIE_COLOR, KPI_SERIE_LABEL, LINE_CHART_OPTIONS,
+  HORIZONTAL_BAR_OPTIONS, MODULO_PALETTE, STAT_ACCENT,
+} from '@/lib/reportesChartConfig'
 
 const fadeUp = fadeUpSm
+
+// Rango inmediatamente anterior, de la misma duración, al [desde, hasta]
+// dado -- para poder comparar el período elegido contra el que le precede
+// (ej. "esta semana" vs "la semana pasada"). Se calcula en local, no en UTC
+// (mismo cuidado que calcularRango() en el backend), para no correr el rango
+// un día por el huso horario.
+function fmtFecha(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function rangoAnterior(desde: string, hasta: string): { desde: string; hasta: string } {
+  const MS_DIA = 24 * 60 * 60 * 1000
+  const [dy, dm, dd] = desde.split('-').map(Number)
+  const [hy, hm, hd] = hasta.split('-').map(Number)
+  const fechaDesde = new Date(dy, dm - 1, dd)
+  const fechaHasta = new Date(hy, hm - 1, hd)
+  const duracionDias = Math.round((fechaHasta.getTime() - fechaDesde.getTime()) / MS_DIA) + 1
+  const prevHasta = new Date(fechaDesde.getTime() - MS_DIA)
+  const prevDesde = new Date(prevHasta.getTime() - (duracionDias - 1) * MS_DIA)
+  return { desde: fmtFecha(prevDesde), hasta: fmtFecha(prevHasta) }
+}
+
+function deltaPct(actual: number, anterior: number | undefined): number | undefined {
+  if (anterior === undefined) return undefined
+  if (anterior === 0) return actual > 0 ? 100 : 0
+  return Math.round(((actual - anterior) / anterior) * 100)
+}
+
+function moduloLabel(clave: string): string {
+  return MODULOS_CATALOGO.find((m) => m.clave === clave)?.nombre ?? clave
+}
 
 const PERIODOS: { value: PeriodoReporte; label: string }[] = [
   { value: 'dia',    label: 'Hoy' },
@@ -18,11 +61,40 @@ const PERIODOS: { value: PeriodoReporte; label: string }[] = [
   { value: 'custom', label: 'Rango personalizado' },
 ]
 
-function StatTile({ label, value }: { label: string; value: number }) {
+interface StatTileProps {
+  label: string
+  value: number
+  icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>
+  accent: string
+  /** Omitido cuando la métrica no tiene sentido comparada contra el período
+   *  anterior (ej. "Pendientes", que es un conteo actual, no del rango). */
+  deltaPct?: number
+  /** Serie diaria del propio período -- solo existe para las 4 métricas que
+   *  también alimentan la gráfica de tendencia (ver KPI_SERIE_COLOR). */
+  sparkline?: number[]
+}
+
+function StatTile({ label, value, icon: Icon, accent, deltaPct: delta, sparkline }: StatTileProps) {
   return (
-    <div className="bg-bg-alt/40 border border-border rounded-xl px-4 py-3.5">
-      <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1">{label}</p>
-      <p className="text-2xl font-bold text-text">{value}</p>
+    <div className="bg-bg-alt/40 border border-border rounded-xl px-4 py-3.5 flex flex-col gap-2.5">
+      <div className="flex items-start justify-between gap-2">
+        <span
+          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+          style={{ backgroundColor: `${accent}1A`, color: accent }}
+        >
+          <Icon className="w-4 h-4" aria-hidden />
+        </span>
+        {delta !== undefined && <DeltaBadge pct={delta} />}
+      </div>
+      <div className="flex items-end justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-2xl font-bold text-text leading-none">{value}</p>
+          <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mt-1.5 truncate">{label}</p>
+        </div>
+        {sparkline && sparkline.length > 0 && (
+          <Sparkline data={sparkline} endColor={accent} className="shrink-0" />
+        )}
+      </div>
     </div>
   )
 }
@@ -39,6 +111,12 @@ export default function ReportesTab() {
 
   const { data, isLoading, isError, isFetching, refetch } = useReporte({ periodo, desde, hasta })
 
+  const rangoPrevio = data ? rangoAnterior(data.desde, data.hasta) : null
+  const { data: dataAnterior } = useReporte(
+    { periodo: 'custom', desde: rangoPrevio?.desde, hasta: rangoPrevio?.hasta },
+    Boolean(rangoPrevio),
+  )
+
   const exportExcel = async () => {
     if (!data) return
     setExportando(true)
@@ -50,7 +128,6 @@ export default function ReportesTab() {
   }
 
   const modulosOrdenados = data ? [...data.actividadPorModulo].sort((a, b) => b.total - a.total) : []
-  const maxModulo = modulosOrdenados[0]?.total ?? 0
 
   const rangoInvalido = periodo === 'custom' && desde && hasta && desde > hasta
 
@@ -67,6 +144,22 @@ export default function ReportesTab() {
       tension: 0.3,
       fill: false,
     })),
+  } : null
+
+  const serieUsuarios = data?.serieTiempo.serie.map((p) => p.usuarios) ?? []
+  const serieSolicitudes = data?.serieTiempo.serie.map((p) => p.solicitudes) ?? []
+  const serieDocumentos = data?.serieTiempo.serie.map((p) => p.documentos) ?? []
+  const serieMapas = data?.serieTiempo.serie.map((p) => p.mapas) ?? []
+
+  const moduloChartData = modulosOrdenados.length > 0 ? {
+    labels: modulosOrdenados.map((m) => moduloLabel(m.modulo)),
+    datasets: [{
+      label: 'Eventos',
+      data: modulosOrdenados.map((m) => m.total),
+      backgroundColor: modulosOrdenados.map((_, i) => MODULO_PALETTE[i % MODULO_PALETTE.length]),
+      borderRadius: 6,
+      barThickness: 18,
+    }],
   } : null
 
   return (
@@ -166,45 +259,83 @@ export default function ReportesTab() {
             <div>
               <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2.5">Usuarios</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatTile label="Nuevos registros" value={data.usuarios.nuevos} />
-                <StatTile label="Creados por admin" value={data.usuarios.creadosPorAdmin} />
-                <StatTile label="Logins exitosos" value={data.logins.exitosos} />
-                <StatTile label="Logins fallidos" value={data.logins.fallidos} />
+                <StatTile
+                  label="Nuevos registros" value={data.usuarios.nuevos}
+                  icon={UserPlus} accent={STAT_ACCENT.usuariosNuevos}
+                  deltaPct={deltaPct(data.usuarios.nuevos, dataAnterior?.usuarios.nuevos)}
+                  sparkline={serieUsuarios}
+                />
+                <StatTile
+                  label="Creados por admin" value={data.usuarios.creadosPorAdmin}
+                  icon={UserCog} accent={STAT_ACCENT.usuariosAdmin}
+                  deltaPct={deltaPct(data.usuarios.creadosPorAdmin, dataAnterior?.usuarios.creadosPorAdmin)}
+                />
+                <StatTile
+                  label="Logins exitosos" value={data.logins.exitosos}
+                  icon={LogIn} accent={STAT_ACCENT.loginsExitosos}
+                  deltaPct={deltaPct(data.logins.exitosos, dataAnterior?.logins.exitosos)}
+                />
+                <StatTile
+                  label="Logins fallidos" value={data.logins.fallidos}
+                  icon={ShieldAlert} accent={STAT_ACCENT.loginsFallidos}
+                  deltaPct={deltaPct(data.logins.fallidos, dataAnterior?.logins.fallidos)}
+                />
               </div>
             </div>
             <div>
               <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2.5">Solicitudes</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <StatTile label="Nuevas" value={data.solicitudes.nuevas} />
-                <StatTile label="Resueltas" value={data.solicitudes.resueltas} />
-                <StatTile label="Pendientes" value={data.solicitudes.pendientes} />
+                <StatTile
+                  label="Nuevas" value={data.solicitudes.nuevas}
+                  icon={Inbox} accent={STAT_ACCENT.solicitudesNuevas}
+                  deltaPct={deltaPct(data.solicitudes.nuevas, dataAnterior?.solicitudes.nuevas)}
+                  sparkline={serieSolicitudes}
+                />
+                <StatTile
+                  label="Resueltas" value={data.solicitudes.resueltas}
+                  icon={FileCheck} accent={STAT_ACCENT.solicitudesResueltas}
+                  deltaPct={deltaPct(data.solicitudes.resueltas, dataAnterior?.solicitudes.resueltas)}
+                />
+                {/* Sin deltaPct: "pendientes" es el conteo actual de solicitudes
+                    abiertas, no algo que ocurrió dentro del período elegido. */}
+                <StatTile
+                  label="Pendientes" value={data.solicitudes.pendientes}
+                  icon={Clock} accent={STAT_ACCENT.solicitudesPendientes}
+                />
               </div>
             </div>
             <div>
               <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2.5">Contenido</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatTile label="Documentos creados" value={data.documentos.creados} />
-                <StatTile label="Documentos publicados" value={data.documentos.publicados} />
-                <StatTile label="Mapas creados" value={data.mapas.creados} />
-                <StatTile label="Mapas publicados" value={data.mapas.publicados} />
+                <StatTile
+                  label="Documentos creados" value={data.documentos.creados}
+                  icon={FileText} accent={STAT_ACCENT.documentosCreados}
+                  deltaPct={deltaPct(data.documentos.creados, dataAnterior?.documentos.creados)}
+                />
+                <StatTile
+                  label="Documentos publicados" value={data.documentos.publicados}
+                  icon={FileCheck} accent={STAT_ACCENT.documentosPublicados}
+                  deltaPct={deltaPct(data.documentos.publicados, dataAnterior?.documentos.publicados)}
+                  sparkline={serieDocumentos}
+                />
+                <StatTile
+                  label="Mapas creados" value={data.mapas.creados}
+                  icon={MapPin} accent={STAT_ACCENT.mapasCreados}
+                  deltaPct={deltaPct(data.mapas.creados, dataAnterior?.mapas.creados)}
+                />
+                <StatTile
+                  label="Mapas publicados" value={data.mapas.publicados}
+                  icon={MapIcon} accent={STAT_ACCENT.mapasPublicados}
+                  deltaPct={deltaPct(data.mapas.publicados, dataAnterior?.mapas.publicados)}
+                  sparkline={serieMapas}
+                />
               </div>
             </div>
-            {modulosOrdenados.length > 0 && (
+            {moduloChartData && (
               <div>
                 <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2.5">Actividad por módulo</p>
-                <div className="space-y-2">
-                  {modulosOrdenados.map((m) => (
-                    <div key={m.modulo} className="flex items-center gap-3">
-                      <span className="text-sm text-text capitalize w-32 shrink-0 truncate">{m.modulo}</span>
-                      <div className="flex-1 h-6 bg-bg-alt/40 rounded-md overflow-hidden">
-                        <div
-                          className="h-full rounded-md bg-gradient-to-r from-primary-600 to-primary-800"
-                          style={{ width: `${maxModulo > 0 ? Math.max((m.total / maxModulo) * 100, 4) : 0}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-semibold text-text w-10 text-right shrink-0">{m.total}</span>
-                    </div>
-                  ))}
+                <div style={{ height: Math.max(modulosOrdenados.length * 34, 120) }}>
+                  <Bar data={moduloChartData} options={HORIZONTAL_BAR_OPTIONS} />
                 </div>
               </div>
             )}
