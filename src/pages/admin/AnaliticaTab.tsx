@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Line } from 'react-chartjs-2'
 import {
   Eye, Users, LogOut, Clock, Loader2, AlertCircle,
   Smartphone, Tablet, Monitor, Globe, ArrowDownToLine, ArrowUpFromLine,
@@ -7,6 +8,7 @@ import { fadeUpSm, staggerContainer, staggerItem3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import Sparkline from '@/components/ui/Sparkline'
 import DeltaBadge from '@/components/ui/DeltaBadge'
+import { LINE_CHART_OPTIONS } from '@/lib/reportesChartConfig'
 import {
   useAnaliticaResumen, usePaginasTop, useDispositivos, useFuentesTrafico, useEntradaSalida,
   type DispositivoStat,
@@ -18,6 +20,65 @@ function formatDuracion(segundos: number): string {
   const min = Math.floor(segundos / 60)
   const seg = segundos % 60
   return `${min}m ${String(seg).padStart(2, '0')}s`
+}
+
+// Las tarjetas KPI ya traen serie7 (últimos 7 días, terminando hoy) pero sin
+// fechas -- solo conteos. Se reconstruyen acá para el eje X del gráfico
+// grande; el backend no necesita devolver fechas que el cliente ya puede
+// calcular a partir de "hoy".
+function etiquetasUltimos7Dias(): string[] {
+  const hoy = new Date()
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(hoy)
+    d.setDate(hoy.getDate() - (6 - i))
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })
+  })
+}
+
+// ── Gráfica de tendencia (páginas vistas / visitantes, 7 días) ──
+function TendenciaChart() {
+  const { data, isLoading, isError } = useAnaliticaResumen()
+
+  return (
+    <motion.div {...fadeUp(0.08)} className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5">
+      <h3 className="text-sm font-bold text-text mb-4">Evolución — Últimos 7 Días</h3>
+      <EstadoCarga isLoading={isLoading} isError={isError} vacio={false} />
+      {!isLoading && !isError && data && (
+        <div style={{ height: 260 }}>
+          <Line
+            data={{
+              labels: etiquetasUltimos7Dias(),
+              datasets: [
+                {
+                  label: 'Páginas vistas',
+                  data: data.paginasVistas.serie7,
+                  borderColor: '#009846',
+                  backgroundColor: '#00984622',
+                  pointRadius: 3,
+                  pointHoverRadius: 5,
+                  borderWidth: 2,
+                  tension: 0.3,
+                  fill: true,
+                },
+                {
+                  label: 'Visitantes únicos',
+                  data: data.visitantes.serie7,
+                  borderColor: '#F7AC42',
+                  backgroundColor: '#F7AC4222',
+                  pointRadius: 3,
+                  pointHoverRadius: 5,
+                  borderWidth: 2,
+                  tension: 0.3,
+                  fill: true,
+                },
+              ],
+            }}
+            options={LINE_CHART_OPTIONS}
+          />
+        </div>
+      )}
+    </motion.div>
+  )
 }
 
 const DISPOSITIVO_ICONO: Record<DispositivoStat['dispositivo'], typeof Smartphone> = {
@@ -162,6 +223,8 @@ export default function AnaliticaTab({ desde, hasta }: AnaliticaTabProps) {
       </motion.p>
 
       <KpiCards />
+
+      <TendenciaChart />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Páginas más visitadas */}
