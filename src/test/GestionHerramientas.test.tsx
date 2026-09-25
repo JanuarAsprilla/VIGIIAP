@@ -174,25 +174,73 @@ describe('GestionHerramientas — editar y visibilidad', () => {
 })
 
 describe('GestionHerramientas — reordenar', () => {
-  test('subir la primera fila está deshabilitado', () => {
+  test('subir/bajar deshabilitado para una herramienta sola en su tag (conversor y panel-choco tienen tags distintos)', () => {
     render(<GestionHerramientas />)
     expect(screen.getByRole('button', { name: /Subir Conversor de Coordenadas/i })).toBeDisabled()
-  })
-
-  test('bajar la última fila está deshabilitado', () => {
-    render(<GestionHerramientas />)
+    expect(screen.getByRole('button', { name: /Bajar Conversor de Coordenadas/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Subir Panel Chocó/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /Bajar Panel Chocó/i })).toBeDisabled()
   })
 
-  test('bajar la primera fila intercambia el orden con la siguiente', async () => {
-    const mutateAsync = vi.fn().mockResolvedValue(undefined)
-    vi.mocked(useReordenarHerramientas).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useReordenarHerramientas>)
+  // Mover arriba/abajo opera DENTRO del tag -- con tags distintos (arriba)
+  // ninguna reordena nada; acá se prueban 2 herramientas del MISMO tag.
+  describe('con dos herramientas del mismo tag', () => {
+    const MISMO_TAG = [
+      makeHerramienta(),
+      makeHerramienta({ clave: 'panel-choco', titulo: 'Panel Chocó', tag: 'Geodésico', orden: 1 }),
+    ]
 
+    test('subir la primera fila del grupo está deshabilitado, bajar no', () => {
+      vi.mocked(useHerramientasList).mockReturnValue({ data: MISMO_TAG, isLoading: false } as unknown as ReturnType<typeof useHerramientasList>)
+      render(<GestionHerramientas />)
+      expect(screen.getByRole('button', { name: /Subir Conversor de Coordenadas/i })).toBeDisabled()
+      expect(screen.getByRole('button', { name: /Bajar Conversor de Coordenadas/i })).not.toBeDisabled()
+    })
+
+    test('bajar la primera fila intercambia el orden con la siguiente', async () => {
+      vi.mocked(useHerramientasList).mockReturnValue({ data: MISMO_TAG, isLoading: false } as unknown as ReturnType<typeof useHerramientasList>)
+      const mutateAsync = vi.fn().mockResolvedValue(undefined)
+      vi.mocked(useReordenarHerramientas).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useReordenarHerramientas>)
+
+      const user = userEvent.setup()
+      render(<GestionHerramientas />)
+      await user.click(screen.getByRole('button', { name: /Bajar Conversor de Coordenadas/i }))
+
+      expect(mutateAsync).toHaveBeenCalledWith([{ clave: 'conversor', orden: 1 }, { clave: 'panel-choco', orden: 0 }])
+    })
+  })
+})
+
+describe('GestionHerramientas — agrupación por tag', () => {
+  test('agrupa las herramientas en secciones por tag', () => {
+    render(<GestionHerramientas />)
+    expect(screen.getByRole('heading', { name: 'Geodésico' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Reportes' })).toBeInTheDocument()
+  })
+})
+
+describe('GestionHerramientas — buscador', () => {
+  test('filtra por título', async () => {
     const user = userEvent.setup()
     render(<GestionHerramientas />)
-    await user.click(screen.getByRole('button', { name: /Bajar Conversor de Coordenadas/i }))
+    await user.type(screen.getByLabelText(/Buscar herramienta/i), 'Panel')
+    expect(screen.queryByText('Conversor de Coordenadas')).not.toBeInTheDocument()
+    expect(screen.getByText('Panel Chocó')).toBeInTheDocument()
+  })
 
-    expect(mutateAsync).toHaveBeenCalledWith([{ clave: 'conversor', orden: 1 }, { clave: 'panel-choco', orden: 0 }])
+  test('filtra por tag', async () => {
+    const user = userEvent.setup()
+    render(<GestionHerramientas />)
+    await user.type(screen.getByLabelText(/Buscar herramienta/i), 'Reportes')
+    expect(screen.queryByText('Conversor de Coordenadas')).not.toBeInTheDocument()
+    expect(screen.getByText('Panel Chocó')).toBeInTheDocument()
+  })
+
+  test('sin coincidencias muestra un mensaje explícito', async () => {
+    const user = userEvent.setup()
+    render(<GestionHerramientas />)
+    await user.type(screen.getByLabelText(/Buscar herramienta/i), 'xyz-no-existe')
+    expect(screen.getByText(/Ninguna herramienta coincide con "xyz-no-existe"/i)).toBeInTheDocument()
   })
 })
 
