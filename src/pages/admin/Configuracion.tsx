@@ -132,6 +132,7 @@ export default function Configuracion() {
   // el guardado, para no pisar la que ya está guardada con un string vacío.
   const [smtp, setSmtp] = useState({
     mail_host: '', mail_port: '', mail_secure: false, mail_user: '', mail_pass: '',
+    mail_remitente: '', mail_remitente_nombre: '',
   })
   const [mailPassConfigurado, setMailPassConfigurado] = useState(false)
   const [showMailPass, setShowMailPass] = useState(false)
@@ -206,6 +207,8 @@ export default function Configuracion() {
       mail_port:   remoteConfig.mail_port   ?? s.mail_port,
       mail_secure: remoteConfig.mail_secure === undefined ? s.mail_secure : remoteConfig.mail_secure === 'true',
       mail_user:   remoteConfig.mail_user   ?? s.mail_user,
+      mail_remitente:        remoteConfig.mail_remitente        ?? s.mail_remitente,
+      mail_remitente_nombre: remoteConfig.mail_remitente_nombre ?? s.mail_remitente_nombre,
       // mail_pass queda fuera a propósito — nunca llega del backend.
     }))
     setMailPassConfigurado(Boolean(remoteConfig.mail_pass_configurado))
@@ -251,6 +254,8 @@ export default function Configuracion() {
         mail_port: smtp.mail_port,
         mail_secure: smtp.mail_secure,
         mail_user: smtp.mail_user,
+        mail_remitente: smtp.mail_remitente,
+        mail_remitente_nombre: smtp.mail_remitente_nombre,
         // Campo vacío = "no la estoy cambiando" — nunca se manda para no
         // pisar la contraseña ya guardada con un string vacío.
         ...(smtp.mail_pass ? { mail_pass: smtp.mail_pass } : {}),
@@ -349,7 +354,7 @@ export default function Configuracion() {
               </label>
               <input
                 id={`conf-${key}`}
-                type="text"
+                type={key === 'email' ? 'email' : 'text'}
                 value={general[key]}
                 onChange={(e) => setGeneral((g) => ({ ...g, [key]: e.target.value }))}
                 className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
@@ -520,10 +525,37 @@ export default function Configuracion() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
+              <label htmlFor="smtp-remitente" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                Correo remitente <span className="font-normal normal-case tracking-normal text-text-muted">(el "De:" que ven los destinatarios)</span>
+              </label>
+              <input
+                id="smtp-remitente"
+                type="email"
+                placeholder="notificaciones@iiap.org.co"
+                value={smtp.mail_remitente}
+                onChange={(e) => setSmtp((s) => ({ ...s, mail_remitente: e.target.value }))}
+                className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+              />
+              <p className="text-xs text-text-muted mt-1">Vacío usa el usuario SMTP como remitente.</p>
+            </div>
+            <div>
+              <label htmlFor="smtp-remitente-nombre" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Nombre del remitente</label>
+              <input
+                id="smtp-remitente-nombre"
+                type="text"
+                placeholder="VIGIIAP — IIAP"
+                value={smtp.mail_remitente_nombre}
+                onChange={(e) => setSmtp((s) => ({ ...s, mail_remitente_nombre: e.target.value }))}
+                className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
               <label htmlFor="smtp-user" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Usuario</label>
               <input
                 id="smtp-user"
-                type="text"
+                type="email"
                 placeholder="notificaciones@iiap.org.co"
                 value={smtp.mail_user}
                 onChange={(e) => setSmtp((s) => ({ ...s, mail_user: e.target.value }))}

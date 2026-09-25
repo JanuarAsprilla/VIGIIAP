@@ -3,7 +3,7 @@ import { getApiErrorMessage } from '@/lib/apiError'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Trash2, Pencil, X, CheckCircle, ArrowUp, ArrowDown,
-  Loader2, Wrench, Eye, EyeOff, AlertCircle, Globe, Users,
+  Loader2, Wrench, Eye, EyeOff, AlertCircle, Globe, Users, Search,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, staggerContainer } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
@@ -157,6 +157,7 @@ export default function GestionHerramientas() {
   const [editTarget, setEditTarget]     = useState<Herramienta | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Herramienta | null>(null)
   const [toast, setToast]               = useState<string | null>(null)
+  const [busqueda, setBusqueda]         = useState('')
 
   const clavesPublicadas = new Set(herramientas.map((h) => h.clave))
   const clavesDisponibles = Object.keys(REGISTRO_HERRAMIENTAS).filter((c) => !clavesPublicadas.has(c))
@@ -223,12 +224,15 @@ export default function GestionHerramientas() {
     }
   }
 
+  // Mover arriba/abajo opera DENTRO del grupo de su propio tag, no sobre el
+  // orden global -- con las tarjetas agrupadas visualmente por tag, mover
+  // "arriba" y que la tarjeta salte a otra sección se sentiría roto.
   const handleMover = async (h: Herramienta, direccion: 'arriba' | 'abajo') => {
-    const ordenadas = [...herramientas].sort((a, b) => a.orden - b.orden)
-    const idx = ordenadas.findIndex((x) => x.clave === h.clave)
+    const delGrupo = herramientas.filter((x) => x.tag === h.tag).sort((a, b) => a.orden - b.orden)
+    const idx = delGrupo.findIndex((x) => x.clave === h.clave)
     const otroIdx = direccion === 'arriba' ? idx - 1 : idx + 1
-    if (otroIdx < 0 || otroIdx >= ordenadas.length) return
-    const otro = ordenadas[otroIdx]
+    if (otroIdx < 0 || otroIdx >= delGrupo.length) return
+    const otro = delGrupo[otroIdx]
     try {
       await reordenar.mutateAsync([{ clave: h.clave, orden: otro.orden }, { clave: otro.clave, orden: h.orden }])
     } catch {
@@ -248,6 +252,23 @@ export default function GestionHerramientas() {
   }
 
   const ordenadas = [...herramientas].sort((a, b) => a.orden - b.orden)
+
+  const q = busqueda.trim().toLowerCase()
+  const filtradas = !q
+    ? ordenadas
+    : ordenadas.filter((h) =>
+        h.titulo.toLowerCase().includes(q) || h.tag.toLowerCase().includes(q) || h.clave.toLowerCase().includes(q))
+
+  // Agrupadas por tag (orden alfabético de sección) -- con "muchas más"
+  // herramientas viniendo, una sola lista plana deja de tener jerarquía; el
+  // tag ya es un dato real de cada herramienta, no uno nuevo que inventar.
+  const porTag = new Map<string, Herramienta[]>()
+  filtradas.forEach((h) => {
+    const lista = porTag.get(h.tag) ?? []
+    lista.push(h)
+    porTag.set(h.tag, lista)
+  })
+  const grupos = Array.from(porTag.entries()).sort((a, b) => a[0].localeCompare(b[0], 'es'))
 
   return (
     <div className="space-y-6">
@@ -294,24 +315,52 @@ export default function GestionHerramientas() {
       )}
 
       {ordenadas.length > 0 && (
-        <motion.div variants={staggerContainer(0.05, 0.05)} initial="initial" animate="animate" className="space-y-3">
-          <AnimatePresence mode="popLayout">
-            {ordenadas.map((h, i) => (
-              <HerramientaCard
-                key={h.clave}
-                h={h}
-                esPrimera={i === 0}
-                esUltima={i === ordenadas.length - 1}
-                onEditar={abrirEditar}
-                onEliminar={setDeleteTarget}
-                onMover={handleMover}
-                onToggleActiva={handleToggleActiva}
-                moviendose={reordenar.isPending}
-              />
-            ))}
-          </AnimatePresence>
+        <motion.div {...fadeUp(0.06)} className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" aria-hidden="true" />
+          <input
+            type="text"
+            aria-label="Buscar herramienta"
+            placeholder="Buscar por título, tag o clave…"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+          />
         </motion.div>
       )}
+
+      {ordenadas.length > 0 && filtradas.length === 0 && (
+        <p className="text-sm text-text-muted text-center py-10">Ninguna herramienta coincide con "{busqueda}"</p>
+      )}
+
+      {grupos.map(([tag, delTag]) => (
+        <div key={tag} className="space-y-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-text-muted">{tag}</h2>
+            <span className="text-[0.65rem] text-text-faint">{delTag.length}</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+          <motion.div
+            variants={staggerContainer(0.05, 0.05)} initial="initial" animate="animate"
+            className="grid grid-cols-1 lg:grid-cols-2 gap-3"
+          >
+            <AnimatePresence mode="popLayout">
+              {delTag.map((h, i) => (
+                <HerramientaCard
+                  key={h.clave}
+                  h={h}
+                  esPrimera={i === 0}
+                  esUltima={i === delTag.length - 1}
+                  onEditar={abrirEditar}
+                  onEliminar={setDeleteTarget}
+                  onMover={handleMover}
+                  onToggleActiva={handleToggleActiva}
+                  moviendose={reordenar.isPending}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        </div>
+      ))}
 
       {/* Modal crear */}
       <AnimatePresence>

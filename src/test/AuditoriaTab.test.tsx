@@ -67,7 +67,7 @@ describe('AuditoriaTab — búsqueda', () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
     const user = userEvent.setup()
     renderPage()
-    await screen.findByText('Login')
+    await screen.findByRole('cell', { name: 'Login' })
 
     await user.type(screen.getByPlaceholderText(/Buscar por usuario/i), 'carlos')
     await new Promise((resolve) => setTimeout(resolve, 400))
@@ -101,11 +101,38 @@ describe('AuditoriaTab — filtro de módulo', () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 25 } })
     const user = userEvent.setup()
     renderPage()
-    await screen.findByText('Login')
+    await screen.findByRole('cell', { name: 'Login' })
 
-    const select = screen.getByRole('combobox') as HTMLSelectElement
+    const select = screen.getByRole('combobox', { name: 'Módulo' }) as HTMLSelectElement
     await user.selectOptions(select, 'usuarios')
     expect(select).toHaveValue('usuarios')
+  })
+})
+
+describe('AuditoriaTab — filtro de acción', () => {
+  test('el backend ya soporta filtrar por accion= exacta -- el selector lo envía', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('cell', { name: 'Login' })
+
+    const select = screen.getByRole('combobox', { name: 'Acción' }) as HTMLSelectElement
+    await user.selectOptions(select, 'delete_usuario')
+
+    expect(select).toHaveValue('delete_usuario')
+    expect(api.get).toHaveBeenLastCalledWith('/admin/audit', { params: expect.objectContaining({ accion: 'delete_usuario', offset: 0 }) })
+  })
+
+  test('incluye las acciones de seguridad antes invisibles (refresh_token_reuse, login_failed, etc.)', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
+    renderPage()
+    await screen.findByRole('cell', { name: 'Login' })
+
+    const select = screen.getByRole('combobox', { name: 'Acción' })
+    const opciones = Array.from(select.querySelectorAll('option')).map((o) => o.textContent)
+    expect(opciones).toContain('Reutilización de refresh token')
+    expect(opciones).toContain('Login fallido')
+    expect(opciones).toContain('Login bloqueado')
   })
 })
 
@@ -113,7 +140,7 @@ describe('AuditoriaTab — paginación', () => {
   test('anterior está deshabilitado en la página 1, siguiente habilitado con más páginas', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 25 } })
     renderPage()
-    await screen.findByText('Login')
+    await screen.findByRole('cell', { name: 'Login' })
 
     const [prev, next] = screen.getAllByRole('button').filter((b) =>
       b.querySelector('.lucide-chevron-left, .lucide-chevron-right'))
@@ -125,7 +152,7 @@ describe('AuditoriaTab — paginación', () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 25 } })
     const user = userEvent.setup()
     renderPage()
-    await screen.findByText('Login')
+    await screen.findByRole('cell', { name: 'Login' })
 
     const next = screen.getAllByRole('button').find((b) => b.querySelector('.lucide-chevron-right'))!
     await user.click(next)
@@ -140,9 +167,9 @@ describe('AuditoriaTab — exportar Excel', () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
     const user = userEvent.setup()
     renderPage()
-    await screen.findByText('Login')
+    await screen.findByRole('cell', { name: 'Login' })
 
-    await user.selectOptions(screen.getByRole('combobox'), 'usuarios')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Módulo' }), 'usuarios')
     await user.type(screen.getByPlaceholderText(/Buscar por usuario/i), 'ana')
     await new Promise((resolve) => setTimeout(resolve, 400)) // debounce de la búsqueda
     await user.click(screen.getByRole('button', { name: /Exportar Excel/i }))
@@ -156,7 +183,7 @@ describe('AuditoriaTab — exportar Excel', () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
     const user = userEvent.setup()
     renderPage()
-    await screen.findByText('Login')
+    await screen.findByRole('cell', { name: 'Login' })
 
     await user.type(screen.getByLabelText('Desde'), '2026-01-01')
     await user.type(screen.getByLabelText('Hasta'), '2026-01-31')
@@ -173,7 +200,7 @@ describe('AuditoriaTab — exportar Excel', () => {
 
     const user = userEvent.setup()
     renderPage()
-    await screen.findByText('Login')
+    await screen.findByRole('cell', { name: 'Login' })
     await user.click(screen.getByRole('button', { name: /Exportar Excel/i }))
 
     expect(await screen.findByText(/No se pudo generar el archivo Excel/i)).toBeInTheDocument()
