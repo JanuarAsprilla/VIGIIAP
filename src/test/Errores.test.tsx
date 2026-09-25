@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -23,13 +23,17 @@ vi.mock('@/components/ui/Card3D', () => ({
     <div className={className}>{children}</div>,
 }))
 
-vi.mock('@/lib/api', () => ({ default: { get: vi.fn() } }))
+vi.mock('@/lib/api', () => ({ default: { get: vi.fn(), patch: vi.fn() } }))
 import api from '@/lib/api'
 
 vi.mock('react-chartjs-2', () => ({
   Doughnut: () => <div data-testid="doughnut-chart" />,
   Bar: () => <div data-testid="bar-chart" />,
 }))
+
+interface MockUser { rol: string; modulos?: { modulo: string; puede_ver: boolean; puede_editar: boolean }[] }
+const authMock: { user: MockUser | null } = { user: { rol: 'super_admin' } }
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 
 function renderPage() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -45,7 +49,11 @@ function makeError(overrides: Record<string, unknown> = {}) {
   }
 }
 
-beforeEach(() => { vi.clearAllMocks() })
+beforeEach(() => {
+  vi.clearAllMocks()
+  authMock.user = { rol: 'super_admin' }
+  vi.mocked(api.patch).mockResolvedValue(undefined)
+})
 
 describe('Errores — estados', () => {
   test('sin errores muestra el mensaje explícito de "todo en orden"', async () => {
@@ -187,8 +195,9 @@ describe('Errores — filtro por severidad', () => {
     renderPage()
     await screen.findAllByText('Fallo del servidor')
 
-    await user.click(screen.getByRole('button', { name: 'Críticos' }))
-    await user.click(screen.getByRole('button', { name: 'Todos' }))
+    const grupoSeveridad = screen.getByRole('group', { name: 'Filtrar por severidad' })
+    await user.click(within(grupoSeveridad).getByRole('button', { name: 'Críticos' }))
+    await user.click(within(grupoSeveridad).getByRole('button', { name: 'Todos' }))
 
     expect(screen.getByRole('button', { name: /Petición inválida/i })).toBeInTheDocument()
   })
@@ -247,5 +256,83 @@ describe('Errores — resumen', () => {
     // cargados, no solo los que coinciden con la búsqueda.
     expect(screen.queryByRole('button', { name: /Connection timeout/i })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Token inválido/i })).toBeInTheDocument()
+  })
+})
+
+describe('Errores — estado de seguimiento', () => {
+  test('un admin con permiso de editar puede cambiar el estado, y eso llama al PATCH', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [makeError({ estado: 'pendiente' })],
+      meta: { total: 1 },
+    })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findAllByText('Connection timeout')
+
+    const select = screen.getByLabelText('Estado del error')
+    expect(select).toHaveValue('pendiente')
+
+    await user.selectOptions(select, 'revisando')
+
+    expect(api.patch).toHaveBeenCalledWith('/admin/errores/1/estado', { estado: 'revisando' })
+  })
+
+  test('un admin_sig sin permiso de editar "errores" ve un badge de solo lectura, no un select', async () => {
+    authMock.user = { rol: 'admin_sig', modulos: [{ modulo: 'errores', puede_ver: true, puede_editar: false }] }
+    vi.mocked(api.get).mockResolvedValue({
+      data: [makeError({ estado: 'revisando' })],
+      meta: { total: 1 },
+    })
+    renderPage()
+    await screen.findAllByText('Connection timeout')
+
+    expect(screen.queryByLabelText('Estado del error')).not.toBeInTheDocument()
+    // "Revisando" también existe como botón de filtro -- se busca el badge (un <span>), no el botón.
+    expect(screen.getByText('Revisando', { selector: 'span' })).toBeInTheDocument()
+  })
+
+  test('el filtro "Pendientes" muestra solo errores con ese estado', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [
+        makeError({ id: 1, mensaje: 'Sin resolver', estado: 'pendiente' }),
+        makeError({ id: 2, mensaje: 'Ya resuelto', estado: 'resuelto' }),
+      ],
+      meta: { total: 2 },
+    })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findAllByText('Sin resolver')
+
+    const grupoEstado = screen.getByRole('group', { name: 'Filtrar por estado' })
+    await user.click(within(grupoEstado).getByRole('button', { name: 'Pendientes' }))
+
+    expect(screen.getByRole('button', { name: /Sin resolver/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Ya resuelto/i })).not.toBeInTheDocument()
+  })
+
+  test('el detalle expandido muestra quién y cuándo actualizó el estado, si aplica', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [makeError({
+        estado: 'resuelto',
+        estado_actualizado_por: 'admin@iiap.org.co',
+        estado_actualizado_en: '2026-09-20T10:00:00Z',
+      })],
+      meta: { total: 1 },
+    })
+    const user = userEvent.setup()
+    renderPage()
+    const fila = await screen.findByRole('button', { name: /Connection timeout/i })
+
+    await user.click(fila)
+
+    expect(screen.getByText(/Estado actualizado por admin@iiap\.org\.co/)).toBeInTheDocument()
+  })
+
+  test('sin estado en la respuesta del backend, se asume "pendiente" por compatibilidad', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeError()], meta: { total: 1 } }) // sin campo estado
+    renderPage()
+    await screen.findAllByText('Connection timeout')
+
+    expect(screen.getByLabelText('Estado del error')).toHaveValue('pendiente')
   })
 })
