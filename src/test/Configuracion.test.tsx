@@ -284,6 +284,28 @@ describe('Configuracion — SMTP (solo super_admin)', () => {
 
     expect(await screen.findByText('SMTP no configurado')).toBeInTheDocument()
   })
+
+  test('precarga correo remitente y su nombre', async () => {
+    vi.mocked(api.get).mockResolvedValue({ mail_remitente: 'notificaciones@iiap.org.co', mail_remitente_nombre: 'VIGIIAP' })
+    renderPage()
+
+    expect(await screen.findByDisplayValue('notificaciones@iiap.org.co')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('VIGIIAP')).toBeInTheDocument()
+  })
+
+  test('guarda correo remitente y su nombre', async () => {
+    vi.mocked(api.put).mockResolvedValue({})
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.type(screen.getByLabelText(/Correo remitente/i), 'alertas@iiap.org.co')
+    await user.type(screen.getByLabelText('Nombre del remitente'), 'VIGIIAP — IIAP')
+    await user.click(screen.getByRole('button', { name: /Guardar Cambios/i }))
+
+    expect(api.put).toHaveBeenCalledWith('/admin/configuracion', expect.objectContaining({
+      mail_remitente: 'alertas@iiap.org.co', mail_remitente_nombre: 'VIGIIAP — IIAP',
+    }))
+  })
 })
 
 describe('Configuracion — Ajustes Avanzados (solo super_admin)', () => {
