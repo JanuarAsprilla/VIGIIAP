@@ -1,4 +1,4 @@
-import { useState, type ComponentType } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Line, Bar } from 'react-chartjs-2'
 import {
@@ -7,14 +7,13 @@ import {
 } from 'lucide-react'
 import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
-import Sparkline from '@/components/ui/Sparkline'
-import DeltaBadge from '@/components/ui/DeltaBadge'
+import MetricPanel, { type Metric } from '@/components/ui/MetricPanel'
 import { useReporte, type PeriodoReporte } from '@/hooks/useReportes'
 import { exportarReporteExcel } from '@/lib/exportarReporteExcel'
 import { MODULOS_CATALOGO } from '@/lib/constants/modulos'
 import {
   KPI_SERIE_COLOR, KPI_SERIE_LABEL, LINE_CHART_OPTIONS,
-  HORIZONTAL_BAR_OPTIONS, MODULO_PALETTE, STAT_ACCENT,
+  HORIZONTAL_BAR_OPTIONS, MODULO_PALETTE,
 } from '@/lib/reportesChartConfig'
 
 const fadeUp = fadeUpSm
@@ -60,44 +59,6 @@ const PERIODOS: { value: PeriodoReporte; label: string }[] = [
   { value: 'anio',   label: 'Este año' },
   { value: 'custom', label: 'Rango personalizado' },
 ]
-
-interface StatTileProps {
-  label: string
-  value: number
-  icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>
-  accent: string
-  /** Omitido cuando la métrica no tiene sentido comparada contra el período
-   *  anterior (ej. "Pendientes", que es un conteo actual, no del rango). */
-  deltaPct?: number
-  /** Serie diaria del propio período -- solo existe para las 4 métricas que
-   *  también alimentan la gráfica de tendencia (ver KPI_SERIE_COLOR). */
-  sparkline?: number[]
-}
-
-function StatTile({ label, value, icon: Icon, accent, deltaPct: delta, sparkline }: StatTileProps) {
-  return (
-    <div className="bg-bg-alt/40 border border-border rounded-xl px-4 py-3.5 flex flex-col gap-2.5">
-      <div className="flex items-start justify-between gap-2">
-        <span
-          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-          style={{ backgroundColor: `${accent}1A`, color: accent }}
-        >
-          <Icon className="w-4 h-4" aria-hidden />
-        </span>
-        {delta !== undefined && <DeltaBadge pct={delta} />}
-      </div>
-      <div className="flex items-end justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-2xl font-bold text-text leading-none">{value}</p>
-          <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mt-1.5 truncate">{label}</p>
-        </div>
-        {sparkline && sparkline.length > 0 && (
-          <Sparkline data={sparkline} endColor={accent} className="shrink-0" />
-        )}
-      </div>
-    </div>
-  )
-}
 
 /** Pestaña "Reportes" de la pantalla de Actividad -- reportes agregados por
  *  período (día/semana/mes/año/rango) sobre audit_log, con evolución día a
@@ -150,6 +111,62 @@ export default function ReportesTab() {
   const serieSolicitudes = data?.serieTiempo.serie.map((p) => p.solicitudes) ?? []
   const serieDocumentos = data?.serieTiempo.serie.map((p) => p.documentos) ?? []
   const serieMapas = data?.serieTiempo.serie.map((p) => p.mapas) ?? []
+
+  const metricasUsuarios: Metric[] = data ? [
+    {
+      label: 'Nuevos registros', value: data.usuarios.nuevos, icon: UserPlus,
+      deltaPct: deltaPct(data.usuarios.nuevos, dataAnterior?.usuarios.nuevos),
+      sparkline: serieUsuarios, sparklineColor: KPI_SERIE_COLOR.usuarios,
+    },
+    {
+      label: 'Creados por admin', value: data.usuarios.creadosPorAdmin, icon: UserCog,
+      deltaPct: deltaPct(data.usuarios.creadosPorAdmin, dataAnterior?.usuarios.creadosPorAdmin),
+    },
+    {
+      label: 'Logins exitosos', value: data.logins.exitosos, icon: LogIn,
+      deltaPct: deltaPct(data.logins.exitosos, dataAnterior?.logins.exitosos),
+    },
+    {
+      label: 'Logins fallidos', value: data.logins.fallidos, icon: ShieldAlert,
+      deltaPct: deltaPct(data.logins.fallidos, dataAnterior?.logins.fallidos),
+    },
+  ] : []
+
+  const metricasSolicitudes: Metric[] = data ? [
+    {
+      label: 'Nuevas', value: data.solicitudes.nuevas, icon: Inbox,
+      deltaPct: deltaPct(data.solicitudes.nuevas, dataAnterior?.solicitudes.nuevas),
+      sparkline: serieSolicitudes, sparklineColor: KPI_SERIE_COLOR.solicitudes,
+    },
+    {
+      label: 'Resueltas', value: data.solicitudes.resueltas, icon: FileCheck,
+      deltaPct: deltaPct(data.solicitudes.resueltas, dataAnterior?.solicitudes.resueltas),
+    },
+    // Sin deltaPct: "pendientes" es el conteo actual de solicitudes abiertas,
+    // no algo que ocurrió dentro del período elegido.
+    { label: 'Pendientes', value: data.solicitudes.pendientes, icon: Clock },
+  ] : []
+
+  const metricasContenido: Metric[] = data ? [
+    {
+      label: 'Documentos creados', value: data.documentos.creados, icon: FileText,
+      deltaPct: deltaPct(data.documentos.creados, dataAnterior?.documentos.creados),
+    },
+    {
+      label: 'Documentos publicados', value: data.documentos.publicados, icon: FileCheck,
+      deltaPct: deltaPct(data.documentos.publicados, dataAnterior?.documentos.publicados),
+      sparkline: serieDocumentos, sparklineColor: KPI_SERIE_COLOR.documentos,
+    },
+    {
+      label: 'Mapas creados', value: data.mapas.creados, icon: MapPin,
+      deltaPct: deltaPct(data.mapas.creados, dataAnterior?.mapas.creados),
+    },
+    {
+      label: 'Mapas publicados', value: data.mapas.publicados, icon: MapIcon,
+      deltaPct: deltaPct(data.mapas.publicados, dataAnterior?.mapas.publicados),
+      sparkline: serieMapas, sparklineColor: KPI_SERIE_COLOR.mapas,
+    },
+  ] : []
 
   const moduloChartData = modulosOrdenados.length > 0 ? {
     labels: modulosOrdenados.map((m) => moduloLabel(m.modulo)),
@@ -249,91 +266,28 @@ export default function ReportesTab() {
         ) : (
           <div className="space-y-6">
             <div>
-              <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2.5">
+              <p className="section-title mb-3">
                 Evolución {data.serieTiempo.granularidad === 'hora' ? 'por hora' : 'día a día'}
               </p>
-              <div style={{ height: 260 }}>
+              <div style={{ height: 280 }}>
                 {chartData && <Line data={chartData} options={LINE_CHART_OPTIONS} />}
               </div>
             </div>
             <div>
-              <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2.5">Usuarios</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatTile
-                  label="Nuevos registros" value={data.usuarios.nuevos}
-                  icon={UserPlus} accent={STAT_ACCENT.usuariosNuevos}
-                  deltaPct={deltaPct(data.usuarios.nuevos, dataAnterior?.usuarios.nuevos)}
-                  sparkline={serieUsuarios}
-                />
-                <StatTile
-                  label="Creados por admin" value={data.usuarios.creadosPorAdmin}
-                  icon={UserCog} accent={STAT_ACCENT.usuariosAdmin}
-                  deltaPct={deltaPct(data.usuarios.creadosPorAdmin, dataAnterior?.usuarios.creadosPorAdmin)}
-                />
-                <StatTile
-                  label="Logins exitosos" value={data.logins.exitosos}
-                  icon={LogIn} accent={STAT_ACCENT.loginsExitosos}
-                  deltaPct={deltaPct(data.logins.exitosos, dataAnterior?.logins.exitosos)}
-                />
-                <StatTile
-                  label="Logins fallidos" value={data.logins.fallidos}
-                  icon={ShieldAlert} accent={STAT_ACCENT.loginsFallidos}
-                  deltaPct={deltaPct(data.logins.fallidos, dataAnterior?.logins.fallidos)}
-                />
-              </div>
+              <p className="section-title mb-3">Usuarios</p>
+              <MetricPanel metrics={metricasUsuarios} />
             </div>
             <div>
-              <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2.5">Solicitudes</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <StatTile
-                  label="Nuevas" value={data.solicitudes.nuevas}
-                  icon={Inbox} accent={STAT_ACCENT.solicitudesNuevas}
-                  deltaPct={deltaPct(data.solicitudes.nuevas, dataAnterior?.solicitudes.nuevas)}
-                  sparkline={serieSolicitudes}
-                />
-                <StatTile
-                  label="Resueltas" value={data.solicitudes.resueltas}
-                  icon={FileCheck} accent={STAT_ACCENT.solicitudesResueltas}
-                  deltaPct={deltaPct(data.solicitudes.resueltas, dataAnterior?.solicitudes.resueltas)}
-                />
-                {/* Sin deltaPct: "pendientes" es el conteo actual de solicitudes
-                    abiertas, no algo que ocurrió dentro del período elegido. */}
-                <StatTile
-                  label="Pendientes" value={data.solicitudes.pendientes}
-                  icon={Clock} accent={STAT_ACCENT.solicitudesPendientes}
-                />
-              </div>
+              <p className="section-title mb-3">Solicitudes</p>
+              <MetricPanel metrics={metricasSolicitudes} />
             </div>
             <div>
-              <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2.5">Contenido</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatTile
-                  label="Documentos creados" value={data.documentos.creados}
-                  icon={FileText} accent={STAT_ACCENT.documentosCreados}
-                  deltaPct={deltaPct(data.documentos.creados, dataAnterior?.documentos.creados)}
-                />
-                <StatTile
-                  label="Documentos publicados" value={data.documentos.publicados}
-                  icon={FileCheck} accent={STAT_ACCENT.documentosPublicados}
-                  deltaPct={deltaPct(data.documentos.publicados, dataAnterior?.documentos.publicados)}
-                  sparkline={serieDocumentos}
-                />
-                <StatTile
-                  label="Mapas creados" value={data.mapas.creados}
-                  icon={MapPin} accent={STAT_ACCENT.mapasCreados}
-                  deltaPct={deltaPct(data.mapas.creados, dataAnterior?.mapas.creados)}
-                />
-                <StatTile
-                  label="Mapas publicados" value={data.mapas.publicados}
-                  icon={MapIcon} accent={STAT_ACCENT.mapasPublicados}
-                  deltaPct={deltaPct(data.mapas.publicados, dataAnterior?.mapas.publicados)}
-                  sparkline={serieMapas}
-                />
-              </div>
+              <p className="section-title mb-3">Contenido</p>
+              <MetricPanel metrics={metricasContenido} />
             </div>
             {moduloChartData && (
               <div>
-                <p className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-2.5">Actividad por módulo</p>
+                <p className="section-title mb-3">Actividad por módulo</p>
                 <div style={{ height: Math.max(modulosOrdenados.length * 34, 120) }}>
                   <Bar data={moduloChartData} options={HORIZONTAL_BAR_OPTIONS} />
                 </div>

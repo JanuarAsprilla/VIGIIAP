@@ -335,8 +335,8 @@ export default function GestionHerramientas() {
       {grupos.map(([tag, delTag]) => (
         <div key={tag} className="space-y-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-text-muted">{tag}</h2>
-            <span className="text-[0.65rem] text-text-faint">{delTag.length}</span>
+            <h2 className="section-title">{tag}</h2>
+            <span className="data-label">{delTag.length}</span>
             <div className="flex-1 h-px bg-border" />
           </div>
           <motion.div

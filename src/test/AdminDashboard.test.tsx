@@ -155,24 +155,20 @@ describe('Dashboard — KPIs', () => {
     expect(screen.getByText('+100%')).toBeInTheDocument()
   })
 
-  test('muestra la cifra de flujo semanal junto al valor total', async () => {
+  test('muestra un sparkline de la serie de 7 días junto a cada KPI con tendencia', async () => {
     renderPage()
-    // El "18" vive en un <span> anidado dentro del texto "18 nuevos esta semana" —
-    // se compara el textContent completo del contenedor en vez del nodo de texto suelto.
-    const isFlowCaption = (text: string) => (_: string, el: Element | null) =>
-      el?.tagName === 'SPAN' && el.textContent === text
-    expect(await screen.findByText(isFlowCaption('18 nuevos esta semana'))).toBeInTheDocument()
-    expect(screen.getByText(isFlowCaption('4 nuevas esta semana'))).toBeInTheDocument()
-    expect(screen.getAllByText(/publicados esta semana/).length).toBe(2)
+    await screen.findByText('50')
+    // 4 KPIs visibles para super_admin, los 4 con tendencia -- ver mockTendencias.
+    expect(screen.getAllByRole('img', { name: /Tendencia de los últimos/ })).toHaveLength(4)
   })
 
-  test('mientras cargan las tendencias, muestra un esqueleto en vez de datos a medias', async () => {
+  test('mientras cargan las tendencias, no muestra el badge de variación todavía', async () => {
     vi.mocked(useDashboardTendencias).mockReturnValue({
       data: undefined, isLoading: true,
     } as unknown as ReturnType<typeof useDashboardTendencias>)
     renderPage()
     expect(await screen.findByText('50')).toBeInTheDocument()
-    expect(screen.queryByText(/esta semana/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^[+-]\d+%$/)).not.toBeInTheDocument()
   })
 })
 
@@ -369,7 +365,7 @@ describe('Dashboard — personalización por permisos de módulo (admin_sig dele
     authMock.user = { name: 'Delegado', rol: 'admin_sig', modulos: [] }
     renderPage()
 
-    expect(await screen.findByText(/Acceso delegado a 0 módulos/)).toBeInTheDocument()
+    expect(await screen.findByText(/acceso delegado a 0 módulos/i)).toBeInTheDocument()
     expect(screen.getByText('Todavía no tienes ningún módulo asignado')).toBeInTheDocument()
     expect(screen.getByText(/no es un error/i)).toBeInTheDocument()
     expect(screen.queryByText('Solicitudes Pendientes')).not.toBeInTheDocument()
@@ -395,7 +391,7 @@ describe('Dashboard — personalización por permisos de módulo (admin_sig dele
 
     expect(await screen.findByText('Usuarios Registrados')).toBeInTheDocument()
     expect(screen.getByText('Distribución de Roles')).toBeInTheDocument()
-    expect(screen.queryByText(/Acceso delegado/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/acceso delegado/i)).not.toBeInTheDocument()
   })
 })
 

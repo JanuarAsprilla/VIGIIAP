@@ -13,8 +13,7 @@ import { puedeVerModulo } from '@/lib/permisosModulo'
 import type { ModuloClave } from '@/lib/constants/modulos'
 import { fadeUpSm, staggerContainer, staggerItem3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
-import Sparkline from '@/components/ui/Sparkline'
-import DeltaBadge from '@/components/ui/DeltaBadge'
+import MetricPanel, { type Metric } from '@/components/ui/MetricPanel'
 import { LINE_CHART_OPTIONS } from '@/lib/reportesChartConfig'
 import {
   useAdminStats, useDashboardTendencias,
@@ -61,61 +60,19 @@ function KPICards({
   ]
   const kpis = todos.filter((kpi) => puedeVerModulo(user, kpi.modulo))
   if (kpis.length === 0) return null
+
+  const metrics: Metric[] = kpis.map((kpi) => ({
+    label: kpi.label,
+    value: kpi.value ?? '—',
+    loading: isLoading,
+    icon: kpi.icon,
+    deltaPct: tendenciasLoading ? undefined : kpi.tendencia?.deltaPct,
+    sparkline: tendenciasLoading ? undefined : kpi.tendencia?.serie7,
+  }))
+
   return (
-    <motion.div
-      variants={staggerContainer(0.07, 0.05)}
-      initial="initial"
-      animate="animate"
-      className="grid grid-cols-2 sm:grid-cols-4 gap-4"
-    >
-      {kpis.map((kpi) => {
-        const Icon = kpi.icon
-        const dotColor = !kpi.tendencia || kpi.tendencia.deltaPct === 0
-          ? 'var(--stats-value)'
-          : kpi.tendencia.deltaPct > 0 ? 'var(--color-primary-600)' : 'var(--color-orange-500)'
-        return (
-          <motion.div key={kpi.label} variants={staggerItem3D}>
-            <Card3D
-              glow="var(--stats-border)"
-              intensity={4}
-              className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5 relative overflow-hidden"
-              whileHover={{ y: -3 }}
-            >
-              {/* Subtle corner glow — tono único de la identidad de stats */}
-              <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full pointer-events-none"
-                style={{ background: 'radial-gradient(circle, var(--stats-bg) 0%, transparent 70%)' }} />
-
-              <div className="flex items-start justify-between mb-3 relative">
-                <div className="w-9 h-9 bg-[var(--stats-bg)] border border-[var(--stats-border)] rounded-xl flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-[var(--stats-value)]" aria-hidden="true" />
-                </div>
-                {kpi.tendencia && <DeltaBadge pct={kpi.tendencia.deltaPct} />}
-              </div>
-              <div className="tabular font-display text-3xl font-bold text-text relative">
-                {isLoading
-                  ? <span className="inline-block w-10 h-7 bg-bg-alt rounded animate-pulse" />
-                  : (kpi.value ?? '—')}
-              </div>
-              <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">{kpi.label}</p>
-
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/60 relative">
-                {tendenciasLoading ? (
-                  <span className="inline-block w-24 h-3 bg-bg-alt rounded animate-pulse" />
-                ) : kpi.tendencia ? (
-                  <>
-                    <span className="text-[0.68rem] text-text-muted">
-                      <span className="font-semibold text-text">{kpi.tendencia.semanaActual}</span> {kpi.flowLabel} esta semana
-                    </span>
-                    <Sparkline data={kpi.tendencia.serie7} endColor={dotColor} />
-                  </>
-                ) : (
-                  <span className="text-[0.68rem] text-text-faint">Sin datos de tendencia</span>
-                )}
-              </div>
-            </Card3D>
-          </motion.div>
-        )
-      })}
+    <motion.div {...fadeUp(0.05)}>
+      <MetricPanel metrics={metrics} />
     </motion.div>
   )
 }
@@ -145,7 +102,7 @@ function TraficoUso() {
           <div className="w-7 h-7 bg-[var(--stats-bg)] border border-[var(--stats-border)] rounded-lg flex items-center justify-center">
             <Eye className="w-3.5 h-3.5 text-[var(--stats-value)]" aria-hidden="true" />
           </div>
-          <h3 className="text-sm font-bold text-text">Tráfico y Uso — Últimos 7 Días</h3>
+          <h3 className="section-title">Tráfico y Uso — Últimos 7 Días</h3>
         </div>
         <Link to="/admin/actividad?tab=analitica" className="text-xs font-semibold text-primary-800 hover:text-primary-600 no-underline flex items-center gap-1 shrink-0">
           Ver detalle <ArrowRight className="w-3 h-3" />
@@ -216,7 +173,7 @@ function SaludSistema() {
         <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${ok ? 'bg-primary-700/10' : 'bg-red/10'}`}>
           {ok ? <ShieldCheck className="w-3.5 h-3.5 text-primary-700" aria-hidden="true" /> : <ServerCrash className="w-3.5 h-3.5 text-red-dark" aria-hidden="true" />}
         </div>
-        <h3 className="text-sm font-bold text-text">Salud del Sistema</h3>
+        <h3 className="section-title">Salud del Sistema</h3>
       </div>
       <div className="flex-1 flex flex-col items-center justify-center text-center py-2">
         {isLoading ? (
@@ -225,12 +182,12 @@ function SaludSistema() {
           <p className="text-xs text-red-500">No se pudo verificar</p>
         ) : ok ? (
           <>
-            <p className="text-2xl font-bold text-primary-700">Todo en orden</p>
+            <p className="stat-figure" style={{ color: 'var(--color-primary-700)' }}>Todo en orden</p>
             <p className="text-xs text-text-muted mt-1">Sin errores críticos activos</p>
           </>
         ) : (
           <>
-            <p className="text-3xl font-bold text-red-dark tabular">{criticos}</p>
+            <p className="stat-figure" style={{ color: 'var(--color-red-dark)' }}>{criticos}</p>
             <p className="text-xs text-text-muted mt-1">
               tipo{criticos === 1 ? '' : 's'} de error crítico{criticos === 1 ? '' : 's'} · {ocurrenciasCriticas} ocurrencia{ocurrenciasCriticas === 1 ? '' : 's'}
             </p>
@@ -286,7 +243,7 @@ function SolicitudesChart({ solicitudes, isError, onRetry }: { solicitudes: Soli
   if (isError) {
     return (
       <motion.div {...fadeUp(0.28)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5 text-center">
-        <h3 className="text-sm font-bold text-text mb-3">Solicitudes por Estado</h3>
+        <h3 className="section-title mb-3">Solicitudes por Estado</h3>
         <p className="text-xs text-red-500 mb-2">No se pudo cargar la información.</p>
         <button onClick={onRetry} className="text-xs font-semibold text-primary-700 hover:text-primary-900 transition-colors">
           Reintentar
@@ -297,7 +254,7 @@ function SolicitudesChart({ solicitudes, isError, onRetry }: { solicitudes: Soli
 
   return (
     <motion.div {...fadeUp(0.28)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5">
-      <h3 className="text-sm font-bold text-text mb-4">Solicitudes por Estado</h3>
+      <h3 className="section-title mb-4">Solicitudes por Estado</h3>
 
       {/* Bar chart */}
       <div className="flex items-end gap-2 mb-4 h-24">
@@ -402,7 +359,7 @@ function RolesChart({ usuarios, isError, onRetry }: { usuarios: { rol: string }[
   if (isError) {
     return (
       <motion.div {...fadeUp(0.3)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5 text-center">
-        <h3 className="text-sm font-bold text-text mb-3">Distribución de Roles</h3>
+        <h3 className="section-title mb-3">Distribución de Roles</h3>
         <p className="text-xs text-red-500 mb-2">No se pudo cargar la información.</p>
         <button onClick={onRetry} className="text-xs font-semibold text-primary-700 hover:text-primary-900 transition-colors">
           Reintentar
@@ -413,7 +370,7 @@ function RolesChart({ usuarios, isError, onRetry }: { usuarios: { rol: string }[
 
   return (
     <motion.div {...fadeUp(0.3)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5">
-      <h3 className="text-sm font-bold text-text mb-4">Distribución de Roles</h3>
+      <h3 className="section-title mb-4">Distribución de Roles</h3>
       <div className="space-y-3">
         {items.map((item) => {
           const pct = total > 0 ? item.count / total : 0
@@ -455,7 +412,7 @@ function SolicitudesPendientes({ solicitudes, isError, onRetry }: { solicitudes:
   return (
     <motion.div {...fadeUp(0.2)} className="bg-[var(--card-bg)] border border-border rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-        <h3 className="text-sm font-bold text-text">Solicitudes Pendientes</h3>
+        <h3 className="section-title">Solicitudes Pendientes</h3>
         <Link to="/admin/solicitudes" className="text-xs font-semibold text-primary-800 hover:text-primary-600 no-underline flex items-center gap-1">
           Ver todas <ArrowRight className="w-3 h-3" />
         </Link>
@@ -546,7 +503,7 @@ function ActividadReciente({ enabled }: { enabled: boolean }) {
   return (
     <motion.div {...fadeUp(0.25)} className="bg-[var(--card-bg)] border border-border rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-        <h3 className="text-sm font-bold text-text">Actividad Reciente</h3>
+        <h3 className="section-title">Actividad Reciente</h3>
         <Link to="/admin/actividad" className="text-xs font-semibold text-primary-800 hover:text-primary-600 no-underline flex items-center gap-1">
           Ver todo <ArrowRight className="w-3 h-3" />
         </Link>
@@ -685,18 +642,18 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header -- el título lleva todo el peso jerárquico de la página (sin
+          eyebrow encima: el saludo personal se movió a la descripción, ver
+          impeccable/craft-floor.md sobre eyebrows). */}
       <motion.div {...fadeUp(0)}>
-        <span className="text-[0.7rem] font-bold uppercase tracking-widest" style={{ color: 'var(--hero-eyebrow-text)' }}>
+        <h1 className="font-display font-bold text-text" style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.25rem)', letterSpacing: '-0.01em' }}>
           Panel de Control
-        </span>
-        <h1 className="font-display text-3xl font-bold text-text mt-1">
-          Bienvenido, {user?.name?.split(' ')[0]}
         </h1>
-        <p className="text-sm text-text-muted mt-1">
+        <p className="text-sm text-text-muted mt-1.5">
+          Bienvenido, {user?.name?.split(' ')[0]} —{' '}
           {esDelegado
-            ? `Acceso delegado a ${modulosPropios} módulo${modulosPropios === 1 ? '' : 's'} del panel · ${new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}`
-            : `Resumen general del sistema VIGIA-IIAP · ${new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}`}
+            ? `acceso delegado a ${modulosPropios} módulo${modulosPropios === 1 ? '' : 's'} del panel · ${new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}`
+            : `resumen general del sistema VIGIA-IIAP · ${new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}`}
         </p>
       </motion.div>
 
