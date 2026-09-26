@@ -50,6 +50,11 @@ const ESTADO_FILTROS: { clave: EstadoError | 'todos'; label: string }[] = [
   { clave: 'resuelto', label: 'Resueltos' },
 ]
 
+// Los pendientes suben arriba, los resueltos se hunden abajo -- la lista se
+// va "vaciando" visualmente a medida que se atienden errores, en vez de
+// quedar en el mismo orden sin importar qué tan atendido esté cada uno.
+const ESTADO_PRIORIDAD: Record<EstadoError, number> = { pendiente: 0, revisando: 1, resuelto: 2 }
+
 /** Select de estado si el admin puede editar el módulo, o un badge de solo
  *  lectura si no -- el control de seguimiento no debe fingir ser editable
  *  para quien no tiene permiso de "editar" sobre errores. */
@@ -134,8 +139,11 @@ function ErrorRow({ e, expanded, onToggle, onCambiarEstado, puedeEditar, actuali
 }) {
   const sev = severidad(e.statusCode)
   const metodoCls = METODO_COLOR[e.metodo] ?? 'bg-bg-alt text-text-muted'
+  // Un error resuelto se atenúa -- de un vistazo se distingue lo que falta
+  // por atender de lo que ya quedó cerrado, sin desaparecer de la lista.
+  const resuelto = e.estado === 'resuelto'
   return (
-    <div className="border-b border-border last:border-b-0">
+    <div className={`border-b border-border last:border-b-0 ${resuelto ? 'opacity-55 hover:opacity-100 transition-opacity' : ''}`}>
       <div className="w-full flex items-start gap-3.5 px-5 py-4 hover:bg-bg-alt/40 transition-colors">
         <button
           type="button"
@@ -217,12 +225,16 @@ export default function Errores() {
 
   const filtrados = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return todosErrores.filter((e) => {
-      const coincideTexto = !q || e.mensaje.toLowerCase().includes(q) || e.ruta.toLowerCase().includes(q)
-      const coincideSeveridad = severidadFiltro === 'todos' || severidadClave(e.statusCode) === severidadFiltro
-      const coincideEstado = estadoFiltro === 'todos' || e.estado === estadoFiltro
-      return coincideTexto && coincideSeveridad && coincideEstado
-    })
+    return todosErrores
+      .filter((e) => {
+        const coincideTexto = !q || e.mensaje.toLowerCase().includes(q) || e.ruta.toLowerCase().includes(q)
+        const coincideSeveridad = severidadFiltro === 'todos' || severidadClave(e.statusCode) === severidadFiltro
+        const coincideEstado = estadoFiltro === 'todos' || e.estado === estadoFiltro
+        return coincideTexto && coincideSeveridad && coincideEstado
+      })
+      // Sort estable: dentro de cada estado se conserva el orden que ya traía
+      // el backend (más reciente primero), solo se reordenan los grupos.
+      .sort((a, b) => ESTADO_PRIORIDAD[a.estado] - ESTADO_PRIORIDAD[b.estado])
   }, [todosErrores, query, severidadFiltro, estadoFiltro])
 
   const total      = filtrados.length
@@ -236,8 +248,9 @@ export default function Errores() {
     if (todosErrores.length === 0) return null
     const ocurrenciasTotales = todosErrores.reduce((sum, e) => sum + e.ocurrencias, 0)
     const criticos = todosErrores.filter((e) => e.statusCode >= 500).length
+    const pendientes = todosErrores.filter((e) => e.estado !== 'resuelto').length
     const masFrecuente = todosErrores.reduce((a, b) => (b.ocurrencias > a.ocurrencias ? b : a))
-    return { ocurrenciasTotales, criticos, masFrecuente }
+    return { ocurrenciasTotales, criticos, pendientes, masFrecuente }
   }, [todosErrores])
 
   const distribucionSeveridad = useMemo(() => {
@@ -272,7 +285,18 @@ export default function Errores() {
 
       {/* Resumen -- da una lectura rápida de qué tan grave es la situación antes de leer fila por fila */}
       {!isLoading && !isError && resumen && (
-        <motion.div {...fadeUp(0.03)} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <motion.div {...fadeUp(0.03)} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-4 flex items-center gap-3">
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${resumen.pendientes > 0 ? 'bg-red/10' : 'bg-primary-700/10'}`}>
+              {resumen.pendientes > 0
+                ? <AlertCircle className="w-4 h-4 text-red-dark" aria-hidden="true" />
+                : <ShieldCheck className="w-4 h-4 text-primary-700" aria-hidden="true" />}
+            </div>
+            <div>
+              <p className="text-lg font-bold text-text leading-none">{resumen.pendientes}</p>
+              <p className="text-[0.65rem] text-text-muted mt-1">{resumen.pendientes === 0 ? 'Todo atendido' : 'Pendientes de atender'}</p>
+            </div>
+          </div>
           <div className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-4 flex items-center gap-3">
             <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${resumen.criticos > 0 ? 'bg-red/10' : 'bg-primary-700/10'}`}>
               {resumen.criticos > 0
