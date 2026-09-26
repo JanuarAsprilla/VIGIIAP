@@ -335,4 +335,72 @@ describe('Errores — estado de seguimiento', () => {
 
     expect(screen.getByLabelText('Estado del error')).toHaveValue('pendiente')
   })
+
+  test('la tarjeta "Pendientes de atender" cuenta pendiente + revisando, pero no resuelto', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [
+        makeError({ id: 1, estado: 'pendiente' }),
+        makeError({ id: 2, estado: 'revisando' }),
+        makeError({ id: 3, estado: 'resuelto' }),
+      ],
+      meta: { total: 3 },
+    })
+    renderPage()
+    await screen.findAllByText('Connection timeout')
+
+    expect(screen.getByText('Pendientes de atender')).toBeInTheDocument()
+    // 2 de los 3 (pendiente + revisando) cuentan como "por atender".
+    const tarjeta = screen.getByText('Pendientes de atender').closest('div')
+    expect(tarjeta?.textContent).toContain('2')
+  })
+
+  test('con todo resuelto, la tarjeta dice "Todo atendido" en vez de un contador', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [makeError({ estado: 'resuelto' })],
+      meta: { total: 1 },
+    })
+    renderPage()
+    await screen.findAllByText('Connection timeout')
+
+    expect(screen.getByText('Todo atendido')).toBeInTheDocument()
+  })
+
+  test('los pendientes se muestran antes que los resueltos, sin importar el orden que trajo el backend', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [
+        makeError({ id: 1, mensaje: 'Ya resuelto', estado: 'resuelto', ocurrencias: 1 }),
+        // Mayor ocurrencias para que sea inequívocamente el "más frecuente" del
+        // resumen -- evita que su mensaje aparezca dos veces en la página.
+        makeError({ id: 2, mensaje: 'Sin resolver', estado: 'pendiente', ocurrencias: 9 }),
+      ],
+      meta: { total: 2 },
+    })
+    renderPage()
+    await screen.findAllByText('Ya resuelto')
+
+    // La tarjeta "más frecuente" del resumen también puede mostrar uno de estos
+    // mensajes -- se escoge el <p> de la fila (font-semibold) para no confundirlo
+    // con el de la tarjeta de resumen (font-bold).
+    const mensajes = screen
+      .getAllByText(/^(Ya resuelto|Sin resolver)$/, { selector: 'p.font-semibold' })
+      .map((el) => el.textContent)
+    expect(mensajes).toEqual(['Sin resolver', 'Ya resuelto'])
+  })
+
+  test('una fila resuelta se atenúa visualmente respecto a una pendiente', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [
+        makeError({ id: 1, mensaje: 'Sin resolver', estado: 'pendiente' }),
+        makeError({ id: 2, mensaje: 'Ya resuelto', estado: 'resuelto' }),
+      ],
+      meta: { total: 2 },
+    })
+    renderPage()
+    await screen.findAllByText('Sin resolver')
+
+    const filaPendiente = screen.getByRole('button', { name: /Sin resolver/i }).closest('div.border-b')
+    const filaResuelta = screen.getByRole('button', { name: /Ya resuelto/i }).closest('div.border-b')
+    expect(filaPendiente?.className).not.toMatch(/opacity-55/)
+    expect(filaResuelta?.className).toMatch(/opacity-55/)
+  })
 })
