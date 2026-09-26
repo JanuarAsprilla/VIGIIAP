@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import ConversorCoordenadas from '@/components/herramientas/ConversorCoordenadas'
-import { wgs84ToMagna } from '@/lib/proyeccionMagna'
+import { wgs84ToMagna, wgs84ToUtm18N } from '@/lib/proyeccionMagna'
 
 vi.mock('framer-motion', () => {
   const cache = new Map<string, (p: Record<string, unknown>) => ReactNode>()
@@ -35,7 +35,7 @@ async function convertirLote(texto: string) {
   return user
 }
 
-describe('ConversorCoordenadas — lote WGS84 a MAGNA', () => {
+describe('ConversorCoordenadas — por defecto: WGS84 decimal → MAGNA Oeste', () => {
   test('convierte varias líneas a la vez', async () => {
     const esperado1 = wgs84ToMagna(4.8213, -76.7324)
     const esperado2 = wgs84ToMagna(5.6947, -76.6614)
@@ -58,11 +58,15 @@ describe('ConversorCoordenadas — lote WGS84 a MAGNA', () => {
     expect(await screen.findByText('1 resultado')).toBeInTheDocument()
   })
 
-  test('una fila con latitud fuera de Colombia se marca como error sin bloquear las demás', async () => {
-    await convertirLote('50, -76.7324{enter}4.8213, -76.7324')
+  test('una coordenada fuera de Colombia se convierte igual, sin marcarse como error', async () => {
+    // Petición explícita: el conversor no debe juzgar si la coordenada "tiene
+    // sentido" geográficamente -- solo convertir lo que se le da.
+    const esperado = wgs84ToMagna(40.6892, -74.0445) // Nueva York
+    await convertirLote('40.6892, -74.0445')
 
-    expect(await screen.findByText('2 resultados · 1 con error')).toBeInTheDocument()
-    expect(screen.getByText('Latitud fuera del territorio colombiano')).toBeInTheDocument()
+    expect(await screen.findByText('1 resultado')).toBeInTheDocument()
+    expect(screen.queryByText(/fuera del territorio/i)).not.toBeInTheDocument()
+    expect(screen.getByText(`${esperado.x.toLocaleString('es-CO', { maximumFractionDigits: 6 })}, ${esperado.y.toLocaleString('es-CO', { maximumFractionDigits: 6 })}`)).toBeInTheDocument()
   })
 
   test('una fila con texto no numérico se marca como error', async () => {
@@ -81,18 +85,75 @@ describe('ConversorCoordenadas — lote WGS84 a MAGNA', () => {
   })
 })
 
-describe('ConversorCoordenadas — lote MAGNA a WGS84', () => {
-  test('convierte X/Y en modo Magna → WGS84', async () => {
+describe('ConversorCoordenadas — selector de formato', () => {
+  test('el botón de intercambiar invierte origen y destino', async () => {
     const user = userEvent.setup()
     render(<ConversorCoordenadas />)
-    await user.click(screen.getByRole('button', { name: /Magna → WGS84/i }))
+
+    await user.click(screen.getByRole('button', { name: /Intercambiar origen y destino/i }))
 
     const area = screen.getByLabelText(/Coordenadas a convertir/i)
     await user.clear(area)
-    await user.type(area, '1042482, 1120943')
+    await user.type(area, '1042482, 1120943') // X, Y ahora es el origen
     await user.click(screen.getByRole('button', { name: /Convertir/i }))
 
     expect(await screen.findByText('1 resultado')).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'X, Y' })).toBeInTheDocument()
+  })
+
+  test('convierte a otra zona MAGNA (Bogotá) cuando se elige como destino', async () => {
+    const user = userEvent.setup()
+    render(<ConversorCoordenadas />)
+
+    await user.selectOptions(screen.getByLabelText('A'), 'magna:bogota')
+    const area = screen.getByLabelText(/Coordenadas a convertir/i)
+    await user.clear(area)
+    await user.type(area, '4.8213, -76.7324')
+    await user.click(screen.getByRole('button', { name: /Convertir/i }))
+
+    expect(await screen.findByText(/Magna Bogotá/)).toBeInTheDocument()
+  })
+
+  test('convierte a UTM Zona 18N cuando se elige como destino', async () => {
+    const user = userEvent.setup()
+    render(<ConversorCoordenadas />)
+    await user.selectOptions(screen.getByLabelText('A'), 'utm18n')
+
+    const esperado = wgs84ToUtm18N(4.8213, -76.7324)
+    const area = screen.getByLabelText(/Coordenadas a convertir/i)
+    await user.clear(area)
+    await user.type(area, '4.8213, -76.7324')
+    await user.click(screen.getByRole('button', { name: /Convertir/i }))
+
+    expect(await screen.findByText(`${esperado.x.toLocaleString('es-CO', { maximumFractionDigits: 6 })}, ${esperado.y.toLocaleString('es-CO', { maximumFractionDigits: 6 })}`)).toBeInTheDocument()
+  })
+
+  test('acepta y produce formato DMS', async () => {
+    const user = userEvent.setup()
+    render(<ConversorCoordenadas />)
+    await user.selectOptions(screen.getByLabelText('Convertir de'), 'dms')
+    await user.selectOptions(screen.getByLabelText('A'), 'decimal')
+
+    const area = screen.getByLabelText(/Coordenadas a convertir/i)
+    await user.clear(area)
+    await user.type(area, '4°29\'16.70"N, 76°43\'56.64"W')
+    await user.click(screen.getByRole('button', { name: /Convertir/i }))
+
+    expect(await screen.findByText('1 resultado')).toBeInTheDocument()
+    expect(screen.getByText('4,487972, -76,7324')).toBeInTheDocument()
+  })
+
+  test('un texto DMS irreconocible se marca como error, no como NaN silencioso', async () => {
+    const user = userEvent.setup()
+    render(<ConversorCoordenadas />)
+    await user.selectOptions(screen.getByLabelText('Convertir de'), 'dms')
+
+    const area = screen.getByLabelText(/Coordenadas a convertir/i)
+    await user.clear(area)
+    await user.type(area, 'no es DMS, tampoco esto')
+    await user.click(screen.getByRole('button', { name: /Convertir/i }))
+
+    expect(await screen.findByText(/No se pudo interpretar como DMS/i)).toBeInTheDocument()
   })
 })
 
