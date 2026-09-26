@@ -449,6 +449,22 @@ describe('Dashboard — Salud del Sistema', () => {
     expect(detalle.textContent).toMatch(/^tipos de error críticos · 5 ocurrencias/)
   })
 
+  test('errores críticos ya marcados como "resuelto" no cuentan para la salud del sistema', async () => {
+    vi.mocked(useErrorLog).mockReturnValue({
+      data: {
+        data: [
+          { id: 1, statusCode: 500, ocurrencias: 3, estado: 'resuelto' },
+          { id: 2, statusCode: 503, ocurrencias: 2, estado: 'resuelto' },
+        ],
+      },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useErrorLog>)
+    renderPage()
+
+    expect(await screen.findByText('Todo en orden')).toBeInTheDocument()
+    expect(screen.queryByText(/tipos de error crítico/i)).not.toBeInTheDocument()
+  })
+
   test('un admin_sig sin el módulo "errores" no ve la sección', async () => {
     authMock.user = {
       name: 'Delegado', rol: 'admin_sig',

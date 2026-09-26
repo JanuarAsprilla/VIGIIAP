@@ -159,7 +159,10 @@ function TraficoUso() {
 // crítico que atender ahora mismo. ──
 function SaludSistema() {
   const { data, isLoading, isError } = useErrorLog({ limit: 200 })
-  const errores = data?.data ?? []
+  // Un error marcado "Resuelto" ya no cuenta para la salud del sistema -- de
+  // lo contrario este widget seguiría en rojo aunque el admin ya haya
+  // atendido todo, igual que le pasaba al resumen de Errores.tsx.
+  const errores = (data?.data ?? []).filter((e) => e.estado !== 'resuelto')
   const criticos = errores.filter((e) => e.statusCode >= 500).length
   // Ocurrencias solo de los errores CRÍTICOS -- mezclar aquí el volumen de
   // 4xx/otros (ruido normal de una API en producción) haría parecer más
