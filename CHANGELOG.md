@@ -6,6 +6,77 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.7.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.6.0...v1.7.0) (2026-09-26)
+
+
+### Features
+
+* administrar visibilidad publico/usuarios de cada herramienta ([fbd21dd](https://github.com/JanuarAsprilla/VIGIIAP/commit/fbd21ddd17a1e95db98837d7cddb823a02226c27))
+* agrupa Herramientas por tag + completa campos de remitente en Configuración ([#219](https://github.com/JanuarAsprilla/VIGIIAP/issues/219)) ([02f315b](https://github.com/JanuarAsprilla/VIGIIAP/commit/02f315ba278c7949d8b9bce1a7109c4b5bc3b6ea))
+* analítica de uso anónima tipo Google Analytics en Actividad ([#208](https://github.com/JanuarAsprilla/VIGIIAP/issues/208)) ([4149fd1](https://github.com/JanuarAsprilla/VIGIIAP/commit/4149fd1c9767e59e9598cca02d7623d9be5e7546))
+* bloquea el panel admin hasta activar 2FA cuando el super_admin lo exige ([#202](https://github.com/JanuarAsprilla/VIGIIAP/issues/202)) ([9e501b5](https://github.com/JanuarAsprilla/VIGIIAP/commit/9e501b5a5e9432c450da674930a3b2afbb5aaf06))
+* búsqueda global real y tolerante a errores de tipeo en el Command Palette ([#166](https://github.com/JanuarAsprilla/VIGIIAP/issues/166)) ([65b84c5](https://github.com/JanuarAsprilla/VIGIIAP/commit/65b84c5b6497ed91dbb3b7e9fbc931f0f639fa76))
+* catálogo de tipos de notificación y preferencias por usuario (Fases 2-3) ([#167](https://github.com/JanuarAsprilla/VIGIIAP/issues/167)) ([4068a61](https://github.com/JanuarAsprilla/VIGIIAP/commit/4068a619f6d63f11c88e8108eb88266d817c6ae4))
+* el Conversor de Coordenadas convierte muchas coordenadas a la vez ([#200](https://github.com/JanuarAsprilla/VIGIIAP/issues/200)) ([8048fc7](https://github.com/JanuarAsprilla/VIGIIAP/commit/8048fc7666dd220333d41d1bb42c29aebc61c37f))
+* exportar Actividad a Excel con marca institucional y el registro completo ([#173](https://github.com/JanuarAsprilla/VIGIIAP/issues/173)) ([a854603](https://github.com/JanuarAsprilla/VIGIIAP/commit/a854603a3e5dd9a2e12593e8bb95a6893c245199))
+* exportar reportes a Excel con identidad institucional en vez de CSV plano ([#172](https://github.com/JanuarAsprilla/VIGIIAP/issues/172)) ([b30aa92](https://github.com/JanuarAsprilla/VIGIIAP/commit/b30aa920a69f2233799a733d99c65022c2e3cbaa))
+* filtro por módulo y nombre unificado de categoría en todos los formularios ([#169](https://github.com/JanuarAsprilla/VIGIIAP/issues/169)) ([c4fa57a](https://github.com/JanuarAsprilla/VIGIIAP/commit/c4fa57a477999e2145ea62fa4c3da3f86126d97f))
+* filtros de seguridad reales en Registro de Actividad (fechas, búsqueda, módulos) ([#189](https://github.com/JanuarAsprilla/VIGIIAP/issues/189)) ([fdf75ba](https://github.com/JanuarAsprilla/VIGIIAP/commit/fdf75bac393bebced313b1b805ecc5419c1418cf))
+* formulario de conexión con tipo propio/externo ([#170](https://github.com/JanuarAsprilla/VIGIIAP/issues/170)) ([113c2cc](https://github.com/JanuarAsprilla/VIGIIAP/commit/113c2ccd7d290ef447b9d31207feddaa4180debb))
+* fusiona Reportes en Actividad (3 pestañas) + gráfica de series de tiempo ([#213](https://github.com/JanuarAsprilla/VIGIIAP/issues/213)) ([50e7344](https://github.com/JanuarAsprilla/VIGIIAP/commit/50e734466d1b895bf879926ac3d3ecd652e5707c))
+* gráfica de tendencia grande en Analítica de Uso ([#220](https://github.com/JanuarAsprilla/VIGIIAP/issues/220)) ([ab50fe8](https://github.com/JanuarAsprilla/VIGIIAP/commit/ab50fe8e9a16eb4021e4d112c30180fde658b284))
+* gráficos y robustez en Errores + filtro de acción en Auditoría ([#218](https://github.com/JanuarAsprilla/VIGIIAP/issues/218)) ([0a3a704](https://github.com/JanuarAsprilla/VIGIIAP/commit/0a3a7048ffbc755047383a2874f6efaf1925b01a))
+* hace visible y funcional el estado de los errores (no solo un badge) ([#226](https://github.com/JanuarAsprilla/VIGIIAP/issues/226)) ([0412f3c](https://github.com/JanuarAsprilla/VIGIIAP/commit/0412f3cb30f9a33cc2587905432970fbc3492b79))
+* Herramientas consume el catálogo real del backend (admin/herramientas) ([3676fcf](https://github.com/JanuarAsprilla/VIGIIAP/commit/3676fcf7a9be740f6d7448eb252a9ed48ff68b8b))
+* integra el Validador de Coordenadas de Eddy Chaverra (IIAP) a Herramientas ([#206](https://github.com/JanuarAsprilla/VIGIIAP/issues/206)) ([3882306](https://github.com/JanuarAsprilla/VIGIIAP/commit/388230627bc48a75ea4c2e18f6dee1e041782432))
+* metadatos técnicos opcionales en el formulario de Mapas (EPSG/escala/fuente/área) ([#197](https://github.com/JanuarAsprilla/VIGIIAP/issues/197)) ([9f8282e](https://github.com/JanuarAsprilla/VIGIIAP/commit/9f8282ec1d2d77791cadb611105d164af644cb83))
+* Panel Chocó Biogeográfico + limpieza y administración real de Herramientas ([6677bcd](https://github.com/JanuarAsprilla/VIGIIAP/commit/6677bcddae8da9002326b13b0e60ea6eed545188))
+* pantalla real de mantenimiento y sección Seguridad en Configuración ([#203](https://github.com/JanuarAsprilla/VIGIIAP/issues/203)) ([1dbd6e1](https://github.com/JanuarAsprilla/VIGIIAP/commit/1dbd6e1c4d3612ac4dd6c72ee422c3326b0bd215))
+* permite marcar cada error como pendiente/revisando/resuelto ([#225](https://github.com/JanuarAsprilla/VIGIIAP/issues/225)) ([b635091](https://github.com/JanuarAsprilla/VIGIIAP/commit/b6350912f2fb4a5fdc74cdc888be8a6a8b6de183))
+* persistir preferencia de tema por usuario ([#164](https://github.com/JanuarAsprilla/VIGIIAP/issues/164)) ([82d0f5e](https://github.com/JanuarAsprilla/VIGIIAP/commit/82d0f5e843511cf510f2db59e776ae4f7094217f))
+* portar Panel de Análisis Territorial Chocó Biogeográfico a Herramientas ([1a55df2](https://github.com/JanuarAsprilla/VIGIIAP/commit/1a55df29b6f7f4ce7980e3321e50aeab9ecb28a7))
+* rediseña las tarjetas de Geovisores al mismo lenguaje visual de Mapas ([#188](https://github.com/JanuarAsprilla/VIGIIAP/issues/188)) ([9cb3a4c](https://github.com/JanuarAsprilla/VIGIIAP/commit/9cb3a4c440890bba7af08207691f8838b799101b))
+* rediseñar el módulo de Errores con tarjetas y resumen accionable ([#171](https://github.com/JanuarAsprilla/VIGIIAP/issues/171)) ([fd74380](https://github.com/JanuarAsprilla/VIGIIAP/commit/fd743803390e2beb6ecaa4c30531040725a4547f))
+* rediseño estructural del Dashboard — Tráfico y Uso + Salud del Sistema ([#221](https://github.com/JanuarAsprilla/VIGIIAP/issues/221)) ([e278832](https://github.com/JanuarAsprilla/VIGIIAP/commit/e2788329e1db3d3ca4b81be6338bd5d1b1ba5fbd))
+* rediseño visual de la pestaña Reportes -- gráfico de módulos y comparación con período anterior ([#222](https://github.com/JanuarAsprilla/VIGIIAP/issues/222)) ([34b79de](https://github.com/JanuarAsprilla/VIGIIAP/commit/34b79de48198f6aadb5117f09a6f4ec81e8bed50))
+* resumen y gráficos de Errores reflejan solo lo activo, no el historial ([#227](https://github.com/JanuarAsprilla/VIGIIAP/issues/227)) ([371b4cc](https://github.com/JanuarAsprilla/VIGIIAP/commit/371b4ccdba8f5b0594a20e4971d653a2f23340fc))
+* sistema editorial de tipografía + MetricPanel en todo el panel admin ([#224](https://github.com/JanuarAsprilla/VIGIIAP/issues/224)) ([d7badeb](https://github.com/JanuarAsprilla/VIGIIAP/commit/d7badebb020d095b9173f34fd66809ac789d1ec3))
+* subir miniatura de geovisor arrastrando una imagen (antes URL a mano) ([#168](https://github.com/JanuarAsprilla/VIGIIAP/issues/168)) ([712d260](https://github.com/JanuarAsprilla/VIGIIAP/commit/712d26069cccdd1e33e03e4b0fe3eddf9ae571d5))
+
+
+### Bug Fixes
+
+* "Quitar" miniatura de geovisor tampoco borraba nada (mismo bug que mapas) ([#186](https://github.com/JanuarAsprilla/VIGIIAP/issues/186)) ([8249db3](https://github.com/JanuarAsprilla/VIGIIAP/commit/8249db383cc0accb7e3dc14caee2c9ca77500903))
+* "Quitar" miniatura no borraba nada + filtro de columnas para mapas ([#182](https://github.com/JanuarAsprilla/VIGIIAP/issues/182)) ([b0273df](https://github.com/JanuarAsprilla/VIGIIAP/commit/b0273dfe999edb125623a35439fd9da506da2c4f))
+* agrega semántica ARIA de combobox y aria-hidden al logo del footer ([#211](https://github.com/JanuarAsprilla/VIGIIAP/issues/211)) ([4694adf](https://github.com/JanuarAsprilla/VIGIIAP/commit/4694adf18d92866e9e41fdba0f6b62f39f98d2b8))
+* botones de acción en tarjeta pública de mapas no resaltaban ([#180](https://github.com/JanuarAsprilla/VIGIIAP/issues/180)) ([d9297fd](https://github.com/JanuarAsprilla/VIGIIAP/commit/d9297fd02de1c70f29433860c35b51e06894764e))
+* corregir etiquetas y quitar tilt/inline en el panel Chocó Biogeográfico ([630a864](https://github.com/JanuarAsprilla/VIGIIAP/commit/630a864e33a465a123321ba65bfcd997dbcf61b1))
+* corrige contraste de texto inactivo en sidebar y barra de pestañas ([#209](https://github.com/JanuarAsprilla/VIGIIAP/issues/209)) ([00a08de](https://github.com/JanuarAsprilla/VIGIIAP/commit/00a08de5c44ed12d94207cb746165efd4b25b3af))
+* el aviso de bienvenida aparecía en cada carga de página, no una sola vez ([#185](https://github.com/JanuarAsprilla/VIGIIAP/issues/185)) ([0cbc070](https://github.com/JanuarAsprilla/VIGIIAP/commit/0cbc070018f9d62f85451ae75cf88a50b4a074ee))
+* el checkbox "Publicar en el portal público" no hacía nada al guardar ([#184](https://github.com/JanuarAsprilla/VIGIIAP/issues/184)) ([cab3ce4](https://github.com/JanuarAsprilla/VIGIIAP/commit/cab3ce4a8e08c8913a7ac88c46fe287179ab0b97))
+* el healthcheck del deploy usaba localhost en vez de 127.0.0.1 ([#216](https://github.com/JanuarAsprilla/VIGIIAP/issues/216)) ([28995ef](https://github.com/JanuarAsprilla/VIGIIAP/commit/28995efead15f73e8d0da7fcd020ec6e8d1f4233))
+* eleva el tope de líneas del conversor de coordenadas en lote a 50.000 ([#201](https://github.com/JanuarAsprilla/VIGIIAP/issues/201)) ([35a5909](https://github.com/JanuarAsprilla/VIGIIAP/commit/35a5909a50cdd499a233bb29706e0ff78d665e02))
+* filtro de categoría de mapas no consumía las categorías reales ([#183](https://github.com/JanuarAsprilla/VIGIIAP/issues/183)) ([6248f31](https://github.com/JanuarAsprilla/VIGIIAP/commit/6248f3199d36b51f10cf2ec2670f4398f241c974))
+* filtro por módulo, edición de módulos y checkboxes en vez de pills ([#177](https://github.com/JanuarAsprilla/VIGIIAP/issues/177)) ([1ea25e8](https://github.com/JanuarAsprilla/VIGIIAP/commit/1ea25e8d6222f7612b7dec9a6943355bd92faa2e))
+* guardar un mapa fallaba (PUT vs PATCH) y las miniaturas se recortaban ([#181](https://github.com/JanuarAsprilla/VIGIIAP/issues/181)) ([50feb46](https://github.com/JanuarAsprilla/VIGIIAP/commit/50feb466fb167fa8667c70da0bb8ba1fd6b7f89f))
+* las tarjetas de geovisores quedaban invisibles en el panel admin ([#196](https://github.com/JanuarAsprilla/VIGIIAP/issues/196)) ([705f75e](https://github.com/JanuarAsprilla/VIGIIAP/commit/705f75ee85d0d4f9b5e6ec2cc03c91d366ec605a))
+* ocultar "Resumen del Sistema" para público/visitante en Herramientas ([a3dc663](https://github.com/JanuarAsprilla/VIGIIAP/commit/a3dc663f74ea754f3ec353fb6e287287014ec3e7))
+* quita el tilt 3D de la tarjeta del Conversor de Coordenadas ([#207](https://github.com/JanuarAsprilla/VIGIIAP/issues/207)) ([d8a467c](https://github.com/JanuarAsprilla/VIGIIAP/commit/d8a467c07b6f41743247f701cd62b7453c3df6f1))
+* recupera la página en blanco cuando falla el primer render de React ([#205](https://github.com/JanuarAsprilla/VIGIIAP/issues/205)) ([e5c97f8](https://github.com/JanuarAsprilla/VIGIIAP/commit/e5c97f87d9dbff449b860cc96c9b528c6b0fda7e))
+* respeta prefers-reduced-motion en Card3D y en todas las animaciones de Framer Motion ([#210](https://github.com/JanuarAsprilla/VIGIIAP/issues/210)) ([a96e39d](https://github.com/JanuarAsprilla/VIGIIAP/commit/a96e39d8c606a51f2e2b7b9b392ec36615922724))
+* retirar herramientas vaporware/maqueta de la Caja de Herramientas ([4938c8d](https://github.com/JanuarAsprilla/VIGIIAP/commit/4938c8d3cc0da9e397c75b49d528b889a20c6684))
+* Salud del Sistema del Dashboard ignora errores ya marcados como Resuelto ([#228](https://github.com/JanuarAsprilla/VIGIIAP/issues/228)) ([97779a5](https://github.com/JanuarAsprilla/VIGIIAP/commit/97779a5a2f1f40dc8a6e5be648483f3035b64c0a))
+* **seguridad:** deja de exponer URLs prefirmadas de S3/MinIO al descargar adjuntos ([#204](https://github.com/JanuarAsprilla/VIGIIAP/issues/204)) ([a2cfc9a](https://github.com/JanuarAsprilla/VIGIIAP/commit/a2cfc9a8f8b2b0a8585057f33fd85ba89a619826))
+* un deploy dejaba la app rota para pestañas ya abiertas (chunk viejo 404) ([#198](https://github.com/JanuarAsprilla/VIGIIAP/issues/198)) ([e2051c3](https://github.com/JanuarAsprilla/VIGIIAP/commit/e2051c3f94b65982b9b97628f9d38656b8ce2bc7))
+* un modelo 3D que falla al cargar tumbaba toda la página de inicio ([#195](https://github.com/JanuarAsprilla/VIGIIAP/issues/195)) ([08ffcbd](https://github.com/JanuarAsprilla/VIGIIAP/commit/08ffcbd18b5c0fd42335f5397de8d8c2f467c005))
+* vista previa de documentos y mapas PDF mostraba "Archivo no disponible" ([#179](https://github.com/JanuarAsprilla/VIGIIAP/issues/179)) ([a6d000d](https://github.com/JanuarAsprilla/VIGIIAP/commit/a6d000d4aab64e81304fc890f992c26f017b28b5))
+
+
+### Performance Improvements
+
+* carga exceljs bajo demanda en PanelChoco y Validador de Coordenadas ([#212](https://github.com/JanuarAsprilla/VIGIIAP/issues/212)) ([ba83a1d](https://github.com/JanuarAsprilla/VIGIIAP/commit/ba83a1db14a433356758da4e5ef33387acf974ee))
+* difiere la carga del hero 3D de Home hasta acercarse por scroll ([#223](https://github.com/JanuarAsprilla/VIGIIAP/issues/223)) ([d06e7ad](https://github.com/JanuarAsprilla/VIGIIAP/commit/d06e7adca866fb05c0bdee84d4470b3d1887bd32))
+
 ## [1.6.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.5.0...v1.6.0) (2026-09-19)
 
 
