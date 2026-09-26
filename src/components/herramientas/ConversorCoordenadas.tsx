@@ -2,26 +2,52 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeftRight, Download, Copy } from 'lucide-react'
 import ToolCard from './ToolCard'
-import { wgs84ToMagna, magnaToWgs84 } from '@/lib/proyeccionMagna'
+import {
+  wgs84ToMagna, magnaToWgs84, ZONAS_MAGNA, type ZonaMagna,
+  wgs84ToUtm18N, utm18NToWgs84,
+  dmsToDecimal, decimalToDms,
+} from '@/lib/proyeccionMagna'
 
-type Modo = 'wgs2magna' | 'magna2wgs'
+type Formato = 'decimal' | 'dms' | `magna:${ZonaMagna}` | 'utm18n'
+
+interface DefinicionFormato {
+  label: string
+  labelCorto: string
+  /** Nombres de columna para el par de valores en este formato. */
+  columnas: [string, string]
+  /** true si los valores de este formato son texto (DMS), no números planos. */
+  esTexto: boolean
+}
+
+const FORMATOS: Record<Formato, DefinicionFormato> = {
+  decimal:                 { label: 'WGS84 — decimal (lat, lon)',              labelCorto: 'WGS84 decimal',       columnas: ['Latitud', 'Longitud'], esTexto: false },
+  dms:                     { label: 'WGS84 — grados, min, seg (DMS)',          labelCorto: 'WGS84 DMS',           columnas: ['Latitud', 'Longitud'], esTexto: true },
+  'magna:oeste':           { label: `${ZONAS_MAGNA.oeste.nombre} (${ZONAS_MAGNA.oeste.epsg})`,             labelCorto: 'Magna Oeste',        columnas: ['X', 'Y'], esTexto: false },
+  'magna:bogota':          { label: `${ZONAS_MAGNA.bogota.nombre} (${ZONAS_MAGNA.bogota.epsg})`,           labelCorto: 'Magna Bogotá',       columnas: ['X', 'Y'], esTexto: false },
+  'magna:esteCentral':     { label: `${ZONAS_MAGNA.esteCentral.nombre} (${ZONAS_MAGNA.esteCentral.epsg})`, labelCorto: 'Magna Este Central', columnas: ['X', 'Y'], esTexto: false },
+  'magna:este':            { label: `${ZONAS_MAGNA.este.nombre} (${ZONAS_MAGNA.este.epsg})`,               labelCorto: 'Magna Este',         columnas: ['X', 'Y'], esTexto: false },
+  utm18n:                  { label: 'UTM Zona 18N (EPSG:32618)',               labelCorto: 'UTM 18N',             columnas: ['X', 'Y'], esTexto: false },
+}
+
+const ORDEN_FORMATOS: Formato[] = ['decimal', 'dms', 'magna:oeste', 'magna:bogota', 'magna:esteCentral', 'magna:este', 'utm18n']
 
 interface FilaResultado {
   linea: number
   entradaA: string
   entradaB: string
-  salidaA?: number
-  salidaB?: number
+  salidaA?: number | string
+  salidaB?: number | string
   error?: string
 }
 
-// Una línea por coordenada, separada por coma, punto y coma, tabulador o
-// espacio -- cubre tanto pegar desde Excel/Sheets (tabulador) como un CSV
-// simple. El separador de miles/decimal en coma del modo de una sola
-// coordenada (es-CO) se deja fuera aquí a propósito: es ambiguo mezclado
-// con coma como separador de columna en un lote, así que el lote pide punto
-// decimal -- se explica en el hint junto al textarea.
-const SEPARADOR = /[,;\t\s]+/
+// Los formatos numéricos (decimal, Magna, UTM) se separan por coma, punto y
+// coma, tabulador o espacio -- cubre tanto pegar desde Excel/Sheets
+// (tabulador) como un CSV simple. DMS se separa SOLO por coma/punto y coma:
+// un valor DMS ya trae espacios internos ("4° 29' 16.7\" N"), así que
+// partir por espacio rompería el propio valor.
+const SEPARADOR_NUMERICO = /[,;\t\s]+/
+const SEPARADOR_TEXTO = /[,;]/
+
 // La aritmética de la proyección es trivial (~20 operaciones por línea) --
 // 50.000 líneas se procesan en milisegundos, sin riesgo real de congelar la
 // pestaña. El tope existe solo para el caso patológico de pegar un archivo
@@ -36,58 +62,94 @@ function parseNumero(token: string): number | null {
   return parseFloat(limpio)
 }
 
-function convertirLote(texto: string, modo: Modo): FilaResultado[] {
+/** Formato de origen → WGS84 decimal (lat, lon). null + mensaje si no se pudo interpretar. */
+function aWgs84(a: string, b: string, formato: Formato): { lat: number; lon: number } | { error: string } {
+  if (formato === 'dms') {
+    const lat = dmsToDecimal(a)
+    const lon = dmsToDecimal(b)
+    if (lat === null || lon === null) return { error: 'No se pudo interpretar como DMS (ej. 4°29\'16.7"N)' }
+    return { lat, lon }
+  }
+  const numA = parseNumero(a)
+  const numB = parseNumero(b)
+  if (numA === null || numB === null) return { error: 'Valores no numéricos (usa punto decimal, ej. 4.8213)' }
+
+  if (formato === 'decimal') return { lat: numA, lon: numB }
+  if (formato === 'utm18n') return utm18NToWgs84(numA, numB)
+  const zona = formato.slice('magna:'.length) as ZonaMagna
+  return magnaToWgs84(numA, numB, zona)
+}
+
+/** WGS84 decimal → formato de destino, como par de valores listos para mostrar. */
+function deWgs84(lat: number, lon: number, formato: Formato): [number | string, number | string] {
+  if (formato === 'decimal') return [lat, lon]
+  if (formato === 'dms') return [decimalToDms(lat, 'lat'), decimalToDms(lon, 'lon')]
+  if (formato === 'utm18n') { const { x, y } = wgs84ToUtm18N(lat, lon); return [x, y] }
+  const zona = formato.slice('magna:'.length) as ZonaMagna
+  const { x, y } = wgs84ToMagna(lat, lon, zona)
+  return [x, y]
+}
+
+function convertirLote(texto: string, origen: Formato, destino: Formato): FilaResultado[] {
+  const separador = FORMATOS[origen].esTexto ? SEPARADOR_TEXTO : SEPARADOR_NUMERICO
   return texto
     .split('\n')
     .map((linea, i) => ({ linea: i + 1, texto: linea.trim() }))
     .filter((l) => l.texto.length > 0)
     .slice(0, MAX_LINEAS)
     .map(({ linea, texto }) => {
-      const partes = texto.split(SEPARADOR).filter(Boolean)
+      const partes = texto.split(separador).map((p) => p.trim()).filter(Boolean)
       if (partes.length !== 2) {
-        return { linea, entradaA: texto, entradaB: '', error: 'Se esperaban 2 valores separados por coma, espacio o tabulador' }
+        return { linea, entradaA: texto, entradaB: '', error: 'Se esperaban 2 valores por línea' }
       }
       const [a, b] = partes
-      const numA = parseNumero(a)
-      const numB = parseNumero(b)
-      if (numA === null || numB === null) {
-        return { linea, entradaA: a, entradaB: b, error: 'Valores no numéricos (usa punto decimal, ej. 4.8213)' }
-      }
+      const wgs84 = aWgs84(a, b, origen)
+      if ('error' in wgs84) return { linea, entradaA: a, entradaB: b, error: wgs84.error }
 
-      if (modo === 'wgs2magna') {
-        if (numA < -4 || numA > 14)   return { linea, entradaA: a, entradaB: b, error: 'Latitud fuera del territorio colombiano' }
-        if (numB < -82 || numB > -66) return { linea, entradaA: a, entradaB: b, error: 'Longitud fuera del territorio colombiano' }
-        const { x, y } = wgs84ToMagna(numA, numB)
-        return { linea, entradaA: a, entradaB: b, salidaA: x, salidaB: y }
-      }
-      const { lat, lon } = magnaToWgs84(numA, numB)
-      return { linea, entradaA: a, entradaB: b, salidaA: lat, salidaB: lon }
+      const [salidaA, salidaB] = deWgs84(wgs84.lat, wgs84.lon, destino)
+      return { linea, entradaA: a, entradaB: b, salidaA, salidaB }
     })
 }
 
-function aCSV(filas: FilaResultado[], modo: Modo): string {
-  const encabezados = modo === 'wgs2magna'
-    ? ['linea', 'latitud', 'longitud', 'x', 'y', 'error']
-    : ['linea', 'x', 'y', 'latitud', 'longitud', 'error']
+function formatoSalida(valor: number | string | undefined): string {
+  if (valor === undefined) return ''
+  if (typeof valor === 'string') return valor
+  return valor.toLocaleString('es-CO', { maximumFractionDigits: 6 })
+}
+
+function aCSV(filas: FilaResultado[], origen: Formato, destino: Formato): string {
+  const [colA, colB] = FORMATOS[origen].columnas
+  const [colC, colD] = FORMATOS[destino].columnas
+  const encabezados = ['linea', colA, colB, colC, colD, 'error']
   const filasCSV = filas.map((f) => [
-    f.linea, f.entradaA, f.entradaB, f.salidaA ?? '', f.salidaB ?? '', f.error ?? '',
+    f.linea, f.entradaA, f.entradaB, formatoSalida(f.salidaA), formatoSalida(f.salidaB), f.error ?? '',
   ].join(','))
   return [encabezados.join(','), ...filasCSV].join('\n')
 }
 
 export default function ConversorCoordenadas() {
-  const [modo, setModo]       = useState<Modo>('wgs2magna')
+  const [origen, setOrigen]   = useState<Formato>('decimal')
+  const [destino, setDestino] = useState<Formato>('magna:oeste')
   const [texto, setTexto]     = useState('4.8213, -76.7324\n5.6947, -76.6614')
   const [resultados, setResultados] = useState<FilaResultado[] | null>(null)
   const [copied, setCopied]   = useState(false)
 
-  const convert = () => setResultados(convertirLote(texto, modo))
+  const convert = () => setResultados(convertirLote(texto, origen, destino))
 
-  const switchModo = (id: Modo) => { setModo(id); setResultados(null) }
+  const intercambiar = () => {
+    setOrigen(destino)
+    setDestino(origen)
+    setResultados(null)
+  }
 
-  const ejemplo = modo === 'wgs2magna'
-    ? 'Una coordenada por línea: latitud, longitud (ej. 4.8213, -76.7324)'
-    : 'Una coordenada por línea: X, Y en metros (ej. 1042482, 1120943)'
+  const cambiarOrigen = (f: Formato) => { setOrigen(f); setResultados(null) }
+  const cambiarDestino = (f: Formato) => { setDestino(f); setResultados(null) }
+
+  const [colOrigenA, colOrigenB] = FORMATOS[origen].columnas
+  const [colDestinoA, colDestinoB] = FORMATOS[destino].columnas
+  const ejemplo = FORMATOS[origen].esTexto
+    ? `Una coordenada por línea: ${colOrigenA}, ${colOrigenB} (ej. 4°29'16.7"N, 76°43'56.6"W)`
+    : `Una coordenada por línea: ${colOrigenA}, ${colOrigenB} (ej. 4.8213, -76.7324)`
 
   const totalErrores = resultados?.filter((f) => f.error).length ?? 0
   const excedeLimite = texto.split('\n').filter((l) => l.trim()).length > MAX_LINEAS
@@ -95,7 +157,7 @@ export default function ConversorCoordenadas() {
   const copiarResultados = () => {
     if (!resultados) return
     const textoTabulado = resultados.map((f) => [
-      f.entradaA, f.entradaB, f.salidaA ?? '', f.salidaB ?? '', f.error ?? '',
+      f.entradaA, f.entradaB, formatoSalida(f.salidaA), formatoSalida(f.salidaB), f.error ?? '',
     ].join('\t')).join('\n')
     navigator.clipboard.writeText(textoTabulado).then(() => {
       setCopied(true)
@@ -105,33 +167,52 @@ export default function ConversorCoordenadas() {
 
   const descargarCSV = () => {
     if (!resultados) return
-    const blob = new Blob([aCSV(resultados, modo)], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob([aCSV(resultados, origen, destino)], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `coordenadas-convertidas-${modo}.csv`
+    a.download = `coordenadas-convertidas.csv`
     a.click()
     URL.revokeObjectURL(url)
   }
 
   return (
     <ToolCard tag="Geodésico" title="Conversor de Coordenadas" icon={ArrowLeftRight} color="gold" index={2} tilt3D={false}>
-      {/* Mode toggle */}
-      <div className="flex gap-1 p-1 bg-bg-alt rounded-xl mb-4">
-        {([
-          { id: 'wgs2magna' as const, label: 'WGS84 → Magna' },
-          { id: 'magna2wgs' as const, label: 'Magna → WGS84' },
-        ]).map((m) => (
-          <button
-            key={m.id}
-            onClick={() => switchModo(m.id)}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-              modo === m.id ? 'bg-[var(--card-bg)] text-primary-800 shadow-sm' : 'text-text-muted hover:text-text'
-            }`}
+      {/* Selector de formato origen/destino -- cualquier combinación es
+          válida, la conversión siempre pasa por WGS84 decimal como formato
+          intermedio (ver aWgs84/deWgs84 en este mismo archivo). */}
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-2 items-end mb-4">
+        <div>
+          <label htmlFor="cc-origen" className="block text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">Convertir de</label>
+          <select
+            id="cc-origen"
+            value={origen}
+            onChange={(e) => cambiarOrigen(e.target.value as Formato)}
+            className="w-full px-2.5 py-2 bg-[var(--card-bg)] border border-border rounded-lg text-xs font-semibold focus:outline-none focus:border-primary-800 transition"
           >
-            {m.label}
-          </button>
-        ))}
+            {ORDEN_FORMATOS.map((f) => <option key={f} value={f}>{FORMATOS[f].label}</option>)}
+          </select>
+        </div>
+        <button
+          type="button"
+          onClick={intercambiar}
+          title="Intercambiar origen y destino"
+          aria-label="Intercambiar origen y destino"
+          className="mb-0.5 p-2 rounded-lg bg-bg-alt text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors"
+        >
+          <ArrowLeftRight className="w-4 h-4" />
+        </button>
+        <div>
+          <label htmlFor="cc-destino" className="block text-[0.6rem] font-bold uppercase tracking-wider text-text-muted mb-1">A</label>
+          <select
+            id="cc-destino"
+            value={destino}
+            onChange={(e) => cambiarDestino(e.target.value as Formato)}
+            className="w-full px-2.5 py-2 bg-[var(--card-bg)] border border-border rounded-lg text-xs font-semibold focus:outline-none focus:border-primary-800 transition"
+          >
+            {ORDEN_FORMATOS.map((f) => <option key={f} value={f}>{FORMATOS[f].label}</option>)}
+          </select>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -193,8 +274,8 @@ export default function ConversorCoordenadas() {
                 <thead className="sticky top-0 bg-[var(--card-bg)]">
                   <tr className="text-[0.6rem] text-text-muted uppercase tracking-wider">
                     <th className="text-left px-3 py-1.5 font-bold">#</th>
-                    <th className="text-left px-3 py-1.5 font-bold">{modo === 'wgs2magna' ? 'Lat, Lon' : 'X, Y'}</th>
-                    <th className="text-left px-3 py-1.5 font-bold">{modo === 'wgs2magna' ? 'X, Y' : 'Lat, Lon'}</th>
+                    <th className="text-left px-3 py-1.5 font-bold">{colOrigenA}, {colOrigenB}</th>
+                    <th className="text-left px-3 py-1.5 font-bold">{colDestinoA}, {colDestinoB}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -205,7 +286,7 @@ export default function ConversorCoordenadas() {
                       <td className="px-3 py-1.5">
                         {f.error
                           ? <span className="text-red-600">{f.error}</span>
-                          : <span className="text-primary-900">{f.salidaA?.toLocaleString('es-CO', { maximumFractionDigits: 6 })}, {f.salidaB?.toLocaleString('es-CO', { maximumFractionDigits: 6 })}</span>}
+                          : <span className="text-primary-900">{formatoSalida(f.salidaA)}, {formatoSalida(f.salidaB)}</span>}
                       </td>
                     </tr>
                   ))}
@@ -216,7 +297,7 @@ export default function ConversorCoordenadas() {
         )}
 
         <p className="text-[0.6rem] text-text-muted text-center">
-          Sistema de referencia: MAGNA-SIRGAS / Colombia Oeste (EPSG:3115) · Meridiano central −77°
+          {FORMATOS[origen].labelCorto} → {FORMATOS[destino].labelCorto} · Elipsoide GRS 1980 (MAGNA-SIRGAS) / WGS84 (UTM)
         </p>
       </div>
     </ToolCard>
