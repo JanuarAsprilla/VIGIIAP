@@ -219,6 +219,38 @@ describe('Errores — gráficos', () => {
     await screen.findByText('Sin errores registrados')
     expect(screen.queryByText('Distribución por Severidad')).not.toBeInTheDocument()
   })
+
+  test('con todo resuelto, oculta los gráficos y muestra el aviso "Todo resuelto" en su lugar', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [makeError({ estado: 'resuelto' })],
+      meta: { total: 1 },
+    })
+    renderPage()
+    await screen.findAllByText('Connection timeout')
+
+    expect(screen.queryByText('Distribución por Severidad')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('doughnut-chart')).not.toBeInTheDocument()
+    expect(screen.getByText('Todo resuelto')).toBeInTheDocument()
+    expect(screen.getByText(/no hay errores activos que atender/i)).toBeInTheDocument()
+  })
+
+  test('con una mezcla de pendiente y resuelto, los gráficos solo cuentan lo pendiente', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [
+        makeError({ id: 1, mensaje: 'Sin resolver', status_code: 500, ocurrencias: 4, estado: 'pendiente' }),
+        makeError({ id: 2, mensaje: 'Ya resuelto', status_code: 500, ocurrencias: 9, estado: 'resuelto' }),
+      ],
+      meta: { total: 2 },
+    })
+    renderPage()
+    await screen.findAllByText('Sin resolver')
+
+    // El doughnut mockeado no expone sus datasets -- se verifica indirectamente
+    // vía la tarjeta de resumen, que comparte el mismo cálculo de "activos".
+    const tarjetaOcurrencias = screen.getByText('Ocurrencias sin resolver').closest('div')
+    expect(tarjetaOcurrencias?.textContent).toContain('4') // solo las del pendiente
+    expect(tarjetaOcurrencias?.textContent).not.toContain('13') // NO se suman las 9 del resuelto
+  })
 })
 
 describe('Errores — resumen', () => {
@@ -233,9 +265,9 @@ describe('Errores — resumen', () => {
     renderPage()
     await screen.findAllByText('Connection timeout')
 
-    expect(screen.getByText('1')).toBeInTheDocument() // 1 crítico (5xx)
-    expect(screen.getByText('6')).toBeInTheDocument() // 5 + 1 ocurrencias totales
-    expect(screen.getByText('Más frecuente — 5×')).toBeInTheDocument()
+    expect(screen.getByText('1')).toBeInTheDocument() // 1 crítico (5xx) activo
+    expect(screen.getByText('6')).toBeInTheDocument() // 5 + 1 ocurrencias activas
+    expect(screen.getByText('Más frecuente activo — 5×')).toBeInTheDocument()
   })
 
   test('el buscador filtra por mensaje o endpoint', async () => {

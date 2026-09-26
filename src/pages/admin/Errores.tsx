@@ -244,31 +244,45 @@ export default function Errores() {
     [filtrados, page],
   )
 
+  // El resumen y los gráficos se calculan sobre lo que sigue ACTIVO (pendiente
+  // o revisando), no sobre el historial completo -- una vez resuelto, un error
+  // no debería seguir pintando la pantalla como si el sistema estuviera mal.
+  // La tabla de abajo sí sigue mostrando el historial completo, con su propio
+  // filtro por estado para quien quiera revisar lo ya resuelto.
+  const erroresActivos = useMemo(
+    () => todosErrores.filter((e) => e.estado !== 'resuelto'),
+    [todosErrores],
+  )
+
   const resumen = useMemo(() => {
     if (todosErrores.length === 0) return null
-    const ocurrenciasTotales = todosErrores.reduce((sum, e) => sum + e.ocurrencias, 0)
-    const criticos = todosErrores.filter((e) => e.statusCode >= 500).length
-    const pendientes = todosErrores.filter((e) => e.estado !== 'resuelto').length
-    const masFrecuente = todosErrores.reduce((a, b) => (b.ocurrencias > a.ocurrencias ? b : a))
-    return { ocurrenciasTotales, criticos, pendientes, masFrecuente }
-  }, [todosErrores])
+    const ocurrenciasActivas = erroresActivos.reduce((sum, e) => sum + e.ocurrencias, 0)
+    const criticosActivos = erroresActivos.filter((e) => e.statusCode >= 500).length
+    const masFrecuente = erroresActivos.length > 0
+      ? erroresActivos.reduce((a, b) => (b.ocurrencias > a.ocurrencias ? b : a))
+      : null
+    return { pendientes: erroresActivos.length, ocurrenciasActivas, criticosActivos, masFrecuente }
+  }, [todosErrores, erroresActivos])
 
   const distribucionSeveridad = useMemo(() => {
     const porSeveridad: Record<Severidad, number> = { critico: 0, advertencia: 0, info: 0 }
-    todosErrores.forEach((e) => { porSeveridad[severidadClave(e.statusCode)] += e.ocurrencias })
+    erroresActivos.forEach((e) => { porSeveridad[severidadClave(e.statusCode)] += e.ocurrencias })
     return porSeveridad
-  }, [todosErrores])
+  }, [erroresActivos])
 
   const topRutas = useMemo(() => {
     const porRuta = new Map<string, number>()
-    todosErrores.forEach((e) => porRuta.set(e.ruta, (porRuta.get(e.ruta) ?? 0) + e.ocurrencias))
+    erroresActivos.forEach((e) => porRuta.set(e.ruta, (porRuta.get(e.ruta) ?? 0) + e.ocurrencias))
     return Array.from(porRuta, ([ruta, ocurrencias]) => ({ ruta, ocurrencias }))
       .sort((a, b) => b.ocurrencias - a.ocurrencias)
       .slice(0, 6)
-  }, [todosErrores])
+  }, [erroresActivos])
 
-  const hayDatosParaGraficos = todosErrores.length > 0
+  const hayDatosParaGraficos = erroresActivos.length > 0
     && (distribucionSeveridad.critico + distribucionSeveridad.advertencia + distribucionSeveridad.info) > 0
+  // Hay historial, pero nada activo -- se muestra un aviso "todo sano" en vez
+  // de simplemente ocultar los gráficos sin explicar por qué desaparecieron.
+  const todoResuelto = todosErrores.length > 0 && erroresActivos.length === 0
 
   return (
     <div className="space-y-6">
@@ -298,39 +312,60 @@ export default function Errores() {
             </div>
           </div>
           <div className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-4 flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${resumen.criticos > 0 ? 'bg-red/10' : 'bg-primary-700/10'}`}>
-              {resumen.criticos > 0
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${resumen.criticosActivos > 0 ? 'bg-red/10' : 'bg-primary-700/10'}`}>
+              {resumen.criticosActivos > 0
                 ? <ServerCrash className="w-4 h-4 text-red-dark" aria-hidden="true" />
                 : <ShieldCheck className="w-4 h-4 text-primary-700" aria-hidden="true" />}
             </div>
             <div>
-              <p className="text-lg font-bold text-text leading-none">{resumen.criticos}</p>
-              <p className="text-[0.65rem] text-text-muted mt-1">Tipos de error críticos (5xx)</p>
+              <p className="text-lg font-bold text-text leading-none">{resumen.criticosActivos}</p>
+              <p className="text-[0.65rem] text-text-muted mt-1">Críticos (5xx) sin resolver</p>
             </div>
           </div>
           <div className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-4 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gold-500/10 flex items-center justify-center shrink-0">
-              <Repeat2 className="w-4 h-4 text-gold-500" aria-hidden="true" />
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${resumen.ocurrenciasActivas > 0 ? 'bg-gold-500/10' : 'bg-primary-700/10'}`}>
+              {resumen.ocurrenciasActivas > 0
+                ? <Repeat2 className="w-4 h-4 text-gold-500" aria-hidden="true" />
+                : <ShieldCheck className="w-4 h-4 text-primary-700" aria-hidden="true" />}
             </div>
             <div>
-              <p className="text-lg font-bold text-text leading-none">{resumen.ocurrenciasTotales}</p>
-              <p className="text-[0.65rem] text-text-muted mt-1">Ocurrencias totales registradas</p>
+              <p className="text-lg font-bold text-text leading-none">{resumen.ocurrenciasActivas}</p>
+              <p className="text-[0.65rem] text-text-muted mt-1">Ocurrencias sin resolver</p>
             </div>
           </div>
           <div className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-4 flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-lg bg-primary-700/10 flex items-center justify-center shrink-0">
-              <AlertCircle className="w-4 h-4 text-primary-700" aria-hidden="true" />
+              {resumen.masFrecuente
+                ? <AlertCircle className="w-4 h-4 text-primary-700" aria-hidden="true" />
+                : <ShieldCheck className="w-4 h-4 text-primary-700" aria-hidden="true" />}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-text leading-tight truncate">{resumen.masFrecuente.mensaje}</p>
-              <p className="text-[0.65rem] text-text-muted mt-1">Más frecuente — {resumen.masFrecuente.ocurrencias}×</p>
+              {resumen.masFrecuente ? (
+                <>
+                  <p className="text-sm font-bold text-text leading-tight truncate">{resumen.masFrecuente.mensaje}</p>
+                  <p className="text-[0.65rem] text-text-muted mt-1">Más frecuente activo — {resumen.masFrecuente.ocurrencias}×</p>
+                </>
+              ) : (
+                <p className="text-sm font-bold text-text leading-tight">Ningún error activo</p>
+              )}
             </div>
           </div>
         </motion.div>
       )}
 
+      {/* Cuando hay historial pero nada activo, un aviso explícito en vez de
+          simplemente ocultar los gráficos sin decir por qué desaparecieron. */}
+      {!isLoading && !isError && todoResuelto && (
+        <motion.div {...fadeUp(0.04)} className="flex items-center gap-3 px-5 py-4 bg-primary-700/5 border border-primary-700/20 rounded-xl">
+          <ShieldCheck className="w-5 h-5 text-primary-700 shrink-0" aria-hidden="true" />
+          <p className="text-sm text-text">
+            <span className="font-bold">Todo resuelto</span> — no hay errores activos que atender. El historial completo sigue disponible abajo.
+          </p>
+        </motion.div>
+      )}
+
       {/* Gráficos -- distribución por severidad y rutas más afectadas, sobre
-          el registro completo (no solo la página visible de la tabla). */}
+          los errores ACTIVOS (no el historial completo). */}
       {!isLoading && !isError && hayDatosParaGraficos && (
         <motion.div {...fadeUp(0.04)} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5">
