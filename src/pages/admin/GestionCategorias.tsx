@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, staggerContainer } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
+import Thumbnail from '@/components/ui/Thumbnail'
 import type { ModuloCategoria } from '@/types'
 import {
   useCategoriasList,
@@ -185,7 +186,7 @@ function CategoriaCard({ cat, conteo, onEdit, onDelete }: {
       {/* Imagen */}
       <div className="relative aspect-video bg-bg-alt">
         {cat.thumbnail_url ? (
-          <img src={cat.thumbnail_url} alt={cat.nombre} className="w-full h-full object-cover" loading="lazy" />
+          <Thumbnail src={cat.thumbnail_url} alt={cat.nombre} objectFit="cover" className="w-full h-full" />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-text-muted/40">
             <ImageOff className="w-8 h-8" />
