@@ -16,6 +16,7 @@ import { descargarUrl, forceDownload } from '@/pages/documentos/documentos.utils
 import { useToast, ToastContainer } from '@/components/Toast'
 import { cardEnter3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
+import Thumbnail from '@/components/ui/Thumbnail'
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 20 },
@@ -181,9 +182,8 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
     >
       {/* Miniatura de fondo -- completa, sin recortar */}
       {map.thumbnail_url ? (
-        <img src={map.thumbnail_url} alt=""
-          loading="lazy"
-          className="absolute inset-0 w-full h-full object-contain bg-bg-alt group-hover/card:scale-105 transition-transform duration-500" />
+        <Thumbnail src={map.thumbnail_url} alt="" objectFit="contain"
+          className="absolute inset-0 w-full h-full group-hover/card:scale-105 transition-transform duration-500" />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center overflow-hidden"
           style={{ background: `linear-gradient(135deg, ${colors.accent}14 0%, ${colors.accent}06 100%)` }}>

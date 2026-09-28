@@ -12,6 +12,7 @@ import {
 import { useConexionesGeoserverList } from '@/hooks/useConexionesGeoserver'
 import type { GeovisorRaw } from '@/types'
 import GeovisorFormModal from '@/components/admin/geovisores/GeovisorFormModal'
+import Thumbnail from '@/components/ui/Thumbnail'
 
 const fadeUp = fadeUpSm
 
@@ -78,9 +79,8 @@ function GeovisorCard({
       }`}
     >
       {geovisor.thumbnailUrl ? (
-        <img src={geovisor.thumbnailUrl} alt=""
-          loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover bg-bg-alt group-hover/card:scale-105 transition-transform duration-500" />
+        <Thumbnail src={geovisor.thumbnailUrl} alt="" objectFit="cover"
+          className="absolute inset-0 w-full h-full group-hover/card:scale-105 transition-transform duration-500" />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary-800 to-primary-950">
           <MapPinned className="w-12 h-12 text-white/25" aria-hidden="true" />

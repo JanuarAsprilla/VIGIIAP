@@ -9,6 +9,7 @@ import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { cardEnter3D, fadeUp } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
+import Thumbnail from '@/components/ui/Thumbnail'
 import type { GeovisorRaw } from '@/types'
 
 // Paleta determinista por nombre de categoría -- los geovisores no tienen un enum fijo de
@@ -54,9 +55,8 @@ function GeovisorCard({ geovisor, index, colors }: { geovisor: GeovisorRaw; inde
       <Link to={`/geovisores/${geovisor.slug}`} className="absolute inset-0 no-underline text-inherit"
         aria-label={`${geovisor.titulo}${geovisor.categoria ? `, ${geovisor.categoria}` : ''}`}>
         {geovisor.thumbnailUrl ? (
-          <img src={geovisor.thumbnailUrl} alt=""
-            loading="lazy"
-            className="absolute inset-0 w-full h-full object-cover bg-bg-alt group-hover/card:scale-105 transition-transform duration-500" />
+          <Thumbnail src={geovisor.thumbnailUrl} alt="" objectFit="cover"
+            className="absolute inset-0 w-full h-full group-hover/card:scale-105 transition-transform duration-500" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center overflow-hidden"
             style={{ background: `linear-gradient(135deg, ${colors.accent}2e 0%, ${colors.accent}0a 100%)` }}>
