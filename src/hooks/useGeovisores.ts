@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
-import type { ApiListResponse, GeovisorRaw, GeovisorInput, TemaCapas } from '@/types'
+import type { ApiListResponse, GeovisorRaw, GeovisorInput, TemaCapas, CompletitudGeovisor } from '@/types'
 
 const KEYS = {
-  all:     ['geovisores'],
-  list:    (params: Record<string, unknown>) => ['geovisores', 'list', params],
-  detail:  (slug: string | null | undefined) => ['geovisores', 'detail', slug],
-  capas:   (slug: string | null | undefined) => ['geovisores', 'capas', slug],
+  all:         ['geovisores'],
+  list:        (params: Record<string, unknown>) => ['geovisores', 'list', params],
+  detail:      (slug: string | null | undefined) => ['geovisores', 'detail', slug],
+  capas:       (slug: string | null | undefined) => ['geovisores', 'capas', slug],
+  completitud: (id: string | null | undefined) => ['geovisores', 'completitud', id],
 }
 
 const PAGE_LIMIT   = 100 // techo real del backend (ver paginate.js) -- pedir más no sirve, se recorta igual
@@ -109,6 +110,16 @@ export function useToggleGeovisorActivo() {
   return useMutation<GeovisorRaw, Error, { id: string; activo: boolean }>({
     mutationFn: ({ id, activo }) => api.patch(`/geovisores/${id}/activo`, { activo }),
     onSuccess:  () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  })
+}
+
+/** Si el geovisor tiene alguna capa con fichas habilitadas, dice si es publicable y cuáles bloquean. */
+export function useCompletitudGeovisor(id: string | null | undefined) {
+  return useQuery<CompletitudGeovisor>({
+    queryKey: KEYS.completitud(id),
+    queryFn:  () => api.get(`/admin/geovisores/${id}/completitud`),
+    enabled:  !!id,
+    staleTime: 60_000,
   })
 }
 

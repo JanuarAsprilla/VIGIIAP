@@ -36,6 +36,13 @@ vi.mock('@/hooks/useCategorias', () => ({
 }))
 import { useCategoriasList } from '@/hooks/useCategorias'
 
+vi.mock('@/hooks/useFichasPunto', () => ({
+  useAtributosCapa: vi.fn(() => ({ data: [], isLoading: false })),
+  useConfigFichasCapa: vi.fn(() => ({ data: null, isLoading: false })),
+  useUpsertConfigFichasCapa: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+  useFeaturesFichas: vi.fn(() => ({ data: undefined })),
+}))
+
 // El mapa en vivo (react-leaflet real) se prueba aparte en GeovisorMapaConstructor.test.tsx --
 // acá se reemplaza por botones de prueba que disparan los mismos callbacks que dispararía el
 // mapa real (mover vista, agregar/eliminar preset), para probar el cableado del formulario sin
@@ -71,7 +78,7 @@ function makeGeovisor(overrides: Partial<GeovisorRaw> = {}): GeovisorRaw {
   return {
     id: '1', slug: 'geologia-choco', titulo: 'Geología del Chocó', subtitulo: 'Unidades',
     descripcion: 'Descripción', cita: 'Cita sugerida', categoria: 'Geología', conexionGeoserverId: 'c1',
-    workspacesGeoserver: ['t_15_geologia'], capasSeleccionadas: ['t_15_geologia:fallas'],
+    workspacesGeoserver: ['t_15_geologia'], capasSeleccionadas: ['t_15_geologia:fallas'], capasConFicha: [],
     colorPorTema: { t_15_geologia: '#123456' },
     centro: { lat: 5.55, lng: -76.6 }, zoomInicial: 9, basemapDefecto: 'satelite',
     areaMaxHa: 5000, presetsArea: [{ nombre: 'Zona norte', geometria: { type: 'Polygon', coordinates: [[[1, 2], [3, 4], [5, 6], [1, 2]]] } }],
@@ -546,6 +553,84 @@ describe('GeovisorFormModal — miniatura (ThumbnailDropzone)', () => {
 // Regresión: antes se ofrecían TODAS las categorías del sistema, aunque
 // solo las usara Documentos o Mapas -- ahora solo se sugieren las asignadas
 // explícitamente al módulo "geovisores" (ver categorias.modulos, migración 048).
+describe('GeovisorFormModal — fichas por punto', () => {
+  test('el ícono de fichas no aparece para una capa hasta que se marca', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+
+    expect(screen.queryByTitle('Habilitar fichas por punto')).not.toBeInTheDocument()
+  })
+
+  test('marcar una capa vectorial ofrece el ícono de fichas; una raster no', async () => {
+    vi.mocked(useWorkspacesDeConexion).mockReturnValue({
+      data: [{
+        id: 't_19_clima', nombre: 'Clima', totalCapas: 1,
+        capas: [{ id: 't_19_clima:precipitacion', nombre: 'Precipitación', tipo: 'raster' }],
+      }],
+      isFetching: false,
+    } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Clima/i)
+    await user.click(screen.getByRole('checkbox', { name: /Precipitación/i }))
+
+    expect(screen.queryByTitle('Habilitar fichas por punto')).not.toBeInTheDocument()
+  })
+
+  test('activar el ícono de fichas de una capa vectorial marcada abre la sección 5 con su fila', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+
+    expect(screen.queryByRole('heading', { name: 'Fichas por punto' })).not.toBeInTheDocument()
+    await user.click(screen.getByTitle('Habilitar fichas por punto'))
+
+    expect(screen.getByRole('heading', { name: 'Fichas por punto' })).toBeInTheDocument()
+    expect(screen.getByTitle('Fichas por punto habilitadas')).toBeInTheDocument()
+  })
+
+  test('desmarcar la capa quita su fila de la sección 5, aunque el ícono de fichas seguía activo', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    const checkboxFallas = screen.getByRole('checkbox', { name: /Fallas/i })
+    await user.click(checkboxFallas)
+    await user.click(screen.getByTitle('Habilitar fichas por punto'))
+    await user.click(checkboxFallas)
+
+    expect(screen.queryByRole('heading', { name: 'Fichas por punto' })).not.toBeInTheDocument()
+  })
+
+  test('capasConFicha llega en el payload al enviar, filtrado a las capas seleccionadas', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Estaciones climáticas')
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await user.click(screen.getByTitle('Habilitar fichas por punto'))
+    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      capasConFicha: ['t_15_geologia:fallas'],
+    }))
+  })
+
+  test('al editar un geovisor con capasConFicha ya guardado, precarga la sección 5', () => {
+    render(<GeovisorFormModal open editing={makeGeovisor({ capasConFicha: ['t_15_geologia:fallas'] })} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.getByRole('heading', { name: 'Fichas por punto' })).toBeInTheDocument()
+  })
+})
+
 describe('GeovisorFormModal — categoría por módulo', () => {
   test('no sugiere una categoría usada solo por otro módulo (Documentos/Mapas)', async () => {
     vi.mocked(useCategoriasList).mockReturnValue({

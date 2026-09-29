@@ -11,7 +11,7 @@ function makeGeovisor(overrides: Partial<GeovisorRaw>): GeovisorRaw {
   return {
     id: 'g1', slug: 'geovisor', titulo: 'Geovisor', subtitulo: null, descripcion: null,
     cita: null, categoria: null, conexionGeoserverId: 'c1', workspacesGeoserver: [],
-    capasSeleccionadas: [], colorPorTema: {}, centro: { lat: 0, lng: 0 }, zoomInicial: 8,
+    capasSeleccionadas: [], capasConFicha: [], colorPorTema: {}, centro: { lat: 0, lng: 0 }, zoomInicial: 8,
     basemapDefecto: 'calles', areaMaxHa: null, presetsArea: [],
     visibilidad: 'publico', presentacion: { mostrarMetricas: true, mostrarImagenes: false, camposPopup: [] },
     thumbnailUrl: null, activo: true, orden: 0, creadoEn: '2026-01-01',

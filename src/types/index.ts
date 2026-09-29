@@ -213,6 +213,8 @@ export interface GeovisorRaw {
   workspacesGeoserver: string[]
   /** IDs de capa ("workspace:layername") elegidas sueltas, sin importar su workspace/tema — vacío = usar workspacesGeoserver completos (legado). */
   capasSeleccionadas: string[]
+  /** Subconjunto de capasSeleccionadas con "fichas por punto" habilitado -- ver useFichasPunto.ts. */
+  capasConFicha: string[]
   colorPorTema: Record<string, string>
   centro: { lat: number; lng: number }
   zoomInicial: number
@@ -237,6 +239,7 @@ export interface GeovisorInput {
   conexionGeoserverId: string
   workspacesGeoserver: string[]
   capasSeleccionadas: string[]
+  capasConFicha: string[]
   colorPorTema: Record<string, string>
   centroLat: number
   centroLng: number
@@ -421,3 +424,104 @@ export interface WebVitalMetric {
   delta: number
   id: string
 }
+
+// ─── Fichas por punto (geovisores) ─────────────────────────────────────────────
+// Contenido curado (fotos/video/descripción) por feature de una capa vectorial,
+// identificado por un atributo estable de la propia capa -- no por el fid
+// interno de GeoServer, que se reasigna si el IIAP reimporta los datos. La
+// config vive a nivel de capa (conexión + capaId), compartida entre cualquier
+// geovisor que use esa misma capa, en vez de duplicarse por geovisor.
+
+export interface AtributoCapa {
+  nombre: string
+  tipo: string
+}
+
+export interface CapaFichaConfig {
+  id: string
+  conexionGeoserverId: string
+  capaId: string
+  campoIdentificador: string
+  campoEtiqueta: string | null
+  creadoEn: string
+  actualizadoEn: string
+}
+
+export type TipoMedioFicha = 'imagen' | 'video'
+
+export interface MedioFicha {
+  id: string
+  tipo: TipoMedioFicha
+  url: string
+  miniaturaUrl: string | null
+  ancho: number | null
+  alto: number | null
+  duracionS: number | null
+  leyenda: string | null
+  creditos: string | null
+  orden: number
+}
+
+export interface FichaPunto {
+  id: string
+  titulo: string | null
+  descripcion: string
+  medios: MedioFicha[]
+}
+
+export type EstadoFeatureFicha = 'completa' | 'incompleta' | 'sin_ficha'
+
+export interface FeatureFichaEstado {
+  valor: string
+  etiqueta: string | null
+  centroide: [number, number]
+  nFeatures: number
+  estado: EstadoFeatureFicha
+  fichaId: string | null
+  nImagenes: number
+  nVideos: number
+  tieneDescripcion: boolean
+  actualizadoEn: string | null
+}
+
+export interface ResumenCompletitud {
+  totalFeatures: number
+  completas: number
+  incompletas: number
+  sinIdentificador: number
+  identificadoresDuplicados: number
+  huerfanas: number
+}
+
+export interface FeatureSinIdentificador {
+  fid: string
+  etiqueta: string | null
+}
+
+export interface FichaHuerfana {
+  valor: string
+  fichaId: string
+  nMedios: number
+}
+
+export interface FeaturesFichaResponse {
+  resumen: ResumenCompletitud
+  features: FeatureFichaEstado[]
+  sinIdentificador: FeatureSinIdentificador[]
+  huerfanas: FichaHuerfana[]
+}
+
+export interface CompletitudCapa {
+  capaId: string
+  nombre: string
+  resumen: ResumenCompletitud
+  bloqueantes: number
+}
+
+export interface CompletitudGeovisor {
+  publicable: boolean
+  capas: CompletitudCapa[]
+}
+
+/** GeoJSON.Feature enriquecido con la ficha curada de su punto, cuando la capa tiene el modo habilitado. */
+export type FeatureConFicha = GeoJSON.Feature & { ficha?: FichaPunto | null }

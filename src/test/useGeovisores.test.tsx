@@ -5,7 +5,7 @@ import { createElement, type ReactNode } from 'react'
 
 vi.mock('@/lib/api', () => ({ default: { get: vi.fn() } }))
 import api from '@/lib/api'
-import { useGeovisoresList, useGeovisoresPublico } from '@/hooks/useGeovisores'
+import { useGeovisoresList, useGeovisoresPublico, useCompletitudGeovisor } from '@/hooks/useGeovisores'
 
 function wrapper({ children }: { children: ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -73,5 +73,22 @@ describe('useGeovisoresList / useGeovisoresPublico — paginación completa', ()
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(api.get).toHaveBeenCalledTimes(20) // MAX_PAGINAS
+  })
+})
+
+describe('useCompletitudGeovisor', () => {
+  test('pide la completitud cuando hay id', async () => {
+    vi.mocked(api.get).mockResolvedValue({ publicable: false, capas: [{ capaId: 'ws:estaciones', nombre: 'Estaciones', resumen: { totalFeatures: 10, completas: 7, incompletas: 3, sinIdentificador: 0, identificadoresDuplicados: 0, huerfanas: 0 }, bloqueantes: 3 }] })
+    const { result } = renderHook(() => useCompletitudGeovisor('g1'), { wrapper })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(api.get).toHaveBeenCalledWith('/admin/geovisores/g1/completitud')
+    expect(result.current.data?.publicable).toBe(false)
+    expect(result.current.data?.capas[0].bloqueantes).toBe(3)
+  })
+
+  test('no dispara la petición sin id', () => {
+    renderHook(() => useCompletitudGeovisor(undefined), { wrapper })
+    expect(api.get).not.toHaveBeenCalled()
   })
 })

@@ -46,6 +46,7 @@ function makeGeovisor(overrides: Record<string, unknown> = {}) {
     subtitulo: null, descripcion: null, cita: null, categoria: 'Geología',
     conexionGeoserverId: 'conexion-1', workspacesGeoserver: ['t_15_geologia'],
     capasSeleccionadas: ['t_15_geologia:fallas'],
+    capasConFicha: [],
     colorPorTema: {}, centro: { lat: 5.55, lng: -76.6 }, zoomInicial: 8,
     basemapDefecto: 'calles', areaMaxHa: null, presetsArea: [],
     visibilidad: 'publico',
