@@ -12,6 +12,8 @@ const KEYS = {
   config:    (conexionId: string | null | undefined, capaId: string | null | undefined) =>
     ['fichas-punto', 'config', conexionId, capaId],
   features:  (configId: string | null | undefined) => ['fichas-punto', 'features', configId],
+  ficha:     (configId: string | null | undefined, valor: string | null | undefined) =>
+    ['fichas-punto', 'ficha', configId, valor],
 }
 
 /** Atributos (columnas) de una capa vectorial -- para elegir cuál sirve de identificador estable. */
@@ -62,11 +64,30 @@ export function useFeaturesFichas(configId: string | null | undefined) {
   })
 }
 
+/** Ficha completa (título, descripción, medios) de un valor puntual -- /features solo trae un resumen, así que el editor pide el detalle recién al abrir una fila. null si el punto todavía no tiene ficha (en blanco). */
+export function useFicha(configId: string | null | undefined, valor: string | null | undefined) {
+  return useQuery<FichaPunto | null>({
+    queryKey: KEYS.ficha(configId, valor),
+    queryFn:  async () => {
+      try {
+        return await api.get(`/admin/fichas-capa/${configId}/fichas/${encodeURIComponent(valor!)}`)
+      } catch (err) {
+        if (asApiError(err)?.status === 404) return null
+        throw err
+      }
+    },
+    enabled: !!configId && !!valor,
+  })
+}
+
 export function useUpsertFicha(configId: string | null | undefined) {
   const qc = useQueryClient()
   return useMutation<FichaPunto, Error, { valor: string; titulo?: string; descripcion: string }>({
     mutationFn: ({ valor, ...data }) => api.put(`/admin/fichas-capa/${configId}/fichas/${encodeURIComponent(valor)}`, data),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: KEYS.features(configId) }),
+    onSuccess:  (ficha, { valor }) => {
+      qc.setQueryData(KEYS.ficha(configId, valor), ficha)
+      qc.invalidateQueries({ queryKey: KEYS.features(configId) })
+    },
   })
 }
 
@@ -74,7 +95,10 @@ export function useDeleteFicha(configId: string | null | undefined) {
   const qc = useQueryClient()
   return useMutation<void, Error, string>({
     mutationFn: (valor) => api.delete(`/admin/fichas-capa/${configId}/fichas/${encodeURIComponent(valor)}`),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: KEYS.features(configId) }),
+    onSuccess:  (_data, valor) => {
+      qc.setQueryData(KEYS.ficha(configId, valor), null)
+      qc.invalidateQueries({ queryKey: KEYS.features(configId) })
+    },
   })
 }
 

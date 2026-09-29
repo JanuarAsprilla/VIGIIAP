@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Loader2, Check, AlertCircle } from 'lucide-react'
+import { Loader2, Check, AlertCircle, ListChecks } from 'lucide-react'
 import { asApiError, getApiErrorMessage } from '@/lib/apiError'
 import {
   useAtributosCapa, useConfigFichasCapa, useUpsertConfigFichasCapa, useFeaturesFichas,
 } from '@/hooks/useFichasPunto'
+import FichasCapaModal from './FichasCapaModal'
 
 const inputCls = 'w-full px-2.5 py-1.5 bg-[var(--card-bg)] border border-border rounded-md text-xs focus:outline-none focus:border-primary-800 transition'
 
@@ -28,6 +29,7 @@ export default function FichaCapaConfigRow({ conexionId, capaId, capaNombre }: {
   const [campoEtiqueta, setCampoEtiqueta] = useState(() => config?.campoEtiqueta ?? '')
   const [error, setError] = useState('')
   const [configAnterior, setConfigAnterior] = useState(config)
+  const [modalAbierto, setModalAbierto] = useState(false)
 
   // Precarga desde la config ya guardada -- si otro geovisor ya la configuró,
   // esta fila hereda el mismo identificador en vez de partir vacía. Ajustado
@@ -111,18 +113,30 @@ export default function FichaCapaConfigRow({ conexionId, capaId, capaNombre }: {
         </p>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         {config && featuresResp ? (
-          <span className="text-[0.65rem] font-semibold text-text">
+          <span className="text-[0.65rem] font-semibold text-text shrink-0">
             {featuresResp.resumen.completas}/{featuresResp.resumen.totalFeatures} completas
           </span>
         ) : <span />}
-        <button type="button" onClick={guardar} disabled={!campoIdentificador || !hayCambios || upsertConfig.isPending}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-800 text-white rounded-md text-[0.65rem] font-semibold hover:bg-primary-700 disabled:opacity-40 transition-colors">
-          {upsertConfig.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-          {config ? 'Guardar cambios' : 'Habilitar'}
-        </button>
+        <div className="flex items-center gap-2">
+          {config && (
+            <button type="button" onClick={() => setModalAbierto(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-md text-[0.65rem] font-semibold text-text hover:border-primary-800 transition-colors">
+              <ListChecks className="w-3 h-3" /> Gestionar fichas
+            </button>
+          )}
+          <button type="button" onClick={guardar} disabled={!campoIdentificador || !hayCambios || upsertConfig.isPending}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-800 text-white rounded-md text-[0.65rem] font-semibold hover:bg-primary-700 disabled:opacity-40 transition-colors">
+            {upsertConfig.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+            {config ? 'Guardar cambios' : 'Habilitar'}
+          </button>
+        </div>
       </div>
+
+      {modalAbierto && config && (
+        <FichasCapaModal configId={config.id} capaNombre={capaNombre} onClose={() => setModalAbierto(false)} />
+      )}
     </div>
   )
 }
