@@ -13,6 +13,15 @@ import {
   useAtributosCapa, useConfigFichasCapa, useUpsertConfigFichasCapa, useFeaturesFichas,
 } from '@/hooks/useFichasPunto'
 
+vi.mock('@/components/admin/geovisores/fichas/FichasCapaModal', () => ({
+  default: ({ capaNombre, onClose }: { capaNombre: string; onClose: () => void }) => (
+    <div data-testid="fichas-modal">
+      <span>Modal de {capaNombre}</span>
+      <button onClick={onClose}>cerrar-modal-test</button>
+    </div>
+  ),
+}))
+
 const atributosFixture = [{ nombre: 'codigo_estacion', tipo: 'string' }, { nombre: 'nombre_estacion', tipo: 'string' }]
 
 beforeEach(() => {
@@ -84,5 +93,28 @@ describe('FichaCapaConfigRow — configuración ya existente (compartida)', () =
     render(<FichaCapaConfigRow conexionId="c1" capaId="ws:estaciones" capaNombre="Estaciones" />)
 
     expect(screen.getByText('14/20 completas')).toBeInTheDocument()
+  })
+
+  test('el botón "Gestionar fichas" abre el modal de checklist; "cerrar" lo cierra', async () => {
+    vi.mocked(useConfigFichasCapa).mockReturnValue({
+      data: { id: 'cfg1', conexionGeoserverId: 'c1', capaId: 'ws:estaciones', campoIdentificador: 'codigo_estacion', campoEtiqueta: null, creadoEn: '', actualizadoEn: '' },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useConfigFichasCapa>)
+    const user = userEvent.setup()
+    render(<FichaCapaConfigRow conexionId="c1" capaId="ws:estaciones" capaNombre="Estaciones" />)
+
+    expect(screen.queryByTestId('fichas-modal')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Gestionar fichas/i }))
+
+    expect(screen.getByText('Modal de Estaciones')).toBeInTheDocument()
+    await user.click(screen.getByText('cerrar-modal-test'))
+    expect(screen.queryByTestId('fichas-modal')).not.toBeInTheDocument()
+  })
+})
+
+describe('FichaCapaConfigRow — sin config todavía', () => {
+  test('no ofrece "Gestionar fichas" antes de habilitar la capa (no hay configId para abrir el modal)', () => {
+    render(<FichaCapaConfigRow conexionId="c1" capaId="ws:estaciones" capaNombre="Estaciones" />)
+    expect(screen.queryByRole('button', { name: /Gestionar fichas/i })).not.toBeInTheDocument()
   })
 })

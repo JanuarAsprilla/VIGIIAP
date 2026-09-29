@@ -7,7 +7,7 @@ vi.mock('@/lib/api', () => ({ default: { get: vi.fn(), put: vi.fn(), post: vi.fn
 import api from '@/lib/api'
 import {
   useAtributosCapa, useConfigFichasCapa, useUpsertConfigFichasCapa,
-  useFeaturesFichas, useUpsertFicha, useDeleteFicha, useSubirMedioFicha,
+  useFeaturesFichas, useFicha, useUpsertFicha, useDeleteFicha, useSubirMedioFicha,
   useActualizarMedio, useReordenarMedios, useEliminarMedio,
 } from '@/hooks/useFichasPunto'
 
@@ -85,6 +85,31 @@ describe('useFeaturesFichas', () => {
 
   test('no dispara sin configId', () => {
     renderHook(() => useFeaturesFichas(undefined), { wrapper })
+    expect(api.get).not.toHaveBeenCalled()
+  })
+})
+
+describe('useFicha', () => {
+  test('trae la ficha completa (título, descripción, medios) de un valor puntual', async () => {
+    vi.mocked(api.get).mockResolvedValue({ id: 'f1', titulo: 'Estación Atrato', descripcion: 'Monitorea el nivel del río.', medios: [] })
+    const { result } = renderHook(() => useFicha('cfg1', 'EST-01'), { wrapper })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(api.get).toHaveBeenCalledWith('/admin/fichas-capa/cfg1/fichas/EST-01')
+    expect(result.current.data?.titulo).toBe('Estación Atrato')
+  })
+
+  test('un 404 se interpreta como "todavía sin ficha" (null), no como error', async () => {
+    const err = Object.assign(new Error('not found'), { status: 404 })
+    vi.mocked(api.get).mockRejectedValue(err)
+    const { result } = renderHook(() => useFicha('cfg1', 'EST-01'), { wrapper })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(result.current.data).toBeNull()
+  })
+
+  test('no dispara sin valor', () => {
+    renderHook(() => useFicha('cfg1', null), { wrapper })
     expect(api.get).not.toHaveBeenCalled()
   })
 })

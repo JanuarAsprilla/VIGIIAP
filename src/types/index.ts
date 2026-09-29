@@ -474,6 +474,7 @@ export type EstadoFeatureFicha = 'completa' | 'incompleta' | 'sin_ficha'
 export interface FeatureFichaEstado {
   valor: string
   etiqueta: string | null
+  /** [lng, lat], convención GeoJSON -- invertir a [lat, lng] para pasarlo a un Marker/MapContainer de Leaflet. */
   centroide: [number, number]
   nFeatures: number
   estado: EstadoFeatureFicha
