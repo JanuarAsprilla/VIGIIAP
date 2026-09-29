@@ -29,6 +29,9 @@ export default defineConfig({
         // Script del validador original portado tal cual (~1.1k líneas de lógica + GeoJSON embebido);
         // se verifica por su comportamiento en validador.original.test.tsx, no línea a línea.
         'src/components/herramientas/validador-coordenadas/validador.motor.ts',
+        // Script del dashboard original portado tal cual (~5k líneas de lógica + datos embebidos);
+        // se verifica por su comportamiento en panelChoco.original.test.tsx, no línea a línea.
+        'src/components/herramientas/panel-choco/panelChoco.motor.ts',
       ],
       // Ratchet: solo subir, nunca bajar para que un PR pase.
       thresholds: {
