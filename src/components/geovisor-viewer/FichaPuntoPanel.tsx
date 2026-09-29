@@ -5,11 +5,15 @@ import Thumbnail from '@/components/ui/Thumbnail'
 import { isTrustedUrl } from '@/lib/trustedUrl'
 import type { FichaPunto, MedioFicha } from '@/types'
 
-/** Solo medios ya procesados y con una URL de origen confiable -- el visor
+/** Solo medios ya procesados y con URL de origen confiable -- el visor
  *  público nunca debe intentar mostrar un video todavía "procesando" (no
- *  tiene archivo real detrás) ni una URL que no venga de este backend/CDN. */
+ *  tiene archivo real detrás) ni una URL que no venga de este backend/CDN.
+ *  Valida `url` Y `miniaturaUrl` por separado -- el render usa miniaturaUrl
+ *  como preferencia (Thumbnail, poster de video) así que validar solo `url`
+ *  dejaba pasar un miniaturaUrl de origen no confiable sin filtrar. */
 function medioVisible(m: MedioFicha): m is MedioFicha & { url: string } {
   return m.estado === 'listo' && !!m.url && isTrustedUrl(m.url)
+    && (!m.miniaturaUrl || isTrustedUrl(m.miniaturaUrl))
 }
 
 /**
