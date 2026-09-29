@@ -25,9 +25,10 @@ vi.mock('@/lib/api', () => ({ default: { get: vi.fn() } }))
 import api from '@/lib/api'
 
 vi.mock('@/components/geovisor-viewer/PopupCapaContenido', () => ({
-  default: ({ resultados, cargando }: { resultados: unknown[] | null; cargando: boolean }) => (
+  default: ({ resultados, cargando, onVerFicha }: { resultados: unknown[] | null; cargando: boolean; onVerFicha: (f: unknown) => void }) => (
     <div data-testid="contenido">
       {cargando ? 'cargando' : JSON.stringify(resultados)}
+      <button onClick={() => onVerFicha({ id: 'f1' })}>ver-ficha-test</button>
     </div>
   ),
 }))
@@ -48,12 +49,29 @@ beforeEach(() => {
 
 describe('ConsultaCapaClick — sin capas activas', () => {
   test('un clic sin capas activas no abre el popup ni llama a la API', async () => {
-    render(<ConsultaCapaClick slug="geologia-choco" capasActivas={[]} colorPorTema={{}} presentacion={presentacion()} />)
+    render(<ConsultaCapaClick slug="geologia-choco" capasActivas={[]} colorPorTema={{}} presentacion={presentacion()} onVerFicha={vi.fn()} />)
 
     await act(async () => { manejadores!.click(clickFalso) })
 
     expect(screen.queryByTestId('popup')).not.toBeInTheDocument()
     expect(api.get).not.toHaveBeenCalled()
+  })
+})
+
+describe('ConsultaCapaClick — onVerFicha', () => {
+  test('pasa onVerFicha a PopupCapaContenido, sin envolverlo', async () => {
+    vi.mocked(api.get).mockResolvedValue({ type: 'FeatureCollection', features: [] })
+    const onVerFicha = vi.fn()
+
+    render(
+      <ConsultaCapaClick slug="geologia-choco" capasActivas={[{ capa: capaUnidades, tema: 'geologia' }]}
+        colorPorTema={{}} presentacion={presentacion()} onVerFicha={onVerFicha} />,
+    )
+    await act(async () => { manejadores!.click(clickFalso) })
+    await waitFor(() => screen.getByText('ver-ficha-test'))
+
+    screen.getByText('ver-ficha-test').click()
+    expect(onVerFicha).toHaveBeenCalledWith({ id: 'f1' })
   })
 })
 
@@ -69,6 +87,7 @@ describe('ConsultaCapaClick — consulta al hacer clic', () => {
         capasActivas={[{ capa: capaUnidades, tema: 'geologia' }, { capa: capaFallas, tema: 'geologia' }]}
         colorPorTema={{ geologia: '#1B4332' }}
         presentacion={presentacion()}
+        onVerFicha={vi.fn()}
       />,
     )
 
@@ -100,6 +119,7 @@ describe('ConsultaCapaClick — consulta al hacer clic', () => {
         capasActivas={[{ capa: capaUnidades, tema: 'geologia' }, { capa: capaFallas, tema: 'geologia' }]}
         colorPorTema={{ geologia: '#1B4332' }}
         presentacion={presentacion()}
+        onVerFicha={vi.fn()}
       />,
     )
 
@@ -116,7 +136,7 @@ describe('ConsultaCapaClick — consulta al hacer clic', () => {
 
     render(
       <ConsultaCapaClick slug="geologia-choco" capasActivas={[{ capa: capaUnidades, tema: 'geologia' }]}
-        colorPorTema={{}} presentacion={presentacion()} />,
+        colorPorTema={{}} presentacion={presentacion()} onVerFicha={vi.fn()} />,
     )
 
     await act(async () => { manejadores!.click(clickFalso) })

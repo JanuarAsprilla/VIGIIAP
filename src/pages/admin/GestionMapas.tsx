@@ -14,6 +14,7 @@ import { fadeUpSm, panelAnim } from '@/lib/animations'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import CategoryCombobox from '@/components/admin/CategoryCombobox'
 import ThumbnailDropzone from '@/components/ui/ThumbnailDropzone'
+import Thumbnail from '@/components/ui/Thumbnail'
 import { useMapasList, useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa } from '@/hooks/useMapas'
 import { useCategoriasList } from '@/hooks/useCategorias'
 import { isTrustedUrl } from '@/lib/trustedUrl'
@@ -216,11 +217,11 @@ function MapaCard({
     >
       {/* Fondo — miniatura o gradiente de respaldo */}
       {m.thumbnail_url ? (
-        <img
+        <Thumbnail
           src={m.thumbnail_url}
           alt=""
-          loading="lazy"
-          className={`absolute inset-0 w-full h-full object-contain bg-bg-alt transition-transform duration-500 ${!m.visible ? 'grayscale-[0.5]' : ''} group-hover/card:scale-105`}
+          objectFit="contain"
+          className={`absolute inset-0 w-full h-full transition-transform duration-500 ${!m.visible ? 'grayscale-[0.5]' : ''} group-hover/card:scale-105`}
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary-800 to-primary-950">

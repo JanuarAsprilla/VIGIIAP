@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useCallback, type DragEvent } from 'react'
 import { Image } from 'lucide-react'
+import Thumbnail from '@/components/ui/Thumbnail'
 
 /** Arrastrar-y-soltar de una miniatura, con vista previa -- compartido entre
  *  GestionMapas.tsx y GeovisorFormBody.tsx (antes duplicado en el primero). */
@@ -39,7 +40,7 @@ export default function ThumbnailDropzone({ onFile, existing, label = 'Miniatura
       </label>
       {thumb ? (
         <div className="relative w-full h-28 rounded-xl overflow-hidden border border-border bg-bg-alt group">
-          <img src={thumb} alt="Miniatura" className="w-full h-full object-contain" loading="lazy" />
+          <Thumbnail src={thumb} alt="Miniatura" objectFit="contain" className="w-full h-full" />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <button type="button" onClick={() => inputRef.current?.click()}
               className="px-3 py-1.5 bg-[var(--card-bg)] text-text text-xs font-semibold rounded-lg hover:bg-bg-alt transition-colors">

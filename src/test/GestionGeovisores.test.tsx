@@ -24,9 +24,11 @@ vi.mock('@/hooks/useGeovisores', () => ({
   useUploadGeovisorThumbnail: vi.fn(),
   useToggleGeovisorActivo: vi.fn(),
   useDeleteGeovisor: vi.fn(),
+  useCompletitudGeovisor: vi.fn(),
 }))
 import {
   useGeovisoresList, useCreateGeovisor, useUpdateGeovisor, useUploadGeovisorThumbnail, useToggleGeovisorActivo, useDeleteGeovisor,
+  useCompletitudGeovisor,
 } from '@/hooks/useGeovisores'
 
 vi.mock('@/hooks/useCategorias', () => ({
@@ -46,6 +48,7 @@ function makeGeovisor(overrides: Record<string, unknown> = {}) {
     subtitulo: null, descripcion: null, cita: null, categoria: 'Geología',
     conexionGeoserverId: 'conexion-1', workspacesGeoserver: ['t_15_geologia'],
     capasSeleccionadas: ['t_15_geologia:fallas'],
+    capasConFicha: [],
     colorPorTema: {}, centro: { lat: 5.55, lng: -76.6 }, zoomInicial: 8,
     basemapDefecto: 'calles', areaMaxHa: null, presetsArea: [],
     visibilidad: 'publico',
@@ -74,6 +77,7 @@ beforeEach(() => {
   vi.mocked(useUploadGeovisorThumbnail).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUploadGeovisorThumbnail>)
   vi.mocked(useToggleGeovisorActivo).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useToggleGeovisorActivo>)
   vi.mocked(useDeleteGeovisor).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useDeleteGeovisor>)
+  vi.mocked(useCompletitudGeovisor).mockReturnValue({ data: undefined } as unknown as ReturnType<typeof useCompletitudGeovisor>)
 })
 
 describe('GestionGeovisores — listado', () => {
@@ -122,6 +126,120 @@ describe('GestionGeovisores — activar/desactivar', () => {
     await user.click(screen.getByTitle('Desactivar'))
 
     expect(mutateAsync).toHaveBeenCalledWith({ id: 'geovisor-1', activo: false })
+  })
+
+  test('desactivar nunca abre el diálogo de bloqueo, ni siquiera si el backend devolviera GEOVISOR_INCOMPLETO', async () => {
+    // El geovisor de este describe ya está activo (activo: true en el fixture
+    // base), así que el botón intenta desactivar -- un 409 acá no debería
+    // interpretarse jamás como bloqueo de publicación.
+    const mutateAsync = vi.fn().mockRejectedValue(Object.assign(new Error('conflicto'), { code: 'GEOVISOR_INCOMPLETO', fields: { publicable: false, capas: [] } }))
+    vi.mocked(useToggleGeovisorActivo).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useToggleGeovisorActivo>)
+
+    const user = userEvent.setup()
+    render(<GestionGeovisores />)
+    await user.click(screen.getByTitle('Desactivar'))
+
+    expect(await screen.findByText('conflicto')).toBeInTheDocument()
+    expect(screen.queryByText('No se puede publicar todavía')).not.toBeInTheDocument()
+  })
+
+  test('activar con un 409 GEOVISOR_INCOMPLETO abre el diálogo de bloqueo con las capas pendientes', async () => {
+    const mutateAsync = vi.fn().mockRejectedValue(Object.assign(new Error('conflicto'), {
+      code: 'GEOVISOR_INCOMPLETO',
+      fields: {
+        publicable: false,
+        capas: [
+          { capaId: 't_15_geologia:estaciones', nombre: 'Estaciones climáticas', resumen: { totalFeatures: 200, completas: 149, incompletas: 51, sinIdentificador: 0, identificadoresDuplicados: 0, huerfanas: 0 }, bloqueantes: 51 },
+          { capaId: 't_15_geologia:completa', nombre: 'Capa ya completa', resumen: { totalFeatures: 10, completas: 10, incompletas: 0, sinIdentificador: 0, identificadoresDuplicados: 0, huerfanas: 0 }, bloqueantes: 0 },
+        ],
+      },
+    }))
+    vi.mocked(useToggleGeovisorActivo).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useToggleGeovisorActivo>)
+    vi.mocked(useGeovisoresList).mockReturnValue({
+      data: { data: [makeGeovisor({ activo: false, capasConFicha: ['t_15_geologia:estaciones'] })], meta: { total: 1 } }, isLoading: false,
+    } as unknown as ReturnType<typeof useGeovisoresList>)
+
+    const user = userEvent.setup()
+    render(<GestionGeovisores />)
+    await user.click(screen.getByTitle('Activar'))
+
+    expect(await screen.findByText('No se puede publicar todavía')).toBeInTheDocument()
+    expect(screen.getByText('Estaciones climáticas')).toBeInTheDocument()
+    expect(screen.getByText('51 pendientes')).toBeInTheDocument()
+    // Solo la capa con bloqueantes > 0 se lista -- la ya completa no aporta nada a este diálogo.
+    expect(screen.queryByText('Capa ya completa')).not.toBeInTheDocument()
+  })
+
+  test('"Editar geovisor" desde el diálogo de bloqueo abre el formulario de ese geovisor', async () => {
+    const mutateAsync = vi.fn().mockRejectedValue(Object.assign(new Error('conflicto'), {
+      code: 'GEOVISOR_INCOMPLETO',
+      fields: { publicable: false, capas: [{ capaId: 't_15_geologia:estaciones', nombre: 'Estaciones climáticas', resumen: { totalFeatures: 1, completas: 0, incompletas: 1, sinIdentificador: 0, identificadoresDuplicados: 0, huerfanas: 0 }, bloqueantes: 1 }] },
+    }))
+    vi.mocked(useToggleGeovisorActivo).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useToggleGeovisorActivo>)
+    vi.mocked(useGeovisoresList).mockReturnValue({
+      data: { data: [makeGeovisor({ activo: false, capasConFicha: ['t_15_geologia:estaciones'] })], meta: { total: 1 } }, isLoading: false,
+    } as unknown as ReturnType<typeof useGeovisoresList>)
+
+    const user = userEvent.setup()
+    render(<GestionGeovisores />)
+    await user.click(screen.getByTitle('Activar'))
+    await screen.findByText('No se puede publicar todavía')
+    await user.click(screen.getByRole('button', { name: 'Editar geovisor' }))
+
+    expect(screen.getByRole('heading', { name: 'Editar geovisor' })).toBeInTheDocument()
+    expect(screen.queryByText('No se puede publicar todavía')).not.toBeInTheDocument()
+  })
+
+  test('cerrar el diálogo de bloqueo sin editar simplemente lo descarta', async () => {
+    const mutateAsync = vi.fn().mockRejectedValue(Object.assign(new Error('conflicto'), {
+      code: 'GEOVISOR_INCOMPLETO',
+      fields: { publicable: false, capas: [{ capaId: 'c1', nombre: 'Capa X', resumen: { totalFeatures: 1, completas: 0, incompletas: 1, sinIdentificador: 0, identificadoresDuplicados: 0, huerfanas: 0 }, bloqueantes: 1 }] },
+    }))
+    vi.mocked(useToggleGeovisorActivo).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useToggleGeovisorActivo>)
+    vi.mocked(useGeovisoresList).mockReturnValue({
+      data: { data: [makeGeovisor({ activo: false, capasConFicha: ['c1'] })], meta: { total: 1 } }, isLoading: false,
+    } as unknown as ReturnType<typeof useGeovisoresList>)
+
+    const user = userEvent.setup()
+    render(<GestionGeovisores />)
+    await user.click(screen.getByTitle('Activar'))
+    await screen.findByText('No se puede publicar todavía')
+    await user.click(screen.getByRole('button', { name: 'Cerrar' }))
+
+    expect(screen.queryByText('No se puede publicar todavía')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Editar geovisor' })).not.toBeInTheDocument()
+  })
+})
+
+describe('GestionGeovisores — badge de fichas faltantes', () => {
+  test('sin capasConFicha, no consulta completitud ni muestra badge', () => {
+    render(<GestionGeovisores />) // fixture base: capasConFicha: []
+    expect(useCompletitudGeovisor).not.toHaveBeenCalled()
+    expect(screen.queryByText(/fichas? faltantes?/i)).not.toBeInTheDocument()
+  })
+
+  test('con capasConFicha y fichas pendientes, muestra el badge con el total', () => {
+    vi.mocked(useGeovisoresList).mockReturnValue({
+      data: { data: [makeGeovisor({ capasConFicha: ['t_15_geologia:estaciones'] })], meta: { total: 1 } }, isLoading: false,
+    } as unknown as ReturnType<typeof useGeovisoresList>)
+    vi.mocked(useCompletitudGeovisor).mockReturnValue({
+      data: { publicable: false, capas: [{ capaId: 't_15_geologia:estaciones', nombre: 'Estaciones', resumen: { totalFeatures: 10, completas: 7, incompletas: 3, sinIdentificador: 0, identificadoresDuplicados: 0, huerfanas: 0 }, bloqueantes: 3 }] },
+    } as unknown as ReturnType<typeof useCompletitudGeovisor>)
+
+    render(<GestionGeovisores />)
+    expect(screen.getByText('3 fichas faltantes')).toBeInTheDocument()
+  })
+
+  test('con capasConFicha pero ya publicable, no muestra badge', () => {
+    vi.mocked(useGeovisoresList).mockReturnValue({
+      data: { data: [makeGeovisor({ capasConFicha: ['t_15_geologia:estaciones'] })], meta: { total: 1 } }, isLoading: false,
+    } as unknown as ReturnType<typeof useGeovisoresList>)
+    vi.mocked(useCompletitudGeovisor).mockReturnValue({
+      data: { publicable: true, capas: [] },
+    } as unknown as ReturnType<typeof useCompletitudGeovisor>)
+
+    render(<GestionGeovisores />)
+    expect(screen.queryByText(/fichas? faltantes?/i)).not.toBeInTheDocument()
   })
 })
 
