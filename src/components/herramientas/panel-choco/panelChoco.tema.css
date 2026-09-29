@@ -1,0 +1,169 @@
+/* Tema VIGIIAP sobre el panel original: solo cambia apariencia (tokens, tipografía, cabecera),
+   no la estructura ni el comportamiento. Los colores de datos de cada capa se conservan. */
+.pc-root {
+  --verde: var(--color-primary-600);
+  --verde-dark: var(--color-primary-700);
+  --verde-deep: var(--color-primary-800);
+  --verde-light: var(--color-primary-50);
+  --azul: #185FA5;
+  --gris-light: var(--color-bg-alt);
+  --bg: var(--color-bg);
+  --surface: var(--card-bg, var(--color-surface));
+  --border: var(--color-border);
+  --border2: var(--color-border);
+  --text: var(--color-text);
+  --text2: var(--color-text-light);
+  --text3: var(--color-text-muted);
+  --radius: var(--radius-md);
+  --radius-lg: var(--radius-xl);
+  --shadow: var(--shadow-soft);
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --pc-sticky-top: 4.5rem;
+
+  font-family: var(--font-body);
+  background: transparent;
+  min-height: 0;
+}
+
+/* Nota del panel: va justo bajo el título de la herramienta */
+.pc-root .nota-slot:empty,
+.pc-root .nota-slot:has(> #nota-panel-wrap:empty) { display: none; }
+.pc-root .nota-slot { margin-bottom: 1rem; }
+
+/* Barra de herramientas: selector de capa protagonista + carga de datos */
+.pc-root .top-bar {
+  position: relative;
+  z-index: 60;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  margin-bottom: 1rem;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.pc-root .capa-selector { position: relative; flex: 1 1 22rem; max-width: 34rem; }
+.pc-root .capa-toggle {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "etq chev" "act chev";
+  column-gap: 0.75rem;
+  align-items: center;
+  text-align: left;
+  padding: 0.65rem 1rem;
+  background: var(--surface);
+  border: 1.5px solid var(--color-primary-800);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: box-shadow var(--duration-fast) var(--ease-out-expo), background-color var(--duration-fast);
+}
+.pc-root .capa-toggle:hover { background: var(--color-primary-50); }
+.pc-root .capa-toggle:focus-visible { outline: 2px solid var(--color-primary-600); outline-offset: 2px; }
+.pc-root .capa-toggle-label {
+  grid-area: etq;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.pc-root .capa-toggle-actual {
+  grid-area: act;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+.pc-root .capa-toggle-actual .side-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.pc-root .capa-chevron {
+  grid-area: chev;
+  color: var(--color-primary-800);
+  transition: transform var(--duration-fast) var(--ease-out-expo);
+}
+.pc-root .capa-toggle[aria-expanded="true"] .capa-chevron { transform: rotate(180deg); }
+
+.pc-root .capa-selector .sidebar-nav {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  z-index: 70;
+  width: auto;
+  min-height: 0;
+  display: block;
+  padding: 0.375rem;
+  overflow: visible;
+  background: var(--surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-float);
+}
+.pc-root .capa-selector .sidebar-nav[hidden] { display: none; }
+.pc-root .capa-selector .sidebar-nav .side-item {
+  width: 100%;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.75rem;
+  font-size: 0.875rem;
+  white-space: normal;
+}
+.pc-root .capa-selector .sidebar-nav .side-item.active {
+  background: var(--color-primary-50);
+  color: var(--color-primary-800);
+  font-weight: 600;
+  border: none;
+}
+.pc-root .capa-selector .sidebar-nav .side-item:hover { background: var(--color-bg-alt); }
+
+.pc-root .cargar-btn {
+  background: var(--color-primary-800);
+  border-color: var(--color-primary-800);
+  color: #fff;
+  font-weight: 600;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-lg);
+}
+.pc-root .cargar-btn:hover { background: var(--color-primary-700); }
+.pc-root .pending-badge { border-color: var(--color-bg); }
+
+/* Sticky: los filtros quedan bajo la cabecera de la plataforma */
+.pc-root .controls-bar { top: var(--pc-sticky-top) !important; }
+.pc-root .layout-with-sidebar { display: block; margin: 0; }
+.pc-root .content-area { padding: 0; }
+.pc-root .main { padding: 0; }
+.pc-root .hero { background: var(--color-primary-800); }
+.pc-root .footer {
+  background: transparent;
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
+  border-radius: 0;
+}
+
+.pc-root .sidebar-nav .side-item:focus-visible,
+.pc-root .cargar-btn:focus-visible,
+.pc-root .tipo-btn:focus-visible {
+  outline: 2px solid var(--color-primary-600);
+  outline-offset: -2px;
+}
+
+/* Modal y avisos deben quedar sobre la cabecera de la plataforma */
+.pc-root .modal-overlay { z-index: 1000; }
+.pc-root .toast-area { z-index: 1001; }
+
+/* Sin permiso de edición: no existe ninguna vía de carga en pantalla */
+.pc-solo-lectura .cargar-btn-wrap,
+.pc-solo-lectura .update-bar,
+.pc-solo-lectura .modal-overlay { display: none !important; }
+
+@media (max-width: 768px) {
+  .pc-root { --pc-sticky-top: 0px; }
+  .pc-root .capa-selector { max-width: none; }
+}
