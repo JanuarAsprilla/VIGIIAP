@@ -5,16 +5,17 @@ import 'leaflet/dist/leaflet.css'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { useFicha, useUpsertFicha } from '@/hooks/useFichasPunto'
 import BasemapCapas from '@/components/geovisor-viewer/BasemapCapas'
+import MediosFichaGrid from './MediosFichaGrid'
 import type { FeatureFichaEstado } from '@/types'
 
 const DESCRIPCION_MINIMA = 20
 
 /**
- * Editor de UNA ficha (título + descripción por ahora -- fotos/video llegan
- * en la siguiente entrega). El mapa es solo de referencia visual (sin
- * interacción) para que el administrador confirme que está editando el
- * punto correcto antes de escribir -- no hay forma de deshacer un contenido
- * curado pegado al punto equivocado sin darse cuenta.
+ * Editor de UNA ficha: título, descripción y sus fotos/video. El mapa es
+ * solo de referencia visual (sin interacción) para que el administrador
+ * confirme que está editando el punto correcto antes de escribir -- no hay
+ * forma de deshacer un contenido curado pegado al punto equivocado sin
+ * darse cuenta.
  */
 export default function FichaPuntoEditor({ configId, feature, onGuardado, onGuardarYSiguiente }: {
   configId: string
@@ -106,8 +107,9 @@ export default function FichaPuntoEditor({ configId, feature, onGuardado, onGuar
           )}
         </div>
 
-        <div className="rounded-lg border border-dashed border-border px-3 py-4 text-center text-xs text-text-muted">
-          La subida de fotos y video llega en la próxima entrega — por ahora esta ficha solo guarda título y descripción.
+        <div>
+          <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Fotos y video</label>
+          <MediosFichaGrid configId={configId} valor={feature.valor} medios={ficha?.medios ?? []} />
         </div>
 
         {error && (

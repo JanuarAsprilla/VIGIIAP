@@ -12,6 +12,12 @@ vi.mock('@/components/geovisor-viewer/BasemapCapas', () => ({
   default: ({ basemapId }: { basemapId: string }) => <div data-testid="basemap">{basemapId}</div>,
 }))
 
+vi.mock('@/components/admin/geovisores/fichas/MediosFichaGrid', () => ({
+  default: ({ valor, medios }: { valor: string; medios: unknown[] }) => (
+    <div data-testid="medios-grid" data-valor={valor} data-n-medios={medios.length} />
+  ),
+}))
+
 vi.mock('@/hooks/useFichasPunto', () => ({
   useFicha: vi.fn(),
   useUpsertFicha: vi.fn(),
@@ -51,6 +57,23 @@ describe('FichaPuntoEditor — carga y mapa de referencia', () => {
 
     expect(screen.getByLabelText(/Título/i)).toHaveValue('Estación río Atrato')
     expect(screen.getByLabelText(/Descripción/i)).toHaveValue('Monitorea el nivel del río desde 2020.')
+  })
+
+  test('pasa el valor de la feature y los medios de la ficha a MediosFichaGrid', () => {
+    vi.mocked(useFicha).mockReturnValue({
+      data: { id: 'f1', titulo: null, descripcion: '', medios: [{ id: 'm1' }, { id: 'm2' }] },
+      isLoading: false,
+    } as unknown as ReturnType<typeof useFicha>)
+    render(<FichaPuntoEditor configId="cfg1" feature={featureFixture} onGuardado={vi.fn()} onGuardarYSiguiente={vi.fn()} />)
+
+    const grid = screen.getByTestId('medios-grid')
+    expect(grid).toHaveAttribute('data-valor', 'EST-014')
+    expect(grid).toHaveAttribute('data-n-medios', '2')
+  })
+
+  test('sin ficha todavía, MediosFichaGrid recibe una lista de medios vacía (no se rompe)', () => {
+    render(<FichaPuntoEditor configId="cfg1" feature={featureFixture} onGuardado={vi.fn()} onGuardarYSiguiente={vi.fn()} />)
+    expect(screen.getByTestId('medios-grid')).toHaveAttribute('data-n-medios', '0')
   })
 })
 

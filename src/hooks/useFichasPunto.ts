@@ -77,6 +77,10 @@ export function useFicha(configId: string | null | undefined, valor: string | nu
       }
     },
     enabled: !!configId && !!valor,
+    // Mientras algún video de esta ficha siga en 'procesando' (transcodificación
+    // async en el backend), refresca sola hasta que quede 'listo' -- sin esto,
+    // el admin tendría que cerrar y reabrir la ficha para ver el resultado.
+    refetchInterval: (query) => query.state.data?.medios.some((m) => m.estado === 'procesando') ? 6000 : false,
   })
 }
 
@@ -126,15 +130,26 @@ export function useSubirMedioFicha(configId: string | null | undefined) {
         onUploadProgress,
       })
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.features(configId) }),
+    onSuccess: (_medio, { valor }) => {
+      qc.invalidateQueries({ queryKey: KEYS.ficha(configId, valor) })
+      qc.invalidateQueries({ queryKey: KEYS.features(configId) })
+    },
   })
+}
+
+// medioId no trae consigo el `valor` de su ficha -- se invalida cualquier
+// ficha cacheada de esta capa (clave parcial) en vez de una sola, para no
+// tener que ir a buscar a cuál pertenece antes de poder refrescar.
+function invalidarFichasDeCapa(qc: ReturnType<typeof useQueryClient>, configId: string | null | undefined) {
+  qc.invalidateQueries({ queryKey: ['fichas-punto', 'ficha', configId] })
+  qc.invalidateQueries({ queryKey: KEYS.features(configId) })
 }
 
 export function useActualizarMedio(configId: string | null | undefined) {
   const qc = useQueryClient()
   return useMutation<MedioFicha, Error, { medioId: string; leyenda?: string; creditos?: string; orden?: number }>({
     mutationFn: ({ medioId, ...data }) => api.patch(`/admin/fichas-medios/${medioId}`, data),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: KEYS.features(configId) }),
+    onSuccess:  () => invalidarFichasDeCapa(qc, configId),
   })
 }
 
@@ -142,7 +157,10 @@ export function useReordenarMedios(configId: string | null | undefined) {
   const qc = useQueryClient()
   return useMutation<void, Error, { valor: string; ids: string[] }>({
     mutationFn: ({ valor, ids }) => api.put(`/admin/fichas-capa/${configId}/fichas/${encodeURIComponent(valor)}/medios/orden`, { ids }),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: KEYS.features(configId) }),
+    onSuccess:  (_data, { valor }) => {
+      qc.invalidateQueries({ queryKey: KEYS.ficha(configId, valor) })
+      qc.invalidateQueries({ queryKey: KEYS.features(configId) })
+    },
   })
 }
 
@@ -150,6 +168,6 @@ export function useEliminarMedio(configId: string | null | undefined) {
   const qc = useQueryClient()
   return useMutation<void, Error, string>({
     mutationFn: (medioId) => api.delete(`/admin/fichas-medios/${medioId}`),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: KEYS.features(configId) }),
+    onSuccess:  () => invalidarFichasDeCapa(qc, configId),
   })
 }
