@@ -448,11 +448,17 @@ export interface CapaFichaConfig {
 }
 
 export type TipoMedioFicha = 'imagen' | 'video'
+/** 'listo' de inmediato para imagen (recompresión síncrona); 'procesando' para
+ *  un video recién subido (la transcodificación corre en segundo plano);
+ *  'error' si la transcodificación falla. `url`/`miniaturaUrl` son null
+ *  mientras no está 'listo'. */
+export type EstadoMedioFicha = 'listo' | 'procesando' | 'error'
 
 export interface MedioFicha {
   id: string
   tipo: TipoMedioFicha
-  url: string
+  estado: EstadoMedioFicha
+  url: string | null
   miniaturaUrl: string | null
   ancho: number | null
   alto: number | null

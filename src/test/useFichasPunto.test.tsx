@@ -108,6 +108,34 @@ describe('useFicha', () => {
     expect(result.current.data).toBeNull()
   })
 
+  test('con un video en estado "procesando", refresca sola pasados ~6s', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.mocked(api.get).mockResolvedValue({
+      id: 'f1', titulo: null, descripcion: '',
+      medios: [{ id: 'm1', tipo: 'video', estado: 'procesando', url: null, miniaturaUrl: null, ancho: null, alto: null, duracionS: null, leyenda: null, creditos: null, orden: 0 }],
+    })
+    renderHook(() => useFicha('cfg1', 'EST-01'), { wrapper })
+    await vi.waitFor(() => expect(api.get).toHaveBeenCalledTimes(1))
+
+    await vi.advanceTimersByTimeAsync(6000)
+    expect(api.get).toHaveBeenCalledTimes(2)
+    vi.useRealTimers()
+  })
+
+  test('con todos los medios "listo", no vuelve a refrescar sola', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.mocked(api.get).mockResolvedValue({
+      id: 'f1', titulo: null, descripcion: '',
+      medios: [{ id: 'm1', tipo: 'imagen', estado: 'listo', url: 'https://x.test/a.jpg', miniaturaUrl: null, ancho: null, alto: null, duracionS: null, leyenda: null, creditos: null, orden: 0 }],
+    })
+    renderHook(() => useFicha('cfg1', 'EST-01'), { wrapper })
+    await vi.waitFor(() => expect(api.get).toHaveBeenCalledTimes(1))
+
+    await vi.advanceTimersByTimeAsync(10_000)
+    expect(api.get).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
+  })
+
   test('no dispara sin valor', () => {
     renderHook(() => useFicha('cfg1', null), { wrapper })
     expect(api.get).not.toHaveBeenCalled()
