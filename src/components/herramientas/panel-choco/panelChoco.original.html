@@ -1,15 +1,25 @@
 
 
+<div class="nota-slot"><div id="nota-panel-wrap"></div></div>
+
 <div class="top-bar">
-  <div class="logo">
-    <div class="logo-icon">
-      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-    </div>
-    <h1>Chocó Biogeográfico</h1>
-  </div>
-  <div class="top-sub" style="display:flex;flex-direction:column;gap:1px;border-left:1px solid rgba(255,255,255,0.2);padding-left:1rem;">
-    <span style="font-size:15px;font-weight:500;color:#fff;letter-spacing:-0.01em">Análisis territorial interactivo</span>
-    <span style="font-size:12px;color:rgba(255,255,255,0.55);font-weight:300">Selecciona una capa temática y explora los datos por departamento y municipio</span>
+  <div class="capa-selector">
+    <button class="capa-toggle" id="capa-toggle" type="button" aria-expanded="false" aria-controls="capa-lista" data-on-click="alternarCapas()">
+      <span class="capa-toggle-label">Capa temática</span>
+      <span class="capa-toggle-actual"><span class="side-dot" id="capa-actual-dot" style="background:#0F6E56"></span><span id="capa-actual-nombre">Límites administrativos</span></span>
+      <svg class="capa-chevron" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M5 7.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <nav class="sidebar-nav" id="capa-lista" aria-label="Capas temáticas" hidden>
+        <button class="side-item active" id="side-limites" data-on-click="setSideCapa('limites')"><span class="side-dot" style="background:#0F6E56"></span>Límites administrativos</button>
+        <button class="side-item" id="side-titulacion" data-on-click="setSideCapa('titulacion')"><span class="side-dot" style="background:#E8A020"></span>Titulación colectiva</button>
+        <button class="side-item" id="side-cuencas" data-on-click="setSideCapa('cuencas')"><span class="side-dot" style="background:#1565C0"></span>Cuencas hidrográficas</button>
+        <button class="side-item" id="side-humedales" data-on-click="setSideCapa('humedales')"><span class="side-dot" style="background:#00838F"></span>Humedales</button>
+        <button class="side-item" id="side-runap" data-on-click="setSideCapa('runap')"><span class="side-dot" style="background:#2E7D32"></span>Áreas de conservación</button>
+        <button class="side-item" id="side-manglares" data-on-click="setSideCapa('manglares')"><span class="side-dot" style="background:#388E3C"></span>Manglares</button>
+        <button class="side-item" id="side-paramos" data-on-click="setSideCapa('paramos')"><span class="side-dot" style="background:#4A148C"></span>Páramos</button>
+        <button class="side-item" id="side-cienagas" data-on-click="setSideCapa('cienagas')"><span class="side-dot" style="background:#0A4A5E"></span>Ciénagas</button>
+        <button class="side-item" id="side-poblacion" data-on-click="setSideCapa('poblacion')"><span class="side-dot" style="background:#880E4F"></span>Población</button>
+    </nav>
   </div>
   <div class="cargar-btn-wrap" style="margin-left:auto;">
     <button class="cargar-btn" data-on-click="abrirModalCarga()">⬆ <span class="btn-label">Cargar datos</span></button>
@@ -134,25 +144,10 @@
 
   <div class="layout-with-sidebar">
 
-    <!-- SIDEBAR CAPAS -->
-    <nav class="sidebar-nav" aria-label="Capas temáticas">
-      <div class="side-label">Capa temática</div>
-      <button class="side-item active" id="side-limites" data-on-click="setSideCapa('limites')"><span class="side-dot" style="background:#0F6E56"></span>Límites administrativos</button>
-      <button class="side-item" id="side-titulacion" data-on-click="setSideCapa('titulacion')"><span class="side-dot" style="background:#E8A020"></span>Titulación colectiva</button>
-      <button class="side-item" id="side-cuencas" data-on-click="setSideCapa('cuencas')"><span class="side-dot" style="background:#1565C0"></span>Cuencas hidrográficas</button>
-      <button class="side-item" id="side-humedales" data-on-click="setSideCapa('humedales')"><span class="side-dot" style="background:#00838F"></span>Humedales</button>
-      <button class="side-item" id="side-runap" data-on-click="setSideCapa('runap')"><span class="side-dot" style="background:#2E7D32"></span>Áreas de conservación</button>
-      <button class="side-item" id="side-manglares" data-on-click="setSideCapa('manglares')"><span class="side-dot" style="background:#388E3C"></span>Manglares</button>
-      <button class="side-item" id="side-paramos" data-on-click="setSideCapa('paramos')"><span class="side-dot" style="background:#4A148C"></span>Páramos</button>
-      <button class="side-item" id="side-cienagas" data-on-click="setSideCapa('cienagas')"><span class="side-dot" style="background:#0A4A5E"></span>Ciénagas</button>
-      <button class="side-item" id="side-poblacion" data-on-click="setSideCapa('poblacion')"><span class="side-dot" style="background:#880E4F"></span>Población</button>
-    </nav>
+
 
     <!-- CONTENIDO PRINCIPAL -->
     <div class="content-area">
-
-      <!-- Notas (se mueven aquí dentro) -->
-      <div id="nota-panel-wrap"></div>
 
       <!-- Filtros Departamento + Municipio -->
       <div class="controls-bar" style="position:sticky;top:100px;z-index:50;">

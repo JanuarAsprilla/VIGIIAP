@@ -2,8 +2,9 @@ import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
 let rol: string | null = null
+let modulos: { modulo: string; puede_ver: boolean; puede_editar: boolean }[] | undefined
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: rol ? { rol } : null }),
+  useAuth: () => ({ user: rol ? { rol, modulos } : null }),
 }))
 
 const destruidas: number[] = []
@@ -23,6 +24,7 @@ beforeEach(() => {
   destruidas.length = 0
   localStorage.clear()
   rol = null
+  modulos = undefined
 })
 
 describe('Panel Chocó (port fiel del HTML original)', () => {
@@ -59,13 +61,52 @@ describe('Panel Chocó (port fiel del HTML original)', () => {
     expect((container.querySelector('#modal-carga-overlay') as HTMLElement).classList.contains('open')).toBe(false)
   })
 
-  test('un investigador puede abrir el modal de carga de datos', async () => {
-    rol = 'investigador'
+  test('el superadministrador puede abrir el modal de carga de datos', async () => {
+    rol = 'super_admin'
     const { container } = render(<PanelChocoBiogeografico />)
     await waitFor(() => expect(container.querySelector('.cargar-btn')).not.toBeNull())
     expect(screen.queryByText(/modo solo lectura/i)).toBeNull()
     fireEvent.click(container.querySelector('.cargar-btn') as HTMLElement)
     expect((container.querySelector('#modal-carga-overlay') as HTMLElement).classList.contains('open')).toBe(true)
+  })
+
+  test('un administrador con edición en Herramientas puede cargar datos', async () => {
+    rol = 'admin_sig'
+    modulos = [{ modulo: 'herramientas', puede_ver: true, puede_editar: true }]
+    const { container } = render(<PanelChocoBiogeografico />)
+    await waitFor(() => expect(container.querySelector('.pc-root')?.classList.contains('pc-solo-lectura')).toBe(false))
+  })
+
+  test.each([
+    ['admin_sig sin el módulo Herramientas', 'admin_sig', undefined],
+    ['admin_sig solo con permiso de ver', 'admin_sig', [{ modulo: 'herramientas', puede_ver: true, puede_editar: false }]],
+    ['investigador', 'investigador', undefined],
+  ])('%s queda en solo lectura', async (_n, r, m) => {
+    rol = r
+    modulos = m
+    const { container } = render(<PanelChocoBiogeografico />)
+    await waitFor(() => expect(container.querySelector('.pc-root')?.classList.contains('pc-solo-lectura')).toBe(true))
+  })
+
+  test('el selector de capas es un desplegable que se cierra al elegir una capa', async () => {
+    const { container } = render(<PanelChocoBiogeografico />)
+    await waitFor(() => expect(container.querySelector('#capa-toggle')).not.toBeNull())
+    const toggle = container.querySelector('#capa-toggle') as HTMLElement
+    const lista = container.querySelector('#capa-lista') as HTMLElement
+    expect(lista.hidden).toBe(true)
+    fireEvent.click(toggle)
+    expect(lista.hidden).toBe(false)
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    fireEvent.click(container.querySelector('#side-poblacion') as HTMLElement)
+    expect(lista.hidden).toBe(true)
+    expect(container.querySelector('#capa-actual-nombre')?.textContent).toBe('Población')
+  })
+
+  test('la nota de la capa activa está en su propio bloque bajo el título', async () => {
+    const { container } = render(<PanelChocoBiogeografico />)
+    await waitFor(() => expect(container.querySelector('.nota-slot #nota-panel-wrap')).not.toBeNull())
+    fireEvent.click(container.querySelector('#side-poblacion') as HTMLElement)
+    expect(container.querySelector('.nota-slot')?.textContent).toMatch(/Censo DANE 2018/)
   })
 
   test('un rol sin permiso no puede cargar archivos aunque dispare el input', async () => {

@@ -54,6 +54,7 @@ export function iniciarPanelChoco(root, { puedeEditar }) {
     const btn = document.getElementById('side-' + capa);
     if(btn) btn.classList.add('active');
     document.getElementById('nota-panel-wrap').innerHTML = NOTAS[capa] || '';
+    actualizarCapaActiva(btn);
     onCapaChange();
   }
   
@@ -5181,8 +5182,40 @@ export function iniciarPanelChoco(root, { puedeEditar }) {
 
   function abrirSelector(id) { const el = document.getElementById(id); if (el) el.click() }
 
+  // Selector desplegable de capas temáticas (reemplaza la barra lateral del original).
+  function alternarCapas(abrir) {
+    const lista = document.getElementById('capa-lista')
+    const toggle = document.getElementById('capa-toggle')
+    if (!lista || !toggle) return
+    const mostrar = typeof abrir === 'boolean' ? abrir : lista.hidden
+    lista.hidden = !mostrar
+    toggle.setAttribute('aria-expanded', String(mostrar))
+  }
+  function actualizarCapaActiva(btn) {
+    if (btn) {
+      const dot = btn.querySelector('.side-dot')
+      const actualDot = document.getElementById('capa-actual-dot')
+      const nombre = document.getElementById('capa-actual-nombre')
+      if (nombre) nombre.textContent = btn.textContent.trim()
+      if (dot && actualDot) actualDot.style.background = dot.style.background
+    }
+    alternarCapas(false)
+  }
+  const cerrarSiFuera = (e) => {
+    if (!e.target.closest || !e.target.closest('.capa-selector')) alternarCapas(false)
+  }
+  const cerrarConEscape = (e) => {
+    if (e.key === 'Escape') {
+      alternarCapas(false)
+      const t = document.getElementById('capa-toggle')
+      if (t) t.focus()
+    }
+  }
+  globalThis.document.addEventListener('click', cerrarSiFuera)
+  root.addEventListener('keydown', cerrarConEscape)
+
   // Lista blanca: solo estas funciones pueden dispararse desde el DOM.
-  const ACCIONES = { abrirModalCarga, cerrarModalCarga, dispararCarga, loadFile, onCapaChange, onCuencaChange, onDeptoChange, onDeptoChangeCuencas, onMuniChange, onMuniChangeCuencas, onParamoCatChange, onRunapCatChange, onSzhChange, setSideCapa, setTipo, sortCienagasTable, sortCuencasTable, sortGenTable, sortHumedalTable, sortParamosDetail, sortParamosTable, sortPobTable, sortRunapDetail, sortRunapTable, sortTitTable, abrirSelector }
+  const ACCIONES = { alternarCapas, abrirModalCarga, cerrarModalCarga, dispararCarga, loadFile, onCapaChange, onCuencaChange, onDeptoChange, onDeptoChangeCuencas, onMuniChange, onMuniChangeCuencas, onParamoCatChange, onRunapCatChange, onSzhChange, setSideCapa, setTipo, sortCienagasTable, sortCuencasTable, sortGenTable, sortHumedalTable, sortParamosDetail, sortParamosTable, sortPobTable, sortRunapDetail, sortRunapTable, sortTitTable, abrirSelector }
   const despachar = (tipo) => (e) => {
     const el = e.target.closest && e.target.closest('[data-on-' + tipo + ']')
     if (!el || !root.contains(el)) return
@@ -5204,6 +5237,8 @@ export function iniciarPanelChoco(root, { puedeEditar }) {
   return function destruir() {
     root.removeEventListener('click', onClick)
     root.removeEventListener('change', onChange)
+    root.removeEventListener('keydown', cerrarConEscape)
+    globalThis.document.removeEventListener('click', cerrarSiFuera)
     instanciasChart.forEach((c) => { try { c.destroy() } catch {} })
     instanciasChart.clear()
   }
