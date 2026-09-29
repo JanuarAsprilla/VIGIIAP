@@ -1,32 +1,31 @@
-import { useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { Eye } from 'lucide-react'
-import SidebarNavCapas from './components/SidebarNavCapas'
-import { usePanelChocoPermisos } from './hooks/usePanelChocoPermisos'
-import ResumenTerritorial from './sections/ResumenTerritorial'
-import TitulacionColectiva from './sections/TitulacionColectiva'
-import CuencasHidrograficas from './sections/CuencasHidrograficas'
-import AreasRunap from './sections/AreasRunap'
-import Humedales from './sections/Humedales'
-import Paramos from './sections/Paramos'
-import Cienagas from './sections/Cienagas'
-import PoblacionEtnias from './sections/PoblacionEtnias'
-import type { CapaId } from './types'
+import { useAuth } from '@/contexts/AuthContext'
+import { iniciarPanelChoco } from './panelChoco.motor'
+import marcado from './panelChoco.original.html?raw'
+import './panelChoco.original.css'
+import './panelChoco.tema.css'
 
-const SECCIONES: Record<CapaId, React.ComponentType> = {
-  resumen: ResumenTerritorial,
-  titulacion: TitulacionColectiva,
-  cuencas: CuencasHidrograficas,
-  runap: AreasRunap,
-  humedales: Humedales,
-  paramos: Paramos,
-  cienagas: Cienagas,
-  poblacion: PoblacionEtnias,
-}
+const ROLES_EDITAN = new Set(['investigador', 'admin_sig', 'super_admin'])
 
+/** Panel del dashboard original, con su estructura y lógica intactas. Aquí solo se monta:
+ * el marcado es un recurso estático propio (no proviene de usuarios) y el motor se
+ * desmonta limpio (listeners y gráficas) al salir de la herramienta. */
 export default function PanelChocoBiogeografico() {
-  const [capaActiva, setCapaActiva] = useState<CapaId>('resumen')
-  const { puedeEditar } = usePanelChocoPermisos()
-  const Seccion = SECCIONES[capaActiva]
+  const { user } = useAuth()
+  const puedeEditar = !!user && ROLES_EDITAN.has(user.rol)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    root.innerHTML = marcado
+    const destruir = iniciarPanelChoco(root, { puedeEditar })
+    return () => {
+      destruir()
+      root.innerHTML = ''
+    }
+  }, [puedeEditar])
 
   return (
     <div className="space-y-4">
@@ -36,12 +35,7 @@ export default function PanelChocoBiogeografico() {
           Estás viendo este panel en modo solo lectura. Investigadores y administradores SIG pueden cargar y actualizar los datos.
         </div>
       )}
-      <div className="flex flex-col md:flex-row gap-6">
-        <SidebarNavCapas capaActiva={capaActiva} onCambiarCapa={setCapaActiva} />
-        <div className="flex-1 min-w-0">
-          <Seccion />
-        </div>
-      </div>
+      <div ref={rootRef} className={`pc-root${puedeEditar ? '' : ' pc-solo-lectura'}`} />
     </div>
   )
 }

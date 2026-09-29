@@ -1,0 +1,953 @@
+
+
+<div class="top-bar">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+    </div>
+    <h1>Chocó Biogeográfico</h1>
+  </div>
+  <div class="top-sub" style="display:flex;flex-direction:column;gap:1px;border-left:1px solid rgba(255,255,255,0.2);padding-left:1rem;">
+    <span style="font-size:15px;font-weight:500;color:#fff;letter-spacing:-0.01em">Análisis territorial interactivo</span>
+    <span style="font-size:12px;color:rgba(255,255,255,0.55);font-weight:300">Selecciona una capa temática y explora los datos por departamento y municipio</span>
+  </div>
+  <div class="cargar-btn-wrap" style="margin-left:auto;">
+    <button class="cargar-btn" data-on-click="abrirModalCarga()">⬆ <span class="btn-label">Cargar datos</span></button>
+    <span class="pending-badge hidden" id="badge-pendiente">0</span>
+  </div>
+</div>
+
+<!-- MODAL CARGA DE DATOS -->
+<div class="modal-overlay" id="modal-carga-overlay" data-on-click="cerrarModalCarga()" data-solo-fondo>
+  <div class="modal-carga">
+    <div class="modal-carga-header">
+      <div class="modal-carga-header-top">
+        <div class="modal-carga-title">Actualizar capas de datos</div>
+        <button class="modal-carga-close" data-on-click="cerrarModalCarga()" title="Cerrar">✕</button>
+      </div>
+      <div class="modal-carga-sub">Selecciona una capa para cargar o reemplazar su archivo Excel.</div>
+    </div>
+    <div class="modal-carga-body" id="modal-carga-body"></div>
+    <div class="mc-footer">
+      <div class="mc-footer-row">
+        <div class="mc-legend">
+          <div class="mc-leg"><span class="mc-leg-bar" style="background:#1D9E75"></span>Cargado</div>
+          <div class="mc-leg"><span class="mc-leg-bar" style="background:#E8A020"></span>Pendiente</div>
+          <div class="mc-leg"><span class="mc-leg-bar" style="background:#185FA5"></span>Actualizando</div>
+        </div>
+        <span style="font-size:11px;color:#B4B2A9">Guardado en el navegador</span>
+      </div>
+      <div class="mc-footer-row">
+        <div class="mc-legend-cols">
+          <div class="mc-leg"><span class="mc-chip req">col</span> obligatoria</div>
+          <div class="mc-leg"><span class="mc-chip opt">col</span> opcional</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- inputs ocultos para carga real de archivos -->
+<input class="file-input" id="inp-limites"   type="file" accept=".xlsx" data-on-change="loadFile('limites',this)">
+<input class="file-input" id="inp-cc"        type="file" accept=".xlsx" data-on-change="loadFile('cc',this)">
+<input class="file-input" id="inp-ri"        type="file" accept=".xlsx" data-on-change="loadFile('ri',this)">
+<input class="file-input" id="inp-cuencas"   type="file" accept=".xlsx" data-on-change="loadFile('cuencas',this)">
+<input class="file-input" id="inp-humedales" type="file" accept=".xlsx" data-on-change="loadFile('humedales',this)">
+<input class="file-input" id="inp-runap"     type="file" accept=".xlsx" data-on-change="loadFile('runap',this)">
+<input class="file-input" id="inp-paramos"   type="file" accept=".xlsx" data-on-change="loadFile('paramos',this)">
+<input class="file-input" id="inp-manglares" type="file" accept=".xlsx" data-on-change="loadFile('manglares',this)">
+<input class="file-input" id="inp-poblacion" type="file" accept=".xlsx" data-on-change="loadFile('poblacion',this)">
+<input class="file-input" id="inp-cienagas"  type="file" accept=".xlsx" data-on-change="loadFile('cienagas',this)">
+
+<!-- BARRA DE ACTUALIZACIÓN (oculta — reemplazada por modal) -->
+<div class="update-bar" style="display:none">
+  <div class="info">
+    <strong>Actualizar datos:</strong> carga los archivos Excel para reemplazar los datos de cada capa. Se guardan automáticamente en el navegador.
+  </div>
+
+  <div class="upload-group">
+    <span class="status-dot" id="dot-limites"></span>
+    <label>Límites</label>
+    <button class="file-btn" id="btn-limites" data-on-click="abrirSelector(\'inp-limites\')">📂 Cargar .xlsx</button>
+    <input class="file-input" id="inp-limites" type="file" accept=".xlsx" data-on-change="loadFile('limites',this)">
+  </div>
+
+  <div class="upload-group">
+    <span class="status-dot" id="dot-cc"></span>
+    <label>Cons. Com.</label>
+    <button class="file-btn" id="btn-cc-up" data-on-click="abrirSelector(\'inp-cc\')">📂 Cargar .xlsx</button>
+    <input class="file-input" id="inp-cc" type="file" accept=".xlsx" data-on-change="loadFile('cc',this)">
+  </div>
+
+  <div class="upload-group">
+    <span class="status-dot" id="dot-ri"></span>
+    <label>Resg. Ind.</label>
+    <button class="file-btn" id="btn-ri-up" data-on-click="abrirSelector(\'inp-ri\')">📂 Cargar .xlsx</button>
+    <input class="file-input" id="inp-ri" type="file" accept=".xlsx" data-on-change="loadFile('ri',this)">
+  </div>
+
+  <div class="upload-group">
+    <span class="status-dot ok" id="dot-cuencas"></span>
+    <label>Cuencas</label>
+    <button class="file-btn loaded" id="btn-cuencas-up" data-on-click="abrirSelector(\'inp-cuencas\')">📂 Cargar .xlsx</button>
+    <input class="file-input" id="inp-cuencas" type="file" accept=".xlsx" data-on-change="loadFile('cuencas',this)">
+  </div>
+  <div class="upload-group">
+    <span class="status-dot ok" id="dot-humedales"></span>
+    <label>Humedales</label>
+    <button class="file-btn loaded" id="btn-humedales-up" data-on-click="abrirSelector(\'inp-humedales\')">📂 Cargar .xlsx</button>
+    <input class="file-input" id="inp-humedales" type="file" accept=".xlsx" data-on-change="loadFile('humedales',this)">
+  </div>
+  <div class="upload-group">
+    <span class="status-dot ok" id="dot-runap"></span>
+    <label>RUNAP</label>
+    <button class="file-btn loaded" id="btn-runap-up" data-on-click="abrirSelector(\'inp-runap\')">📂 Cargar .xlsx</button>
+    <input class="file-input" id="inp-runap" type="file" accept=".xlsx" data-on-change="loadFile('runap',this)">
+  </div>
+  <div class="upload-group">
+    <span class="status-dot ok" id="dot-paramos"></span>
+    <label>Páramos</label>
+    <button class="file-btn loaded" id="btn-paramos-up" data-on-click="abrirSelector(\'inp-paramos\')">📂 Cargar .xlsx</button>
+    <input class="file-input" id="inp-paramos" type="file" accept=".xlsx" data-on-change="loadFile('paramos',this)">
+  </div>
+  <div class="upload-group">
+    <span class="status-dot ok" id="dot-manglares"></span>
+    <label>Manglares</label>
+    <button class="file-btn loaded" id="btn-manglares-up" data-on-click="abrirSelector(\'inp-manglares\')">📂 Cargar .xlsx</button>
+    <input class="file-input" id="inp-manglares" type="file" accept=".xlsx" data-on-change="loadFile('manglares',this)">
+  
+  <div class="upload-group">
+    <span class="status-dot ok" id="dot-poblacion"></span>
+    <label>Población</label>
+    <button class="file-btn loaded" id="btn-poblacion-up" data-on-click="abrirSelector(\'inp-poblacion\')">📂 Cargar .xlsx</button>
+    <input class="file-input" id="inp-poblacion" type="file" accept=".xlsx" data-on-change="loadFile('poblacion',this)">
+  </div>
+  <div class="upload-group">
+    <span class="status-dot" id="dot-cienagas"></span>
+    <label>Ciénagas</label>
+    <button class="file-btn" id="btn-cienagas-up" data-on-click="abrirSelector(\'inp-cienagas\')">📂 Cargar .xlsx</button>
+    <input class="file-input" id="inp-cienagas" type="file" accept=".xlsx" data-on-change="loadFile('cienagas',this)">
+  </div></div>
+</div>
+
+<div class="main">
+
+  <div class="layout-with-sidebar">
+
+    <!-- SIDEBAR CAPAS -->
+    <nav class="sidebar-nav" aria-label="Capas temáticas">
+      <div class="side-label">Capa temática</div>
+      <button class="side-item active" id="side-limites" data-on-click="setSideCapa('limites')"><span class="side-dot" style="background:#0F6E56"></span>Límites administrativos</button>
+      <button class="side-item" id="side-titulacion" data-on-click="setSideCapa('titulacion')"><span class="side-dot" style="background:#E8A020"></span>Titulación colectiva</button>
+      <button class="side-item" id="side-cuencas" data-on-click="setSideCapa('cuencas')"><span class="side-dot" style="background:#1565C0"></span>Cuencas hidrográficas</button>
+      <button class="side-item" id="side-humedales" data-on-click="setSideCapa('humedales')"><span class="side-dot" style="background:#00838F"></span>Humedales</button>
+      <button class="side-item" id="side-runap" data-on-click="setSideCapa('runap')"><span class="side-dot" style="background:#2E7D32"></span>Áreas de conservación</button>
+      <button class="side-item" id="side-manglares" data-on-click="setSideCapa('manglares')"><span class="side-dot" style="background:#388E3C"></span>Manglares</button>
+      <button class="side-item" id="side-paramos" data-on-click="setSideCapa('paramos')"><span class="side-dot" style="background:#4A148C"></span>Páramos</button>
+      <button class="side-item" id="side-cienagas" data-on-click="setSideCapa('cienagas')"><span class="side-dot" style="background:#0A4A5E"></span>Ciénagas</button>
+      <button class="side-item" id="side-poblacion" data-on-click="setSideCapa('poblacion')"><span class="side-dot" style="background:#880E4F"></span>Población</button>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="content-area">
+
+      <!-- Notas (se mueven aquí dentro) -->
+      <div id="nota-panel-wrap"></div>
+
+      <!-- Filtros Departamento + Municipio -->
+      <div class="controls-bar" style="position:sticky;top:100px;z-index:50;">
+        <div class="ctrl-group" id="paramo-cat-group" style="display:none;">
+          <label>Complejos de Páramo</label>
+          <select id="sel-paramo-cat" data-on-change="onParamoCatChange()">
+            <option value="todos">Todos los complejos</option>
+            <option value="Chiles Cumbal">Chiles Cumbal</option>
+            <option value="Cerro Plateado">Cerro Plateado</option>
+            <option value="Frontino – Urrao &quot;Del Sol Las Alegrías">Frontino – Urrao "Del Sol Las Alegrías</option>
+            <option value="Tatamá">Tatamá</option>
+            <option value="Citará">Citará</option>
+            <option value="Paramillo">Paramillo</option>
+            <option value="El Duende">El Duende</option>
+            <option value="Farallones de Cali">Farallones de Cali</option>
+          </select>
+        </div>
+        <div class="ctrl-group" id="runap-cat-group" style="display:none;">
+          <label>Área de conservación</label>
+          <select id="sel-runap-cat" data-on-change="onRunapCatChange()">
+            <option value="todas">Todas las categorías</option>
+            <option value="Parque Nacional Natural">Parque Nacional Natural</option>
+            <option value="Parques Naturales Regionales">Parques Naturales Regionales</option>
+            <option value="Distritos Regionales de Manejo Integrado">Distritos Regionales de Manejo Integrado</option>
+            <option value="Distritos Nacionales de Manejo Integrado">Distritos Nacionales de Manejo Integrado</option>
+            <option value="Reservas Forestales Protectoras Nacionales">Reservas Forestales Protectoras Nacionales</option>
+            <option value="Reservas Forestales Protectoras Regionales">Reservas Forestales Protectoras Regionales</option>
+            <option value="Santuario de Fauna">Santuario de Fauna</option>
+            <option value="Distritos de Conservación de Suelos">Distritos de Conservación de Suelos</option>
+            <option value="Reserva Natural de la Sociedad Civil">Reserva Natural de la Sociedad Civil</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <label>Departamento</label>
+          <select id="sel-depto" data-on-change="onDeptoChange()">
+            <option value="todos">Todos los departamentos</option>
+            <option value="antioquia">Antioquia</option>
+            <option value="cauca">Cauca</option>
+            <option value="choco">Chocó</option>
+            <option value="cordoba">Córdoba</option>
+            <option value="narino">Nariño</option>
+            <option value="risaralda">Risaralda</option>
+            <option value="valle">Valle del Cauca</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <label>Municipio</label>
+          <select id="sel-muni" data-on-change="onMuniChange()">
+            <option value="todos">Todos los municipios</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Hidden select for capa (keeps JS working) -->
+      <select id="sel-capa" data-on-change="onCapaChange()" style="display:none">
+        <option value="limites">Límites administrativos</option>
+        <option value="titulacion">Titulación colectiva</option>
+        <option value="cuencas">Cuencas hidrográficas</option>
+        <option value="humedales">Humedales</option>
+        <option value="runap">Áreas de conservación (RUNAP)</option>
+        <option value="manglares">Manglares</option>
+        <option value="paramos">Páramos</option>
+        <option value="cienagas">Ciénagas</option>
+        <option value="poblacion">Población</option>
+      </select>
+
+  <div class="controls-bar" id="controls-cuencas" style="display:none;margin-top:-1rem;grid-template-columns:repeat(4,1fr);position:sticky;top:100px;z-index:50;">
+    <div class="ctrl-group">
+      <label>Cuenca hidrográfica</label>
+      <select id="sel-cuenca" data-on-change="onCuencaChange()">
+        <option value="todas">Todas las cuencas</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Subcuenca</label>
+      <select id="sel-szh" data-on-change="onSzhChange()">
+        <option value="todas">Todas las subcuencas</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Departamento</label>
+      <select id="sel-depto-cuencas" data-on-change="onDeptoChangeCuencas()">
+        <option value="todos">Todos los departamentos</option>
+        <option value="Antioquia">Antioquia</option>
+        <option value="Cauca">Cauca</option>
+        <option value="Chocó">Chocó</option>
+        <option value="Córdoba">Córdoba</option>
+        <option value="Narño">Nariño</option>
+        <option value="Risaralda">Risaralda</option>
+        <option value="Valle del cauca">Valle del Cauca</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Municipio</label>
+      <select id="sel-muni-cuencas" data-on-change="onMuniChangeCuencas()">
+        <option value="todos">Todos los municipios</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="metrics-grid" id="metrics-row"></div>
+
+  <div id="metrics-tit-wrap" style="display:none;margin-top:0.75rem">
+    <div class="metrics-grid" id="metrics-tit"></div>
+  </div>
+
+  <div id="seccion-graficos-generales">
+  <div class="chart-card">
+    <h3 id="ch-bar-title">Área por departamento (Ha)</h3>
+    <div class="legend" id="leg-bar"></div>
+    <div style="position:relative;height:230px;"><canvas id="ch-bar"></canvas></div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card" style="margin-bottom:0">
+      <h3>Distribución porcentual</h3>
+      <div class="legend" id="leg-pie"></div>
+      <div style="position:relative;height:200px;"><canvas id="ch-pie"></canvas></div>
+    </div>
+    <div class="chart-card" style="margin-bottom:0">
+      <h3>Número de municipios</h3>
+      <div style="position:relative;height:200px;"><canvas id="ch-munis"></canvas></div>
+    </div>
+  </div>
+  </div>
+
+
+
+
+  <!-- TITULACIÓN -->
+  <div id="seccion-titulacion" style="display:none">
+    <div class="section-divider">
+      <div class="line"></div><div class="div-label">Desglose — Titulación colectiva</div><div class="line"></div>
+    </div>
+
+    <div class="tipo-tabs">
+      <span class="tabs-label">Filtrar:</span>
+      <button class="tipo-btn active-todos" id="btn-todos" data-on-click="setTipo('todos')"><span class="tdot" style="background:#666664"></span>Todos</button>
+      <button class="tipo-btn" id="btn-cc" data-on-click="setTipo('cc')"><span class="tdot" style="background:#E8A020"></span>Consejos comunitarios</button>
+      <button class="tipo-btn" id="btn-ri" data-on-click="setTipo('ri')"><span class="tdot" style="background:#9B6B9E"></span>Resguardos indígenas</button>
+      <button class="tipo-btn" id="btn-st" data-on-click="setTipo('st')"><span class="tdot" style="background:#A8A8A8"></span>Sin titulación colectiva</button>
+    </div>
+
+    <div class="chart-card" style="display:none">
+      <h3>Distribución del territorio por tipo de titulación</h3>
+      <div style="display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:center">
+        <div style="position:relative;height:200px"><canvas id="ch-tit-dist"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-duo" style="display:grid;grid-template-columns:13fr 7fr;gap:10px;margin-bottom:1rem">
+      <div class="chart-card" style="margin-bottom:0">
+        <h3 id="tit-bar-title">Área titulada por departamento</h3>
+        <div class="legend" id="leg-tit-bar"></div>
+        <div style="position:relative;height:320px;"><canvas id="ch-tit-bar"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <h3 id="tit-pie-title">Porcentaje de área titulada por departamento</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;flex-direction:column;border-radius:10px;overflow:hidden;border:1px solid var(--border)">
+            <div style="display:flex;align-items:center;border-bottom:1px solid var(--border)">
+              <div style="width:5px;align-self:stretch;background:#E8A020;flex-shrink:0"></div>
+              <div style="padding:8px 10px;display:flex;align-items:center;gap:8px;flex:1">
+                <svg viewBox="0 0 44 36" width="36" height="28" style="flex-shrink:0">
+                  <rect x="1" y="17" width="14" height="17" rx="2" fill="#E8A020" opacity="0.9"/>
+                  <polygon points="8,8 1,17 15,17" fill="#c47a10"/>
+                  <rect x="5" y="24" width="5" height="10" rx="1" fill="#fff" opacity="0.8"/>
+                  <rect x="18" y="10" width="22" height="24" rx="2" fill="#E8A020"/>
+                  <polygon points="29,1 18,11 40,11" fill="#c47a10"/>
+                  <rect x="23" y="19" width="8" height="15" rx="1" fill="#fff" opacity="0.8"/>
+                </svg>
+                <div style="flex:1"><div style="font-size:10px;color:var(--text-secondary)">Consejos com.</div><div id="tit-icon-cc-ha" style="font-size:9px;color:var(--text-muted)">—</div></div>
+                <div id="tit-icon-cc-pct" style="font-size:16px;font-weight:500;color:#E8A020">—</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;border-bottom:1px solid var(--border)">
+              <div style="width:5px;align-self:stretch;background:#9B6B9E;flex-shrink:0"></div>
+              <div style="padding:8px 10px;display:flex;align-items:center;gap:8px;flex:1">
+                <svg viewBox="0 0 44 36" width="36" height="28" style="flex-shrink:0">
+                  <polygon points="11,34 22,8 33,34" fill="#9B6B9E" opacity="0.9"/>
+                  <polygon points="2,34 11,18 20,34" fill="#7a4e7e" opacity="0.7"/>
+                  <polygon points="24,34 33,20 42,34" fill="#7a4e7e" opacity="0.7"/>
+                  <circle cx="36" cy="8" r="5" fill="#E8A020" opacity="0.95"/>
+                  <rect x="20" y="26" width="3" height="8" fill="#5a3a2a"/>
+                  <circle cx="22" cy="22" r="5" fill="#3a7a2a" opacity="0.95"/>
+                </svg>
+                <div style="flex:1"><div style="font-size:10px;color:var(--text-secondary)">Resguardos ind.</div><div id="tit-icon-ri-ha" style="font-size:9px;color:var(--text-muted)">—</div></div>
+                <div id="tit-icon-ri-pct" style="font-size:16px;font-weight:500;color:#9B6B9E">—</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center">
+              <div style="width:5px;align-self:stretch;background:#A8A8A8;flex-shrink:0"></div>
+              <div style="padding:8px 10px;display:flex;align-items:center;gap:8px;flex:1">
+                <svg viewBox="0 0 44 36" width="36" height="28" style="flex-shrink:0">
+                  <rect x="4" y="5" width="36" height="26" rx="4" fill="none" stroke="#A8A8A8" stroke-width="2.5" stroke-dasharray="5,4"/>
+                  <text x="22" y="23" text-anchor="middle" font-size="16" font-weight="600" fill="#A8A8A8">?</text>
+                </svg>
+                <div style="flex:1"><div style="font-size:10px;color:var(--text-secondary)">Sin titulación</div><div id="tit-icon-st-ha" style="font-size:9px;color:var(--text-muted)">—</div></div>
+                <div id="tit-icon-st-pct" style="font-size:16px;font-weight:500;color:#888">—</div>
+              </div>
+            </div>
+          </div>
+          <div style="position:relative;height:200px"><canvas id="ch-tit-pie"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card" style="margin-top:1rem">
+      <h3 id="tit-tbl-title">Detalle — titulación colectiva</h3>
+      <div class="table-wrap">
+        <table class="dtbl" style="table-layout:fixed;width:100%">
+          <thead><tr style="vertical-align:middle">
+            <th id="tit-col-depto" style="width:12%;white-space:normal;position:relative">
+              <div class="th-inner" data-on-click="sortTitTable('depto')"><span class="th-label">Departamento</span><div class="sort-btn"><div class="sort-arrow up" id="tsa-depto-up"></div><div class="sort-arrow down" id="tsa-depto-down"></div></div></div>
+              <div class="col-tip" id="ttip-depto">Clic para ordenar A→Z / Z→A</div>
+            </th>
+            <th id="tit-col-header" style="width:12%;white-space:normal;position:relative">
+              <div class="th-inner" data-on-click="sortTitTable('muni')"><span class="th-label">Municipio</span><div class="sort-btn"><div class="sort-arrow up" id="tsa-muni-up"></div><div class="sort-arrow down" id="tsa-muni-down"></div></div></div>
+              <div class="col-tip" id="ttip-muni">Clic para ordenar A→Z / Z→A</div>
+            </th>
+            <th style="width:11%;white-space:normal;position:relative">
+              <div class="th-inner" data-on-click="sortTitTable('num_cc')"><span class="th-label" id="tit-th-cc">Consejo Comunitario</span><div class="sort-btn"><div class="sort-arrow up" id="tsa-num_cc-up"></div><div class="sort-arrow down" id="tsa-num_cc-down"></div></div></div>
+              <div class="col-tip" id="ttip-num_cc">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="width:12%;white-space:normal;position:relative">
+              <div class="th-inner" data-on-click="sortTitTable('cc')"><span class="th-label">Área Consejos Comunitarios (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="tsa-cc-up"></div><div class="sort-arrow down" id="tsa-cc-down"></div></div></div>
+              <div class="col-tip" id="ttip-cc">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="width:11%;white-space:normal;position:relative">
+              <div class="th-inner" data-on-click="sortTitTable('num_ri')"><span class="th-label" id="tit-th-ri">Resguardo Indígena</span><div class="sort-btn"><div class="sort-arrow up" id="tsa-num_ri-up"></div><div class="sort-arrow down" id="tsa-num_ri-down"></div></div></div>
+              <div class="col-tip" id="ttip-num_ri">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="width:12%;white-space:normal;position:relative">
+              <div class="th-inner" data-on-click="sortTitTable('ri')"><span class="th-label">Área Resguardos Indígenas (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="tsa-ri-up"></div><div class="sort-arrow down" id="tsa-ri-down"></div></div></div>
+              <div class="col-tip" id="ttip-ri">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="width:13%;white-space:normal;position:relative">
+              <div class="th-inner" data-on-click="sortTitTable('st')"><span class="th-label">Sin Titulación Colectiva (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="tsa-st-up"></div><div class="sort-arrow down" id="tsa-st-down"></div></div></div>
+              <div class="col-tip" id="ttip-st">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="width:12%;white-space:normal;position:relative">
+              <div class="th-inner" data-on-click="sortTitTable('tot')"><span class="th-label">Total Área<br>Titulación Colectiva</span><div class="sort-btn"><div class="sort-arrow up" id="tsa-tot-up"></div><div class="sort-arrow down" id="tsa-tot-down"></div></div></div>
+              <div class="col-tip" id="ttip-tot">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="width:5%;white-space:normal;position:relative">
+              <div class="th-inner" data-on-click="sortTitTable('pct')"><span class="th-label">%</span><div class="sort-btn"><div class="sort-arrow up" id="tsa-pct-up"></div><div class="sort-arrow down" id="tsa-pct-down"></div></div></div>
+              <div class="col-tip" id="ttip-pct">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+          </tr></thead>
+          <tbody id="tit-tbody"></tbody>
+          <tfoot id="tit-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+    <div style="background:#E1F5EE;border:1px solid #9FE1CB;border-radius:var(--radius);padding:10px 14px;margin-top:1rem;font-size:12px;color:#085041;line-height:1.6;">
+      <strong>Nota:</strong> <span style="color:#0F6E56;font-weight:700">*</span> Los totales de Consejos Comunitarios y Resguardos Indígenas pueden superar el número real de títulos, dado que algunos de estos territorios se extienden sobre más de un departamento o municipio, generando múltiples registros para un mismo título colectivo. El número real de títulos es <strong>183 Consejos Comunitarios</strong> y <strong>243 Resguardos Indígenas</strong>.
+    </div>
+  </div>
+
+  <!-- SECCIÓN CUENCAS -->
+  <div id="seccion-cuencas" style="display:none;margin-top:1rem">
+    <!-- KPIs exclusivos del panel de cuencas -->
+    <div id="cuencas-kpi-row1" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:10px"></div>
+    <div id="cuencas-kpi-row2" style="display:none"></div>
+
+    <div class="section-divider">
+      <div class="line"></div><div class="div-label" style="color:#185FA5;background:#E6F1FB;border-color:rgba(24,95,165,0.25)">Área por cuenca hidrográfica</div><div class="line"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:11fr 9fr;gap:10px;margin-bottom:1rem">
+      <div class="chart-card" style="margin-bottom:0">
+        <h3 id="cuencas-bar-title">Área por cuenca hidrográfica (Ha)</h3>
+        <div class="legend" id="leg-cuencas-bar"></div>
+        <div style="position:relative;" id="ch-cuencas-bar-wrap"><canvas id="ch-cuencas-bar"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Porcentaje de área por cuenca hidrográfica</h3>
+        <div class="legend" id="leg-cuencas-pie"></div>
+        <div style="position:relative;height:210px;"><canvas id="ch-cuencas-pie"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card" style="margin-top:1rem">
+      <h3 id="cuencas-tbl-title">Detalle — cuenca / subcuenca hidrográfica</h3>
+      <div class="table-wrap">
+        <table class="dtbl" style="table-layout:fixed;width:100%">
+          <thead><tr id="cuencas-thead-row">
+            <th style="width:40%;position:relative" id="th-cuenca-col">
+              <div class="th-inner" data-on-click="sortCuencasTable('cuenca')"><span class="th-label">Cuenca hidrográfica</span><div class="sort-btn"><div class="sort-arrow up" id="czsa-cuenca-up"></div><div class="sort-arrow down" id="czsa-cuenca-down"></div></div></div>
+              <div class="col-tip" id="cztip-cuenca">Clic para ordenar A→Z / Z→A</div>
+            </th>
+            <th style="width:35%;display:none;position:relative" id="th-subcuenca-col">
+              <div class="th-inner" data-on-click="sortCuencasTable('subcuenca')"><span class="th-label">Subcuenca</span><div class="sort-btn"><div class="sort-arrow up" id="czsa-subcuenca-up"></div><div class="sort-arrow down" id="czsa-subcuenca-down"></div></div></div>
+              <div class="col-tip" id="cztip-subcuenca">Clic para ordenar A→Z / Z→A</div>
+            </th>
+            <th style="width:15%;display:none;position:relative" id="th-depto-cuenca-col">
+              <div class="th-inner" data-on-click="sortCuencasTable('depto2')"><span class="th-label">Departamento</span><div class="sort-btn"><div class="sort-arrow up" id="czsa-depto2-up"></div><div class="sort-arrow down" id="czsa-depto2-down"></div></div></div>
+              <div class="col-tip" id="cztip-depto2">Clic para ordenar A→Z / Z→A</div>
+            </th>
+            <th style="width:15%;display:none;position:relative" id="th-muni-cuenca-col">
+              <div class="th-inner" data-on-click="sortCuencasTable('muni2')"><span class="th-label">Municipio</span><div class="sort-btn"><div class="sort-arrow up" id="czsa-muni2-up"></div><div class="sort-arrow down" id="czsa-muni2-down"></div></div></div>
+              <div class="col-tip" id="cztip-muni2">Clic para ordenar A→Z / Z→A</div>
+            </th>
+            <th style="width:20%;position:relative">
+              <div class="th-inner" data-on-click="sortCuencasTable('area')"><span class="th-label">Área (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="czsa-area-up"></div><div class="sort-arrow down" id="czsa-area-down"></div></div></div>
+              <div class="col-tip" id="cztip-area">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="width:25%;position:relative">
+              <div class="th-inner" data-on-click="sortCuencasTable('pct')"><span class="th-label">% del total</span><div class="sort-btn"><div class="sort-arrow up" id="czsa-pct-up"></div><div class="sort-arrow down" id="czsa-pct-down"></div></div></div>
+              <div class="col-tip" id="cztip-pct">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+          </tr></thead>
+          <tbody id="cuencas-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN RUNAP -->
+  <div id="seccion-runap" style="display:none;margin-top:1rem">
+    <div class="section-divider">
+      <div class="line"></div>
+      <div class="div-label" style="color:#1B5E20;background:#E8F5E9;border-color:rgba(46,125,50,0.25)">Áreas de conservación por categoría</div>
+      <div class="line"></div>
+    </div>
+    <!-- Tarjetas métricas RUNAP dinámicas -->
+    <div id="runap-cards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1rem"></div>
+
+    <div style="display:grid;grid-template-columns:3fr 2fr;gap:10px;margin-bottom:1rem">
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Área por departamento y categoría RUNAP (Ha)</h3>
+        <div class="legend" id="leg-runap"></div>
+        <div style="position:relative;height:280px;"><canvas id="ch-runap" role="img"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Porcentaje de área por categoría RUNAP</h3>
+        <div class="legend" id="leg-runap-pie"></div>
+        <div style="position:relative;height:210px;"><canvas id="ch-runap-pie" role="img"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card" style="margin-top:1rem;display:none">
+      <h3 id="runap-tbl-title">Detalle — áreas de conservación por departamento</h3>
+      <div class="table-wrap">
+        <table class="dtbl" style="table-layout:fixed;width:100%">
+          <thead><tr>
+            <th id="runap-col-depto" style="width:10%;position:relative">
+              <div class="th-inner" data-on-click="sortRunapTable('depto')"><span class="th-label">Departamento</span><div class="sort-btn"><div class="sort-arrow up" id="rsa-depto-up"></div><div class="sort-arrow down" id="rsa-depto-down"></div></div></div>
+              <div class="col-tip" id="rtip-depto">Clic para ordenar A→Z / Z→A</div>
+            </th>
+            <th id="runap-col-muni" style="width:10%;display:none;position:relative">
+              <div class="th-inner" data-on-click="sortRunapTable('muni')"><span class="th-label">Municipio</span><div class="sort-btn"><div class="sort-arrow up" id="rsa-muni-up"></div><div class="sort-arrow down" id="rsa-muni-down"></div></div></div>
+              <div class="col-tip" id="rtip-muni">Clic para ordenar A→Z / Z→A</div>
+            </th>
+            <th id="rth-pnn" style="position:relative"><div class="th-inner" data-on-click="sortRunapTable('pnn')"><span class="th-label">Parque Nal. Natural (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="rsa-pnn-up"></div><div class="sort-arrow down" id="rsa-pnn-down"></div></div></div><div class="col-tip" id="rtip-pnn">Clic para ordenar menor→mayor / mayor→menor</div></th>
+            <th id="rth-drmi" style="position:relative"><div class="th-inner" data-on-click="sortRunapTable('drmi')"><span class="th-label">Dist. Reg. Man. Int. (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="rsa-drmi-up"></div><div class="sort-arrow down" id="rsa-drmi-down"></div></div></div><div class="col-tip" id="rtip-drmi">Clic para ordenar menor→mayor / mayor→menor</div></th>
+            <th id="rth-rfpn" style="position:relative"><div class="th-inner" data-on-click="sortRunapTable('rfpn')"><span class="th-label">Res. For. Prot. Nac. (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="rsa-rfpn-up"></div><div class="sort-arrow down" id="rsa-rfpn-down"></div></div></div><div class="col-tip" id="rtip-rfpn">Clic para ordenar menor→mayor / mayor→menor</div></th>
+            <th id="rth-dnmi" style="position:relative"><div class="th-inner" data-on-click="sortRunapTable('dnmi')"><span class="th-label">Dist. Nac. Man. Int. (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="rsa-dnmi-up"></div><div class="sort-arrow down" id="rsa-dnmi-down"></div></div></div><div class="col-tip" id="rtip-dnmi">Clic para ordenar menor→mayor / mayor→menor</div></th>
+            <th id="rth-rfpr" style="position:relative"><div class="th-inner" data-on-click="sortRunapTable('rfpr')"><span class="th-label">Res. For. Prot. Reg. (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="rsa-rfpr-up"></div><div class="sort-arrow down" id="rsa-rfpr-down"></div></div></div><div class="col-tip" id="rtip-rfpr">Clic para ordenar menor→mayor / mayor→menor</div></th>
+            <th id="rth-pnr" style="position:relative"><div class="th-inner" data-on-click="sortRunapTable('pnr')"><span class="th-label">Parques Nat. Reg. (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="rsa-pnr-up"></div><div class="sort-arrow down" id="rsa-pnr-down"></div></div></div><div class="col-tip" id="rtip-pnr">Clic para ordenar menor→mayor / mayor→menor</div></th>
+            <th id="rth-sf" style="position:relative"><div class="th-inner" data-on-click="sortRunapTable('sf')"><span class="th-label">Santuario Fauna (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="rsa-sf-up"></div><div class="sort-arrow down" id="rsa-sf-down"></div></div></div><div class="col-tip" id="rtip-sf">Clic para ordenar menor→mayor / mayor→menor</div></th>
+            <th id="rth-dcs" style="position:relative"><div class="th-inner" data-on-click="sortRunapTable('dcs')"><span class="th-label">Dist. Cons. Suelos (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="rsa-dcs-up"></div><div class="sort-arrow down" id="rsa-dcs-down"></div></div></div><div class="col-tip" id="rtip-dcs">Clic para ordenar menor→mayor / mayor→menor</div></th>
+            <th id="rth-rnsc" style="position:relative"><div class="th-inner" data-on-click="sortRunapTable('rnsc')"><span class="th-label">Res. Nat. Soc. Civil (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="rsa-rnsc-up"></div><div class="sort-arrow down" id="rsa-rnsc-down"></div></div></div><div class="col-tip" id="rtip-rnsc">Clic para ordenar menor→mayor / mayor→menor</div></th>
+            <th style="position:relative;width:8%"><div class="th-inner" data-on-click="sortRunapTable('total')"><span class="th-label">Total (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="rsa-total-up"></div><div class="sort-arrow down" id="rsa-total-down"></div></div></div><div class="col-tip" id="rtip-total">Clic para ordenar menor→mayor / mayor→menor</div></th>
+            <th style="position:relative;width:5%"><div class="th-inner" data-on-click="sortRunapTable('pct')"><span class="th-label">%</span><div class="sort-btn"><div class="sort-arrow up" id="rsa-pct-up"></div><div class="sort-arrow down" id="rsa-pct-down"></div></div></div><div class="col-tip" id="rtip-pct">Clic para ordenar menor→mayor / mayor→menor</div></th>
+          </tr></thead>
+          <tbody id="runap-tbody"></tbody>
+          <tfoot id="runap-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tabla detalle individual -->
+    <div class="chart-card" style="margin-top:1rem">
+      <h3 id="runap-detail-title">Detalle — áreas de conservación RUNAP</h3>
+      <div class="table-wrap">
+        <table class="dtbl" style="table-layout:auto;width:100%">
+          <thead><tr>
+            <th style="width:22%;position:relative"><div class="th-inner" data-on-click="sortRunapDetail('cat')"><span class="th-label">Tipo de área de conservación</span><div class="sort-btn"><div class="sort-arrow up" id="rdsa-cat-up"></div><div class="sort-arrow down" id="rdsa-cat-down"></div></div></div></th>
+            <th style="width:26%;position:relative"><div class="th-inner" data-on-click="sortRunapDetail('nombre')"><span class="th-label">Nombre área de conservación</span><div class="sort-btn"><div class="sort-arrow up" id="rdsa-nombre-up"></div><div class="sort-arrow down" id="rdsa-nombre-down"></div></div></div></th>
+            <th style="width:14%;position:relative"><div class="th-inner" data-on-click="sortRunapDetail('dep')"><span class="th-label">Departamento</span><div class="sort-btn"><div class="sort-arrow up" id="rdsa-dep-up"></div><div class="sort-arrow down" id="rdsa-dep-down"></div></div></div></th>
+            <th style="width:14%;position:relative"><div class="th-inner" data-on-click="sortRunapDetail('mun')"><span class="th-label">Municipio</span><div class="sort-btn"><div class="sort-arrow up" id="rdsa-mun-up"></div><div class="sort-arrow down" id="rdsa-mun-down"></div></div></div></th>
+            <th style="width:12%;position:relative"><div class="th-inner" data-on-click="sortRunapDetail('area')"><span class="th-label">Total (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="rdsa-area-up"></div><div class="sort-arrow down" id="rdsa-area-down"></div></div></div></th>
+            <th style="width:12%;position:relative"><div class="th-inner" data-on-click="sortRunapDetail('pct')"><span class="th-label">%</span><div class="sort-btn"><div class="sort-arrow up" id="rdsa-pct-up"></div><div class="sort-arrow down" id="rdsa-pct-down"></div></div></div></th>
+          </tr></thead>
+          <tbody id="runap-detail-tbody"></tbody>
+          <tfoot id="runap-detail-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN HUMEDALES -->
+  <div id="seccion-humedales" style="display:none;margin-top:1rem">
+    <div class="section-divider">
+      <div class="line"></div>
+      <div class="div-label" style="color:#1565C0;background:#E3F2FD;border-color:rgba(21,101,192,0.25)">Área por tipo de humedal</div>
+      <div class="line"></div>
+    </div>
+    <div class="chart-duo" style="display:grid;grid-template-columns:13fr 7fr;gap:10px;margin-bottom:1rem">
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Área por departamento y tipo de humedal (Ha)</h3>
+        <div class="legend" id="leg-humedal"></div>
+        <div style="position:relative;height:300px;" id="ch-humedal-wrap"><canvas id="ch-humedal" role="img" aria-label="Área por tipo de humedal por departamento"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Porcentaje de área por tipo de humedal</h3>
+        <div class="legend" id="leg-humedal-pie"></div>
+        <div style="position:relative;height:250px;"><canvas id="ch-humedal-pie" role="img" aria-label="Distribución porcentual por tipo de humedal"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card" style="margin-top:1rem">
+      <h3 id="humedal-tbl-title">Detalle — humedales por departamento</h3>
+      <div class="table-wrap">
+        <table class="dtbl" style="table-layout:fixed;width:100%">
+          <thead><tr>
+            <th id="humedal-col-depto" style="width:14%;position:relative">
+              <div class="th-inner" data-on-click="sortHumedalTable('depto')"><span class="th-label">Departamento</span><div class="sort-btn"><div class="sort-arrow up" id="hsa-depto-up"></div><div class="sort-arrow down" id="hsa-depto-down"></div></div></div>
+              <div class="col-tip" id="htip-depto">Clic para ordenar A→Z / Z→A</div>
+            </th>
+            <th id="humedal-col-muni" style="width:13%;display:none;position:relative">
+              <div class="th-inner" data-on-click="sortHumedalTable('muni')"><span class="th-label">Municipio</span><div class="sort-btn"><div class="sort-arrow up" id="hsa-muni-up"></div><div class="sort-arrow down" id="hsa-muni-down"></div></div></div>
+              <div class="col-tip" id="htip-muni">Clic para ordenar A→Z / Z→A</div>
+            </th>
+            <th style="position:relative">
+              <div class="th-inner" data-on-click="sortHumedalTable('pa')"><span class="th-label">Humedal Perm. Abierto (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="hsa-pa-up"></div><div class="sort-arrow down" id="hsa-pa-down"></div></div></div>
+              <div class="col-tip" id="htip-pa">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="position:relative">
+              <div class="th-inner" data-on-click="sortHumedalTable('pb')"><span class="th-label">Humedal Perm. Bajo Dosel (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="hsa-pb-up"></div><div class="sort-arrow down" id="hsa-pb-down"></div></div></div>
+              <div class="col-tip" id="htip-pb">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="position:relative">
+              <div class="th-inner" data-on-click="sortHumedalTable('pt')"><span class="th-label">Humedal Temporal (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="hsa-pt-up"></div><div class="sort-arrow down" id="hsa-pt-down"></div></div></div>
+              <div class="col-tip" id="htip-pt">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="position:relative">
+              <div class="th-inner" data-on-click="sortHumedalTable('pb2')"><span class="th-label">Potencial Bajo (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="hsa-pb2-up"></div><div class="sort-arrow down" id="hsa-pb2-down"></div></div></div>
+              <div class="col-tip" id="htip-pb2">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="position:relative">
+              <div class="th-inner" data-on-click="sortHumedalTable('pm')"><span class="th-label">Potencial Medio (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="hsa-pm-up"></div><div class="sort-arrow down" id="hsa-pm-down"></div></div></div>
+              <div class="col-tip" id="htip-pm">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="white-space:normal;position:relative">
+              <div class="th-inner" data-on-click="sortHumedalTable('total')"><span class="th-label">Total (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="hsa-total-up"></div><div class="sort-arrow down" id="hsa-total-down"></div></div></div>
+              <div class="col-tip" id="htip-total">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="width:5%;position:relative">
+              <div class="th-inner" data-on-click="sortHumedalTable('pct')"><span class="th-label">%</span><div class="sort-btn"><div class="sort-arrow up" id="hsa-pct-up"></div><div class="sort-arrow down" id="hsa-pct-down"></div></div></div>
+              <div class="col-tip" id="htip-pct">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+          </tr></thead>
+          <tbody id="humedal-tbody"></tbody>
+          <tfoot id="humedal-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN PÁRAMOS -->
+  <div id="seccion-paramos" style="display:none;margin-top:1rem">
+    <div class="section-divider">
+      <div class="line"></div>
+      <div class="div-label" style="color:#4A148C;background:#F3E5F5;border-color:rgba(74,20,140,0.25)">Páramos del Chocó Biogeográfico</div>
+      <div class="line"></div>
+    </div>
+    <div id="paramos-cards" style="display:none">
+      <div class="metric-card" style="border-left:4px solid #4A148C">
+        <div class="mc-label">Total páramos</div>
+        <div class="mc-value" style="color:#4A148C" id="paramos-total-count">8</div>
+        <div class="mc-sub" id="paramos-total-ha">82.088,6 Ha</div>
+      </div>
+    </div>
+
+    <div class="chart-duo" style="display:grid;grid-template-columns:13fr 7fr;gap:10px;margin-bottom:1rem">
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Área por páramo (Ha)</h3>
+        <div class="legend" id="leg-paramos"></div>
+        <div style="position:relative;height:280px;"><canvas id="ch-paramos-bar" role="img"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Porcentaje de área por páramo</h3>
+        <div class="legend" id="leg-paramos-pie"></div>
+        <div style="position:relative;height:210px;"><canvas id="ch-paramos-pie" role="img"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card" style="margin-top:1rem;display:none">
+      <h3 id="paramos-tbl-title">Detalle — páramos por departamento</h3>
+      <div class="table-wrap">
+        <table class="dtbl" id="paramos-tbl" style="table-layout:fixed;width:100%">
+          <thead id="paramos-thead"></thead>
+          <tbody id="paramos-tbody"></tbody>
+          <tfoot id="paramos-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tabla detalle individual páramos -->
+    <div class="chart-card" style="margin-top:1rem">
+      <h3 id="paramos-detail-title">Detalle — complejos de páramo</h3>
+      <div class="table-wrap">
+        <table class="dtbl" style="table-layout:auto;width:100%">
+          <thead><tr>
+            <th style="width:22%;position:relative"><div class="th-inner" data-on-click="sortParamosDetail('nombre')"><span class="th-label">Complejo Paramuno</span><div class="sort-btn"><div class="sort-arrow up" id="pdsa-nombre-up"></div><div class="sort-arrow down" id="pdsa-nombre-down"></div></div></div></th>
+            <th style="width:18%;position:relative"><div class="th-inner" data-on-click="sortParamosDetail('dep')"><span class="th-label">Departamento</span><div class="sort-btn"><div class="sort-arrow up" id="pdsa-dep-up"></div><div class="sort-arrow down" id="pdsa-dep-down"></div></div></div></th>
+            <th style="width:18%;position:relative"><div class="th-inner" data-on-click="sortParamosDetail('mun')"><span class="th-label">Municipio</span><div class="sort-btn"><div class="sort-arrow up" id="pdsa-mun-up"></div><div class="sort-arrow down" id="pdsa-mun-down"></div></div></div></th>
+            <th style="width:14%;position:relative"><div class="th-inner" data-on-click="sortParamosDetail('area')"><span class="th-label">Total (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="pdsa-area-up"></div><div class="sort-arrow down" id="pdsa-area-down"></div></div></div></th>
+            <th style="width:10%;position:relative"><div class="th-inner" data-on-click="sortParamosDetail('pct')"><span class="th-label">%</span><div class="sort-btn"><div class="sort-arrow up" id="pdsa-pct-up"></div><div class="sort-arrow down" id="pdsa-pct-down"></div></div></div></th>
+          </tr></thead>
+          <tbody id="paramos-detail-tbody"></tbody>
+          <tfoot id="paramos-detail-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN CIÉNAGAS -->
+  <div id="seccion-cienagas" style="display:none;margin-top:1rem">
+
+    <!-- Tarjetas KPI fila 1 -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px">
+      <div class="metric-card">
+        <div class="mc-label">DEPARTAMENTOS</div>
+        <div class="mc-value" id="cienagas-deptos">2</div>
+        <div class="mc-sub">en análisis</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-label">MUNICIPIOS</div>
+        <div class="mc-value" id="cienagas-munis">15</div>
+        <div class="mc-sub">incluidos</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-label">ÁREA TOTAL</div>
+        <div class="mc-value" style="font-size:20px" id="cienagas-ha">33.672,0 Ha</div>
+        <div class="mc-sub">hectáreas</div>
+      </div>
+      <div class="metric-card" style="border-left:4px solid #0A4A5E">
+        <div class="mc-label">TOTAL CIÉNAGAS</div>
+        <div class="mc-value" style="color:#0A4A5E;font-size:26px" id="cienagas-count">518</div>
+        <div class="mc-sub">cuerpos de agua</div>
+      </div>
+    </div>
+
+    <!-- Divisor -->
+    <div class="section-divider" style="margin-top:1rem">
+      <div class="line"></div>
+      <div class="div-label" style="color:#0E6882;background:#E3F4FA;border-color:rgba(14,104,130,0.25)">Ciénagas del Chocó Biogeográfico</div>
+      <div class="line"></div>
+    </div>
+
+    <!-- Gráfico 1: Área por municipio (Ha) — ancho completo -->
+    <div class="chart-card" style="margin-top:1rem">
+      <h3>Área por municipio (Ha)</h3>
+      <div class="legend" id="leg-cienagas-bar"></div>
+      <div style="position:relative;height:280px;"><canvas id="ch-cienagas-bar"></canvas></div>
+    </div>
+
+    <!-- Gráficos 2 y 3: Distribución porcentual + Número de municipios lado a lado -->
+    <div class="charts-row" style="margin-top:1rem">
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Distribución porcentual</h3>
+        <div class="legend" id="leg-cienagas-pie"></div>
+        <div style="position:relative;height:260px;"><canvas id="ch-cienagas-pie"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Número de municipios</h3>
+        <div style="position:relative;height:260px;"><canvas id="ch-cienagas-munis"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Tabla de detalle -->
+    <div class="chart-card">
+      <h3 id="cienagas-tbl-title">Detalle por departamento</h3>
+      <div class="table-wrap">
+        <table class="dtbl" style="table-layout:fixed;width:100%">
+          <thead id="cienagas-thead"><tr>
+            <th style="width:20%;position:relative">
+              <div class="th-inner" data-on-click="sortCienagasTable('depto')"><span class="th-label">Departamento</span><div class="sort-btn"><div class="sort-arrow up" id="csa-depto-up"></div><div class="sort-arrow down" id="csa-depto-down"></div></div></div>
+              <div class="col-tip" id="ctip-depto">Clic para ordenar A→Z / Z→A</div>
+            </th>
+            <th id="th-cienagas-muni" style="width:22%;position:relative">
+              <div class="th-inner" data-on-click="sortCienagasTable('muni')"><span class="th-label">Municipio</span><div class="sort-btn"><div class="sort-arrow up" id="csa-muni-up"></div><div class="sort-arrow down" id="csa-muni-down"></div></div></div>
+              <div class="col-tip" id="ctip-muni">Clic para ordenar A→Z / Z→A</div>
+            </th>
+            <th id="th-cienagas-nombre" style="display:none;position:relative">
+              <div class="th-inner" data-on-click="sortCienagasTable('nombre')"><span class="th-label">Nombre ciénaga</span><div class="sort-btn"><div class="sort-arrow up" id="csa-nombre-up"></div><div class="sort-arrow down" id="csa-nombre-down"></div></div></div>
+              <div class="col-tip" id="ctip-nombre">Clic para ordenar A→Z / Z→A</div>
+            </th>
+            <th id="th-cienagas-munis-count" style="text-align:center;position:relative">
+              <div class="th-inner" data-on-click="sortCienagasTable('municipios')"><span class="th-label">Municipios</span><div class="sort-btn"><div class="sort-arrow up" id="csa-municipios-up"></div><div class="sort-arrow down" id="csa-municipios-down"></div></div></div>
+              <div class="col-tip" id="ctip-municipios">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th id="th-cienagas-count" style="text-align:center;color:#0A4A5E;position:relative">
+              <div class="th-inner" data-on-click="sortCienagasTable('cienagas')"><span class="th-label">N° Ciénagas</span><div class="sort-btn"><div class="sort-arrow up" id="csa-cienagas-up"></div><div class="sort-arrow down" id="csa-cienagas-down"></div></div></div>
+              <div class="col-tip" id="ctip-cienagas">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="position:relative">
+              <div class="th-inner" data-on-click="sortCienagasTable('area')"><span class="th-label">Área (Ha)</span><div class="sort-btn"><div class="sort-arrow up" id="csa-area-up"></div><div class="sort-arrow down" id="csa-area-down"></div></div></div>
+              <div class="col-tip" id="ctip-area">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+            <th style="position:relative">
+              <div class="th-inner" data-on-click="sortCienagasTable('pct')"><span class="th-label">% del Total</span><div class="sort-btn"><div class="sort-arrow up" id="csa-pct-up"></div><div class="sort-arrow down" id="csa-pct-down"></div></div></div>
+              <div class="col-tip" id="ctip-pct">Clic para ordenar menor→mayor / mayor→menor</div>
+            </th>
+          </tr></thead>
+          <tbody id="cienagas-tbody"></tbody>
+          <tfoot id="cienagas-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div style="background:#E1F5EE;border:1px solid #9FE1CB;border-radius:var(--radius);padding:10px 14px;margin-top:1rem;font-size:12px;color:#085041;line-height:1.6;">
+      <strong>Nota:</strong> El total de ciénagas por departamento puede no coincidir con la suma de los valores individuales. Algunas ciénagas se encuentran en la frontera entre dos departamentos o municipios, por lo que pueden ser registradas en más de una unidad administrativa. El total real de <strong>529 registros</strong> corresponde al total de filas de la fuente de datos.
+    </div>
+
+  </div>
+
+  <!-- SECCIÓN POBLACIÓN -->
+  <div id="seccion-poblacion" style="display:none;margin-top:1rem">
+    <div class="section-divider">
+      <div class="line"></div>
+      <div class="div-label" style="color:#1565C0;background:#E3F2FD;border-color:rgba(21,101,192,0.25)">Población — Censo DANE 2018</div>
+      <div class="line"></div>
+    </div>
+
+    <!-- Tarjetas KPI -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1rem">
+      <div class="metric-card" style="border-left:4px solid #1565C0">
+        <div class="mc-label">POBLACIÓN TOTAL</div>
+        <div class="mc-value" style="color:#1565C0;font-size:24px" id="pob-total">2.365.617</div>
+        <div class="mc-sub">habitantes · Censo 2018</div>
+      </div>
+      <div class="metric-card" style="border-left:4px solid #42A5F5">
+        <div class="mc-label">HOMBRES</div>
+        <div class="mc-value" style="color:#42A5F5" id="pob-hombres">934.118</div>
+        <div class="mc-sub" id="pob-pct-h">49,2% del total</div>
+      </div>
+      <div class="metric-card" style="border-left:4px solid #E91E63">
+        <div class="mc-label">MUJERES</div>
+        <div class="mc-value" style="color:#E91E63" id="pob-mujeres">963.728</div>
+        <div class="mc-sub" id="pob-pct-m">50,8% del total</div>
+      </div>
+      <div class="metric-card" style="border-left:4px solid #2D5016">
+        <div class="mc-label">MAYOR POBLACIÓN</div>
+        <div class="mc-value" style="font-size:16px;color:#2D5016" id="pob-mayor">Antioquia</div>
+        <div class="mc-sub" id="pob-mayor-pct">26,7% del total</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1rem">
+      <div class="metric-card" style="border-left:4px solid #1A237E">
+        <div class="mc-label">DENSIDAD TOTAL</div>
+        <div class="mc-value" style="color:#1A237E;font-size:18px" id="pob-dens-total">16,8 hab/km²</div>
+        <div class="mc-sub" id="pob-dens-total-sub">Chocó Biogeográfico</div>
+      </div>
+      <div class="metric-card" style="border-left:4px solid #3949AB">
+        <div class="mc-label">MAYOR DENSIDAD</div>
+        <div class="mc-value" style="color:#3949AB;font-size:16px" id="pob-dens-mayor">Risaralda</div>
+        <div class="mc-sub" id="pob-dens-mayor-val">24,6 hab/km²</div>
+      </div>
+      <div class="metric-card" style="border-left:4px solid #7986CB">
+        <div class="mc-label">MENOR DENSIDAD</div>
+        <div class="mc-value" style="color:#7986CB;font-size:16px" id="pob-dens-menor">Chocó</div>
+        <div class="mc-sub" id="pob-dens-menor-val">9,4 hab/km²</div>
+      </div>
+      <div class="metric-card" style="border-left:4px solid #5C6BC0">
+        <div class="mc-label">ÁREA TOTAL</div>
+        <div class="mc-value" style="color:#5C6BC0;font-size:18px" id="pob-area-total">112.981 km²</div>
+        <div class="mc-sub" id="pob-area-total-sub">11.298.117 Ha</div>
+      </div>
+    </div>
+
+    <!-- Bloque 1: Distribución territorial -->
+    <div class="section-divider" style="margin-top:1.25rem">
+      <div class="line"></div>
+      <div class="div-label" style="color:#1565C0;background:#E3F2FD;border-color:rgba(21,101,192,0.25)">Distribución territorial</div>
+      <div class="line"></div>
+    </div>
+    <div class="chart-duo" style="display:grid;grid-template-columns:13fr 7fr;gap:10px;margin-bottom:1rem">
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Población por departamento</h3>
+        <div class="legend" id="leg-pob-bar"></div>
+        <div style="position:relative;height:280px;"><canvas id="ch-pob-bar"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Distribución por género</h3>
+        <div id="pob-genero-cards" class="pob-genero-row" style="display:flex;justify-content:center;gap:40px;align-items:center;padding:12px 0;height:calc(100% - 40px);min-height:240px">
+          <div style="text-align:center">
+            <svg viewBox="0 0 40 60" width="100" height="150" style="display:block;margin:0 auto">
+              <circle cx="20" cy="10" r="9" fill="#1565C0"/>
+              <path d="M8 22 Q8 48 12 58 L28 58 Q32 48 32 22 Q26 18 20 18 Q14 18 8 22Z" fill="#1565C0" opacity="0.85"/>
+              <path d="M8 24 Q2 28 2 40" fill="none" stroke="#1565C0" stroke-width="6" stroke-linecap="round" opacity="0.75"/>
+              <path d="M32 24 Q38 28 38 40" fill="none" stroke="#1565C0" stroke-width="6" stroke-linecap="round" opacity="0.75"/>
+            </svg>
+            <div style="font-size:15px;color:#000;text-transform:uppercase;letter-spacing:0.06em;margin-top:6px">Hombres</div>
+            <div id="pob-hombres-pct" style="font-size:20px;font-weight:500;color:#1565C0;margin-top:2px">—</div>
+            <div id="pob-hombres-n" style="font-size:12px;color:#000">—</div>
+          </div>
+          <div style="text-align:center">
+            <svg viewBox="0 0 40 60" width="100" height="150" style="display:block;margin:0 auto">
+              <circle cx="20" cy="10" r="9" fill="#C2185B"/>
+              <ellipse cx="20" cy="6" rx="11" ry="6" fill="#C2185B" opacity="0.4"/>
+              <path d="M10 22 Q8 30 10 36 Q14 42 20 42 Q26 42 30 36 Q32 30 30 22 Q24 18 20 18 Q16 18 10 22Z" fill="#C2185B" opacity="0.85"/>
+              <path d="M10 36 Q5 48 3 58 L37 58 Q35 48 30 36 Q25 40 20 40 Q15 40 10 36Z" fill="#C2185B" opacity="0.8"/>
+              <path d="M10 24 Q4 28 3 38" fill="none" stroke="#C2185B" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+              <path d="M30 24 Q36 28 37 38" fill="none" stroke="#C2185B" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+            </svg>
+            <div style="font-size:15px;color:#000;text-transform:uppercase;letter-spacing:0.06em;margin-top:6px">Mujeres</div>
+            <div id="pob-mujeres-pct" style="font-size:20px;font-weight:500;color:#C2185B;margin-top:2px">—</div>
+            <div id="pob-mujeres-n" style="font-size:12px;color:#000">—</div>
+          </div>
+        </div>
+        <canvas id="ch-pob-genero" style="display:none"></canvas>
+      </div>
+    </div>
+
+    <!-- Bloque 2: Densidad poblacional -->
+    <div class="section-divider" style="margin-top:1.25rem">
+      <div class="line"></div>
+      <div class="div-label" style="color:#1565C0;background:#E3F2FD;border-color:rgba(21,101,192,0.25)">Densidad poblacional</div>
+      <div class="line"></div>
+    </div>
+    <div class="chart-duo" style="display:grid;grid-template-columns:13fr 7fr;gap:10px;margin-bottom:1rem">
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Densidad por departamento (hab/km²)</h3>
+        <div style="position:relative;height:240px;"><canvas id="ch-dens-bar"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Distribución de densidad</h3>
+        <div class="legend" id="leg-dens-dona"></div>
+        <div style="position:relative;height:210px;"><canvas id="ch-dens-dona"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Bloque 3: Estructura poblacional -->
+    <div class="section-divider" style="margin-top:1.25rem">
+      <div class="line"></div>
+      <div class="div-label" style="color:#1565C0;background:#E3F2FD;border-color:rgba(21,101,192,0.25)">Estructura poblacional</div>
+      <div class="line"></div>
+    </div>
+    <div class="chart-card">
+      <h3>Pirámide poblacional por grupos de edad</h3>
+      <div style="position:relative;height:400px;"><canvas id="ch-piramide"></canvas></div>
+    </div>
+
+    <!-- Bloque 3: Grupos étnicos -->
+    <div class="section-divider" style="margin-top:1.25rem">
+      <div class="line"></div>
+      <div class="div-label" style="color:#1565C0;background:#E3F2FD;border-color:rgba(21,101,192,0.25)">Grupos étnicos — Censo DANE 2018</div>
+      <div class="line"></div>
+    </div>
+    <div class="chart-duo" style="display:grid;grid-template-columns:13fr 7fr;gap:10px;margin-bottom:0.5rem">
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Grupos étnicos por departamento</h3>
+        <div class="legend" id="leg-etnia-bar"></div>
+        <div style="position:relative;height:280px;"><canvas id="ch-etnia-bar"></canvas></div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <h3>Distribución total — Chocó Biogeográfico</h3>
+        <div class="legend" id="leg-etnia-dona"></div>
+        <div style="position:relative;height:250px;"><canvas id="ch-etnia-dona"></canvas></div>
+      </div>
+    </div>
+
+    <div style="background:#E1F5EE;border-radius:var(--radius);padding:8px 14px;font-size:12px;color:#085041;line-height:1.6;margin-bottom:1rem;border:0.5px solid rgba(8,80,65,0.2)">
+      <strong>*</strong> Los grupos <strong>Gitano o Rom</strong> (123 hab.), <strong>Raizal</strong> (383 hab.) y <strong>Palenquero</strong> (382 hab.) tienen una representación mínima en el territorio — menos del 0.02% de la población total — por lo que pueden no ser visibles en los gráficos.
+    </div>
+
+    <!-- Bloque 4: Tabla detalle -->
+    <div class="chart-card" style="margin-top:1rem">
+      <h3 id="pob-etnia-tbl-title">Detalle por grupo étnico</h3>
+      <div class="table-wrap">
+        <table class="dtbl" style="table-layout:fixed;width:100%">
+          <thead id="pob-etnia-thead"></thead>
+          <tbody id="pob-etnia-tbody"></tbody>
+          <tfoot id="pob-etnia-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA GENERAL -->
+  <div class="chart-card" id="seccion-tabla-general" style="margin-top:1rem">
+    <h3 id="tbl-gen-title">Detalle por departamento</h3>
+    <div class="table-wrap">
+      <table class="dtbl" id="tbl-gen-table" style="table-layout:fixed;width:100%">
+        <thead id="tbl-gen-head"></thead>
+        <tbody id="tbl-gen-body"></tbody>
+        <tfoot id="tbl-gen-foot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">Chocó Biogeográfico · Panel de Análisis Territorial · Los datos se guardan en este navegador</div>
+    </div><!-- /content-area -->
+  </div><!-- /layout-with-sidebar -->
+</div>
+
+<div class="toast-area" id="toast-area"></div>
+
