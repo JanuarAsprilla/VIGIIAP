@@ -15,8 +15,9 @@ import BasemapGaleria from '@/components/geovisor-viewer/BasemapGaleria'
 import PanelCapas from '@/components/geovisor-viewer/PanelCapas'
 import HerramientasDibujo from '@/components/geovisor-viewer/HerramientasDibujo'
 import ConsultaCapaClick from '@/components/geovisor-viewer/ConsultaCapaClick'
+import FichaPuntoPanel from '@/components/geovisor-viewer/FichaPuntoPanel'
 import type { AreaInteresState } from '@/components/geovisor-viewer/ControlAreaInteres'
-import type { CapaGeoserver } from '@/types'
+import type { CapaGeoserver, FichaPunto } from '@/types'
 
 interface CapaActiva {
   capa: CapaGeoserver
@@ -33,6 +34,7 @@ export default function GeovisorViewer() {
   const [basemap, setBasemap] = useState<string | null>(null)
   const [capasActivas, setCapasActivas] = useState<CapaActiva[]>([])
   const [areaInteres, setAreaInteres] = useState<AreaInteresState | null>(null)
+  const [fichaAbierta, setFichaAbierta] = useState<FichaPunto | null>(null)
 
   const toggleCapa = (capa: CapaGeoserver, tema: string) => {
     setCapasActivas((prev) =>
@@ -143,8 +145,11 @@ export default function GeovisorViewer() {
             capasActivas={capasActivas}
             colorPorTema={geovisor.colorPorTema}
             presentacion={geovisor.presentacion}
+            onVerFicha={setFichaAbierta}
           />
         </MapContainer>
+
+        <FichaPuntoPanel ficha={fichaAbierta} onClose={() => setFichaAbierta(null)} />
 
         {cargandoCapas && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 px-3 py-1.5 bg-[var(--card-bg)]/95 backdrop-blur-sm border border-border rounded-lg text-xs text-text-muted shadow-md">
