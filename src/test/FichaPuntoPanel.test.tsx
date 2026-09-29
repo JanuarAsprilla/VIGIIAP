@@ -91,6 +91,23 @@ describe('FichaPuntoPanel — medios', () => {
     expect(screen.queryByTestId('thumb')).not.toBeInTheDocument()
   })
 
+  // Regresión: el render prefiere miniaturaUrl (Thumbnail, poster de video),
+  // así que validar solo `url` contra isTrustedUrl dejaba pasar un
+  // miniaturaUrl de origen no confiable sin filtrar -- un backend
+  // comprometido o mal configurado podía inyectar un origen externo
+  // arbitrario en <img src>/<video poster> del visor público.
+  test('url confiable pero miniaturaUrl no confiable -- el medio tampoco se renderiza', () => {
+    const f = ficha({ medios: [medio({ url: 'https://x.test/foto.jpg', miniaturaUrl: 'https://sitio-ajeno-cualquiera.test/foto.jpg' })] })
+    render(<FichaPuntoPanel ficha={f} onClose={vi.fn()} />)
+    expect(screen.queryByTestId('thumb')).not.toBeInTheDocument()
+  })
+
+  test('miniaturaUrl confiable pero url no confiable -- el medio tampoco se renderiza', () => {
+    const f = ficha({ medios: [medio({ url: 'https://sitio-ajeno-cualquiera.test/foto.jpg', miniaturaUrl: 'https://x.test/foto-thumb.jpg' })] })
+    render(<FichaPuntoPanel ficha={f} onClose={vi.fn()} />)
+    expect(screen.queryByTestId('thumb')).not.toBeInTheDocument()
+  })
+
   test('créditos de una foto se muestran en la sección de créditos', () => {
     const f = ficha({ medios: [medio({ creditos: 'Foto: IIAP' })] })
     render(<FichaPuntoPanel ficha={f} onClose={vi.fn()} />)
