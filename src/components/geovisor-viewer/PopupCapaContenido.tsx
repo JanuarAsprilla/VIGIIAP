@@ -1,6 +1,8 @@
-import { Loader2, ImageOff } from 'lucide-react'
+import { Loader2, ImageOff, Image, Video } from 'lucide-react'
 import { metricaDeGeometria } from '@/lib/geo/areaUtils'
-import type { CapaGeoserver, PresentacionGeovisor } from '@/types'
+import Thumbnail from '@/components/ui/Thumbnail'
+import { isTrustedUrl } from '@/lib/trustedUrl'
+import type { CapaGeoserver, PresentacionGeovisor, FichaPunto, FeatureConFicha } from '@/types'
 
 export interface ResultadoCapaClick {
   capa: CapaGeoserver
@@ -11,6 +13,48 @@ export interface ResultadoCapaClick {
 
 const CLAVES_TECNICAS = /^(shape_|fid_|objectid|the_geom|geom)/i
 const MAX_FEATURES_POR_CAPA = 3
+
+/** Tarjeta compacta para una feature con ficha curada -- reemplaza la vista
+ *  de atributos crudos por completo (no se combinan) cuando la capa tiene
+ *  "fichas por punto" habilitado. La ficha completa (galería, video,
+ *  descripción íntegra) vive en FichaPuntoPanel, fuera del popup -- un
+ *  popup de Leaflet es demasiado angosto para eso. */
+function TarjetaFicha({ ficha, onVerFicha }: { ficha: FichaPunto; onVerFicha: (ficha: FichaPunto) => void }) {
+  const medios = ficha.medios.filter((m) =>
+    m.estado === 'listo' && (!m.miniaturaUrl || isTrustedUrl(m.miniaturaUrl)) && (!m.url || isTrustedUrl(m.url)),
+  )
+  const miniatura = medios.find((m) => m.miniaturaUrl || m.url)
+  const nFotos = medios.filter((m) => m.tipo === 'imagen').length
+  const nVideos = medios.filter((m) => m.tipo === 'video').length
+
+  return (
+    <div className="space-y-1.5">
+      {miniatura ? (
+        <Thumbnail src={miniatura.miniaturaUrl ?? miniatura.url ?? ''} alt={ficha.titulo ?? ''} objectFit="cover" className="w-full h-24 rounded-lg" />
+      ) : (
+        <div className="w-full h-16 rounded-lg bg-bg-alt flex items-center justify-center text-text-muted/50">
+          <ImageOff className="w-4 h-4" aria-hidden="true" />
+        </div>
+      )}
+
+      {ficha.titulo && <p className="text-xs font-bold text-text">{ficha.titulo}</p>}
+      {ficha.descripcion && (
+        <p className="text-xs text-text-muted leading-relaxed line-clamp-3">{ficha.descripcion}</p>
+      )}
+
+      <div className="flex items-center justify-between pt-0.5">
+        <div className="flex items-center gap-2.5 text-[0.65rem] text-text-muted">
+          {nFotos > 0 && <span className="inline-flex items-center gap-1"><Image className="w-3 h-3" aria-hidden="true" />{nFotos}</span>}
+          {nVideos > 0 && <span className="inline-flex items-center gap-1"><Video className="w-3 h-3" aria-hidden="true" />{nVideos}</span>}
+        </div>
+        <button type="button" onClick={() => onVerFicha(ficha)}
+          className="text-[0.65rem] font-semibold text-primary-700 hover:text-primary-800 underline underline-offset-2">
+          Ver ficha
+        </button>
+      </div>
+    </div>
+  )
+}
 
 function atributosDeFeature(feature: GeoJSON.Feature, presentacion: PresentacionGeovisor) {
   const props = (feature.properties ?? {}) as Record<string, unknown>
@@ -24,7 +68,15 @@ function atributosDeFeature(feature: GeoJSON.Feature, presentacion: Presentacion
     .map(([clave, valor]) => ({ alias: clave, valor: String(valor) }))
 }
 
-function TarjetaFeature({ feature, presentacion, nombreCapa }: { feature: GeoJSON.Feature; presentacion: PresentacionGeovisor; nombreCapa: string }) {
+function TarjetaFeature({ feature, presentacion, nombreCapa, onVerFicha }: {
+  feature: GeoJSON.Feature
+  presentacion: PresentacionGeovisor
+  nombreCapa: string
+  onVerFicha: (ficha: FichaPunto) => void
+}) {
+  const ficha = (feature as FeatureConFicha).ficha
+  if (ficha) return <TarjetaFicha ficha={ficha} onVerFicha={onVerFicha} />
+
   const atributos = atributosDeFeature(feature, presentacion)
   const props = (feature.properties ?? {}) as Record<string, unknown>
   const urlImagen = presentacion.mostrarImagenes && presentacion.campoImagenUrl
@@ -62,10 +114,11 @@ function TarjetaFeature({ feature, presentacion, nombreCapa }: { feature: GeoJSO
   )
 }
 
-export default function PopupCapaContenido({ resultados, cargando, presentacion }: {
+export default function PopupCapaContenido({ resultados, cargando, presentacion, onVerFicha }: {
   resultados: ResultadoCapaClick[] | null
   cargando: boolean
   presentacion: PresentacionGeovisor
+  onVerFicha: (ficha: FichaPunto) => void
 }) {
   if (cargando) {
     return (
@@ -90,7 +143,7 @@ export default function PopupCapaContenido({ resultados, cargando, presentacion 
           </p>
           <div className="space-y-2 pl-3.5 border-l-2" style={{ borderColor: `${resultado.color}40` }}>
             {resultado.features.slice(0, MAX_FEATURES_POR_CAPA).map((feature, i) => (
-              <TarjetaFeature key={feature.id ?? i} feature={feature} presentacion={presentacion} nombreCapa={resultado.capa.nombre} />
+              <TarjetaFeature key={feature.id ?? i} feature={feature} presentacion={presentacion} nombreCapa={resultado.capa.nombre} onVerFicha={onVerFicha} />
             ))}
             {resultado.features.length > MAX_FEATURES_POR_CAPA && (
               <p className="text-[0.65rem] text-text-muted">

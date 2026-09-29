@@ -76,6 +76,7 @@ function renderHerramientas(props: Partial<Parameters<typeof HerramientasDibujo>
       areaMaxHa={undefined}
       areaActual={null}
       onCambiarArea={onCambiarArea}
+      abiertoInicial
       {...props}
     />,
   )
@@ -192,5 +193,35 @@ describe('HerramientasDibujo — medición', () => {
 
     await user.click(screen.getByTitle('Limpiar medición'))
     expect(screen.queryByText(/Distancia:/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('HerramientasDibujo — panel plegable', () => {
+  test('nace plegado y no muestra los controles hasta desplegarlo', async () => {
+    const user = userEvent.setup()
+    renderHerramientas({ abiertoInicial: false })
+
+    expect(screen.queryByRole('button', { name: /Polígono/i })).not.toBeInTheDocument()
+    const toggle = screen.getByRole('button', { name: /Medir y área de interés/i })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: /Polígono/i })).toBeInTheDocument()
+
+    await user.click(toggle)
+    expect(screen.queryByRole('button', { name: /Polígono/i })).not.toBeInTheDocument()
+  })
+
+  test('al terminar un dibujo se despliega para mostrar el resultado', async () => {
+    const user = userEvent.setup()
+    renderHerramientas({ abiertoInicial: false })
+    await user.click(screen.getByRole('button', { name: /Medir y área de interés/i }))
+    await user.click(screen.getByRole('button', { name: /Distancia/i }))
+    await user.click(screen.getByRole('button', { name: /Medir y área de interés/i }))
+    expect(screen.queryByText(/Distancia:/i)).not.toBeInTheDocument()
+
+    onCreatedCapturado!({ layerType: 'polyline', layer: makeLayerFalso('LineString', [[-76.60, 5.55], [-76.59, 5.55]]) })
+    expect(await screen.findByText(/Distancia:/i)).toBeInTheDocument()
   })
 })

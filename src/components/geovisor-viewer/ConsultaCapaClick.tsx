@@ -5,7 +5,7 @@ import './popup-tema.css'
 import api from '@/lib/api'
 import { bufferClicEnPixeles } from '@/lib/geo/clickBuffer'
 import PopupCapaContenido, { type ResultadoCapaClick } from './PopupCapaContenido'
-import type { CapaGeoserver, PresentacionGeovisor } from '@/types'
+import type { CapaGeoserver, PresentacionGeovisor, FichaPunto } from '@/types'
 
 interface CapaActiva {
   capa: CapaGeoserver
@@ -20,11 +20,12 @@ interface EstadoPopup {
 
 const COLOR_RESPALDO = '#1B4332'
 
-export default function ConsultaCapaClick({ slug, capasActivas, colorPorTema, presentacion }: {
+export default function ConsultaCapaClick({ slug, capasActivas, colorPorTema, presentacion, onVerFicha }: {
   slug: string
   capasActivas: CapaActiva[]
   colorPorTema: Record<string, string>
   presentacion: PresentacionGeovisor
+  onVerFicha: (ficha: FichaPunto) => void
 }) {
   const [estado, setEstado] = useState<EstadoPopup | null>(null)
 
@@ -60,7 +61,7 @@ export default function ConsultaCapaClick({ slug, capasActivas, colorPorTema, pr
       minWidth={220}
       className="geovisor-popup-capa"
     >
-      <PopupCapaContenido resultados={estado.resultados} cargando={estado.cargando} presentacion={presentacion} />
+      <PopupCapaContenido resultados={estado.resultados} cargando={estado.cargando} presentacion={presentacion} onVerFicha={onVerFicha} />
     </Popup>
   )
 }

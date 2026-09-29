@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import {
   X, Loader2, AlertCircle, Plus, Trash2, Globe, Users, ShieldCheck,
-  Layers, Map as MapIcon, Eye, Search, MapPinned, ChevronRight,
+  Layers, Map as MapIcon, Eye, Search, MapPinned, ChevronRight, Images,
 } from 'lucide-react'
 import { panelAnim } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
@@ -14,6 +14,7 @@ import ThumbnailDropzone from '@/components/ui/ThumbnailDropzone'
 import AccordionSection from './AccordionSection'
 import GeovisorMapaConstructor from './GeovisorMapaConstructor'
 import CategoryCombobox from '@/components/admin/CategoryCombobox'
+import FichaCapaConfigRow from './fichas/FichaCapaConfigRow'
 import type { GeovisorRaw, GeovisorInput, MapaVisibilidad, PresetArea, WorkspaceOption } from '@/types'
 import type { FormErrors } from '@/types/forms'
 
@@ -53,6 +54,8 @@ interface FormState {
   conexionGeoserverId: string
   /** IDs de capa ("workspace:layername") — pueden venir de distintos workspaces/temas. */
   capasSeleccionadas: string[]
+  /** Subconjunto de capasSeleccionadas con "fichas por punto" habilitado. */
+  capasConFicha: string[]
   colorPorTema: Record<string, string>
   centroLat: number
   centroLng: number
@@ -71,7 +74,7 @@ interface FormState {
 function emptyForm(): FormState {
   return {
     titulo: '', subtitulo: '', descripcion: '', cita: '', categoria: '',
-    conexionGeoserverId: '', capasSeleccionadas: [], colorPorTema: {},
+    conexionGeoserverId: '', capasSeleccionadas: [], capasConFicha: [], colorPorTema: {},
     centroLat: 5.55, centroLng: -76.6, zoomInicial: 8, basemapDefecto: 'calles',
     areaMaxHa: '', presetsArea: [], visibilidad: 'publico',
     thumbnailUrl: '', mostrarMetricas: true, mostrarImagenes: false, campoImagenUrl: '',
@@ -84,6 +87,7 @@ function formFromGeovisor(g: GeovisorRaw): FormState {
     titulo: g.titulo, subtitulo: g.subtitulo ?? '', descripcion: g.descripcion ?? '',
     cita: g.cita ?? '', categoria: g.categoria ?? '',
     conexionGeoserverId: g.conexionGeoserverId, capasSeleccionadas: g.capasSeleccionadas,
+    capasConFicha: g.capasConFicha,
     colorPorTema: g.colorPorTema, centroLat: g.centro.lat, centroLng: g.centro.lng,
     zoomInicial: g.zoomInicial, basemapDefecto: g.basemapDefecto,
     areaMaxHa: g.areaMaxHa != null ? String(g.areaMaxHa) : '',
@@ -177,6 +181,15 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
     }))
   }
 
+  const toggleFicha = (id: string) => {
+    setForm((f) => ({
+      ...f,
+      capasConFicha: f.capasConFicha.includes(id)
+        ? f.capasConFicha.filter((c) => c !== id)
+        : [...f.capasConFicha, id],
+    }))
+  }
+
   const toggleTema = (id: string) => setTemasExpandidos((prev) => {
     const next = new Set(prev)
     if (next.has(id)) next.delete(id)
@@ -190,6 +203,12 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
     () => [...new Set(form.capasSeleccionadas.map(workspaceDeCapa))],
     [form.capasSeleccionadas],
   )
+
+  // Descarta entradas de una capa que ya se desmarcó de capasSeleccionadas --
+  // igual que colorPorTema, se limpia del todo recién al enviar (validate()),
+  // pero acá se filtra también para que la sección 5 no muestre una fila
+  // "fantasma" de una capa que ya no está activa en el picker de arriba.
+  const capasConFichaVisibles = form.capasConFicha.filter((id) => form.capasSeleccionadas.includes(id))
 
   const setColor = (workspaceId: string, color: string) => {
     setForm((f) => ({ ...f, colorPorTema: { ...f.colorPorTema, [workspaceId]: color } }))
@@ -247,6 +266,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
       // (ver capaPermitidaEnGeovisor() en el backend).
       workspacesGeoserver: temasSeleccionados,
       capasSeleccionadas: form.capasSeleccionadas,
+      capasConFicha: form.capasConFicha.filter((id) => form.capasSeleccionadas.includes(id)),
       colorPorTema: Object.fromEntries(
         Object.entries(form.colorPorTema).filter(([id]) => temasSeleccionados.includes(id)),
       ),
@@ -426,18 +446,30 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                               <div className="space-y-1 px-2.5 pb-2.5">
                                 {w.capas.map((c: CapaWorkspace) => {
                                   const checked = form.capasSeleccionadas.includes(c.id)
+                                  const conFicha = form.capasConFicha.includes(c.id)
                                   return (
-                                    <label key={c.id}
-                                      className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs cursor-pointer transition-colors ${
+                                    <div key={c.id}
+                                      className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
                                         checked ? 'bg-primary-600/8 text-primary-800' : 'hover:bg-bg-alt text-text'
                                       }`}>
-                                      <input type="checkbox" checked={checked} onChange={() => toggleCapa(c.id)}
-                                        className="w-3.5 h-3.5 rounded border-border text-primary-800 focus:ring-primary-800/30 shrink-0" />
-                                      <span className="truncate flex-1">{c.nombre}</span>
+                                      <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+                                        <input type="checkbox" checked={checked} onChange={() => toggleCapa(c.id)}
+                                          className="w-3.5 h-3.5 rounded border-border text-primary-800 focus:ring-primary-800/30 shrink-0" />
+                                        <span className="truncate flex-1">{c.nombre}</span>
+                                      </label>
                                       <span className={`text-[0.55rem] font-semibold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${
                                         c.tipo === 'raster' ? 'bg-gold-500/12 text-gold-500' : 'bg-primary-500/12 text-primary-500'
                                       }`}>{c.tipo === 'raster' ? 'raster' : 'vector'}</span>
-                                    </label>
+                                      {checked && c.tipo === 'vectorial' && (
+                                        <button type="button" onClick={() => toggleFicha(c.id)} aria-pressed={conFicha}
+                                          title={conFicha ? 'Fichas por punto habilitadas' : 'Habilitar fichas por punto'}
+                                          className={`shrink-0 p-1 rounded-md transition-colors ${
+                                            conFicha ? 'text-gold-500 bg-gold-500/12' : 'text-text-faint hover:text-text-muted hover:bg-bg-alt'
+                                          }`}>
+                                          <Images className="w-3.5 h-3.5" />
+                                        </button>
+                                      )}
+                                    </div>
                                   )
                                 })}
                               </div>
@@ -546,6 +578,19 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                 ))}
               </div>
             </AccordionSection>
+
+            {capasConFichaVisibles.length > 0 && (
+              <AccordionSection n={5} title="Fichas por punto" hint="Opcional — exige foto/video y descripción en cada punto de la capa" icon={Images}>
+                <div className="space-y-2">
+                  {capasConFichaVisibles.map((capaId) => {
+                    const capa = workspaces.flatMap((w) => w.capas).find((c) => c.id === capaId)
+                    return (
+                      <FichaCapaConfigRow key={capaId} conexionId={form.conexionGeoserverId} capaId={capaId} capaNombre={capa?.nombre ?? capaId} />
+                    )
+                  })}
+                </div>
+              </AccordionSection>
+            )}
 
             <div className="flex gap-3 pt-2 sticky bottom-0 bg-[var(--card-bg)] pb-1 -mb-1">
               <button type="button" onClick={onClose} disabled={isSaving}

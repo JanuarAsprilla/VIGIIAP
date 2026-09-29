@@ -17,16 +17,12 @@ function ValidadorSkeleton() {
   )
 }
 
-interface ValidadorCoordenadasToolProps {
-  onToast?: (msg: string) => void
-}
-
 // Contenido puro, sin ToolCard/tilt — se muestra a pantalla completa cuando el
 // usuario abre la herramienta desde HerramientaLauncherCard, no dentro de la grilla.
-export default function ValidadorCoordenadasTool({ onToast }: ValidadorCoordenadasToolProps) {
+export default function ValidadorCoordenadasTool() {
   return (
     <Suspense fallback={<ValidadorSkeleton />}>
-      <ValidadorCoordenadas onToast={onToast} />
+      <ValidadorCoordenadas />
     </Suspense>
   )
 }

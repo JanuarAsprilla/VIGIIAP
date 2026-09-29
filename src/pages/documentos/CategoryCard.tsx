@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import type { MouseEvent } from 'react'
 import { motion, useMotionValue, useTransform, useSpring, useMotionTemplate } from 'framer-motion'
 import { ArrowRight, BookOpen } from 'lucide-react'
+import Thumbnail from '@/components/ui/Thumbnail'
 import { categoryIcons, CATEGORY_COLORS } from './documentos.constants'
 import type { CategoryItem } from './documentos.utils'
 
@@ -56,7 +57,7 @@ export function CategoryCard({ category, filteredCount, onOpen, index }: Categor
 
       <div className="absolute inset-0 scale-100 group-hover:scale-110 transition-transform duration-700 ease-out">
         {category.thumbnail ? (
-          <img src={category.thumbnail} alt="" className="w-full h-full object-cover" loading="lazy" />
+          <Thumbnail src={category.thumbnail} alt="" objectFit="cover" className="w-full h-full" />
         ) : (
           <div
             className="w-full h-full"

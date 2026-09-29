@@ -5,13 +5,14 @@ import {
   ShieldAlert, Power, Search, X, AlertTriangle, Rows, Columns2, Columns3,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim } from '@/lib/animations'
-import { getApiErrorMessage } from '@/lib/apiError'
+import { getApiErrorMessage, asApiError } from '@/lib/apiError'
 import {
-  useGeovisoresList, useToggleGeovisorActivo, useDeleteGeovisor,
+  useGeovisoresList, useToggleGeovisorActivo, useDeleteGeovisor, useCompletitudGeovisor,
 } from '@/hooks/useGeovisores'
 import { useConexionesGeoserverList } from '@/hooks/useConexionesGeoserver'
-import type { GeovisorRaw } from '@/types'
+import type { GeovisorRaw, CompletitudGeovisor, CompletitudCapa } from '@/types'
 import GeovisorFormModal from '@/components/admin/geovisores/GeovisorFormModal'
+import Thumbnail from '@/components/ui/Thumbnail'
 
 const fadeUp = fadeUpSm
 
@@ -43,6 +44,23 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
       <CheckCircle className="w-5 h-5 shrink-0" />
       <span className="text-sm font-semibold">{message}</span>
     </motion.div>
+  )
+}
+
+// Solo se monta cuando el geovisor tiene al menos una capa con fichas
+// habilitado -- así useCompletitudGeovisor (un escaneo completo de cada capa
+// en el backend) no se dispara para geovisores que no usan la funcionalidad.
+function BadgeCompletitud({ geovisorId }: { geovisorId: string }) {
+  const { data } = useCompletitudGeovisor(geovisorId)
+  if (!data || data.publicable) return null
+  const faltantes = data.capas.reduce((acc, c) => acc + c.bloqueantes, 0)
+  if (faltantes === 0) return null
+
+  return (
+    <span className="inline-flex items-center gap-1 text-[0.6rem] font-semibold px-1.5 py-0.5 rounded-full bg-gold-400/90 text-primary-950">
+      <AlertTriangle className="w-2.5 h-2.5" aria-hidden="true" />
+      {faltantes} ficha{faltantes === 1 ? '' : 's'} faltante{faltantes === 1 ? '' : 's'}
+    </span>
   )
 }
 
@@ -78,9 +96,8 @@ function GeovisorCard({
       }`}
     >
       {geovisor.thumbnailUrl ? (
-        <img src={geovisor.thumbnailUrl} alt=""
-          loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover bg-bg-alt group-hover/card:scale-105 transition-transform duration-500" />
+        <Thumbnail src={geovisor.thumbnailUrl} alt="" objectFit="cover"
+          className="absolute inset-0 w-full h-full group-hover/card:scale-105 transition-transform duration-500" />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary-800 to-primary-950">
           <MapPinned className="w-12 h-12 text-white/25" aria-hidden="true" />
@@ -102,6 +119,7 @@ function GeovisorCard({
           {!geovisor.activo && (
             <span className="text-[0.6rem] font-semibold px-1.5 py-0.5 rounded bg-white/90 text-text-muted">Inactivo</span>
           )}
+          {geovisor.capasConFicha.length > 0 && <BadgeCompletitud geovisorId={geovisor.id} />}
         </div>
         <button
           type="button"
@@ -181,6 +199,7 @@ export default function GestionGeovisores() {
   const [showForm, setShowForm]         = useState(false)
   const [editing, setEditing]           = useState<GeovisorRaw | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<GeovisorRaw | null>(null)
+  const [bloqueoActivacion, setBloqueoActivacion] = useState<{ geovisor: GeovisorRaw; capas: CompletitudCapa[] } | null>(null)
   const [toast, setToast]               = useState<string | null>(null)
   const [search, setSearch]             = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
@@ -214,10 +233,20 @@ export default function GestionGeovisores() {
   const openEdit = (geovisor: GeovisorRaw) => { setEditing(geovisor); setShowForm(true) }
 
   const handleToggle = async (geovisor: GeovisorRaw) => {
+    const activando = !geovisor.activo
     try {
-      await toggleActivo.mutateAsync({ id: geovisor.id, activo: !geovisor.activo })
+      await toggleActivo.mutateAsync({ id: geovisor.id, activo: activando })
       setToast(`Geovisor "${geovisor.titulo}" ${geovisor.activo ? 'desactivado' : 'activado'}`)
     } catch (err) {
+      const apiErr = asApiError(err)
+      // Desactivar nunca debe quedar bloqueado por completitud -- este código
+      // solo debería llegar al intentar activar, pero se guarda con
+      // `activando` de todos modos por si el backend algún día lo reutiliza.
+      if (activando && apiErr?.code === 'GEOVISOR_INCOMPLETO') {
+        const completitud = apiErr.fields as CompletitudGeovisor | undefined
+        setBloqueoActivacion({ geovisor, capas: completitud?.capas.filter((c) => c.bloqueantes > 0) ?? [] })
+        return
+      }
       setToast(getApiErrorMessage(err, 'No se pudo cambiar el estado'))
     }
   }
@@ -401,6 +430,41 @@ export default function GestionGeovisores() {
                 <button onClick={confirmDelete}
                   className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">
                   Sí, eliminar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {bloqueoActivacion && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-md p-6">
+              <div className="w-12 h-12 bg-gold-400/15 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-5 h-5 text-gold-500" />
+              </div>
+              <h3 className="text-base font-bold text-text mb-2 text-center">No se puede publicar todavía</h3>
+              <p className="text-sm text-text-muted mb-4 text-center">
+                <strong className="text-text">"{bloqueoActivacion.geovisor.titulo}"</strong> tiene capas con "fichas por punto"
+                habilitado que aún no están completas:
+              </p>
+              <ul className="space-y-2 mb-6">
+                {bloqueoActivacion.capas.map((c) => (
+                  <li key={c.capaId} className="flex items-center justify-between gap-2 px-3 py-2 bg-bg-alt rounded-lg text-xs">
+                    <span className="font-semibold text-text truncate">{c.nombre}</span>
+                    <span className="text-text-muted shrink-0">{c.bloqueantes} pendiente{c.bloqueantes === 1 ? '' : 's'}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex gap-3">
+                <button onClick={() => setBloqueoActivacion(null)}
+                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors">
+                  Cerrar
+                </button>
+                <button onClick={() => { openEdit(bloqueoActivacion.geovisor); setBloqueoActivacion(null) }}
+                  className="flex-1 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
+                  Editar geovisor
                 </button>
               </div>
             </motion.div>
