@@ -5,7 +5,7 @@
   <span>ⓘ Los límites incluyen 92 de 93 municipios — falta Belén de Bajirá (Chocó), que aún no tiene límite oficial del IGAC; se registra bajo Riosucio.</span>
 </div>
 
-<div class="errbox" id="errbox"></div>
+<div class="errbox" id="errbox" role="alert"></div>
 
 <div id="overlay-columnas" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:1000; align-items:center; justify-content:center;">
   <div style="background:var(--overlay-bg); border-radius:10px; padding:18px 20px; width:520px; max-width:92vw; max-height:85vh; overflow:auto;">
@@ -37,14 +37,20 @@
 
 <div class="bar">
   <button id="btn-cargar-excel" class="primary"><i class="ti ti-upload" aria-hidden="true"></i> Cargar Excel</button>
-  <input type="file" id="file-excel" accept=".xlsx,.xls" style="display:none">
+  <input type="file" id="file-excel" accept=".xlsx" style="display:none">
   <button id="btn-modo-agregar"><i class="ti ti-map-pin-plus" style="color:#185FA5;" aria-hidden="true"></i> <span id="txt-modo-agregar">Agregar puntos con clic: OFF</span></button>
   <button id="btn-modo-medir"><i class="ti ti-ruler-2" style="color:#0F6E56;" aria-hidden="true"></i> <span id="txt-modo-medir">Medir distancia: OFF</span></button>
   <button id="btn-modo-mover"><i class="ti ti-arrows-move" style="color:#854F0B;" aria-hidden="true"></i> <span id="txt-modo-mover">Mover puntos: OFF</span></button>
   <button id="btn-exportar" disabled><i class="ti ti-download" style="color:#0F6E56;" aria-hidden="true"></i> Descargar Excel de resultados</button>
-  <span id="estado-datos"></span>
+  <span id="estado-datos" aria-live="polite"></span>
 </div>
-<div id="progress"></div>
+<div id="progress" aria-live="polite"></div>
+
+<div id="vc-vacio" class="vc-vacio">
+  <p class="vc-vacio-titulo">Arrastra aquí tu Excel para empezar</p>
+  <p class="vc-vacio-texto">Archivo .xlsx con una columna de latitud y otra de longitud. También puedes agregar puntos haciendo clic sobre el mapa.</p>
+  <button id="btn-plantilla" type="button"><i class="ti ti-download" aria-hidden="true"></i> Descargar plantilla</button>
+</div>
 
 <div class="filtergroup" style="display:flex; align-items:center; gap:10px;">
   <div class="label" style="margin:0;">Formato de coordenadas</div>
@@ -100,6 +106,7 @@
 <div class="card">
   <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
     <h3 style="margin:0;">Registros (<span id="tabla-count">0</span>)</h3>
+    <button id="btn-corregir-invertidas" type="button" style="display:none; font-size:12px; padding:6px 10px; border-radius:6px; border:1px solid #EDA100; background:#EDA100; color:#2C2C2A; cursor:pointer;">Corregir invertidas</button>
     <button id="btn-confirmar-todas-dup" style="display:none; font-size:12px; padding:6px 10px; border-radius:6px; border:1px solid #0F6E56; background:#0F6E56; color:white; cursor:pointer;">Confirmar repetidas como válidas</button>
   </div>
   <div id="tableWrap">

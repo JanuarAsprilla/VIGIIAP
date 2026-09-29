@@ -57,4 +57,36 @@ describe('Validador de coordenadas (port fiel del HTML original)', () => {
     unmount()
     expect(raiz.innerHTML).toBe('')
   })
+
+  test('sin datos muestra el estado vacío con la plantilla y el botón de corregir invertidas oculto', async () => {
+    const { container } = render(<ValidadorCoordenadas />)
+    await waitFor(() => expect(container.querySelector('#vc-vacio')).not.toBeNull())
+    expect((container.querySelector('#vc-vacio') as HTMLElement).hidden).toBe(false)
+    expect(container.querySelector('#btn-plantilla')).not.toBeNull()
+    expect((container.querySelector('#btn-corregir-invertidas') as HTMLElement).style.display).toBe('none')
+  })
+
+  test('arrastrar un archivo sobre la herramienta muestra la zona de soltar y al salir se quita', async () => {
+    const { container } = render(<ValidadorCoordenadas />)
+    await waitFor(() => expect(container.querySelector('.vc-root')).not.toBeNull())
+    const raiz = container.querySelector('.vc-root') as HTMLElement
+    fireEvent.dragOver(raiz, { dataTransfer: { types: ['Files'], files: [] } })
+    expect(raiz.classList.contains('vc-arrastrando')).toBe(true)
+    fireEvent.dragLeave(raiz, { relatedTarget: document.body })
+    expect(raiz.classList.contains('vc-arrastrando')).toBe(false)
+  })
+
+  test('soltar un archivo que no es .xlsx muestra un error claro', async () => {
+    const { container } = render(<ValidadorCoordenadas />)
+    await waitFor(() => expect(container.querySelector('.vc-root')).not.toBeNull())
+    const raiz = container.querySelector('.vc-root') as HTMLElement
+    const pdf = new File(['x'], 'datos.pdf')
+    fireEvent.drop(raiz, { dataTransfer: { types: ['Files'], files: [pdf] } })
+    expect(container.querySelector('#errbox')?.textContent).toMatch(/\.xlsx/)
+  })
+
+  test('el mapa dibuja el contorno de los municipios objetivo', async () => {
+    const { container } = render(<ValidadorCoordenadas />)
+    await waitFor(() => expect(container.querySelectorAll('.leaflet-overlay-pane path').length).toBe(92))
+  })
 })

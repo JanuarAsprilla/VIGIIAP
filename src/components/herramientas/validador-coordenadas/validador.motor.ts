@@ -22,6 +22,7 @@ export function iniciarValidador(root) {
   const L = globalThis.L
   const turf = { centroid, booleanPointInPolygon, point }
   const W = {}
+  let observadorTema = null
   const document = {
     getElementById: (id) => root.querySelector('#' + CSS.escape(id)),
     querySelector: (s) => root.querySelector(s),
@@ -374,10 +375,28 @@ export function iniciarValidador(root) {
   }
   precalcularCentroides(DANE_FEATURES);
   
+  function bboxDe(f){
+    if(f._bbox !== undefined) return f._bbox;
+    let b = null;
+    try{
+      const rec = (c)=>{
+        if(typeof c[0] === 'number'){
+          if(!b) b = [c[0], c[1], c[0], c[1]];
+          else { if(c[0]<b[0]) b[0]=c[0]; if(c[1]<b[1]) b[1]=c[1]; if(c[0]>b[2]) b[2]=c[0]; if(c[1]>b[3]) b[3]=c[1]; }
+        } else c.forEach(rec);
+      };
+      rec(f.geometry.coordinates);
+    }catch(e){ b = null; }
+    f._bbox = b;
+    return b;
+  }
+
   function buscarMunicipio(lat, lon){
     if(!DANE_FEATURES) return null;
     const pt = turf.point([lon, lat]);
     for(const f of DANE_FEATURES){
+      const bb = bboxDe(f);
+      if(bb && (lon<bb[0] || lon>bb[2] || lat<bb[1] || lat>bb[3])) continue;
       try{
         if(turf.booleanPointInPolygon(pt, f)){
           return f.properties;
@@ -507,6 +526,30 @@ export function iniciarValidador(root) {
     renderAll();
   }
   $('btn-confirmar-todas-dup').addEventListener('click', confirmarTodasLasDuplicadas);
+
+  // Corrige de una vez las coordenadas cuya latitud y longitud parecen intercambiadas.
+  // Deja constancia en el Excel de salida (movida_manualmente + valores originales).
+  function corregirTodasLasInvertidas(){
+    let n = 0;
+    for(let i=0;i<ROWS.length;i++){
+      const r = RESULTS[i];
+      if(!(r.latIntercambiada && r.estado==='SOSPECHOSA') || r._movido) continue;
+      r._movido = true;
+      r._latOriginalAntesDeMover = ROWS[i][colLat];
+      r._lonOriginalAntesDeMover = ROWS[i][colLon];
+      const a = ROWS[i][colLat];
+      ROWS[i][colLat] = ROWS[i][colLon];
+      ROWS[i][colLon] = a;
+      validarUnPunto(i);
+      n++;
+    }
+    if(n){
+      detectarDuplicadas();
+      $('estado-datos').textContent = `${n.toLocaleString('es-CO')} coordenada(s) corregida(s) al intercambiar latitud y longitud.`;
+      renderAll();
+    }
+  }
+  $('btn-corregir-invertidas').addEventListener('click', corregirTodasLasInvertidas);
   
   
   // ============================================================
@@ -514,9 +557,20 @@ export function iniciarValidador(root) {
   // ============================================================
   function initMap(){
     map = L.map('map').setView([4.5, -76.5], 6);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri', maxZoom: 19
-    }).addTo(map);
+    const URL_BASE_CLARA = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+    const URL_BASE_OSCURA = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+    const capaBase = L.tileLayer(URL_BASE_CLARA, { attribution: 'Tiles &copy; Esri', maxZoom: 19 }).addTo(map);
+    // La base sigue el tema de la plataforma (claro/oscuro).
+    const aplicarBase = ()=>{
+      const oscuro = globalThis.document.documentElement.classList.contains('dark');
+      capaBase.options.maxNativeZoom = oscuro ? 16 : 19;
+      capaBase.setUrl(oscuro ? URL_BASE_OSCURA : URL_BASE_CLARA);
+    };
+    observadorTema = new MutationObserver(aplicarBase);
+    observadorTema.observe(globalThis.document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    aplicarBase();
+    // Contorno de los municipios objetivo como referencia visual (no interactivo).
+    L.geoJSON(MUNICIPIOS_EMBEBIDOS, { interactive: false, smoothFactor: 1.5, style: { color: '#0F6E56', weight: 1, opacity: 0.55, fill: false } }).addTo(map);
     cluster = L.markerClusterGroup({
       iconCreateFunction: function(cluster){
         const hijos = cluster.getAllChildMarkers();
@@ -969,6 +1023,14 @@ export function iniciarValidador(root) {
     } else {
       btnMasivo.style.display = 'none';
     }
+    const invertidas = RESULTS.filter(r=>r.latIntercambiada && r.estado==='SOSPECHOSA' && !r._movido).length;
+    const btnInv = $('btn-corregir-invertidas');
+    if(invertidas >= 1){
+      btnInv.style.display = '';
+      btnInv.textContent = `Corregir ${invertidas.toLocaleString('es-CO')} invertidas`;
+    } else {
+      btnInv.style.display = 'none';
+    }
   }
   
   function focusRow(idx){
@@ -1037,6 +1099,7 @@ export function iniciarValidador(root) {
     rebuildMarkerIndex(markers);
     renderTabla();
     $('btn-exportar').disabled = ROWS.length===0;
+    $('vc-vacio').hidden = ROWS.length>0;
   }
   
   // ============================================================
@@ -1103,6 +1166,43 @@ export function iniciarValidador(root) {
     XLSX.writeFile(wb, nombre);
   });
   
+  // ── Arrastrar y soltar el Excel sobre la herramienta ──
+  const conArchivos = (e)=> !!e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+  const alArrastrar = (e)=>{ if(conArchivos(e)){ e.preventDefault(); root.classList.add('vc-arrastrando'); } };
+  const alSalirArrastre = (e)=>{ if(!root.contains(e.relatedTarget)) root.classList.remove('vc-arrastrando'); };
+  const alSoltar = (e)=>{
+    if(!conArchivos(e)) return;
+    e.preventDefault();
+    root.classList.remove('vc-arrastrando');
+    const f = e.dataTransfer.files[0];
+    if(!f) return;
+    if(!/\.xlsx$/i.test(f.name)){ showError('Solo se admiten archivos .xlsx.'); return; }
+    hideError();
+    const dt = new DataTransfer();
+    dt.items.add(f);
+    $('file-excel').files = dt.files;
+    $('file-excel').dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  root.addEventListener('dragenter', alArrastrar);
+  root.addEventListener('dragover', alArrastrar);
+  root.addEventListener('dragleave', alSalirArrastre);
+  root.addEventListener('drop', alSoltar);
+
+  // ── Plantilla descargable ──
+  $('btn-plantilla').addEventListener('click', ()=>{
+    void escribirLibroExcel([
+      { nombre: 'Plantilla', filas: [
+        { ID: 1, Especie: 'Ejemplo A', Latitud: 5.6919, Longitud: -76.6583, Municipio: 'Quibdó' },
+        { ID: 2, Especie: 'Ejemplo B', Latitud: 4.2153, Longitud: -77.3654, Municipio: 'Bajo Baudó' },
+      ] },
+      { nombre: 'Instrucciones', filas: [
+        { Campo: 'Latitud', Descripción: 'Grados decimales (ej. 5.6919). Usa punto o coma decimal.' },
+        { Campo: 'Longitud', Descripción: 'Grados decimales, negativa al occidente de Greenwich (ej. -76.6583).' },
+        { Campo: 'Otras columnas', Descripción: 'Se conservan tal cual en el Excel de resultados.' },
+      ] },
+    ], 'PLANTILLA_VALIDADOR_COORDENADAS.xlsx');
+  });
+
   initMap();
   
 
@@ -1122,6 +1222,11 @@ export function iniciarValidador(root) {
 
   return function destruir() {
     root.removeEventListener('click', despachar, true)
+    root.removeEventListener('dragenter', alArrastrar)
+    root.removeEventListener('dragover', alArrastrar)
+    root.removeEventListener('dragleave', alSalirArrastre)
+    root.removeEventListener('drop', alSoltar)
+    if (observadorTema) observadorTema.disconnect()
     try { map.remove() } catch {}
   }
 }
