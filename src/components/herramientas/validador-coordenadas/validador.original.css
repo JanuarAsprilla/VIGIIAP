@@ -1,0 +1,61 @@
+/* Portado desde validador_coordenadas_IIAP.html; selectores acotados a .vc-root. El tema de la plataforma vive en validador.tema.css */
+.vc-root{
+    --bg-page:#FAFAF8; --bg-card:#ffffff; --bg-filter:#F1EFE8; --bg-hover:#F1EFE8;
+    --text-primary:#2C2C2A; --text-secondary:#5F5E5A; --text-muted:#6E6D66;
+    --border-color:#D3D1C7; --border-light:#E1E0D9; --border-lighter:#F1EFE8;
+    --input-bg:#ffffff; --overlay-bg:#ffffff;
+  }
+.vc-root{ margin:0; font-family: var(--font-body); background:var(--bg-page); color:var(--text-primary); }
+.vc-root #wrap{ max-width:1300px; margin:0 auto; padding:16px; }
+.vc-root h1{ font-size:18px; margin:0 0 4px; color:var(--text-primary); }
+.vc-root .sub{ font-size:12px; color:var(--text-secondary); margin-bottom:14px; }
+.vc-root .bar{ display:flex; gap:8px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+.vc-root button{ font-size:12px; padding:7px 12px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-primary); cursor:pointer; }
+.vc-root button:hover{ background:var(--bg-hover); }
+.vc-root button:disabled{ opacity:.5; cursor:not-allowed; }
+.vc-root button.primary{ background:#0F6E56; color:white; border-color:#0F6E56; }
+.vc-root button .ti{ font-size:14px; vertical-align:-2px; margin-right:2px; }
+.vc-root button.primary .ti{ color:white !important; }
+.vc-root button.primary:hover{ background:#0c5a46; }
+.vc-root .fmt-btn.activo{ background:#0F6E56; color:white; border-color:#0F6E56; }
+.vc-root #estado-datos{ font-size:11px; color:var(--text-secondary); }
+.vc-root .filtergroup{ background:var(--bg-filter); border-radius:8px; padding:10px 12px; margin-bottom:8px; }
+.vc-root .filtergroup .label{ font-size:10px; color:var(--text-secondary); margin-bottom:6px; text-transform:uppercase; letter-spacing:.02em; }
+.vc-root .filtergrid{ display:grid; gap:8px; grid-template-columns:repeat(4,1fr); }
+.vc-root .filtergrid select, .vc-root .filtergrid input{ width:100%; box-sizing:border-box; padding:6px 8px; font-size:12px; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-primary); }
+.vc-root .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:14px 0; }
+.vc-root .kpi{ background:var(--bg-card); border-left:4px solid #0F6E56; border-radius:8px; padding:10px 12px; }
+.vc-root .kpi.k2{ border-color:#1BAF7A; }
+.vc-root .kpi.k3{ border-color:#EDA100; }
+.vc-root .kpi.k4{ border-color:#E34948; }
+.vc-root .kpi.k5{ border-color:#888780; }
+.vc-root .kpi .lab{ font-size:11px; color:var(--text-secondary); }
+.vc-root .kpi .val{ font-size:20px; font-weight:600; }
+.vc-root .kpi.k1 .val{color:#0F6E56}
+.vc-root .kpi.k2 .val{color:#1BAF7A}
+.vc-root .kpi.k3 .val{color:#EDA100}
+.vc-root .kpi.k4 .val{color:#E34948}
+.vc-root .kpi.k5 .val{color:#888780}
+.vc-root .row{ display:grid; grid-template-columns:1.4fr 1fr; gap:12px; margin-bottom:12px; }
+.vc-root .card{ background:var(--bg-card); border-radius:8px; padding:10px; }
+.vc-root .card h3{ font-size:11px; color:var(--text-secondary); margin:0 0 6px; font-weight:500; text-transform:uppercase; }
+.vc-root .legend{ display:flex; gap:12px; flex-wrap:wrap; font-size:11px; color:var(--text-secondary); margin-bottom:6px; }
+.vc-root .legend span{ display:inline-flex; align-items:center; gap:4px; }
+.vc-root .legend i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+.vc-root #map{ height:440px; border-radius:6px; overflow:hidden; }
+.vc-root table{ width:100%; border-collapse:collapse; font-size:11px; }
+.vc-root th{ text-align:left; padding:5px 6px; color:var(--text-secondary); font-weight:500; border-bottom:1px solid var(--border-light); cursor:pointer; white-space:nowrap; }
+.vc-root td{ padding:5px 6px; border-bottom:1px solid var(--border-lighter); white-space:nowrap; max-width:220px; overflow:hidden; text-overflow:ellipsis; }
+.vc-root tr.row-click{ cursor:pointer; }
+.vc-root tr.row-click:hover{ background:var(--bg-hover); }
+.vc-root .badge{ display:inline-block; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:600; color:white; }
+.vc-root .b-valida{ background:#1BAF7A; }
+.vc-root .b-sospechosa{ background:#EDA100; }
+.vc-root .b-invalida{ background:#E34948; }
+.vc-root .b-na{ background:#888780; }
+.vc-root #pager{ display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:11px; color:var(--text-secondary); }
+.vc-root #pager button{ font-size:11px; padding:4px 10px; }
+.vc-root .foot{ font-size:11px; color:var(--text-muted); text-align:right; margin-top:10px; }
+.vc-root #tableWrap{ overflow:auto; max-height:420px; }
+.vc-root #progress{ font-size:11px; color:var(--text-secondary); margin-top:6px; }
+.vc-root .errbox{ background:#FDECEC; border:1px solid #E34948; color:#8a2323; border-radius:6px; padding:8px 10px; font-size:12px; margin-bottom:10px; display:none; }

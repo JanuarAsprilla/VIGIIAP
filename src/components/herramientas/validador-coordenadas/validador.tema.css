@@ -1,0 +1,45 @@
+/* Tema VIGIIAP sobre el validador original: solo cambia apariencia (tokens, tipografía, íconos),
+   no la estructura ni el comportamiento. Los colores de estado (válida/sospechosa/inválida) se conservan.
+   El modo claro/oscuro lo aporta la plataforma a través de sus tokens. */
+.vc-root {
+  --bg-page: transparent;
+  --bg-card: var(--card-bg, var(--color-surface));
+  --bg-filter: var(--color-bg-alt);
+  --bg-hover: var(--color-bg-alt);
+  --text-primary: var(--color-text);
+  --text-secondary: var(--color-text-light);
+  --text-muted: var(--color-text-muted);
+  --border-color: var(--color-border);
+  --border-light: var(--color-border);
+  --border-lighter: var(--color-border);
+  --input-bg: var(--card-bg, var(--color-surface));
+  --overlay-bg: var(--card-bg, var(--color-surface));
+
+  font-family: var(--font-body);
+  background: transparent;
+}
+.vc-root #wrap { max-width: none; padding: 0; }
+.vc-root .sub { font-size: 0.875rem; }
+.vc-root .kpi, .vc-root .card, .vc-root .filtergroup { border-radius: var(--radius-xl); box-shadow: var(--shadow-soft); }
+.vc-root button.primary, .vc-root .fmt-btn.activo { background: var(--color-primary-800); border-color: var(--color-primary-800); }
+.vc-root button.primary:hover { background: var(--color-primary-700); }
+.vc-root button:focus-visible, .vc-root select:focus-visible, .vc-root input:focus-visible {
+  outline: 2px solid var(--color-primary-600);
+  outline-offset: 2px;
+}
+.vc-root #map { z-index: 0; }
+
+/* Íconos Tabler del original -> máscaras locales (sin webfont externo) */
+.vc-root .ti {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background-color: currentColor;
+  -webkit-mask: var(--vc-icono) center / contain no-repeat;
+  mask: var(--vc-icono) center / contain no-repeat;
+}
+.vc-root .ti-upload{--vc-icono:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20class%3D%22lucide%20lucide-upload%22%20aria-hidden%3D%22true%22%3E%3Cpath%20d%3D%22M12%203v12%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m17%208-5-5-5%205%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M21%2015v4a2%202%200%200%201-2%202H5a2%202%200%200%201-2-2v-4%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E");}
+.vc-root .ti-map-pin-plus{--vc-icono:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20class%3D%22lucide%20lucide-map-pin-plus%22%20aria-hidden%3D%22true%22%3E%3Cpath%20d%3D%22M19.914%2011.105A7.298%207.298%200%200%200%2020%2010a8%208%200%200%200-16%200c0%204.993%205.539%2010.193%207.399%2011.799a1%201%200%200%200%201.202%200%2032%2032%200%200%200%20.824-.738%22%3E%3C%2Fpath%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2210%22%20r%3D%223%22%3E%3C%2Fcircle%3E%3Cpath%20d%3D%22M16%2018h6%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M19%2015v6%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E");}
+.vc-root .ti-ruler-2{--vc-icono:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20class%3D%22lucide%20lucide-ruler%22%20aria-hidden%3D%22true%22%3E%3Cpath%20d%3D%22M21.3%2015.3a2.4%202.4%200%200%201%200%203.4l-2.6%202.6a2.4%202.4%200%200%201-3.4%200L2.7%208.7a2.41%202.41%200%200%201%200-3.4l2.6-2.6a2.41%202.41%200%200%201%203.4%200Z%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m14.5%2012.5%202-2%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m11.5%209.5%202-2%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m8.5%206.5%202-2%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m17.5%2015.5%202-2%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E");}
+.vc-root .ti-arrows-move{--vc-icono:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20class%3D%22lucide%20lucide-move%22%20aria-hidden%3D%22true%22%3E%3Cpath%20d%3D%22M12%202v20%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m15%2019-3%203-3-3%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m19%209%203%203-3%203%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M2%2012h20%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m5%209-3%203%203%203%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m9%205%203-3%203%203%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E");}
+.vc-root .ti-download{--vc-icono:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20class%3D%22lucide%20lucide-download%22%20aria-hidden%3D%22true%22%3E%3Cpath%20d%3D%22M12%2015V3%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M21%2015v4a2%202%200%200%201-2%202H5a2%202%200%200%201-2-2v-4%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m7%2010%205%205%205-5%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E");}

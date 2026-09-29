@@ -26,6 +26,9 @@ export default defineConfig({
       exclude: [
         'node_modules/', 'dist/', 'src/test/',
         'src/main.tsx', 'src/vite-env.d.ts', 'src/types/**',
+        // Script del validador original portado tal cual (~1.1k líneas de lógica + GeoJSON embebido);
+        // se verifica por su comportamiento en validador.original.test.tsx, no línea a línea.
+        'src/components/herramientas/validador-coordenadas/validador.motor.ts',
       ],
       // Ratchet: solo subir, nunca bajar para que un PR pase.
       thresholds: {

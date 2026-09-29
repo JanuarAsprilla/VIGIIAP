@@ -1,0 +1,130 @@
+
+<div id="wrap">
+<div class="sub">Carga tu Excel, elige las columnas de latitud y longitud, y valida cada punto dentro de los límites de los 93 municipios del Chocó Biogeográfico.</div>
+<div style="display:flex; gap:6px; align-items:flex-start; font-size:12px; color:var(--text-secondary); line-height:1.4; margin-bottom:14px;">
+  <span>ⓘ Los límites incluyen 92 de 93 municipios — falta Belén de Bajirá (Chocó), que aún no tiene límite oficial del IGAC; se registra bajo Riosucio.</span>
+</div>
+
+<div class="errbox" id="errbox"></div>
+
+<div id="overlay-columnas" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:1000; align-items:center; justify-content:center;">
+  <div style="background:var(--overlay-bg); border-radius:10px; padding:18px 20px; width:520px; max-width:92vw; max-height:85vh; overflow:auto;">
+    <h3 style="margin:0 0 4px; font-size:14px; color:var(--text-primary);">Selecciona las columnas de coordenadas</h3>
+    <p style="font-size:12px; color:var(--text-secondary); margin:0 0 14px;" id="col-sub"></p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div>
+        <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">Columna de latitud</label>
+        <select id="sel-col-lat" style="width:100%; padding:6px 8px; font-size:12px; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-primary);"></select>
+      </div>
+      <div>
+        <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">Columna de longitud</label>
+        <select id="sel-col-lon" style="width:100%; padding:6px 8px; font-size:12px; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-primary);"></select>
+      </div>
+    </div>
+    <div style="overflow:auto; max-height:220px; margin-bottom:14px; border:1px solid var(--border-lighter); border-radius:6px;">
+      <table style="width:100%; border-collapse:collapse; font-size:11px;">
+        <thead><tr id="col-preview-head"></tr></thead>
+        <tbody id="col-preview-body"></tbody>
+      </table>
+    </div>
+    <p id="col-mensaje" style="font-size:11px; color:var(--text-muted); margin:0 0 12px;"></p>
+    <div style="display:flex; gap:8px;">
+      <button id="btn-cancelar-columnas" style="flex:1; padding:8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-card); cursor:pointer; font-size:12px;">Cancelar</button>
+      <button id="btn-confirmar-columnas" style="flex:2; padding:8px; border-radius:6px; border:1px solid #0F6E56; background:#0F6E56; color:white; cursor:pointer; font-size:12px;">Confirmar y validar</button>
+    </div>
+  </div>
+</div>
+
+<div class="bar">
+  <button id="btn-cargar-excel" class="primary"><i class="ti ti-upload" aria-hidden="true"></i> Cargar Excel</button>
+  <input type="file" id="file-excel" accept=".xlsx,.xls" style="display:none">
+  <button id="btn-modo-agregar"><i class="ti ti-map-pin-plus" style="color:#185FA5;" aria-hidden="true"></i> <span id="txt-modo-agregar">Agregar puntos con clic: OFF</span></button>
+  <button id="btn-modo-medir"><i class="ti ti-ruler-2" style="color:#0F6E56;" aria-hidden="true"></i> <span id="txt-modo-medir">Medir distancia: OFF</span></button>
+  <button id="btn-modo-mover"><i class="ti ti-arrows-move" style="color:#854F0B;" aria-hidden="true"></i> <span id="txt-modo-mover">Mover puntos: OFF</span></button>
+  <button id="btn-exportar" disabled><i class="ti ti-download" style="color:#0F6E56;" aria-hidden="true"></i> Descargar Excel de resultados</button>
+  <span id="estado-datos"></span>
+</div>
+<div id="progress"></div>
+
+<div class="filtergroup" style="display:flex; align-items:center; gap:10px;">
+  <div class="label" style="margin:0;">Formato de coordenadas</div>
+  <div style="display:flex; gap:6px;">
+    <button id="fmt-dd" class="fmt-btn">DD (grados decimales)</button>
+    <button id="fmt-dms" class="fmt-btn">DMS (grados, min, seg)</button>
+    <button id="fmt-utm" class="fmt-btn">UTM</button>
+  </div>
+</div>
+
+<div class="filtergroup">
+  <div class="label">Filtros</div>
+  <div class="filtergrid">
+    <select id="f-estado"><option value="">Estado: todos</option><option value="VÁLIDA">Válida</option><option value="SOSPECHOSA">Sospechosa</option><option value="INVÁLIDA">Inválida</option></select>
+    <select id="f-depto"><option value="">Departamento: todos</option></select>
+    <select id="f-muni"><option value="">Municipio detectado: todos</option></select>
+    <select id="f-error"><option value="">Tipo de error: todos</option></select>
+  </div>
+  <div style="display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;">
+    <button class="chip-origen activo" data-origen="" style="font-size:11px; padding:5px 12px; border-radius:999px; border:1px solid #0F6E56; background:#0F6E56; color:white; cursor:pointer;">Todos</button>
+    <button class="chip-origen" data-origen="agregado" style="font-size:11px; padding:5px 12px; border-radius:999px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-primary); cursor:pointer;">Agregados manualmente</button>
+    <button class="chip-origen" data-origen="movido" style="font-size:11px; padding:5px 12px; border-radius:999px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-primary); cursor:pointer;">Movidos manualmente</button>
+    <button class="chip-origen" data-origen="confirmado" style="font-size:11px; padding:5px 12px; border-radius:999px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-primary); cursor:pointer;">Confirmados como válidos</button>
+  </div>
+</div>
+
+<div class="kpis">
+  <div class="kpi k1"><div class="lab">Total registros</div><div class="val" id="kpi-total">-</div></div>
+  <div class="kpi k2"><div class="lab">Válidas</div><div class="val" id="kpi-validas">-</div></div>
+  <div class="kpi k3"><div class="lab">Sospechosas</div><div class="val" id="kpi-sospechosas">-</div></div>
+  <div class="kpi k4"><div class="lab">Inválidas</div><div class="val" id="kpi-invalidas">-</div></div>
+</div>
+
+<div class="row">
+  <div class="card">
+    <h3>Mapa de puntos</h3>
+    <div class="legend">
+      <span><i style="background:#1BAF7A"></i>Válida</span>
+      <span><i style="background:#EDA100"></i>Sospechosa</span>
+      <span><i style="background:#E34948"></i>Inválida</span>
+      <span><i style="background:#888780"></i>Sin coordenadas</span>
+    </div>
+    <div id="map"></div>
+  </div>
+  <div class="card">
+    <h3>Resumen por municipio detectado</h3>
+    <div id="tableWrap2" style="max-height:440px; overflow:auto;">
+      <table id="tbl-resumen"><thead><tr><th>Depto</th><th>Municipio</th><th>Puntos</th><th>Váli.</th><th>Sosp.</th><th>Invá.</th><th>Calidad</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+    <h3 style="margin:0;">Registros (<span id="tabla-count">0</span>)</h3>
+    <button id="btn-confirmar-todas-dup" style="display:none; font-size:12px; padding:6px 10px; border-radius:6px; border:1px solid #0F6E56; background:#0F6E56; color:white; cursor:pointer;">Confirmar repetidas como válidas</button>
+  </div>
+  <div id="tableWrap">
+    <table>
+      <thead><tr>
+        <th data-k="estado">Estado</th><th>Fila Excel</th><th data-k="lat" id="th-lat">Lat original</th><th data-k="lon" id="th-lon">Lon original</th>
+        <th data-k="depDet">Depto. detectado</th><th data-k="muniDet">Municipio detectado</th>
+        <th data-k="error">Tipo de error</th><th data-k="dist">Dist. al centro (km)</th><th data-k="obs">Observación</th><th>Acción</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div id="pager">
+    <span style="display:flex; align-items:center; gap:6px;">
+      <label style="font-size:11px; color:#5F5E5A; white-space:nowrap;">Fila Excel</label>
+      <input id="f-fila-desde" type="number" placeholder="Desde" style="width:70px; padding:5px 6px; font-size:11px; border-radius:6px; border:1px solid #D3D1C7;">
+      <span style="font-size:11px; color:#888780;">a</span>
+      <input id="f-fila-hasta" type="number" placeholder="Hasta" style="width:70px; padding:5px 6px; font-size:11px; border-radius:6px; border:1px solid #D3D1C7;">
+    </span>
+    <span><span id="pager-info"></span> <button id="prev">Anterior</button> <button id="next">Siguiente</button></span>
+  </div>
+</div>
+
+<div class="foot" id="foot"></div>
+</div>
+
+
+
