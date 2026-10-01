@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Loader2, Check, AlertCircle, ListChecks } from 'lucide-react'
+import { Loader2, Check, AlertCircle, ListChecks, Trash2 } from 'lucide-react'
 import { asApiError, getApiErrorMessage } from '@/lib/apiError'
 import {
-  useAtributosCapa, useConfigFichasCapa, useUpsertConfigFichasCapa, useFeaturesFichas,
+  useAtributosCapa, useConfigFichasCapa, useUpsertConfigFichasCapa, useEliminarConfigFichasCapa, useFeaturesFichas,
 } from '@/hooks/useFichasPunto'
 import FichasCapaModal from './FichasCapaModal'
 
@@ -24,12 +24,14 @@ export default function FichaCapaConfigRow({ conexionId, capaId, capaNombre }: {
   const { data: config, isLoading: cargandoConfig } = useConfigFichasCapa(conexionId, capaId)
   const { data: featuresResp } = useFeaturesFichas(config?.id)
   const upsertConfig = useUpsertConfigFichasCapa()
+  const eliminarConfig = useEliminarConfigFichasCapa()
 
   const [campoIdentificador, setCampoIdentificador] = useState(() => config?.campoIdentificador ?? '')
   const [campoEtiqueta, setCampoEtiqueta] = useState(() => config?.campoEtiqueta ?? '')
   const [error, setError] = useState('')
   const [configAnterior, setConfigAnterior] = useState(config)
   const [modalAbierto, setModalAbierto] = useState(false)
+  const [confirmandoQuitar, setConfirmandoQuitar] = useState(false)
 
   // Precarga desde la config ya guardada -- si otro geovisor ya la configuró,
   // esta fila hereda el mismo identificador en vez de partir vacía. Ajustado
@@ -59,6 +61,20 @@ export default function FichaCapaConfigRow({ conexionId, capaId, capaNombre }: {
           ? 'Ya hay fichas cargadas con el identificador actual — elimínalas antes de cambiarlo.'
           : getApiErrorMessage(err, 'No se pudo guardar la configuración'),
       )
+    }
+  }
+
+  const quitar = async () => {
+    if (!config) return
+    setError('')
+    try {
+      await eliminarConfig.mutateAsync({ configId: config.id, conexionId, capaId })
+      setCampoIdentificador('')
+      setCampoEtiqueta('')
+      setConfirmandoQuitar(false)
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'No se pudo quitar la configuración'))
+      setConfirmandoQuitar(false)
     }
   }
 
@@ -133,6 +149,32 @@ export default function FichaCapaConfigRow({ conexionId, capaId, capaNombre }: {
           </button>
         </div>
       </div>
+
+      {config && (
+        confirmandoQuitar ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 border border-red-300/50 bg-red/5 rounded-md px-3 py-2">
+            <p className="text-[0.65rem] text-text">
+              ¿Quitar la configuración de esta capa? Podrás elegir otro identificador.
+            </p>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setConfirmandoQuitar(false)} disabled={eliminarConfig.isPending}
+                className="px-2.5 py-1 border border-border rounded-md text-[0.65rem] font-semibold text-text-muted hover:border-primary-800 disabled:opacity-40 transition-colors">
+                Cancelar
+              </button>
+              <button type="button" onClick={quitar} disabled={eliminarConfig.isPending}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-600 text-white rounded-md text-[0.65rem] font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors">
+                {eliminarConfig.isPending && <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />}
+                Sí, quitar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setConfirmandoQuitar(true)}
+            className="inline-flex items-center gap-1.5 text-[0.65rem] font-semibold text-text-muted hover:text-red-600 transition-colors">
+            <Trash2 className="w-3 h-3" aria-hidden="true" /> Quitar configuración
+          </button>
+        )
+      )}
 
       {modalAbierto && config && (
         <FichasCapaModal configId={config.id} capaNombre={capaNombre} onClose={() => setModalAbierto(false)} />
