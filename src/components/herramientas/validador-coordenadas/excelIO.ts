@@ -54,6 +54,61 @@ export async function leerLibroExcel(buffer: ArrayBuffer): Promise<LibroLeido> {
   return libro
 }
 
+/** Decodifica como UTF-8 y, si el archivo no lo es (CSV de Excel en español suele ser Windows-1252), cae a Windows-1252. */
+function decodificarTexto(buffer: ArrayBuffer): string {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buffer).replace(/^\uFEFF/, '')
+  } catch {
+    return new TextDecoder('windows-1252').decode(buffer)
+  }
+}
+
+function detectarSeparador(primeraLinea: string): string {
+  const candidatos = [',', ';', '\t']
+  const conteos = candidatos.map((c) => primeraLinea.split(c).length - 1)
+  const mayor = Math.max(...conteos)
+  return mayor === 0 ? ',' : candidatos[conteos.indexOf(mayor)]
+}
+
+/** Divide un CSV en filas de celdas respetando comillas, comillas escapadas ("") y saltos de línea dentro de comillas. */
+function parsearCsv(texto: string, separador: string): string[][] {
+  const filas: string[][] = []
+  let fila: string[] = []
+  let celda = ''
+  let entreComillas = false
+  for (let i = 0; i < texto.length; i++) {
+    const c = texto[i]
+    if (entreComillas) {
+      if (c === '"' && texto[i + 1] === '"') { celda += '"'; i++ }
+      else if (c === '"') entreComillas = false
+      else celda += c
+    } else if (c === '"') entreComillas = true
+    else if (c === separador) { fila.push(celda); celda = '' }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && texto[i + 1] === '\n') i++
+      fila.push(celda); celda = ''
+      filas.push(fila); fila = []
+    } else celda += c
+  }
+  if (celda !== '' || fila.length > 0) { fila.push(celda); filas.push(fila) }
+  return filas
+}
+
+/** CSV como un libro de una sola hoja, con el mismo formato que leerLibroExcel (texto, celdas vacías = ''). */
+export function leerLibroCsv(buffer: ArrayBuffer): LibroLeido {
+  const texto = decodificarTexto(buffer)
+  const salto = texto.search(/\r|\n/)
+  const separador = detectarSeparador(salto === -1 ? texto : texto.slice(0, salto))
+  const [encabezados = [], ...cuerpo] = parsearCsv(texto, separador).filter((f) => f.some((c) => c.trim() !== ''))
+  const nombres = encabezados.map((h) => limpiarTexto(h).trim())
+  const filas: FilaTexto[] = cuerpo.map((celdas) => {
+    const fila: FilaTexto = {}
+    nombres.forEach((nombre, i) => { if (nombre) fila[nombre] = limpiarTexto(celdas[i] ?? '') })
+    return fila
+  })
+  return { SheetNames: ['CSV'], Sheets: { CSV: filas } }
+}
+
 /** Nombres de hoja válidos en Excel: máx. 31 caracteres y sin \ / ? * [ ] : */
 function nombreHoja(nombre: string): string {
   return nombre.replace(/[\\/?*[\]:]/g, ' ').slice(0, 31)

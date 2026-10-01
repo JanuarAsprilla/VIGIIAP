@@ -89,4 +89,47 @@ describe('Validador de coordenadas (port fiel del HTML original)', () => {
     const { container } = render(<ValidadorCoordenadas />)
     await waitFor(() => expect(container.querySelectorAll('.leaflet-overlay-pane path').length).toBe(92))
   })
+
+  async function cargarCsv(container: HTMLElement, contenido: string) {
+    await waitFor(() => expect(container.querySelector('#file-excel')).not.toBeNull())
+    const input = container.querySelector('#file-excel') as HTMLInputElement
+    const archivo = new File([contenido], 'datos.csv', { type: 'text/csv' })
+    fireEvent.change(input, { target: { files: [archivo] } })
+    await waitFor(() => expect((container.querySelector('#overlay-columnas') as HTMLElement).style.display).toBe('flex'))
+  }
+
+  test('acepta .csv: propone grados y preselecciona la columna de municipio', async () => {
+    const { container } = render(<ValidadorCoordenadas />)
+    await cargarCsv(container, 'ID,Municipio,Latitud,Longitud\n1,Quibdó,5.69,-76.65\n2,Tadó,5.27,-76.56\n')
+    expect((container.querySelector('#sel-col-muni') as HTMLSelectElement).value).toBe('Municipio')
+    expect((container.querySelector('#sel-sistema') as HTMLSelectElement).value).toBe('wgs84')
+    expect(container.querySelector('#lbl-col-lat')?.textContent).toBe('Columna de latitud')
+  })
+
+  test('con valores planos propone MAGNA-SIRGAS Oeste y rotula Norte/Este', async () => {
+    const { container } = render(<ValidadorCoordenadas />)
+    await cargarCsv(container, 'ID,Norte,Este\n1,1121182.85,1046437.87\n2,1123183.57,1045000.12\n')
+    expect((container.querySelector('#sel-sistema') as HTMLSelectElement).value).toBe('oeste')
+    expect(container.querySelector('#lbl-col-lat')?.textContent).toBe('Columna Norte (Y)')
+    expect(container.querySelector('#lbl-col-lon')?.textContent).toBe('Columna Este (X)')
+  })
+
+  test('cambiar el sistema de coordenadas actualiza los rótulos', async () => {
+    const { container } = render(<ValidadorCoordenadas />)
+    await cargarCsv(container, 'ID,Latitud,Longitud\n1,5.69,-76.65\n2,5.27,-76.56\n')
+    const sistema = container.querySelector('#sel-sistema') as HTMLSelectElement
+    fireEvent.change(sistema, { target: { value: 'utm18n' } })
+    expect(container.querySelector('#lbl-col-lon')?.textContent).toBe('Columna Este (X)')
+    fireEvent.change(sistema, { target: { value: 'wgs84' } })
+    expect(container.querySelector('#lbl-col-lon')?.textContent).toBe('Columna de longitud')
+  })
+
+  test('confirmar marca un municipio declarado que no coincide con el detectado', async () => {
+    const { container } = render(<ValidadorCoordenadas />)
+    await cargarCsv(container, 'ID,Municipio,Latitud,Longitud\n1,Quibdó,5.6919,-76.6583\n2,Tadó,5.7100,-76.6700\n3,Quibdo,5.6930,-76.6600\n')
+    fireEvent.click(container.querySelector('#btn-confirmar-columnas') as HTMLElement)
+    await waitFor(() => expect(container.querySelectorAll('#tableWrap tbody tr').length).toBe(3))
+    await waitFor(() => expect(container.querySelector('#tableWrap tbody')?.textContent).toMatch(/Municipio declarado no coincide/))
+    expect(container.querySelector('#tableWrap tbody')?.textContent?.match(/Municipio declarado no coincide/g)).toHaveLength(1)
+  })
 })
