@@ -294,7 +294,7 @@ export function iniciarValidador(root) {
       const th = document.createElement('th');
       th.textContent = c;
       const esNum = pendingNumCols.includes(c);
-      th.style.cssText = 'text-align:left; padding:5px 6px; font-weight:500; border-bottom:1px solid #E1E0D9; white-space:nowrap;' + (esNum? 'color:#0F6E56;' : 'color:#B4B2A9;');
+      th.className = esNum ? 'vc-col-num' : 'vc-col-txt';
       headTr.appendChild(th);
     });
     const bodyTbody = $('col-preview-body'); bodyTbody.innerHTML='';
@@ -303,7 +303,6 @@ export function iniciarValidador(root) {
       cols.forEach(c=>{
         const td = document.createElement('td');
         td.textContent = row[c];
-        td.style.cssText = 'padding:5px 6px; border-bottom:1px solid #F1EFE8; white-space:nowrap;';
         tr.appendChild(td);
       });
       bodyTbody.appendChild(tr);
@@ -338,7 +337,7 @@ export function iniciarValidador(root) {
     RESULTS = ROWS.map((row,i)=>({estado:'', tipo_error:'', observacion:'', depDet:'', muniDet:'', codigoDivipola:'', latIntercambiada:false, _filaExcel: i+2}));
     $('overlay-columnas').style.display = 'none';
     $('estado-datos').textContent = `Excel cargado (${ROWS.length.toLocaleString('es-CO')} registros) — lat: ${colLat}, lon: ${colLon}`;
-    $('foot').textContent = `Última actualización: cargado el ${new Date().toLocaleString('es-CO')} (lat: ${colLat}, lon: ${colLon})`;
+    $('foot').textContent = `Última actualización: ${new Date().toLocaleString('es-CO')}`;
     validarBasico();
     renderAll();
     const miId = ++validacionId;
@@ -1048,12 +1047,8 @@ export function iniciarValidador(root) {
   document.querySelectorAll('.chip-origen').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       filtroOrigen = btn.dataset.origen;
-      document.querySelectorAll('.chip-origen').forEach(b=>{
-        b.classList.remove('activo');
-        b.style.background = 'var(--bg-card)'; b.style.color = 'var(--text-primary)'; b.style.borderColor = 'var(--border-color)';
-      });
+      document.querySelectorAll('.chip-origen').forEach(b=>{ b.classList.remove('activo'); });
       btn.classList.add('activo');
-      btn.style.background = '#0F6E56'; btn.style.color = 'white'; btn.style.borderColor = '#0F6E56';
       aplicarFiltros();
       renderAll(false);
     });
@@ -1169,7 +1164,7 @@ export function iniciarValidador(root) {
       const pct = m.reg ? Math.round((m.val/m.reg)*100) : 0;
       const estiloMuni = m.especial ? 'color:#888780; font-style:italic;' : '';
       tr.innerHTML = `<td>${m.dep}</td><td style="${estiloMuni}">${m.muni}</td><td>${m.reg}</td><td>${m.val}</td><td>${m.sos}</td><td>${m.inv}</td>` +
-        `<td><div style="display:flex; align-items:center; gap:5px;"><div style="flex:1; min-width:36px; height:5px; border-radius:3px; background:#FDECEC; overflow:hidden;"><div style="width:${pct}%; height:100%; background:#1BAF7A;"></div></div><span style="font-size:10px; color:#888780;">${pct}%</span></div></td>`;
+        `<td><div style="display:flex; align-items:center; gap:5px;"><div style="flex:1; min-width:36px; height:6px; border-radius:999px; background:color-mix(in srgb, #E34948 16%, var(--bg-card)); overflow:hidden;"><div style="width:${pct}%; height:100%; border-radius:999px; background:#1BAF7A;"></div></div><span style="font-size:10px; color:#888780;">${pct}%</span></div></td>`;
       tbody.appendChild(tr);
     });
   }
