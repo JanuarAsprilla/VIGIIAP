@@ -18,9 +18,10 @@
   color: var(--text-primary);
 }
 .vc-root #wrap { max-width: none; padding: 0; }
-.vc-root .sub { font-size: 0.9375rem; line-height: 1.55; color: var(--text-secondary); margin-bottom: 0.5rem; }
-.vc-root .sub strong { font-weight: 700; color: var(--text-primary); }
-.vc-root .vc-nota { display: flex; gap: 0.375rem; font-size: 0.75rem; line-height: 1.45; color: var(--text-muted); margin-bottom: 1.125rem; }
+/* Texto de introducción y nota de límites comparten el mismo estilo (tamaño, color, interlineado) */
+.vc-root :is(.sub, .vc-nota) { font-size: 0.75rem; line-height: 1.45; color: var(--text-muted); }
+.vc-root .sub { margin-bottom: 0.5rem; }
+.vc-root .vc-nota { display: flex; gap: 0.375rem; margin-bottom: 1.125rem; }
 .vc-root button .ti { font-size: 1rem; margin: 0; vertical-align: 0; }
 
 /* Modos del mapa (agregar / medir / mover): "encendido" = tinte verde, no un bloque sólido */

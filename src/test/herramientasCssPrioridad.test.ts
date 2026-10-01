@@ -69,3 +69,11 @@ describe('sistema común', () => {
     expect(todoDentroDeUnBloque('@layer a { .x { color: red } } .y { color: blue }')).toBe(false)
   })
 })
+
+describe('texto de introducción del validador', () => {
+  test('comparte una sola regla de estilo con la nota de límites (mismo tamaño y color)', () => {
+    const tema = leer('validador-coordenadas/validador.tema.css')
+    expect(tema).toMatch(/\.vc-root :is\(\.sub, \.vc-nota\)\s*\{[^}]*font-size: 0\.75rem/)
+    expect(tema).not.toMatch(/\.vc-root \.sub\s*\{[^}]*font-size/)
+  })
+})
