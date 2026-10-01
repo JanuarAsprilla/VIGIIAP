@@ -13,6 +13,7 @@ import { useConexionesGeoserverList } from '@/hooks/useConexionesGeoserver'
 import type { GeovisorRaw, CompletitudGeovisor, CompletitudCapa } from '@/types'
 import GeovisorFormModal from '@/components/admin/geovisores/GeovisorFormModal'
 import Thumbnail from '@/components/ui/Thumbnail'
+import { nombreLegibleDeCapa } from '@/lib/nombreDeCapa'
 
 const fadeUp = fadeUpSm
 
@@ -452,7 +453,7 @@ export default function GestionGeovisores() {
               <ul className="space-y-2 mb-6">
                 {bloqueoActivacion.capas.map((c) => (
                   <li key={c.capaId} className="flex items-center justify-between gap-2 px-3 py-2 bg-bg-alt rounded-lg text-xs">
-                    <span className="font-semibold text-text truncate">{c.nombre}</span>
+                    <span className="font-semibold text-text truncate">{nombreLegibleDeCapa(c)}</span>
                     <span className="text-text-muted shrink-0">{c.bloqueantes} pendiente{c.bloqueantes === 1 ? '' : 's'}</span>
                   </li>
                 ))}

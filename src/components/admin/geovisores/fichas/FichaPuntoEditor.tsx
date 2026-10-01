@@ -33,11 +33,16 @@ export default function FichaPuntoEditor({ configId, feature, onGuardado, onGuar
 
   // Ajustado durante el render, no en un efecto -- evita el re-render extra
   // que produciría un useEffect solo para sincronizar este estado derivado
-  // cuando la ficha completa termina de cargar (o al cambiar de punto).
+  // cuando la ficha completa termina de cargar. Solo se adopta lo que llega del
+  // servidor si el texto no se tocó: subir o borrar un medio refresca la ficha
+  // y no debe pisar lo que el admin escribió y todavía no guardó.
   if (ficha !== fichaAnterior) {
+    const sinEditar = titulo === (fichaAnterior?.titulo ?? '') && descripcion === (fichaAnterior?.descripcion ?? '')
     setFichaAnterior(ficha)
-    setTitulo(ficha?.titulo ?? '')
-    setDescripcion(ficha?.descripcion ?? '')
+    if (sinEditar) {
+      setTitulo(ficha?.titulo ?? '')
+      setDescripcion(ficha?.descripcion ?? '')
+    }
   }
 
   const guardar = async (avanzar: boolean) => {

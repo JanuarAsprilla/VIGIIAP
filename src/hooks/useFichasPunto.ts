@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { AxiosProgressEvent } from 'axios'
 import api from '@/lib/api'
 import { asApiError } from '@/lib/apiError'
@@ -26,19 +26,38 @@ export function useAtributosCapa(conexionId: string | null | undefined, capaId: 
   })
 }
 
+async function fetchConfigFichasCapa(conexionId: string, capaId: string): Promise<CapaFichaConfig | null> {
+  try {
+    return await api.get('/admin/fichas-capa', { params: { conexionId, capaId } })
+  } catch (err) {
+    if (asApiError(err)?.status === 404) return null
+    throw err
+  }
+}
+
 /** Config de fichas de una capa (identificador elegido) -- null si nunca se habilitó, no un error. */
 export function useConfigFichasCapa(conexionId: string | null | undefined, capaId: string | null | undefined) {
   return useQuery<CapaFichaConfig | null>({
     queryKey: KEYS.config(conexionId, capaId),
-    queryFn:  async () => {
-      try {
-        return await api.get('/admin/fichas-capa', { params: { conexionId, capaId } })
-      } catch (err) {
-        if (asApiError(err)?.status === 404) return null
-        throw err
-      }
-    },
+    queryFn:  () => fetchConfigFichasCapa(conexionId!, capaId!),
     enabled: !!conexionId && !!capaId,
+  })
+}
+
+/**
+ * De las capas indicadas, las que ya cargaron y NO tienen config de fichas
+ * (sin identificador elegido). Comparte caché con useConfigFichasCapa, así que
+ * no repite las peticiones que ya hacen las filas del formulario. Una capa
+ * cuya config sigue cargando no cuenta como "sin configurar".
+ */
+export function useCapasSinConfigFichas(conexionId: string | null | undefined, capaIds: readonly string[]): string[] {
+  return useQueries({
+    queries: capaIds.map((capaId) => ({
+      queryKey: KEYS.config(conexionId, capaId),
+      queryFn:  () => fetchConfigFichasCapa(conexionId!, capaId),
+      enabled:  !!conexionId,
+    })),
+    combine: (resultados) => capaIds.filter((_, i) => resultados[i]?.data === null),
   })
 }
 

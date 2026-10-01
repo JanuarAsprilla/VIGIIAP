@@ -6,7 +6,7 @@ import { createElement, type ReactNode } from 'react'
 vi.mock('@/lib/api', () => ({ default: { get: vi.fn(), put: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }))
 import api from '@/lib/api'
 import {
-  useAtributosCapa, useConfigFichasCapa, useUpsertConfigFichasCapa,
+  useAtributosCapa, useConfigFichasCapa, useCapasSinConfigFichas, useUpsertConfigFichasCapa,
   useFeaturesFichas, useFicha, useUpsertFicha, useDeleteFicha, useSubirMedioFicha,
   useActualizarMedio, useReordenarMedios, useEliminarMedio,
 } from '@/hooks/useFichasPunto'
@@ -57,6 +57,36 @@ describe('useConfigFichasCapa', () => {
     vi.mocked(api.get).mockRejectedValue(err)
     const { result } = renderHook(() => useConfigFichasCapa('c1', 'ws:estaciones'), { wrapper })
     await waitFor(() => expect(result.current.isError).toBe(true))
+  })
+})
+
+describe('useCapasSinConfigFichas', () => {
+  const config = { id: 'cfg1', conexionGeoserverId: 'c1', capaId: 'ws:con', campoIdentificador: 'codigo', campoEtiqueta: null, creadoEn: '', actualizadoEn: '' }
+
+  test('devuelve solo las capas cuya config no existe (404), no las que sí la tienen', async () => {
+    vi.mocked(api.get).mockImplementation((_url, opts) => {
+      const capaId = (opts as { params: { capaId: string } }).params.capaId
+      return capaId === 'ws:con'
+        ? Promise.resolve(config)
+        : Promise.reject(Object.assign(new Error('not found'), { status: 404 }))
+    })
+    const { result } = renderHook(() => useCapasSinConfigFichas('c1', ['ws:con', 'ws:sin']), { wrapper })
+
+    await waitFor(() => expect(result.current).toEqual(['ws:sin']))
+  })
+
+  test('mientras la config carga, la capa no se cuenta como sin configurar', () => {
+    vi.mocked(api.get).mockReturnValue(new Promise(() => {}))
+    const { result } = renderHook(() => useCapasSinConfigFichas('c1', ['ws:sin']), { wrapper })
+
+    expect(result.current).toEqual([])
+  })
+
+  test('sin conexión no consulta nada', () => {
+    const { result } = renderHook(() => useCapasSinConfigFichas('', ['ws:sin']), { wrapper })
+
+    expect(api.get).not.toHaveBeenCalled()
+    expect(result.current).toEqual([])
   })
 })
 
