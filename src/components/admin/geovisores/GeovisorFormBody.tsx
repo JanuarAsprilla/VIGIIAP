@@ -15,6 +15,8 @@ import AccordionSection from './AccordionSection'
 import GeovisorMapaConstructor from './GeovisorMapaConstructor'
 import CategoryCombobox from '@/components/admin/CategoryCombobox'
 import FichaCapaConfigRow from './fichas/FichaCapaConfigRow'
+import SelectorTipoGeovisor from './SelectorTipoGeovisor'
+import { tipoDeGeovisor, capasVectorialesSeleccionadas, type TipoGeovisor } from './tiposGeovisor'
 import type { GeovisorRaw, GeovisorInput, MapaVisibilidad, PresetArea, WorkspaceOption } from '@/types'
 import type { FormErrors } from '@/types/forms'
 
@@ -111,6 +113,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
 }) {
   const [form, setForm] = useState<FormState>(() => editing ? formFromGeovisor(editing) : emptyForm())
   const [errors, setErrors] = useState<FormErrors>({})
+  const [tipo, setTipo] = useState<TipoGeovisor>(() => tipoDeGeovisor(editing?.capasConFicha ?? []))
   const [filtroCapa, setFiltroCapa] = useState('')
   const [uploadedThumb, setUploadedThumb] = useState<File | null>(null)
   // Distingue "nunca se tocó la miniatura" de "se quitó explícitamente" --
@@ -172,12 +175,34 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
       .filter((w) => w.capas.length > 0)
   }, [workspaces, filtroCapa])
 
-  const toggleCapa = (id: string) => {
+  const catalogoCapas = useMemo(() => workspaces.flatMap((w) => w.capas), [workspaces])
+
+  // En el tipo "con fichas" toda capa vectorial que se marca exige fichas desde
+  // ese mismo clic; el admin puede quitarla después capa por capa.
+  const toggleCapa = (capa: CapaWorkspace) => {
+    setForm((f) => {
+      const yaMarcada = f.capasSeleccionadas.includes(capa.id)
+      if (yaMarcada) {
+        return {
+          ...f,
+          capasSeleccionadas: f.capasSeleccionadas.filter((c) => c !== capa.id),
+          capasConFicha: f.capasConFicha.filter((c) => c !== capa.id),
+        }
+      }
+      const exigeFicha = tipo === 'fichas' && capa.tipo === 'vectorial'
+      return {
+        ...f,
+        capasSeleccionadas: [...f.capasSeleccionadas, capa.id],
+        capasConFicha: exigeFicha ? [...f.capasConFicha, capa.id] : f.capasConFicha,
+      }
+    })
+  }
+
+  const cambiarTipo = (nuevo: TipoGeovisor) => {
+    setTipo(nuevo)
     setForm((f) => ({
       ...f,
-      capasSeleccionadas: f.capasSeleccionadas.includes(id)
-        ? f.capasSeleccionadas.filter((c) => c !== id)
-        : [...f.capasSeleccionadas, id],
+      capasConFicha: nuevo === 'fichas' ? capasVectorialesSeleccionadas(f.capasSeleccionadas, catalogoCapas) : [],
     }))
   }
 
@@ -203,12 +228,6 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
     () => [...new Set(form.capasSeleccionadas.map(workspaceDeCapa))],
     [form.capasSeleccionadas],
   )
-
-  // Descarta entradas de una capa que ya se desmarcó de capasSeleccionadas --
-  // igual que colorPorTema, se limpia del todo recién al enviar (validate()),
-  // pero acá se filtra también para que la sección 5 no muestre una fila
-  // "fantasma" de una capa que ya no está activa en el picker de arriba.
-  const capasConFichaVisibles = form.capasConFicha.filter((id) => form.capasSeleccionadas.includes(id))
 
   const setColor = (workspaceId: string, color: string) => {
     setForm((f) => ({ ...f, colorPorTema: { ...f.colorPorTema, [workspaceId]: color } }))
@@ -343,6 +362,8 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
               </p>
             )}
 
+            <SelectorTipoGeovisor value={tipo} onChange={cambiarTipo} />
+
             <AccordionSection n={1} title="Información general" hint="Cómo se presenta en el portal público" icon={Layers} defaultOpen>
               <div>
                 <label htmlFor="gv-titulo" className={labelCls}>Título <span className="text-orange-500" aria-hidden="true">*</span></label>
@@ -384,7 +405,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
               <div>
                 <label htmlFor="gv-conexion" className={labelCls}>Conexión <span className="text-orange-500" aria-hidden="true">*</span></label>
                 <select id="gv-conexion" value={form.conexionGeoserverId}
-                  onChange={(e) => setForm((f) => ({ ...f, conexionGeoserverId: e.target.value, capasSeleccionadas: [], colorPorTema: {} }))}
+                  onChange={(e) => setForm((f) => ({ ...f, conexionGeoserverId: e.target.value, capasSeleccionadas: [], capasConFicha: [], colorPorTema: {} }))}
                   className={inputCls(!!errors.conexionGeoserverId)}>
                   <option value="">Selecciona una conexión…</option>
                   {conexiones.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
@@ -412,7 +433,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                   {gruposFiltrados.length === 0 ? (
                     <p className="text-xs text-text-muted py-3 text-center">Ninguna capa coincide con "{filtroCapa}".</p>
                   ) : (
-                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    <div className={`space-y-2 overflow-y-auto pr-1 ${tipo === 'fichas' ? 'max-h-[28rem]' : 'max-h-72'}`}>
                       {gruposFiltrados.map((w, i) => {
                         const activo = temasSeleccionados.includes(w.id)
                         const color = form.colorPorTema[w.id] ?? PALETA_AUTO[i % PALETA_AUTO.length]
@@ -447,27 +468,39 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                                 {w.capas.map((c: CapaWorkspace) => {
                                   const checked = form.capasSeleccionadas.includes(c.id)
                                   const conFicha = form.capasConFicha.includes(c.id)
+                                  const modoFichas = tipo === 'fichas'
                                   return (
-                                    <div key={c.id}
-                                      className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                                        checked ? 'bg-primary-600/8 text-primary-800' : 'hover:bg-bg-alt text-text'
-                                      }`}>
-                                      <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
-                                        <input type="checkbox" checked={checked} onChange={() => toggleCapa(c.id)}
-                                          className="w-3.5 h-3.5 rounded border-border text-primary-800 focus:ring-primary-800/30 shrink-0" />
-                                        <span className="truncate flex-1">{c.nombre}</span>
-                                      </label>
-                                      <span className={`text-[0.55rem] font-semibold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${
-                                        c.tipo === 'raster' ? 'bg-gold-500/12 text-gold-500' : 'bg-primary-500/12 text-primary-500'
-                                      }`}>{c.tipo === 'raster' ? 'raster' : 'vector'}</span>
-                                      {checked && c.tipo === 'vectorial' && (
-                                        <button type="button" onClick={() => toggleFicha(c.id)} aria-pressed={conFicha}
-                                          title={conFicha ? 'Fichas por punto habilitadas' : 'Habilitar fichas por punto'}
-                                          className={`shrink-0 p-1 rounded-md transition-colors ${
-                                            conFicha ? 'text-gold-500 bg-gold-500/12' : 'text-text-faint hover:text-text-muted hover:bg-bg-alt'
-                                          }`}>
-                                          <Images className="w-3.5 h-3.5" />
-                                        </button>
+                                    <div key={c.id}>
+                                      <div
+                                        className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                                          checked ? 'bg-primary-600/8 text-primary-800' : 'hover:bg-bg-alt text-text'
+                                        }`}>
+                                        <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+                                          <input type="checkbox" checked={checked} onChange={() => toggleCapa(c)}
+                                            className="w-3.5 h-3.5 rounded border-border text-primary-800 focus:ring-primary-800/30 shrink-0" />
+                                          <span className="truncate flex-1">{c.nombre}</span>
+                                        </label>
+                                        <span className={`text-[0.55rem] font-semibold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${
+                                          c.tipo === 'raster' ? 'bg-gold-500/12 text-gold-500' : 'bg-primary-500/12 text-primary-500'
+                                        }`}>{c.tipo === 'raster' ? 'raster' : 'vector'}</span>
+                                        {modoFichas && c.tipo === 'raster' && (
+                                          <span className="text-[0.58rem] text-text-faint shrink-0">sin fichas</span>
+                                        )}
+                                        {modoFichas && checked && c.tipo === 'vectorial' && (
+                                          <button type="button" onClick={() => toggleFicha(c.id)} aria-pressed={conFicha}
+                                            title={conFicha ? 'Esta capa exige fichas — clic para quitarlas' : 'Exigir fichas en esta capa'}
+                                            className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[0.58rem] font-semibold transition-colors ${
+                                              conFicha ? 'text-gold-500 bg-gold-500/12' : 'text-text-muted bg-bg-alt hover:text-text'
+                                            }`}>
+                                            <Images className="w-3 h-3" aria-hidden="true" />
+                                            {conFicha ? 'Con fichas' : 'Sin fichas'}
+                                          </button>
+                                        )}
+                                      </div>
+                                      {checked && conFicha && (
+                                        <div className="mt-1 ml-5">
+                                          <FichaCapaConfigRow conexionId={form.conexionGeoserverId} capaId={c.id} capaNombre={c.nombre} />
+                                        </div>
                                       )}
                                     </div>
                                   )
@@ -478,6 +511,11 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                         )
                       })}
                     </div>
+                  )}
+                  {tipo === 'fichas' && form.capasConFicha.length === 0 && (
+                    <p className="text-[0.65rem] text-gold-500 leading-snug">
+                      Marca al menos una capa vectorial: cada una exigirá foto o video y descripción en todos sus puntos.
+                    </p>
                   )}
                   <p className="text-[0.65rem] text-text-muted">
                     {form.capasSeleccionadas.length === 0
@@ -578,19 +616,6 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                 ))}
               </div>
             </AccordionSection>
-
-            {capasConFichaVisibles.length > 0 && (
-              <AccordionSection n={5} title="Fichas por punto" hint="Opcional — exige foto/video y descripción en cada punto de la capa" icon={Images}>
-                <div className="space-y-2">
-                  {capasConFichaVisibles.map((capaId) => {
-                    const capa = workspaces.flatMap((w) => w.capas).find((c) => c.id === capaId)
-                    return (
-                      <FichaCapaConfigRow key={capaId} conexionId={form.conexionGeoserverId} capaId={capaId} capaNombre={capa?.nombre ?? capaId} />
-                    )
-                  })}
-                </div>
-              </AccordionSection>
-            )}
 
             <div className="flex gap-3 pt-2 sticky bottom-0 bg-[var(--card-bg)] pb-1 -mb-1">
               <button type="button" onClick={onClose} disabled={isSaving}

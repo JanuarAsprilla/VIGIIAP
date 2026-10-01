@@ -554,16 +554,34 @@ describe('GeovisorFormModal — miniatura (ThumbnailDropzone)', () => {
 // solo las usara Documentos o Mapas -- ahora solo se sugieren las asignadas
 // explícitamente al módulo "geovisores" (ver categorias.modulos, migración 048).
 describe('GeovisorFormModal — fichas por punto', () => {
-  test('el ícono de fichas no aparece para una capa hasta que se marca', async () => {
+  const elegirTipoFichas = (user: ReturnType<typeof userEvent.setup>) =>
+    user.click(screen.getByRole('radio', { name: /fichas por punto/i }))
+
+  test('el tipo estándar es el valor por defecto y no ofrece fichas en las capas', async () => {
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
     await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
 
-    expect(screen.queryByTitle('Habilitar fichas por punto')).not.toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /estándar/i })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.queryByRole('button', { name: /con fichas/i })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Atributo identificador/i)).not.toBeInTheDocument()
   })
 
-  test('marcar una capa vectorial ofrece el ícono de fichas; una raster no', async () => {
+  test('en el tipo con fichas, marcar una capa vectorial la habilita y muestra su atributo identificador', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await elegirTipoFichas(user)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+
+    expect(screen.getByRole('button', { name: /con fichas/i })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText(/Atributo identificador/i)).toBeInTheDocument()
+  })
+
+  test('una capa raster no admite fichas aunque el tipo sea con fichas', async () => {
     vi.mocked(useWorkspacesDeConexion).mockReturnValue({
       data: [{
         id: 't_19_clima', nombre: 'Clima', totalCapas: 1,
@@ -573,51 +591,50 @@ describe('GeovisorFormModal — fichas por punto', () => {
     } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await elegirTipoFichas(user)
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
     await abrirTema(user, /Clima/i)
     await user.click(screen.getByRole('checkbox', { name: /Precipitación/i }))
 
-    expect(screen.queryByTitle('Habilitar fichas por punto')).not.toBeInTheDocument()
+    expect(screen.getByText('sin fichas')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /con fichas/i })).not.toBeInTheDocument()
   })
 
-  test('activar el ícono de fichas de una capa vectorial marcada abre la sección 5 con su fila', async () => {
+  test('se puede quitar las fichas de una capa concreta sin cambiar de tipo', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await elegirTipoFichas(user)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await user.click(screen.getByRole('button', { name: /con fichas/i }))
+
+    expect(screen.getByRole('button', { name: /sin fichas/i })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.queryByLabelText(/Atributo identificador/i)).not.toBeInTheDocument()
+  })
+
+  test('cambiar a tipo con fichas habilita las capas vectoriales ya marcadas', async () => {
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
     await abrirTema(user, /Geologia/i)
     await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await elegirTipoFichas(user)
 
-    expect(screen.queryByRole('heading', { name: 'Fichas por punto' })).not.toBeInTheDocument()
-    await user.click(screen.getByTitle('Habilitar fichas por punto'))
-
-    expect(screen.getByRole('heading', { name: 'Fichas por punto' })).toBeInTheDocument()
-    expect(screen.getByTitle('Fichas por punto habilitadas')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Atributo identificador/i)).toBeInTheDocument()
   })
 
-  test('desmarcar la capa quita su fila de la sección 5, aunque el ícono de fichas seguía activo', async () => {
-    const user = userEvent.setup()
-    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
-    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
-    await abrirTema(user, /Geologia/i)
-    const checkboxFallas = screen.getByRole('checkbox', { name: /Fallas/i })
-    await user.click(checkboxFallas)
-    await user.click(screen.getByTitle('Habilitar fichas por punto'))
-    await user.click(checkboxFallas)
-
-    expect(screen.queryByRole('heading', { name: 'Fichas por punto' })).not.toBeInTheDocument()
-  })
-
-  test('capasConFicha llega en el payload al enviar, filtrado a las capas seleccionadas', async () => {
+  test('capasConFicha llega en el payload con las vectoriales marcadas del tipo con fichas', async () => {
     const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
     vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
     const user = userEvent.setup()
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
 
     await user.type(screen.getByLabelText(/^Título/i), 'Estaciones climáticas')
+    await elegirTipoFichas(user)
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
     await abrirTema(user, /Geologia/i)
     await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
-    await user.click(screen.getByTitle('Habilitar fichas por punto'))
     await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
@@ -625,9 +642,27 @@ describe('GeovisorFormModal — fichas por punto', () => {
     }))
   })
 
-  test('al editar un geovisor con capasConFicha ya guardado, precarga la sección 5', () => {
-    render(<GeovisorFormModal open editing={makeGeovisor({ capasConFicha: ['t_15_geologia:fallas'] })} onClose={vi.fn()} onSaved={vi.fn()} />)
-    expect(screen.getByRole('heading', { name: 'Fichas por punto' })).toBeInTheDocument()
+  test('volver al tipo estándar envía capasConFicha vacío', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Estaciones climáticas')
+    await elegirTipoFichas(user)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await user.click(screen.getByRole('radio', { name: /estándar/i }))
+    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ capasConFicha: [] }))
+  })
+
+  test('al editar un geovisor con capasConFicha ya guardado, precarga el tipo con fichas', () => {
+    render(<GeovisorFormModal open editing={makeGeovisor({ capasSeleccionadas: ['t_15_geologia:fallas'], capasConFicha: ['t_15_geologia:fallas'] })} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    expect(screen.getByRole('radio', { name: /fichas por punto/i })).toHaveAttribute('aria-checked', 'true')
   })
 })
 
