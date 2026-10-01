@@ -74,6 +74,23 @@ export function useUpsertConfigFichasCapa() {
   })
 }
 
+/**
+ * Quita la config de fichas de una capa. El backend responde 409 (CONFIG_CON_FICHAS /
+ * CONFIG_EN_USO) si la capa ya tiene fichas o algún geovisor la exige. Al
+ * éxito la capa vuelve a "nunca configurada" (null) -- el estado que ya
+ * entiende useConfigFichasCapa -- y se descarta su listado de features.
+ */
+export function useEliminarConfigFichasCapa() {
+  const qc = useQueryClient()
+  return useMutation<void, Error, { configId: string; conexionId: string; capaId: string }>({
+    mutationFn: ({ configId }) => api.delete(`/admin/fichas-capa/${configId}`),
+    onSuccess:  (_, { configId, conexionId, capaId }) => {
+      qc.setQueryData(KEYS.config(conexionId, capaId), null)
+      qc.removeQueries({ queryKey: KEYS.features(configId) })
+    },
+  })
+}
+
 /** Todas las features de la capa con su estado de completitud -- alimenta el checklist de administración. */
 export function useFeaturesFichas(configId: string | null | undefined) {
   return useQuery<FeaturesFichaResponse>({

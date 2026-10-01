@@ -41,6 +41,7 @@ vi.mock('@/hooks/useFichasPunto', () => ({
   useConfigFichasCapa: vi.fn(() => ({ data: null, isLoading: false })),
   useUpsertConfigFichasCapa: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   useFeaturesFichas: vi.fn(() => ({ data: undefined })),
+  useEliminarConfigFichasCapa: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   useCapasSinConfigFichas: vi.fn(() => [] as string[]),
 }))
 import { useCapasSinConfigFichas } from '@/hooks/useFichasPunto'

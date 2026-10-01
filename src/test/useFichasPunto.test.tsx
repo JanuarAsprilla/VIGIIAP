@@ -6,7 +6,7 @@ import { createElement, type ReactNode } from 'react'
 vi.mock('@/lib/api', () => ({ default: { get: vi.fn(), put: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }))
 import api from '@/lib/api'
 import {
-  useAtributosCapa, useConfigFichasCapa, useCapasSinConfigFichas, useUpsertConfigFichasCapa, useImportarFichas,
+  useAtributosCapa, useConfigFichasCapa, useCapasSinConfigFichas, useUpsertConfigFichasCapa, useEliminarConfigFichasCapa, useImportarFichas,
   useFeaturesFichas, useFicha, useUpsertFicha, useDeleteFicha, useSubirMedioFicha,
   useActualizarMedio, useReordenarMedios, useEliminarMedio,
 } from '@/hooks/useFichasPunto'
@@ -57,6 +57,44 @@ describe('useConfigFichasCapa', () => {
     vi.mocked(api.get).mockRejectedValue(err)
     const { result } = renderHook(() => useConfigFichasCapa('c1', 'ws:estaciones'), { wrapper })
     await waitFor(() => expect(result.current.isError).toBe(true))
+  })
+})
+
+describe('useEliminarConfigFichasCapa', () => {
+  test('hace DELETE a la config y deja la caché de esa capa en null (nunca configurada)', async () => {
+    vi.mocked(api.delete).mockResolvedValue(undefined)
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    qc.setQueryData(['fichas-punto', 'config', 'c1', 'ws:estaciones'], { id: 'cfg1' })
+    const conCliente = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: qc }, children)
+    const { result } = renderHook(() => useEliminarConfigFichasCapa(), { wrapper: conCliente })
+
+    await result.current.mutateAsync({ configId: 'cfg1', conexionId: 'c1', capaId: 'ws:estaciones' })
+
+    expect(api.delete).toHaveBeenCalledWith('/admin/fichas-capa/cfg1')
+    expect(qc.getQueryData(['fichas-punto', 'config', 'c1', 'ws:estaciones'])).toBeNull()
+  })
+
+  test('descarta el listado de features de esa config, que ya no existe', async () => {
+    vi.mocked(api.delete).mockResolvedValue(undefined)
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    qc.setQueryData(['fichas-punto', 'features', 'cfg1'], { features: [] })
+    const conCliente = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: qc }, children)
+    const { result } = renderHook(() => useEliminarConfigFichasCapa(), { wrapper: conCliente })
+
+    await result.current.mutateAsync({ configId: 'cfg1', conexionId: 'c1', capaId: 'ws:estaciones' })
+
+    expect(qc.getQueryData(['fichas-punto', 'features', 'cfg1'])).toBeUndefined()
+  })
+
+  test('si el servidor responde 409, el error se propaga y la caché no cambia', async () => {
+    vi.mocked(api.delete).mockRejectedValue(Object.assign(new Error('en uso'), { status: 409, code: 'CONFIG_EN_USO' }))
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    qc.setQueryData(['fichas-punto', 'config', 'c1', 'ws:estaciones'], { id: 'cfg1' })
+    const conCliente = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: qc }, children)
+    const { result } = renderHook(() => useEliminarConfigFichasCapa(), { wrapper: conCliente })
+
+    await expect(result.current.mutateAsync({ configId: 'cfg1', conexionId: 'c1', capaId: 'ws:estaciones' })).rejects.toThrow('en uso')
+    expect(qc.getQueryData(['fichas-punto', 'config', 'c1', 'ws:estaciones'])).toEqual({ id: 'cfg1' })
   })
 })
 
