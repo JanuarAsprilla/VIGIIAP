@@ -102,15 +102,12 @@ describe('Validador de coordenadas (port fiel del HTML original)', () => {
     expect(document.body.textContent).not.toMatch(/Arrastra tu Excel \(\.xlsx o \.csv\)/)
   })
 
-  test('el texto de la herramienta invita a cargar o arrastrar el archivo y resalta lo importante', async () => {
+  test('el texto de la herramienta invita a cargar o arrastrar el archivo, en texto plano como la nota de límites', async () => {
     render(<ValidadorCoordenadas />)
     await waitFor(() => expect(document.querySelector('.sub')).not.toBeNull())
     const intro = document.querySelector('.sub') as HTMLElement
     expect(intro.textContent).toBe('Carga o arrastra tu archivo Excel, selecciona las columnas correspondientes a latitud y longitud, y valida cada punto para determinar si se encuentra dentro de los límites de los 93 municipios del Chocó Biogeográfico.')
-    expect(Array.from(intro.querySelectorAll('strong')).map((s) => s.textContent)).toEqual([
-      'Carga o arrastra tu archivo Excel',
-      '93 municipios del Chocó Biogeográfico',
-    ])
+    expect(intro.querySelector('strong, b, em, i')).toBeNull()
   })
 
   test('los chips de origen se activan por clase, sin estilos en línea', async () => {
