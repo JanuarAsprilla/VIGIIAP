@@ -1,3 +1,4 @@
+@import '../herramientaTema.css'; /* se inlinea aquí: el orden original -> común -> propio no depende del reparto en archivos del build */
 /* Tema del panel: solo lo propio de esta herramienta. Botones, campos, tarjetas, tablas y ventanas
    vienen de ../herramientaTema.css (sistema común); los colores de datos de cada capa se conservan. */
 .pc-root {
