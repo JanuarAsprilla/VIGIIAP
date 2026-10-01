@@ -16,13 +16,17 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import centroid from '@turf/centroid'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
 import { point } from '@turf/helpers'
-import { leerLibroExcel, escribirLibroExcel } from './excelIO'
+import { magnaToWgs84, utm18NToWgs84 } from '@/lib/proyeccionMagna'
+import { leerLibroExcel, leerLibroCsv, escribirLibroExcel } from './excelIO'
 
 export function iniciarValidador(root) {
   const L = globalThis.L
   const turf = { centroid, booleanPointInPolygon, point }
   const W = {}
   let observadorTema = null
+  let colMuni = ''
+  let validacionId = 0
+  let validando = false
   const document = {
     getElementById: (id) => root.querySelector('#' + CSS.escape(id)),
     querySelector: (s) => root.querySelector(s),
@@ -214,8 +218,34 @@ export function iniciarValidador(root) {
     });
   }
   
-  const NOMBRES_LAT_PROBABLES = ['decimallatitude','latitude','latitud','lat','y'];
-  const NOMBRES_LON_PROBABLES = ['decimallongitude','longitude','longitud','lon','lng','long','x'];
+  const NOMBRES_MUNI_PROBABLES = ['municipio','mpio','municipality','nombre municipio','nombre_municipio','mun','municipio_nombre','mpio_cnmbre'];
+
+  function actualizarEtiquetasSistema(){
+    const plano = $('sel-sistema').value !== 'wgs84';
+    $('lbl-col-lat').textContent = plano ? 'Columna Norte (Y)' : 'Columna de latitud';
+    $('lbl-col-lon').textContent = plano ? 'Columna Este (X)' : 'Columna de longitud';
+  }
+  $('sel-sistema').addEventListener('change', actualizarEtiquetasSistema);
+
+  // Pasa coordenadas planas a grados y las deja en columnas calculadas (las originales se conservan).
+  function convertirPlanasAGrados(rows, colNorte, colEste, sistema){
+    const COL_LAT = 'Latitud (calculada)', COL_LON = 'Longitud (calculada)';
+    rows.forEach(row=>{
+      const y = limpiarCoord(row[colNorte]), x = limpiarCoord(row[colEste]);
+      let lat = '', lon = '';
+      if(!isNaN(x) && !isNaN(y)){
+        try{
+          const g = sistema==='utm18n' ? utm18NToWgs84(x, y) : magnaToWgs84(x, y, sistema);
+          if(isFinite(g.lat) && isFinite(g.lon)){ lat = +g.lat.toFixed(6); lon = +g.lon.toFixed(6); }
+        }catch(e){ /* fila sin conversión: queda vacía y se marca inválida */ }
+      }
+      row[COL_LAT] = lat; row[COL_LON] = lon;
+    });
+    return { colLat: COL_LAT, colLon: COL_LON };
+  }
+
+  const NOMBRES_LAT_PROBABLES = ['decimallatitude','latitude','latitud','lat','y','norte','northing','north'];
+  const NOMBRES_LON_PROBABLES = ['decimallongitude','longitude','longitud','lon','lng','long','x','este','easting','east'];
   
   function adivinarColumna(numCols, nombresProbables){
     for(const nombre of nombresProbables){
@@ -243,6 +273,19 @@ export function iniciarValidador(root) {
       const o2 = document.createElement('option'); o2.value=c; o2.textContent=c; if(c===lonSugerida) o2.selected=true; selLon.appendChild(o2);
     });
   
+    const selMuni = $('sel-col-muni');
+    selMuni.innerHTML = '';
+    const sinMuni = document.createElement('option'); sinMuni.value = ''; sinMuni.textContent = '— Ninguna —'; selMuni.appendChild(sinMuni);
+    const muniSugerida = Object.keys(rows[0]).find(c=> NOMBRES_MUNI_PROBABLES.includes(normalizar(c).toLowerCase())) || '';
+    Object.keys(rows[0]).forEach(c=>{
+      const o = document.createElement('option'); o.value = c; o.textContent = c; if(c===muniSugerida) o.selected = true; selMuni.appendChild(o);
+    });
+    // Valores muy grandes (> 360) no pueden ser grados: se propone coordenadas planas.
+    const muestraLat = rows.slice(0, 50).map(r=>Math.abs(limpiarCoord(r[latSugerida]))).filter(v=>!isNaN(v)).sort((a,b)=>a-b);
+    const mediana = muestraLat.length ? muestraLat[Math.floor(muestraLat.length/2)] : 0;
+    $('sel-sistema').value = mediana > 360 ? 'oeste' : 'wgs84';
+    actualizarEtiquetasSistema();
+
     $('col-sub').textContent = `Hoja "${sheetName}": ${rows.length.toLocaleString('es-CO')} filas, ${Object.keys(rows[0]).length} columnas (${pendingNumCols.length} numéricas). Solo las columnas numéricas aparecen en los desplegables.`;
   
     const cols = Object.keys(rows[0]);
@@ -283,7 +326,14 @@ export function iniciarValidador(root) {
       $('col-mensaje').style.color = '#E34948';
       return;
     }
-    colLat = latCol; colLon = lonCol;
+    const sistema = $('sel-sistema').value;
+    colMuni = $('sel-col-muni').value || '';
+    if(sistema !== 'wgs84'){
+      const conv = convertirPlanasAGrados(pendingRows, latCol, lonCol, sistema);
+      colLat = conv.colLat; colLon = conv.colLon;
+    } else {
+      colLat = latCol; colLon = lonCol;
+    }
     ROWS = pendingRows;
     RESULTS = ROWS.map((row,i)=>({estado:'', tipo_error:'', observacion:'', depDet:'', muniDet:'', codigoDivipola:'', latIntercambiada:false, _filaExcel: i+2}));
     $('overlay-columnas').style.display = 'none';
@@ -291,7 +341,8 @@ export function iniciarValidador(root) {
     $('foot').textContent = `Última actualización: cargado el ${new Date().toLocaleString('es-CO')} (lat: ${colLat}, lon: ${colLon})`;
     validarBasico();
     renderAll();
-    validarContraMunicipios(); renderAll();
+    const miId = ++validacionId;
+    validarContraMunicipios(miId).then((completo)=>{ if(completo) renderAll(); });
     pendingRows = null;
   });
   
@@ -299,11 +350,12 @@ export function iniciarValidador(root) {
     const file = e.target.files[0];
     if(!file) return;
     hideError();
-    $('estado-datos').textContent = 'Leyendo Excel...';
+    $('estado-datos').textContent = 'Leyendo archivo...';
+    const esCsv = /\.csv$/i.test(file.name);
     const reader = new FileReader();
     reader.onload = async (ev)=>{
       try{
-        const wb = await leerLibroExcel(ev.target.result);
+        const wb = esCsv ? leerLibroCsv(ev.target.result) : await leerLibroExcel(ev.target.result);
         // Elige la hoja con más filas de datos (normalmente la principal)
         let mejorHoja = null, mejorFilas = [];
         for(const sn of wb.SheetNames){
@@ -317,7 +369,7 @@ export function iniciarValidador(root) {
         }
         mostrarPanelColumnas(mejorFilas, mejorHoja);
       }catch(err){
-        showError('No se pudo procesar el Excel: '+err.message);
+        showError('No se pudo procesar el archivo: '+err.message);
         $('estado-datos').textContent = '';
       }
     };
@@ -406,9 +458,17 @@ export function iniciarValidador(root) {
     return null;
   }
   
-  function validarContraMunicipios(){
+  async function validarContraMunicipios(miId){
+    validando = true;
+    $('btn-exportar').disabled = true;
     $('progress').textContent = 'Validando ubicación geográfica...';
-    for(let i=0;i<ROWS.length;i++){
+    const total = ROWS.length;
+    for(let i=0;i<total;i++){
+      if(i>0 && i%400===0){
+        $('progress').textContent = `Validando ubicación geográfica... ${i.toLocaleString('es-CO')} de ${total.toLocaleString('es-CO')}`;
+        await new Promise(res=>setTimeout(res, 0));
+        if(miId !== validacionId) return false; // se cargó otro archivo: esta validación ya no aplica
+      }
       const r = RESULTS[i];
       if(r.estado==='INVÁLIDA' && r.tipo_error.indexOf('vacías')>=0) continue; // ya sin coords válidas
       const lat = limpiarCoord(ROWS[i][colLat]);
@@ -435,7 +495,30 @@ export function iniciarValidador(root) {
     detectarIntercambiadas();
     detectarPrecision();
     detectarDuplicadas();
+    detectarMunicipioDeclarado();
+    validando = false;
     $('progress').textContent = '';
+    return true;
+  }
+
+  // ── Municipio declarado en el Excel vs. municipio donde cae la coordenada ──
+  function coincideMunicipio(declarado, detectado){
+    const nd = normalizar(declarado), nm = normalizar(detectado);
+    if(!nd || nd === nm || nd.includes(nm) || nm.includes(nd)) return true;
+    return (ALIASES_MUNI[detectado] || []).some(a=>{ const na = normalizar(a); return nd === na || nd.includes(na); });
+  }
+  function marcarMunicipioDeclarado(i){
+    if(!colMuni) return;
+    const r = RESULTS[i];
+    if(r.estado !== 'VÁLIDA' || !r.muniDet) return;
+    const declarado = String(ROWS[i][colMuni] === undefined || ROWS[i][colMuni] === null ? '' : ROWS[i][colMuni]).trim();
+    if(!declarado || coincideMunicipio(declarado, r.muniDet)) return;
+    r.estado = 'SOSPECHOSA';
+    r.tipo_error = 'Municipio declarado no coincide';
+    r.observacion = `El Excel indica "${declarado}", pero la coordenada cae en ${r.muniDet}, ${r.depDet}.`;
+  }
+  function detectarMunicipioDeclarado(){
+    for(let i=0;i<ROWS.length;i++) marcarMunicipioDeclarado(i);
   }
   
   function detectarIntercambiadas(){
@@ -796,6 +879,7 @@ export function iniciarValidador(root) {
         }
       }
     }
+    marcarMunicipioDeclarado(i);
   }
   
   W.__confirmarNuevoPunto = function(lat, lon){
@@ -1098,7 +1182,7 @@ export function iniciarValidador(root) {
     const markers = renderMap(filtered);
     rebuildMarkerIndex(markers);
     renderTabla();
-    $('btn-exportar').disabled = ROWS.length===0;
+    $('btn-exportar').disabled = ROWS.length===0 || validando;
     $('vc-vacio').hidden = ROWS.length>0;
   }
   
@@ -1176,7 +1260,7 @@ export function iniciarValidador(root) {
     root.classList.remove('vc-arrastrando');
     const f = e.dataTransfer.files[0];
     if(!f) return;
-    if(!/\.xlsx$/i.test(f.name)){ showError('Solo se admiten archivos .xlsx.'); return; }
+    if(!/\.(xlsx|csv)$/i.test(f.name)){ showError('Solo se admiten archivos .xlsx o .csv.'); return; }
     hideError();
     const dt = new DataTransfer();
     dt.items.add(f);
