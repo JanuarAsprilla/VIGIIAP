@@ -1,78 +1,75 @@
 
 <div id="wrap">
 <div class="sub">Carga tu Excel, elige las columnas de latitud y longitud, y valida cada punto dentro de los límites de los 93 municipios del Chocó Biogeográfico.</div>
-<div style="display:flex; gap:6px; align-items:flex-start; font-size:12px; color:var(--text-secondary); line-height:1.4; margin-bottom:14px;">
+<div class="vc-nota">
   <span>ⓘ Los límites incluyen 92 de 93 municipios — falta Belén de Bajirá (Chocó), que aún no tiene límite oficial del IGAC; se registra bajo Riosucio.</span>
 </div>
 
 <div class="errbox" id="errbox" role="alert"></div>
 
-<div id="overlay-columnas" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:1000; align-items:center; justify-content:center;">
-  <div style="background:var(--overlay-bg); border-radius:10px; padding:18px 20px; width:520px; max-width:92vw; max-height:85vh; overflow:auto;">
-    <h3 style="margin:0 0 4px; font-size:14px; color:var(--text-primary);">Selecciona las columnas de coordenadas</h3>
-    <p style="font-size:12px; color:var(--text-secondary); margin:0 0 14px;" id="col-sub"></p>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+<div id="overlay-columnas" class="vc-overlay" style="display:none;">
+  <div class="vc-modal" role="dialog" aria-modal="true" aria-labelledby="vc-modal-titulo">
+    <h3 id="vc-modal-titulo" class="vc-modal-titulo">Selecciona las columnas de coordenadas</h3>
+    <p class="vc-modal-sub" id="col-sub"></p>
+    <div class="vc-grid2">
       <div>
-        <label id="lbl-col-lat" style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">Columna de latitud</label>
-        <select id="sel-col-lat" style="width:100%; padding:6px 8px; font-size:12px; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-primary);"></select>
+        <label id="lbl-col-lat" class="vc-etiqueta">Columna de latitud</label>
+        <select id="sel-col-lat" class="vc-select"></select>
       </div>
       <div>
-        <label id="lbl-col-lon" style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">Columna de longitud</label>
-        <select id="sel-col-lon" style="width:100%; padding:6px 8px; font-size:12px; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-primary);"></select>
+        <label id="lbl-col-lon" class="vc-etiqueta">Columna de longitud</label>
+        <select id="sel-col-lon" class="vc-select"></select>
       </div>
     </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+    <div class="vc-grid2">
       <div>
-        <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">Sistema de coordenadas</label>
-        <select id="sel-sistema" style="width:100%; padding:6px 8px; font-size:12px; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-primary);">
-          <option value="wgs84">Grados decimales (WGS84 / MAGNA geográficas)</option>
+        <label class="vc-etiqueta">Sistema de coordenadas</label>
+        <select id="sel-sistema" class="vc-select">
+          <option value="wgs84">Grados decimales (WGS84)</option>
           <option value="oeste">MAGNA-SIRGAS planas — Oeste (EPSG:3115)</option>
           <option value="bogota">MAGNA-SIRGAS planas — Bogotá (EPSG:3116)</option>
           <option value="utm18n">WGS84 / UTM zona 18N (EPSG:32618)</option>
         </select>
       </div>
       <div>
-        <label style="font-size:11px; color:var(--text-secondary); display:block; margin-bottom:4px;">Columna de municipio (opcional)</label>
-        <select id="sel-col-muni" style="width:100%; padding:6px 8px; font-size:12px; border-radius:6px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-primary);"></select>
+        <label class="vc-etiqueta">Columna de municipio (opcional)</label>
+        <select id="sel-col-muni" class="vc-select"></select>
       </div>
     </div>
-    <div style="overflow:auto; max-height:220px; margin-bottom:14px; border:1px solid var(--border-lighter); border-radius:6px;">
-      <table style="width:100%; border-collapse:collapse; font-size:11px;">
+    <div class="vc-previa">
+      <table>
         <thead><tr id="col-preview-head"></tr></thead>
         <tbody id="col-preview-body"></tbody>
       </table>
     </div>
-    <p id="col-mensaje" style="font-size:11px; color:var(--text-muted); margin:0 0 12px;"></p>
-    <div style="display:flex; gap:8px;">
-      <button id="btn-cancelar-columnas" style="flex:1; padding:8px; border-radius:6px; border:1px solid var(--border-color); background:var(--bg-card); cursor:pointer; font-size:12px;">Cancelar</button>
-      <button id="btn-confirmar-columnas" style="flex:2; padding:8px; border-radius:6px; border:1px solid #0F6E56; background:#0F6E56; color:white; cursor:pointer; font-size:12px;">Confirmar y validar</button>
+    <p id="col-mensaje" class="vc-modal-msg"></p>
+    <div class="vc-modal-acciones">
+      <button id="btn-cancelar-columnas" type="button">Cancelar</button>
+      <button id="btn-confirmar-columnas" type="button" class="primary">Confirmar y validar</button>
     </div>
   </div>
 </div>
 
 <div class="bar">
-  <button id="btn-cargar-excel" class="primary"><i class="ti ti-upload" aria-hidden="true"></i> Cargar Excel</button>
+  <button id="btn-cargar-excel" type="button" class="primary"><i class="ti ti-upload" aria-hidden="true"></i> Cargar Excel</button>
+  <button id="btn-plantilla" type="button"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Plantilla</button>
   <input type="file" id="file-excel" accept=".xlsx,.csv" style="display:none">
-  <button id="btn-modo-agregar"><i class="ti ti-map-pin-plus" style="color:#185FA5;" aria-hidden="true"></i> <span id="txt-modo-agregar">Agregar puntos con clic: OFF</span></button>
-  <button id="btn-modo-medir"><i class="ti ti-ruler-2" style="color:#0F6E56;" aria-hidden="true"></i> <span id="txt-modo-medir">Medir distancia: OFF</span></button>
-  <button id="btn-modo-mover"><i class="ti ti-arrows-move" style="color:#854F0B;" aria-hidden="true"></i> <span id="txt-modo-mover">Mover puntos: OFF</span></button>
-  <button id="btn-exportar" disabled><i class="ti ti-download" style="color:#0F6E56;" aria-hidden="true"></i> Descargar Excel de resultados</button>
+  <button id="btn-modo-agregar" type="button"><i class="ti ti-map-pin-plus" aria-hidden="true"></i> <span id="txt-modo-agregar">Agregar puntos con clic: OFF</span></button>
+  <button id="btn-modo-medir" type="button"><i class="ti ti-ruler-2" aria-hidden="true"></i> <span id="txt-modo-medir">Medir distancia: OFF</span></button>
+  <button id="btn-modo-mover" type="button"><i class="ti ti-arrows-move" aria-hidden="true"></i> <span id="txt-modo-mover">Mover puntos: OFF</span></button>
+  <button id="btn-exportar" type="button" disabled><i class="ti ti-download" aria-hidden="true"></i> Exportar resultados</button>
   <span id="estado-datos" aria-live="polite"></span>
 </div>
 <div id="progress" aria-live="polite"></div>
 
-<div id="vc-vacio" class="vc-vacio">
-  <p class="vc-vacio-titulo">Arrastra aquí tu Excel para empezar</p>
-  <p class="vc-vacio-texto">Archivo .xlsx o .csv con una columna de latitud y otra de longitud (o coordenadas planas MAGNA-SIRGAS / UTM). También puedes agregar puntos haciendo clic sobre el mapa.</p>
-  <button id="btn-plantilla" type="button"><i class="ti ti-download" aria-hidden="true"></i> Descargar plantilla</button>
-</div>
+<p id="vc-vacio" class="vc-vacio">Arrastra tu Excel (.xlsx o .csv) sobre la herramienta, o usa Cargar Excel. También puedes agregar puntos con clic sobre el mapa.</p>
 
-<div class="filtergroup" style="display:flex; align-items:center; gap:10px;">
-  <div class="label" style="margin:0;">Formato de coordenadas</div>
-  <div style="display:flex; gap:6px;">
-    <button id="fmt-dd" class="fmt-btn">DD (grados decimales)</button>
-    <button id="fmt-dms" class="fmt-btn">DMS (grados, min, seg)</button>
-    <button id="fmt-utm" class="fmt-btn">UTM</button>
+<div class="filtergroup vc-formato">
+  <div class="label">Formato de coordenadas</div>
+  <div class="vc-chips">
+    <button id="fmt-dd" type="button" class="fmt-btn">DD (grados decimales)</button>
+    <button id="fmt-dms" type="button" class="fmt-btn">DMS (grados, min, seg)</button>
+    <button id="fmt-utm" type="button" class="fmt-btn">UTM</button>
   </div>
 </div>
 
@@ -84,11 +81,11 @@
     <select id="f-muni"><option value="">Municipio detectado: todos</option></select>
     <select id="f-error"><option value="">Tipo de error: todos</option></select>
   </div>
-  <div style="display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;">
-    <button class="chip-origen activo" data-origen="" style="font-size:11px; padding:5px 12px; border-radius:999px; border:1px solid #0F6E56; background:#0F6E56; color:white; cursor:pointer;">Todos</button>
-    <button class="chip-origen" data-origen="agregado" style="font-size:11px; padding:5px 12px; border-radius:999px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-primary); cursor:pointer;">Agregados manualmente</button>
-    <button class="chip-origen" data-origen="movido" style="font-size:11px; padding:5px 12px; border-radius:999px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-primary); cursor:pointer;">Movidos manualmente</button>
-    <button class="chip-origen" data-origen="confirmado" style="font-size:11px; padding:5px 12px; border-radius:999px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-primary); cursor:pointer;">Confirmados como válidos</button>
+  <div class="vc-chips vc-chips-origen">
+    <button class="chip-origen activo" data-origen="" type="button">Todos</button>
+    <button class="chip-origen" data-origen="agregado" type="button">Agregados manualmente</button>
+    <button class="chip-origen" data-origen="movido" type="button">Movidos manualmente</button>
+    <button class="chip-origen" data-origen="confirmado" type="button">Confirmados como válidos</button>
   </div>
 </div>
 
@@ -112,17 +109,17 @@
   </div>
   <div class="card">
     <h3>Resumen por municipio detectado</h3>
-    <div id="tableWrap2" style="max-height:440px; overflow:auto;">
+    <div id="tableWrap2">
       <table id="tbl-resumen"><thead><tr><th>Depto</th><th>Municipio</th><th>Puntos</th><th>Váli.</th><th>Sosp.</th><th>Invá.</th><th>Calidad</th></tr></thead><tbody></tbody></table>
     </div>
   </div>
 </div>
 
 <div class="card">
-  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-    <h3 style="margin:0;">Registros (<span id="tabla-count">0</span>)</h3>
-    <button id="btn-corregir-invertidas" type="button" style="display:none; font-size:12px; padding:6px 10px; border-radius:6px; border:1px solid #EDA100; background:#EDA100; color:#2C2C2A; cursor:pointer;">Corregir invertidas</button>
-    <button id="btn-confirmar-todas-dup" style="display:none; font-size:12px; padding:6px 10px; border-radius:6px; border:1px solid #0F6E56; background:#0F6E56; color:white; cursor:pointer;">Confirmar repetidas como válidas</button>
+  <div class="vc-registros-cab">
+    <h3>Registros (<span id="tabla-count">0</span>)</h3>
+    <button id="btn-corregir-invertidas" type="button" class="vc-aviso" style="display:none;">Corregir invertidas</button>
+    <button id="btn-confirmar-todas-dup" type="button" class="vc-ok" style="display:none;">Confirmar repetidas como válidas</button>
   </div>
   <div id="tableWrap">
     <table>
@@ -135,13 +132,13 @@
     </table>
   </div>
   <div id="pager">
-    <span style="display:flex; align-items:center; gap:6px;">
-      <label style="font-size:11px; color:#5F5E5A; white-space:nowrap;">Fila Excel</label>
-      <input id="f-fila-desde" type="number" placeholder="Desde" style="width:70px; padding:5px 6px; font-size:11px; border-radius:6px; border:1px solid #D3D1C7;">
-      <span style="font-size:11px; color:#888780;">a</span>
-      <input id="f-fila-hasta" type="number" placeholder="Hasta" style="width:70px; padding:5px 6px; font-size:11px; border-radius:6px; border:1px solid #D3D1C7;">
+    <span class="vc-rango">
+      <label for="f-fila-desde">Fila Excel</label>
+      <input id="f-fila-desde" class="vc-input" type="number" placeholder="Desde">
+      <span>a</span>
+      <input id="f-fila-hasta" class="vc-input" type="number" placeholder="Hasta">
     </span>
-    <span><span id="pager-info"></span> <button id="prev">Anterior</button> <button id="next">Siguiente</button></span>
+    <span><span id="pager-info"></span> <button id="prev" type="button">Anterior</button> <button id="next" type="button">Siguiente</button></span>
   </div>
 </div>
 

@@ -132,4 +132,38 @@ describe('Validador de coordenadas (port fiel del HTML original)', () => {
     await waitFor(() => expect(container.querySelector('#tableWrap tbody')?.textContent).toMatch(/Municipio declarado no coincide/))
     expect(container.querySelector('#tableWrap tbody')?.textContent?.match(/Municipio declarado no coincide/g)).toHaveLength(1)
   })
+
+  test('hay un único botón para cargar archivos y la pista de carga no trae botones propios', async () => {
+    const { container } = render(<ValidadorCoordenadas />)
+    await waitFor(() => expect(container.querySelector('#btn-cargar-excel')).not.toBeNull())
+    const botonesDeCarga = Array.from(container.querySelectorAll('button')).filter((b) => /^\s*Cargar/i.test(b.textContent ?? ''))
+    expect(botonesDeCarga).toHaveLength(1)
+    expect(container.querySelector('#vc-vacio button')).toBeNull()
+  })
+
+  test('plantilla y exportar viven juntos en la barra de acciones', async () => {
+    const { container } = render(<ValidadorCoordenadas />)
+    await waitFor(() => expect(container.querySelector('.bar #btn-plantilla')).not.toBeNull())
+    expect(container.querySelector('.bar #btn-exportar')).not.toBeNull()
+    expect(container.querySelector('.bar #btn-cargar-excel')).not.toBeNull()
+  })
+
+  test('los chips de origen se activan por clase, sin estilos en línea', async () => {
+    const { container } = render(<ValidadorCoordenadas />)
+    await waitFor(() => expect(container.querySelector('.chip-origen')).not.toBeNull())
+    const chips = Array.from(container.querySelectorAll<HTMLElement>('.chip-origen'))
+    fireEvent.click(chips[1])
+    expect(chips[1].classList.contains('activo')).toBe(true)
+    expect(chips[0].classList.contains('activo')).toBe(false)
+    expect(chips.every((c) => !c.getAttribute('style'))).toBe(true)
+  })
+
+  test('el pie ya no repite las columnas de latitud y longitud del estado de carga', async () => {
+    const { container } = render(<ValidadorCoordenadas />)
+    await cargarCsv(container, 'ID,Latitud,Longitud\n1,5.69,-76.65\n2,5.27,-76.56\n')
+    fireEvent.click(container.querySelector('#btn-confirmar-columnas') as HTMLElement)
+    await waitFor(() => expect(container.querySelector('#foot')?.textContent).toMatch(/Última actualización/))
+    expect(container.querySelector('#foot')?.textContent).not.toMatch(/lat:|lon:/)
+    expect(container.querySelector('#estado-datos')?.textContent).toMatch(/lat: Latitud/)
+  })
 })

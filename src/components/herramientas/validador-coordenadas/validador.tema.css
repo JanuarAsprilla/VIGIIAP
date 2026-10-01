@@ -1,6 +1,6 @@
-/* Tema VIGIIAP sobre el validador original: solo cambia apariencia (tokens, tipografía, íconos),
-   no la estructura ni el comportamiento. Los colores de estado (válida/sospechosa/inválida) se conservan.
-   El modo claro/oscuro lo aporta la plataforma a través de sus tokens. */
+/* Tema VIGIIAP del validador: un único sistema visual (suave, redondeado, minimalista) construido
+   solo con tokens de la plataforma. No cambia estructura ni comportamiento del original; el modo
+   claro/oscuro lo aporta la plataforma a través de esos mismos tokens. */
 .vc-root {
   --bg-page: transparent;
   --bg-card: var(--card-bg, var(--color-surface));
@@ -15,35 +15,302 @@
   --input-bg: var(--card-bg, var(--color-surface));
   --overlay-bg: var(--card-bg, var(--color-surface));
 
+  /* Semáforo de estados: mismos tonos del original, usados en tintes suaves */
+  --vc-ok: #1BAF7A;
+  --vc-aviso: #EDA100;
+  --vc-error: #E34948;
+  --vc-nd: #888780;
+  --vc-acento: var(--color-primary-600);
+  --vc-sombra: 0 1px 2px rgba(26, 86, 50, 0.06), 0 6px 18px -8px rgba(26, 86, 50, 0.14);
+
   font-family: var(--font-body);
   background: transparent;
+  color: var(--text-primary);
 }
 .vc-root #wrap { max-width: none; padding: 0; }
-.vc-root .sub { font-size: 0.875rem; }
-.vc-root .kpi, .vc-root .card, .vc-root .filtergroup { border-radius: var(--radius-xl); box-shadow: var(--shadow-soft); }
-.vc-root button.primary, .vc-root .fmt-btn.activo { background: var(--color-primary-800); border-color: var(--color-primary-800); }
-.vc-root button.primary:hover { background: var(--color-primary-700); }
-.vc-root button:focus-visible, .vc-root select:focus-visible, .vc-root input:focus-visible {
-  outline: 2px solid var(--color-primary-600);
+.vc-root .sub { font-size: 0.9375rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+.vc-root .vc-nota {
+  display: flex;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin-bottom: 1.125rem;
+}
+
+/* ── Botones: píldoras suaves ─────────────────────────────────────────────── */
+.vc-root button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.375rem;
+  padding: 0.55rem 1rem;
+  font: 600 0.8125rem/1 var(--font-body);
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms, box-shadow 150ms, transform 100ms;
+}
+.vc-root button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--vc-acento) 9%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--vc-acento) 38%, var(--color-border));
+}
+.vc-root button:active:not(:disabled) { transform: scale(0.98); }
+.vc-root button:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+.vc-root button:focus-visible,
+.vc-root select:focus-visible,
+.vc-root input:focus-visible {
+  outline: 2px solid var(--vc-acento);
   outline-offset: 2px;
 }
-.vc-root #map { z-index: 0; }
+.vc-root button .ti { font-size: 1rem; margin: 0; vertical-align: 0; }
 
-/* Sensación de uso: transiciones suaves, tabla con encabezado fijo, estado vacío y zona de soltar */
-.vc-root button { transition: background-color 150ms, border-color 150ms, transform 100ms; }
-.vc-root button:active:not(:disabled) { transform: scale(0.98); }
-.vc-root #tableWrap thead th { position: sticky; top: 0; z-index: 1; background: var(--bg-card); }
+/* Acción principal (una sola por pantalla): verde con degradado suave */
+.vc-root #btn-cargar-excel,
+.vc-root #btn-confirmar-columnas {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-800));
+  box-shadow: 0 8px 18px -8px rgba(26, 86, 50, 0.6);
+}
+.vc-root #btn-cargar-excel:hover:not(:disabled),
+.vc-root #btn-confirmar-columnas:hover:not(:disabled) {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700));
+  transform: translateY(-1px);
+}
+.vc-root #btn-cargar-excel .ti,
+.vc-root #btn-confirmar-columnas .ti { color: #fff !important; }
+
+/* Modos del mapa (agregar / medir / mover): "encendido" = tinte verde, no un bloque sólido */
+.vc-root #btn-modo-agregar.primary,
+.vc-root #btn-modo-medir.primary,
+.vc-root #btn-modo-mover.primary {
+  color: color-mix(in srgb, var(--vc-acento) 62%, var(--color-text));
+  background: color-mix(in srgb, var(--vc-acento) 15%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--vc-acento) 55%, var(--color-border));
+}
+.vc-root #btn-modo-agregar.primary .ti,
+.vc-root #btn-modo-medir.primary .ti,
+.vc-root #btn-modo-mover.primary .ti { color: inherit !important; }
+
+/* Acciones sobre la tabla: tintes de aviso / confirmación */
+.vc-root .vc-aviso {
+  color: color-mix(in srgb, #8a5a00 70%, var(--color-text));
+  background: color-mix(in srgb, var(--vc-aviso) 20%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--vc-aviso) 55%, var(--color-border));
+}
+.vc-root .vc-ok {
+  color: color-mix(in srgb, var(--vc-ok) 55%, var(--color-text));
+  background: color-mix(in srgb, var(--vc-ok) 16%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--vc-ok) 50%, var(--color-border));
+}
+
+/* Barra principal */
+.vc-root .bar { gap: 0.625rem; margin-bottom: 1rem; }
+.vc-root #estado-datos:not(:empty) {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--vc-ok) 50%, var(--color-text));
+  background: color-mix(in srgb, var(--vc-ok) 12%, var(--bg-card));
+  border-radius: 999px;
+}
+.vc-root #progress { font-size: 0.75rem; color: var(--text-secondary); margin: -0.375rem 0 0.75rem; }
+
+/* Pista de carga (reemplaza a la tarjeta grande: no tiene botones propios) */
 .vc-root .vc-vacio {
-  margin: 0 0 14px;
-  padding: 22px 16px;
+  margin: 0 0 1rem;
+  padding: 0.7rem 1rem;
   text-align: center;
-  border: 2px dashed var(--border-color);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  border: 1.5px dashed var(--color-border);
   border-radius: var(--radius-xl);
-  background: var(--bg-filter);
 }
 .vc-root .vc-vacio[hidden] { display: none; }
-.vc-root .vc-vacio-titulo { margin: 0 0 4px; font-size: 15px; font-weight: 600; color: var(--text-primary); }
-.vc-root .vc-vacio-texto { margin: 0 0 12px; font-size: 12px; color: var(--text-secondary); }
+
+/* ── Tarjetas y grupos ────────────────────────────────────────────────────── */
+.vc-root .card,
+.vc-root .filtergroup,
+.vc-root .kpi {
+  background: var(--bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--vc-sombra);
+}
+.vc-root .card { padding: 1.125rem 1.25rem; }
+.vc-root .filtergroup { padding: 0.875rem 1.125rem; margin-bottom: 0.75rem; }
+.vc-root .row { gap: 0.75rem; margin-bottom: 0.75rem; }
+.vc-root .filtergroup .label,
+.vc-root .card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.vc-root .vc-formato { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+.vc-root .vc-formato .label { margin: 0; }
+.vc-root .vc-chips { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.vc-root .vc-chips-origen { margin-top: 0.625rem; }
+
+/* Chips y formato: píldoras pequeñas; activo = tinte verde */
+.vc-root .chip-origen,
+.vc-root .fmt-btn {
+  min-height: 2rem;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.75rem;
+  box-shadow: none;
+}
+.vc-root .chip-origen.activo,
+.vc-root .fmt-btn.activo {
+  color: color-mix(in srgb, var(--vc-acento) 62%, var(--color-text));
+  background: color-mix(in srgb, var(--vc-acento) 16%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--vc-acento) 55%, var(--color-border));
+}
+
+/* Campos */
+.vc-root select,
+.vc-root .vc-select,
+.vc-root .vc-input,
+.vc-root .filtergrid input {
+  min-height: 2.375rem;
+  padding: 0.45rem 2rem 0.45rem 0.8rem;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  background-color: var(--input-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.vc-root .vc-input { width: 5rem; padding-right: 0.6rem; }
+.vc-root select:hover { border-color: color-mix(in srgb, var(--vc-acento) 40%, var(--color-border)); }
+.vc-root select:focus,
+.vc-root .vc-input:focus {
+  outline: none;
+  border-color: var(--vc-acento);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vc-acento) 22%, transparent);
+}
+.vc-root .filtergrid { gap: 0.625rem; }
+.vc-root .vc-etiqueta {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── Indicadores: punto de color + número grande ──────────────────────────── */
+.vc-root .kpis { gap: 0.75rem; margin: 0.75rem 0; }
+.vc-root .kpi { padding: 0.95rem 1.125rem; }
+.vc-root .kpi.k1 { --kc: var(--color-primary-800); }
+.vc-root .kpi.k2 { --kc: var(--vc-ok); }
+.vc-root .kpi.k3 { --kc: var(--vc-aviso); }
+.vc-root .kpi.k4 { --kc: var(--vc-error); }
+.vc-root .kpi.k5 { --kc: var(--vc-nd); }
+.vc-root .kpi.k1, .vc-root .kpi.k2, .vc-root .kpi.k3, .vc-root .kpi.k4, .vc-root .kpi.k5 { border-color: var(--color-border); }
+.vc-root .kpi .lab { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); }
+.vc-root .kpi .lab::before { content: ''; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--kc); }
+.vc-root .kpi .val { margin-top: 0.15rem; font-size: 1.75rem; font-weight: 700; line-height: 1.15; color: color-mix(in srgb, var(--kc) 78%, var(--color-text)); }
+.vc-root .kpi.k1 .val, .vc-root .kpi.k2 .val, .vc-root .kpi.k3 .val, .vc-root .kpi.k4 .val, .vc-root .kpi.k5 .val { color: color-mix(in srgb, var(--kc) 78%, var(--color-text)); }
+
+/* ── Mapa y tablas ────────────────────────────────────────────────────────── */
+.vc-root #map { border-radius: var(--radius-xl); border: 1px solid var(--color-border); z-index: 0; }
+.vc-root .legend { gap: 0.875rem; margin-bottom: 0.625rem; }
+.vc-root .leaflet-popup-content-wrapper { border-radius: var(--radius-xl); box-shadow: var(--shadow-card); }
+.vc-root #tableWrap,
+.vc-root #tableWrap2 {
+  max-height: 26rem;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+}
+.vc-root #tableWrap2 { max-height: 27.5rem; }
+.vc-root table { border-collapse: separate; border-spacing: 0; }
+.vc-root th {
+  padding: 0.6rem 0.7rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--bg-card) 93%, var(--vc-acento));
+  border-bottom: 1px solid var(--color-border);
+}
+.vc-root #tableWrap thead th,
+.vc-root #tableWrap2 thead th { position: sticky; top: 0; z-index: 1; }
+.vc-root td { padding: 0.55rem 0.7rem; font-size: 0.75rem; border-bottom: 1px solid var(--color-border); }
+.vc-root tbody tr:last-child td { border-bottom: none; }
+.vc-root tr.row-click { transition: background-color 120ms; }
+.vc-root tr.row-click:hover { background: color-mix(in srgb, var(--vc-acento) 7%, var(--bg-card)); }
+
+/* Estados: etiquetas suaves en vez de bloques de color saturado */
+.vc-root .badge { padding: 0.2rem 0.65rem; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.03em; border-radius: 999px; }
+.vc-root .b-valida { color: color-mix(in srgb, var(--vc-ok) 55%, var(--color-text)); background: color-mix(in srgb, var(--vc-ok) 17%, var(--bg-card)); }
+.vc-root .b-sospechosa { color: color-mix(in srgb, #8a5a00 70%, var(--color-text)); background: color-mix(in srgb, var(--vc-aviso) 22%, var(--bg-card)); }
+.vc-root .b-invalida { color: color-mix(in srgb, var(--vc-error) 60%, var(--color-text)); background: color-mix(in srgb, var(--vc-error) 15%, var(--bg-card)); }
+.vc-root .b-na { color: var(--text-secondary); background: color-mix(in srgb, var(--vc-nd) 16%, var(--bg-card)); }
+
+.vc-root .vc-registros-cab { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.625rem; }
+.vc-root .vc-registros-cab h3 { margin: 0; }
+.vc-root #pager { margin-top: 0.75rem; font-size: 0.75rem; }
+.vc-root #pager button { min-height: 2rem; padding: 0.35rem 0.85rem; font-size: 0.75rem; box-shadow: none; }
+.vc-root .vc-rango { display: flex; align-items: center; gap: 0.4rem; color: var(--text-secondary); }
+.vc-root .vc-rango .vc-input { min-height: 2rem; }
+.vc-root .foot { font-size: 0.6875rem; color: var(--text-muted); margin-top: 0.75rem; }
+.vc-root .errbox {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--vc-error) 10%, var(--bg-card));
+  border: 1px solid color-mix(in srgb, var(--vc-error) 40%, var(--color-border));
+  border-radius: var(--radius-xl);
+  padding: 0.65rem 0.9rem;
+}
+
+/* ── Diálogo de columnas ──────────────────────────────────────────────────── */
+.vc-root .vc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 28, 18, 0.4);
+  backdrop-filter: blur(6px);
+}
+.vc-root .vc-modal {
+  width: 34rem;
+  max-width: 92vw;
+  max-height: 88vh;
+  overflow: auto;
+  padding: 1.375rem 1.5rem;
+  background: var(--overlay-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-float);
+}
+.vc-root .vc-modal-titulo { margin: 0 0 0.25rem; font-family: var(--font-display); font-size: 1.1875rem; font-weight: 600; color: var(--text-primary); }
+.vc-root .vc-modal-sub { margin: 0 0 1rem; font-size: 0.8125rem; color: var(--text-secondary); }
+.vc-root .vc-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.875rem; }
+.vc-root .vc-grid2 .vc-select { width: 100%; }
+.vc-root .vc-previa { overflow: auto; max-height: 13rem; margin-bottom: 0.875rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.vc-root .vc-previa table { width: 100%; font-size: 0.75rem; }
+.vc-root .vc-previa td { padding: 0.4rem 0.6rem; white-space: nowrap; }
+.vc-root .vc-previa th { padding: 0.45rem 0.6rem; text-align: left; white-space: nowrap; position: static; }
+.vc-root .vc-col-num { color: color-mix(in srgb, var(--vc-acento) 70%, var(--color-text)); }
+.vc-root .vc-col-txt { color: var(--text-muted); opacity: 0.8; }
+.vc-root .vc-modal-msg { margin: 0 0 0.875rem; font-size: 0.75rem; color: var(--text-muted); }
+.vc-root .vc-modal-acciones { display: flex; gap: 0.5rem; }
+.vc-root .vc-modal-acciones button { flex: 1; min-height: 2.5rem; }
+.vc-root .vc-modal-acciones #btn-confirmar-columnas { flex: 2; }
+
+/* Zona de soltar archivo (arrastrar y soltar) */
 .vc-root.vc-arrastrando { position: relative; }
 .vc-root.vc-arrastrando::after {
   content: 'Suelta tu Excel aquí';
@@ -58,12 +325,19 @@
   color: var(--color-primary-800);
   background: color-mix(in srgb, var(--color-primary-600) 12%, var(--bg-card));
   border: 2px dashed var(--color-primary-600);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   pointer-events: none;
 }
+
+@media (max-width: 560px) {
+  .vc-root .vc-grid2 { grid-template-columns: 1fr; }
+  .vc-root .kpis { grid-template-columns: 1fr 1fr; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .vc-root button { transition: none; }
-  .vc-root button:active:not(:disabled) { transform: none; }
+  .vc-root button, .vc-root select, .vc-root tr.row-click { transition: none; }
+  .vc-root button:active:not(:disabled),
+  .vc-root #btn-cargar-excel:hover:not(:disabled),
+  .vc-root #btn-confirmar-columnas:hover:not(:disabled) { transform: none; }
 }
 
 /* Íconos Tabler del original -> máscaras locales (sin webfont externo) */
@@ -80,3 +354,4 @@
 .vc-root .ti-ruler-2{--vc-icono:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20class%3D%22lucide%20lucide-ruler%22%20aria-hidden%3D%22true%22%3E%3Cpath%20d%3D%22M21.3%2015.3a2.4%202.4%200%200%201%200%203.4l-2.6%202.6a2.4%202.4%200%200%201-3.4%200L2.7%208.7a2.41%202.41%200%200%201%200-3.4l2.6-2.6a2.41%202.41%200%200%201%203.4%200Z%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m14.5%2012.5%202-2%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m11.5%209.5%202-2%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m8.5%206.5%202-2%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m17.5%2015.5%202-2%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E");}
 .vc-root .ti-arrows-move{--vc-icono:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20class%3D%22lucide%20lucide-move%22%20aria-hidden%3D%22true%22%3E%3Cpath%20d%3D%22M12%202v20%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m15%2019-3%203-3-3%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m19%209%203%203-3%203%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M2%2012h20%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m5%209-3%203%203%203%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m9%205%203-3%203%203%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E");}
 .vc-root .ti-download{--vc-icono:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20class%3D%22lucide%20lucide-download%22%20aria-hidden%3D%22true%22%3E%3Cpath%20d%3D%22M12%2015V3%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M21%2015v4a2%202%200%200%201-2%202H5a2%202%200%200%201-2-2v-4%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22m7%2010%205%205%205-5%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E");}
+.vc-root .ti-file-spreadsheet{--vc-icono:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20class%3D%22lucide%20lucide-file-spreadsheet%22%20aria-hidden%3D%22true%22%3E%3Cpath%20d%3D%22M6%2022a2%202%200%200%201-2-2V4a2%202%200%200%201%202-2h8a2.4%202.4%200%200%201%201.704.706l3.588%203.588A2.4%202.4%200%200%201%2020%208v12a2%202%200%200%201-2%202z%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M14%202v5a1%201%200%200%200%201%201h5%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M8%2013h2%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M14%2013h2%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M8%2017h2%22%3E%3C%2Fpath%3E%3Cpath%20d%3D%22M14%2017h2%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E");}
