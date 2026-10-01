@@ -1,0 +1,158 @@
+/* Sistema visual común de las herramientas (Validador, Panel Chocó, y las que vengan):
+   suave, redondeado, minimalista, construido solo con tokens de la plataforma (claro y oscuro).
+   Cada herramienta lleva `.ht-root` en su contenedor y solo añade en su propio tema lo que le es
+   específico. Importar DESPUÉS del CSS original de la herramienta (misma especificidad: gana el último). */
+.ht-root {
+  --ht-acento: var(--color-primary-600);
+  --ht-ok: #1BAF7A;
+  --ht-aviso: #EDA100;
+  --ht-error: #E34948;
+  --ht-nd: #888780;
+  --ht-sombra: 0 1px 2px rgba(26, 86, 50, 0.06), 0 6px 18px -8px rgba(26, 86, 50, 0.14);
+  font-family: var(--font-body);
+}
+
+/* ── Botones: píldoras suaves ─────────────────────────────────────────────── */
+.ht-root button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.375rem;
+  padding: 0.55rem 1rem;
+  font: 600 0.8125rem/1 var(--font-body);
+  color: var(--color-text);
+  background: var(--card-bg, var(--color-surface));
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms, box-shadow 150ms, transform 100ms;
+}
+.ht-root button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ht-acento) 9%, var(--card-bg, var(--color-surface)));
+  border-color: color-mix(in srgb, var(--ht-acento) 38%, var(--color-border));
+}
+.ht-root button:active:not(:disabled) { transform: scale(0.98); }
+.ht-root button:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+.ht-root button:focus-visible,
+.ht-root select:focus-visible,
+.ht-root input:focus-visible {
+  outline: 2px solid var(--ht-acento);
+  outline-offset: 2px;
+}
+
+/* Acción principal (una por pantalla): verde con degradado suave */
+.ht-root .ht-primario {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-800));
+  box-shadow: 0 8px 18px -8px rgba(26, 86, 50, 0.6);
+}
+.ht-root .ht-primario:hover:not(:disabled) {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700));
+  transform: translateY(-1px);
+}
+.ht-root .ht-primario .ti { color: #fff !important; }
+
+/* Tintes suaves de aviso / confirmación */
+.ht-root .ht-aviso {
+  color: color-mix(in srgb, #8a5a00 70%, var(--color-text));
+  background: color-mix(in srgb, var(--ht-aviso) 20%, var(--card-bg, var(--color-surface)));
+  border-color: color-mix(in srgb, var(--ht-aviso) 55%, var(--color-border));
+}
+.ht-root .ht-ok {
+  color: color-mix(in srgb, var(--ht-ok) 55%, var(--color-text));
+  background: color-mix(in srgb, var(--ht-ok) 16%, var(--card-bg, var(--color-surface)));
+  border-color: color-mix(in srgb, var(--ht-ok) 50%, var(--color-border));
+}
+
+/* Chips: píldoras pequeñas; activo = tinte verde */
+.ht-root .ht-chip {
+  min-height: 2rem;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.75rem;
+  box-shadow: none;
+}
+.ht-root .ht-chip.activo {
+  color: color-mix(in srgb, var(--ht-acento) 62%, var(--color-text));
+  background: color-mix(in srgb, var(--ht-acento) 16%, var(--card-bg, var(--color-surface)));
+  border-color: color-mix(in srgb, var(--ht-acento) 55%, var(--color-border));
+}
+
+/* ── Campos ───────────────────────────────────────────────────────────────── */
+.ht-root select,
+.ht-root .ht-input {
+  min-height: 2.375rem;
+  padding: 0.45rem 2rem 0.45rem 0.8rem;
+  font-size: 0.8125rem;
+  color: var(--color-text);
+  background-color: var(--card-bg, var(--color-surface));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.ht-root .ht-input { width: 5rem; padding-right: 0.6rem; }
+.ht-root select:hover { border-color: color-mix(in srgb, var(--ht-acento) 40%, var(--color-border)); }
+.ht-root select:focus,
+.ht-root .ht-input:focus {
+  outline: none;
+  border-color: var(--ht-acento);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ht-acento) 22%, transparent);
+}
+
+/* ── Tarjetas, grupos e indicadores ───────────────────────────────────────── */
+.ht-root :is(.card, .filtergroup, .kpi, .chart-card, .metric-card, .controls-bar) {
+  background: var(--card-bg, var(--color-surface));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--ht-sombra);
+}
+.ht-root :is(.filtergroup .label, .card h3, .chart-card h3, .metric-card .mc-label, .ctrl-group label) {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* ── Tablas: contenedor redondeado, encabezado teñido, filas con hover ────── */
+.ht-root :is(.table-wrap, #tableWrap, #tableWrap2) {
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+}
+.ht-root table { border-collapse: separate; border-spacing: 0; }
+.ht-root :is(th, table.dtbl th) {
+  padding: 0.6rem 0.7rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--card-bg, var(--color-surface)) 93%, var(--ht-acento));
+  border-bottom: 1px solid var(--color-border);
+}
+.ht-root :is(td, table.dtbl td) { padding: 0.55rem 0.7rem; font-size: 0.75rem; border-bottom: 1px solid var(--color-border); }
+.ht-root :is(tbody tr:last-child td, table.dtbl tr:last-child td) { border-bottom: none; }
+.ht-root :is(tr.row-click:hover, table.dtbl tr:hover td) { background: color-mix(in srgb, var(--ht-acento) 7%, var(--card-bg, var(--color-surface))); }
+
+/* ── Ventanas emergentes: fondo difuminado y tarjeta redondeada ───────────── */
+.ht-root :is(.vc-overlay, .modal-overlay) {
+  background: rgba(10, 28, 18, 0.4);
+  backdrop-filter: blur(6px);
+}
+.ht-root :is(.vc-modal, .modal-carga) {
+  background: var(--card-bg, var(--color-surface));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-float);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ht-root button, .ht-root select, .ht-root tr.row-click { transition: none; }
+  .ht-root button:active:not(:disabled),
+  .ht-root .ht-primario:hover:not(:disabled) { transform: none; }
+}

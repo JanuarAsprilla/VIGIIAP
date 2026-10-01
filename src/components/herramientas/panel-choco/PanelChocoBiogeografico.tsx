@@ -5,6 +5,7 @@ import { puedeEditarModulo } from '@/lib/permisosModulo'
 import { iniciarPanelChoco } from './panelChoco.motor'
 import marcado from './panelChoco.original.html?raw'
 import './panelChoco.original.css'
+import '../herramientaTema.css'
 import './panelChoco.tema.css'
 
 /** Panel del dashboard original, con su estructura y lógica intactas. Aquí solo se monta:
@@ -30,7 +31,7 @@ export default function PanelChocoBiogeografico() {
 
   return (
     <div className="space-y-4">
-      <div ref={rootRef} className={`pc-root${puedeEditar ? '' : ' pc-solo-lectura'}`} />
+      <div ref={rootRef} className={`pc-root ht-root${puedeEditar ? '' : ' pc-solo-lectura'}`} />
       {!puedeEditar && (
         <div className="flex items-center gap-2 px-3 py-2 bg-bg-alt border border-border rounded-lg text-xs text-text-muted">
           <Eye className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />

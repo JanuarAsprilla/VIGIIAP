@@ -166,4 +166,12 @@ describe('Validador de coordenadas (port fiel del HTML original)', () => {
     expect(container.querySelector('#foot')?.textContent).not.toMatch(/lat:|lon:/)
     expect(container.querySelector('#estado-datos')?.textContent).toMatch(/lat: Latitud/)
   })
+
+  test('usa el sistema visual común de las herramientas (ht-root, botón principal compartido)', async () => {
+    const { container } = render(<ValidadorCoordenadas />)
+    await waitFor(() => expect(container.querySelector('#btn-cargar-excel')).not.toBeNull())
+    expect(container.querySelector('.vc-root')?.classList.contains('ht-root')).toBe(true)
+    expect(container.querySelector('#btn-cargar-excel')?.classList.contains('ht-primario')).toBe(true)
+    expect(container.querySelector('#btn-confirmar-columnas')?.classList.contains('ht-primario')).toBe(true)
+  })
 })
