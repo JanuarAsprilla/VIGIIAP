@@ -170,3 +170,23 @@
   .pc-root { --pc-sticky-top: 0px; }
   .pc-root .capa-selector { max-width: none; }
 }
+
+/* Responsivo por ANCHO DEL CONTENEDOR (la herramienta vive junto al menú lateral de la plataforma,
+   así que el ancho de la ventana no dice cuánto espacio tiene). Va en .main, nunca en .pc-root. */
+.pc-root .main { container: pc / inline-size; }
+.pc-root :is(.card, .chart-card, .metric-card, .charts-row > *, .chart-duo > *) { min-width: 0; }
+
+@container pc (max-width: 62rem) {
+  .pc-root [style*="13fr 7fr"], .pc-root [style*="11fr 9fr"], .pc-root [style*="3fr 2fr"], .pc-root [style*="200px 1fr"] { grid-template-columns: 1fr !important; }
+  .pc-root [style*="repeat(5,1fr)"], .pc-root [style*="repeat(5, 1fr)"] { grid-template-columns: repeat(3, 1fr) !important; }
+}
+@container pc (max-width: 44rem) {
+  .pc-root [style*="repeat(4,1fr)"], .pc-root [style*="repeat(4, 1fr)"], .pc-root [style*="repeat(5,1fr)"], .pc-root [style*="repeat(5, 1fr)"] { grid-template-columns: 1fr 1fr !important; }
+  .pc-root .metrics-grid { grid-template-columns: 1fr 1fr; }
+  .pc-root .charts-row, .pc-root .chart-duo { grid-template-columns: 1fr !important; }
+  .pc-root .table-wrap, .pc-root #tableWrap, .pc-root #tableWrap2 { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+@container pc (max-width: 28rem) {
+  .pc-root [style*="repeat(4,1fr)"], .pc-root [style*="repeat(4, 1fr)"], .pc-root [style*="repeat(5,1fr)"], .pc-root [style*="repeat(5, 1fr)"] { grid-template-columns: 1fr !important; }
+  .pc-root .metrics-grid { grid-template-columns: 1fr; }
+}

@@ -179,7 +179,28 @@
 }
 @media (max-width: 560px) {
   .vc-root .vc-grid2 { grid-template-columns: 1fr; }
+}
+
+/* Responsivo por ANCHO DEL CONTENEDOR (hay menú lateral: el ancho de la ventana engaña). Va en #wrap, nunca en .vc-root. */
+.vc-root #wrap { container: vc / inline-size; }
+.vc-root :is(.card, .kpi, .filtergroup) { min-width: 0; }
+.vc-root #map { max-width: 100%; }
+
+@container vc (max-width: 62rem) {
+  .vc-root .row { grid-template-columns: 1fr; }
+  .vc-root .filtergrid { grid-template-columns: 1fr 1fr; }
+}
+@container vc (max-width: 40rem) {
   .vc-root .kpis { grid-template-columns: 1fr 1fr; }
+  .vc-root #map { height: 320px; }
+  .vc-root .bar { gap: 0.5rem; }
+  .vc-root #tableWrap, .vc-root #tableWrap2 { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .vc-root #pager { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+}
+@container vc (max-width: 28rem) {
+  .vc-root .filtergrid, .vc-root .kpis { grid-template-columns: 1fr; }
+  .vc-root .bar > button { flex: 1 1 100%; }
+  .vc-root #map { height: 280px; }
 }
 
 /* Íconos Tabler del original -> máscaras locales (sin webfont externo) */

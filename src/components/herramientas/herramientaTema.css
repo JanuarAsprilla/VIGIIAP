@@ -151,6 +151,20 @@
   box-shadow: var(--shadow-float);
 }
 
+/* ── Responsivo ───────────────────────────────────────────────────────────── */
+/* Las tarjetas de una cuadrícula pueden encogerse: sin esto, una tabla o un gráfico ancho ensancha toda la página. */
+.ht-root :is(.card, .chart-card, .metric-card, .kpi, .filtergroup, .controls-bar) { min-width: 0; }
+.ht-root :is(canvas, img, svg) { max-width: 100%; }
+
+/* En pantallas táctiles todo lo que se toca mide al menos 44 px (guía de accesibilidad móvil). */
+@media (pointer: coarse) {
+  .ht-root button { min-height: 2.75rem; }
+  .ht-root .ht-chip { min-height: 2.5rem; padding-inline: 1rem; }
+  .ht-root select,
+  .ht-root .ht-input { min-height: 2.75rem; }
+  .ht-root .modal-carga-close { width: 2.5rem; height: 2.5rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ht-root button, .ht-root select, .ht-root tr.row-click { transition: none; }
   .ht-root button:active:not(:disabled),
