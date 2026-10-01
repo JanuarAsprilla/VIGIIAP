@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { AxiosProgressEvent } from 'axios'
 import api from '@/lib/api'
-import { asApiError } from '@/lib/apiError'
+import { asApiError, getApiErrorMessage } from '@/lib/apiError'
+import { enTandas, TAMANO_TANDA, type FilaFicha } from '@/lib/fichas/importarFichas'
 import type {
-  AtributoCapa, CapaFichaConfig, FichaPunto, MedioFicha, FeaturesFichaResponse,
+  AtributoCapa, CapaFichaConfig, FichaPunto, MedioFicha, FeaturesFichaResponse, ResultadoImportacionFichas,
 } from '@/types'
 
 const KEYS = {
@@ -81,6 +82,46 @@ export function useFicha(configId: string | null | undefined, valor: string | nu
     // async en el backend), refresca sola hasta que quede 'listo' -- sin esto,
     // el admin tendría que cerrar y reabrir la ficha para ver el resultado.
     refetchInterval: (query) => query.state.data?.medios.some((m) => m.estado === 'procesando') ? 6000 : false,
+  })
+}
+
+/**
+ * Importa títulos y descripciones en lote. Las filas viajan en tandas de
+ * TAMANO_TANDA (límite del backend), una a la vez, y se suman los resultados.
+ * Si una tanda falla después de que otras ya entraron, el error lo dice -- el
+ * backend es idempotente, así que reintentar el mismo archivo es seguro.
+ */
+export function useImportarFichas(configId: string | null | undefined) {
+  const qc = useQueryClient()
+  return useMutation<
+    ResultadoImportacionFichas,
+    Error,
+    { filas: FilaFicha[]; sobrescribir: boolean; onProgreso?: (hechas: number, total: number) => void }
+  >({
+    mutationFn: async ({ filas, sobrescribir, onProgreso }) => {
+      const suma: ResultadoImportacionFichas = { creadas: 0, actualizadas: 0, omitidas: 0, duplicadasEnArchivo: 0 }
+      let hechas = 0
+      for (const tanda of enTandas(filas, TAMANO_TANDA)) {
+        let r: ResultadoImportacionFichas
+        try {
+          r = await api.post(`/admin/fichas-capa/${configId}/fichas/importar`, { filas: tanda, sobrescribir })
+        } catch (err) {
+          if (hechas === 0) throw err
+          throw new Error(`Se importaron ${hechas} de ${filas.length} filas antes de un error: ${getApiErrorMessage(err, 'falló la importación')}`)
+        }
+        suma.creadas += r.creadas
+        suma.actualizadas += r.actualizadas
+        suma.omitidas += r.omitidas
+        suma.duplicadasEnArchivo += r.duplicadasEnArchivo
+        hechas += tanda.length
+        onProgreso?.(hechas, filas.length)
+      }
+      return suma
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['fichas-punto', 'features', configId] })
+      qc.invalidateQueries({ queryKey: ['fichas-punto', 'ficha', configId] })
+    },
   })
 }
 

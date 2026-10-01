@@ -6,7 +6,7 @@ import { createElement, type ReactNode } from 'react'
 vi.mock('@/lib/api', () => ({ default: { get: vi.fn(), put: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }))
 import api from '@/lib/api'
 import {
-  useAtributosCapa, useConfigFichasCapa, useUpsertConfigFichasCapa,
+  useAtributosCapa, useConfigFichasCapa, useUpsertConfigFichasCapa, useImportarFichas,
   useFeaturesFichas, useFicha, useUpsertFicha, useDeleteFicha, useSubirMedioFicha,
   useActualizarMedio, useReordenarMedios, useEliminarMedio,
 } from '@/hooks/useFichasPunto'
@@ -67,6 +67,62 @@ describe('useUpsertConfigFichasCapa', () => {
 
     await result.current.mutateAsync({ conexionId: 'c1', capaId: 'ws:estaciones', campoIdentificador: 'codigo' })
     expect(api.put).toHaveBeenCalledWith('/admin/fichas-capa', { conexionId: 'c1', capaId: 'ws:estaciones', campoIdentificador: 'codigo' })
+  })
+})
+
+describe('useImportarFichas', () => {
+  const filas = (n: number) => Array.from({ length: n }, (_, i) => ({ valor: `EST-${i}`, descripcion: 'Texto de la ficha' }))
+  const resultado = (creadas: number) => ({ creadas, actualizadas: 0, omitidas: 0, duplicadasEnArchivo: 0 })
+
+  test('envía las filas en tandas de 500 y suma los resultados de cada una', async () => {
+    vi.mocked(api.post)
+      .mockResolvedValueOnce(resultado(500))
+      .mockResolvedValueOnce(resultado(500))
+      .mockResolvedValueOnce({ creadas: 150, actualizadas: 30, omitidas: 20, duplicadasEnArchivo: 1 })
+    const { result } = renderHook(() => useImportarFichas('cfg1'), { wrapper })
+
+    const total = await result.current.mutateAsync({ filas: filas(1200), sobrescribir: false })
+
+    expect(api.post).toHaveBeenCalledTimes(3)
+    expect(vi.mocked(api.post).mock.calls.map((c) => (c[1] as { filas: unknown[] }).filas.length)).toEqual([500, 500, 200])
+    expect(vi.mocked(api.post).mock.calls[0][0]).toBe('/admin/fichas-capa/cfg1/fichas/importar')
+    expect(total).toEqual({ creadas: 1150, actualizadas: 30, omitidas: 20, duplicadasEnArchivo: 1 })
+  })
+
+  test('pasa la opción de sobrescribir en cada tanda', async () => {
+    vi.mocked(api.post).mockResolvedValue(resultado(1))
+    const { result } = renderHook(() => useImportarFichas('cfg1'), { wrapper })
+
+    await result.current.mutateAsync({ filas: filas(1), sobrescribir: true })
+
+    expect(vi.mocked(api.post).mock.calls[0][1]).toMatchObject({ sobrescribir: true })
+  })
+
+  test('informa el avance después de cada tanda', async () => {
+    vi.mocked(api.post).mockResolvedValue(resultado(500))
+    const onProgreso = vi.fn()
+    const { result } = renderHook(() => useImportarFichas('cfg1'), { wrapper })
+
+    await result.current.mutateAsync({ filas: filas(700), sobrescribir: false, onProgreso })
+
+    expect(onProgreso.mock.calls).toEqual([[500, 700], [700, 700]])
+  })
+
+  test('si una tanda falla después de importar otras, el error dice cuántas filas ya entraron', async () => {
+    vi.mocked(api.post)
+      .mockResolvedValueOnce(resultado(500))
+      .mockRejectedValueOnce(new Error('Fallo de red'))
+    const { result } = renderHook(() => useImportarFichas('cfg1'), { wrapper })
+
+    await expect(result.current.mutateAsync({ filas: filas(700), sobrescribir: false }))
+      .rejects.toThrow(/500 de 700 filas.*Fallo de red/)
+  })
+
+  test('si falla la primera tanda, propaga el error original', async () => {
+    vi.mocked(api.post).mockRejectedValueOnce(new Error('Sin permiso'))
+    const { result } = renderHook(() => useImportarFichas('cfg1'), { wrapper })
+
+    await expect(result.current.mutateAsync({ filas: filas(10), sobrescribir: false })).rejects.toThrow('Sin permiso')
   })
 })
 

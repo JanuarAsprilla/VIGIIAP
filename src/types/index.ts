@@ -518,6 +518,15 @@ export interface FeaturesFichaResponse {
   huerfanas: FichaHuerfana[]
 }
 
+/** Resultado (sumado de todas las tandas) de importar títulos y descripciones de fichas en lote. */
+export interface ResultadoImportacionFichas {
+  creadas: number
+  actualizadas: number
+  /** Puntos que ya tenían descripción y no se tocaron (sin "sobrescribir"). */
+  omitidas: number
+  duplicadasEnArchivo: number
+}
+
 export interface CompletitudCapa {
   capaId: string
   nombre: string
