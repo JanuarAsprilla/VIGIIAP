@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { iniciarValidador } from './validador.motor'
 import marcado from './validador.original.html?raw'
 import './validador.original.css'
+import '../herramientaTema.css'
 import './validador.tema.css'
 
 /** Validador del HTML original, con su estructura y lógica intactas. Aquí solo se monta:
@@ -21,5 +22,5 @@ export default function ValidadorCoordenadas() {
     }
   }, [])
 
-  return <div ref={rootRef} className="vc-root" />
+  return <div ref={rootRef} className="vc-root ht-root" />
 }

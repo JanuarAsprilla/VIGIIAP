@@ -128,4 +128,19 @@ describe('Panel Chocó (port fiel del HTML original)', () => {
     expect(destruidas.length).toBeGreaterThan(0)
     expect(raiz.innerHTML).toBe('')
   })
+
+  test('usa el sistema visual común de las herramientas y el botón de carga es el principal compartido', async () => {
+    rol = 'super_admin'
+    const { container } = render(<PanelChocoBiogeografico />)
+    await waitFor(() => expect(container.querySelector('.cargar-btn')).not.toBeNull())
+    expect(container.querySelector('.pc-root')?.classList.contains('ht-root')).toBe(true)
+    expect(container.querySelector('.cargar-btn')?.classList.contains('ht-primario')).toBe(true)
+  })
+
+  test('ya no repite en el pie que los datos se guardan en el navegador (lo dice el diálogo de carga)', async () => {
+    const { container } = render(<PanelChocoBiogeografico />)
+    await waitFor(() => expect(container.querySelector('.sidebar-nav')).not.toBeNull())
+    expect(container.querySelector('.pc-root > .footer, .pc-root .footer')).toBeNull()
+    expect(container.querySelector('.mc-footer')?.textContent).toMatch(/Guardado en el navegador/)
+  })
 })
