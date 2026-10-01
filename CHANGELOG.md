@@ -6,6 +6,18 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.10.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.9.0...v1.10.0) (2026-10-01)
+
+
+### Features
+
+* herramientas responsivas por ancho de contenedor ([#262](https://github.com/JanuarAsprilla/VIGIIAP/issues/262)) ([25701bf](https://github.com/JanuarAsprilla/VIGIIAP/commit/25701bf21f612aa9bf9ade1918fe0a79c9173639))
+
+
+### Bug Fixes
+
+* los botones de las herramientas conservan su diseño en producción; texto del validador ([#259](https://github.com/JanuarAsprilla/VIGIIAP/issues/259)) ([d4b724b](https://github.com/JanuarAsprilla/VIGIIAP/commit/d4b724bc9560ea1c66fc20687c4fb080d837ea58))
+
 ## [1.9.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.8.0...v1.9.0) (2026-10-01)
 
 
