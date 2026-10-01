@@ -1,6 +1,5 @@
 import { BarChart3, MapPinCheck, type LucideIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
-import ConversorCoordenadas from '@/components/herramientas/ConversorCoordenadas'
 import PanelChocoTool from '@/components/herramientas/PanelChocoTool'
 import ValidadorCoordenadasTool from '@/components/herramientas/ValidadorCoordenadasTool'
 
@@ -8,14 +7,10 @@ type AccentColor = 'primary' | 'orange' | 'gold' | 'green'
 
 interface EntradaRegistro {
   Component: ComponentType<{ onToast?: (msg: string) => void }>
-  /** Herramientas con su propia navegación interna (pestañas/secciones) se
-   *  muestran en la grilla como tarjeta lanzadora (icon/color obligatorios
-   *  aquí) y ocupan toda la página al abrirse -- ver Herramientas.tsx.
-   *  Herramientas simples (sin `focusable`) renderizan su propio ToolCard
-   *  internamente con su tag/título/ícono ya en el componente. */
-  focusable?: boolean
-  icon?: LucideIcon
-  color?: AccentColor
+  /** Toda herramienta se muestra como una tarjeta pequeña en la grilla (ícono y color
+   *  obligatorios) y, al abrirla, ocupa toda la página -- ver Herramientas.tsx. */
+  icon: LucideIcon
+  color: AccentColor
 }
 
 /**
@@ -28,7 +23,6 @@ interface EntradaRegistro {
  * nunca rompe la página, pero tampoco hace aparecer una herramienta de la nada.
  */
 export const REGISTRO_HERRAMIENTAS: Record<string, EntradaRegistro> = {
-  conversor: { Component: ConversorCoordenadas },
-  'panel-choco': { Component: PanelChocoTool, focusable: true, icon: BarChart3, color: 'gold' },
-  'validador-coordenadas': { Component: ValidadorCoordenadasTool, focusable: true, icon: MapPinCheck, color: 'primary' },
+  'panel-choco': { Component: PanelChocoTool, icon: BarChart3, color: 'gold' },
+  'validador-coordenadas': { Component: ValidadorCoordenadasTool, icon: MapPinCheck, color: 'primary' },
 }

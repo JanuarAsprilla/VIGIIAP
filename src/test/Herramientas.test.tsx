@@ -2,7 +2,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
-import { BarChart3 } from 'lucide-react'
+import { BarChart3, MapPinCheck } from 'lucide-react'
 import Herramientas from '@/pages/Herramientas'
 
 vi.mock('framer-motion', () => {
@@ -39,11 +39,15 @@ vi.mock('@/components/herramientas/SolicitarHerramientaModal', () => ({
 }))
 
 const CATALOGO_BASE = [
-  { clave: 'conversor', titulo: 'Conversor de Coordenadas', tag: 'Geodésico', activa: true, orden: 0, focusable: false, Component: () => <div>Herramienta: Conversor</div> },
   {
     clave: 'panel-choco', titulo: 'Panel de Análisis Territorial — Chocó Biogeográfico', tag: 'Reportes',
-    descripcion: 'Descripción del panel', activa: true, orden: 1, focusable: true, icon: BarChart3, color: 'gold' as const,
+    descripcion: 'Descripción del panel', activa: true, orden: 0, icon: BarChart3, color: 'gold' as const,
     Component: () => <div>Herramienta: Panel Chocó</div>,
+  },
+  {
+    clave: 'validador-coordenadas', titulo: 'Validador de Coordenadas', tag: 'Calidad de datos',
+    descripcion: 'Valida cada punto de un Excel contra los municipios.', activa: true, orden: 1, icon: MapPinCheck, color: 'primary' as const,
+    Component: () => <div>Herramienta: Validador</div>,
   },
 ]
 
@@ -56,14 +60,17 @@ beforeEach(() => {
 })
 
 describe('Herramientas — grilla y filtrado', () => {
-  test('muestra las 2 herramientas y el resumen de actividad sin búsqueda', () => {
+  beforeEach(() => window.localStorage.clear())
+
+  test('muestra todas las herramientas como tarjetas pequeñas y el resumen de actividad', () => {
     render(<Herramientas />)
-    expect(screen.getByText('Herramienta: Conversor')).toBeInTheDocument()
-    // Panel Chocó es "focusable" — en la grilla se ve su tarjeta lanzadora, no su
-    // contenido (que solo se monta al abrirlo, ver siguiente test).
     expect(screen.getByText('Panel de Análisis Territorial — Chocó Biogeográfico')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Abrir panel completo/i })).toBeInTheDocument()
+    expect(screen.getByText('Validador de Coordenadas')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Abrir Panel de Análisis Territorial/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Abrir Validador de Coordenadas/i })).toBeInTheDocument()
+    // El contenido de cada herramienta solo se monta al abrirla.
     expect(screen.queryByText('Herramienta: Panel Chocó')).not.toBeInTheDocument()
+    expect(screen.queryByText('Herramienta: Validador')).not.toBeInTheDocument()
     expect(screen.getByText('Resumen de Actividad')).toBeInTheDocument()
   })
 
@@ -71,32 +78,32 @@ describe('Herramientas — grilla y filtrado', () => {
     catalogoLoading = true
     render(<Herramientas />)
     expect(screen.getByRole('status', { name: /Cargando herramientas/i })).toBeInTheDocument()
-    expect(screen.queryByText('Herramienta: Conversor')).not.toBeInTheDocument()
+    expect(screen.queryByText('Validador de Coordenadas')).not.toBeInTheDocument()
   })
 
-  test('abrir una herramienta focusable la muestra a pantalla completa y "Volver" regresa a la grilla', async () => {
+  test('abrir una herramienta la muestra a pantalla completa y "Volver" regresa a la grilla', async () => {
     const user = userEvent.setup()
     render(<Herramientas />)
 
-    await user.click(screen.getByRole('button', { name: /Abrir panel completo/i }))
-    expect(screen.getByText('Herramienta: Panel Chocó')).toBeInTheDocument()
-    expect(screen.queryByText('Herramienta: Conversor')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Abrir Validador de Coordenadas/i }))
+    expect(screen.getByText('Herramienta: Validador')).toBeInTheDocument()
+    expect(screen.queryByText('Panel de Análisis Territorial — Chocó Biogeográfico')).not.toBeInTheDocument()
     expect(screen.queryByText('Resumen de Actividad')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /Volver a Herramientas/i }))
-    expect(screen.queryByText('Herramienta: Panel Chocó')).not.toBeInTheDocument()
-    expect(screen.getByText('Herramienta: Conversor')).toBeInTheDocument()
+    expect(screen.queryByText('Herramienta: Validador')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Abrir Validador de Coordenadas/i })).toBeInTheDocument()
   })
 
   test('filtra herramientas por título o categoría según la búsqueda global', () => {
     searchQuery = 'reportes'
     render(<Herramientas />)
     expect(screen.getByText('Panel de Análisis Territorial — Chocó Biogeográfico')).toBeInTheDocument()
-    expect(screen.queryByText('Herramienta: Conversor')).not.toBeInTheDocument()
+    expect(screen.queryByText('Validador de Coordenadas')).not.toBeInTheDocument()
   })
 
   test('oculta el resumen de actividad mientras hay una búsqueda activa', () => {
-    searchQuery = 'conversor'
+    searchQuery = 'validador'
     render(<Herramientas />)
     expect(screen.queryByText('Resumen de Actividad')).not.toBeInTheDocument()
   })
@@ -106,6 +113,33 @@ describe('Herramientas — grilla y filtrado', () => {
     render(<Herramientas />)
     expect(screen.getByText(/No se encontraron herramientas para/i)).toBeInTheDocument()
     expect(screen.getByText('"inexistente-xyz"')).toBeInTheDocument()
+  })
+
+  test('el selector de columnas cambia la cuadrícula y se recuerda en este navegador', async () => {
+    const user = userEvent.setup()
+    const { container, unmount } = render(<Herramientas />)
+    const grilla = () => container.querySelector('.grid.gap-6') as HTMLElement
+    expect(grilla().className).toContain('xl:grid-cols-3')
+
+    await user.click(screen.getByRole('button', { name: '1 columna' }))
+    expect(grilla().className).toContain('grid-cols-1')
+    expect(grilla().className).not.toContain('md:grid-cols-2')
+    expect(screen.getByRole('button', { name: '1 columna' })).toHaveAttribute('aria-pressed', 'true')
+    expect(window.localStorage.getItem('vigiiap:herramientas-cols')).toBe('1')
+
+    unmount()
+    const otra = render(<Herramientas />)
+    expect(otra.container.querySelector('.grid.gap-6')?.className).not.toContain('md:grid-cols-2')
+    expect(screen.getByRole('button', { name: '1 columna' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  test('2 columnas aplica la cuadrícula de dos columnas', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<Herramientas />)
+    await user.click(screen.getByRole('button', { name: '2 columnas' }))
+    const clases = (container.querySelector('.grid.gap-6') as HTMLElement).className
+    expect(clases).toContain('md:grid-cols-2')
+    expect(clases).not.toContain('xl:grid-cols-3')
   })
 
   // Regresión: antes de distinguir "sin catálogo" de "sin resultados de

@@ -4,8 +4,8 @@ import { renderHook } from '@testing-library/react'
 vi.mock('@/hooks/useHerramientas', () => ({ useHerramientasList: vi.fn() }))
 vi.mock('@/lib/herramientasRegistro', () => ({
   REGISTRO_HERRAMIENTAS: {
-    conversor: { Component: () => null },
-    'panel-choco': { Component: () => null, focusable: true, icon: () => null, color: 'gold' },
+    'validador-coordenadas': { Component: () => null, icon: () => null, color: 'primary' },
+    'panel-choco': { Component: () => null, icon: () => null, color: 'gold' },
   },
 }))
 
@@ -13,7 +13,7 @@ import { useHerramientasList } from '@/hooks/useHerramientas'
 import { useHerramientasCatalogo } from '@/hooks/useHerramientasCatalogo'
 
 function makeHerramienta(overrides: Record<string, unknown> = {}) {
-  return { clave: 'conversor', titulo: 'Conversor', descripcion: null, tag: 'Geodésico', activa: true, orden: 0, ...overrides }
+  return { clave: 'validador-coordenadas', titulo: 'Validador', descripcion: null, tag: 'Calidad de datos', activa: true, orden: 0, ...overrides }
 }
 
 beforeEach(() => vi.clearAllMocks())
@@ -27,7 +27,7 @@ describe('useHerramientasCatalogo', () => {
     const { result } = renderHook(() => useHerramientasCatalogo())
 
     expect(result.current.items).toHaveLength(1)
-    expect(result.current.items[0]).toMatchObject({ clave: 'conversor', titulo: 'Conversor' })
+    expect(result.current.items[0]).toMatchObject({ clave: 'validador-coordenadas', titulo: 'Validador' })
     expect(typeof result.current.items[0].Component).toBe('function')
   })
 
@@ -40,7 +40,7 @@ describe('useHerramientasCatalogo', () => {
     const { result } = renderHook(() => useHerramientasCatalogo())
 
     expect(result.current.items).toHaveLength(1)
-    expect(result.current.items[0].clave).toBe('conversor')
+    expect(result.current.items[0].clave).toBe('validador-coordenadas')
   })
 
   test('propaga isLoading del hook subyacente', () => {
@@ -54,7 +54,7 @@ describe('useHerramientasCatalogo', () => {
     expect(result.current.items).toEqual([])
   })
 
-  test('una herramienta focusable trae su icon/color del registro', () => {
+  test('cada herramienta trae su icon/color del registro', () => {
     vi.mocked(useHerramientasList).mockReturnValue({
       data: [makeHerramienta({ clave: 'panel-choco', titulo: 'Panel Chocó' })],
       isLoading: false, isError: false,
@@ -62,7 +62,7 @@ describe('useHerramientasCatalogo', () => {
 
     const { result } = renderHook(() => useHerramientasCatalogo())
 
-    expect(result.current.items[0].focusable).toBe(true)
+    expect(result.current.items[0].icon).toBeDefined()
     expect(result.current.items[0].color).toBe('gold')
   })
 })

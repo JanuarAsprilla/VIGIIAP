@@ -16,35 +16,34 @@ interface HerramientaLauncherCardProps {
   onAbrir: () => void
 }
 
-/** Tarjeta de entrada para herramientas "focusable" — sin tilt ni glow: son
- * paneles con su propia navegación interna (pestañas, filtros, formularios),
- * y el tilt 3D de Card3D estorba la interacción en vez de ayudarla. Al hacer
- * clic, la herramienta se abre a pantalla completa (ver Herramientas.tsx),
- * no inline dentro de la grilla junto a las demás. */
+/** Tarjeta pequeña de entrada a una herramienta. Toda la tarjeta es el botón: al hacer
+ * clic, la herramienta ocupa la página completa (ver Herramientas.tsx), no se abre
+ * dentro de la grilla. Sin tilt ni glow: las herramientas tienen su propia navegación
+ * interna y el movimiento 3D estorbaría la interacción. */
 export default function HerramientaLauncherCard({ tag, title, description, icon: Icon, color = 'primary', onAbrir }: HerramientaLauncherCardProps) {
   return (
-    <div className={`bg-white border border-border/70 rounded-xl overflow-hidden border-t-2 ${accentStyles[color]}`}>
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <span className="inline-block text-[0.6rem] font-bold uppercase tracking-widest text-text-muted mb-1.5">
-              {tag}
-            </span>
-            <h3 className="text-lg font-bold text-text leading-snug">{title}</h3>
-          </div>
-          <div className="w-10 h-10 bg-bg-alt rounded-lg flex items-center justify-center shrink-0">
-            <Icon className="w-5 h-5 text-primary-800" aria-hidden="true" />
-          </div>
+    <button
+      type="button"
+      onClick={onAbrir}
+      aria-label={`Abrir ${title}`}
+      className={`group h-full w-full text-left flex flex-col gap-3 p-4 bg-[var(--card-bg)] border border-border/70 border-t-2 ${accentStyles[color]} rounded-xl
+        transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-card hover:border-primary-800/40
+        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 motion-reduce:transition-none motion-reduce:hover:translate-y-0`}
+    >
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 bg-bg-alt rounded-lg flex items-center justify-center shrink-0">
+          <Icon className="w-5 h-5 text-primary-800" aria-hidden="true" />
         </div>
-        <p className="text-sm text-text-muted leading-relaxed mb-5">{description}</p>
-        <button
-          onClick={onAbrir}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-bg-alt border border-border rounded-lg text-xs font-semibold text-text hover:border-primary-800 hover:text-primary-800 transition-colors"
-        >
-          Abrir panel completo
-          <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
-        </button>
+        <div className="min-w-0 flex-1">
+          <span className="block text-[0.6rem] font-bold uppercase tracking-widest text-text-muted mb-0.5">{tag}</span>
+          <h3 className="text-sm font-bold text-text leading-snug">{title}</h3>
+        </div>
+        <ArrowUpRight
+          className="w-4 h-4 text-text-muted shrink-0 transition-transform duration-200 group-hover:text-primary-800 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none"
+          aria-hidden="true"
+        />
       </div>
-    </div>
+      {description && <p className="text-xs text-text-muted leading-relaxed line-clamp-3">{description}</p>}
+    </button>
   )
 }
