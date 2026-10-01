@@ -9,6 +9,7 @@ import { getApiErrorMessage } from '@/lib/apiError'
 import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
 import { useCreateGeovisor, useUpdateGeovisor, useUploadGeovisorThumbnail } from '@/hooks/useGeovisores'
 import { useCategoriasList } from '@/hooks/useCategorias'
+import { useCapasSinConfigFichas } from '@/hooks/useFichasPunto'
 import Switch from '@/components/ui/Switch'
 import ThumbnailDropzone from '@/components/ui/ThumbnailDropzone'
 import AccordionSection from './AccordionSection'
@@ -177,6 +178,11 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
 
   const catalogoCapas = useMemo(() => workspaces.flatMap((w) => w.capas), [workspaces])
 
+  // Una capa con fichas sin su atributo identificador deja un geovisor que luego
+  // no se puede publicar y sin pista de por qué: se detecta antes de guardar.
+  const capasConFichaActivas = form.capasConFicha.filter((id) => form.capasSeleccionadas.includes(id))
+  const capasSinConfigFichas = useCapasSinConfigFichas(form.conexionGeoserverId, capasConFichaActivas)
+
   // En el tipo "con fichas" toda capa vectorial que se marca exige fichas desde
   // ese mismo clic; el admin puede quitarla después capa por capa.
   const toggleCapa = (capa: CapaWorkspace) => {
@@ -270,6 +276,13 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
       e.campoImagenUrl = 'Indica qué atributo trae la URL de la imagen'
     }
 
+    capasSinConfigFichas.forEach((id) => {
+      e[`ficha-${id}`] = 'Elige el atributo identificador y pulsa «Habilitar» para poder guardar.'
+    })
+    if (capasSinConfigFichas.length > 0) {
+      e._root = 'Hay capas con fichas por punto sin su atributo identificador. Configúralas en cada capa.'
+    }
+
     setErrors(e)
     if (Object.keys(e).length) return null
 
@@ -285,7 +298,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
       // (ver capaPermitidaEnGeovisor() en el backend).
       workspacesGeoserver: temasSeleccionados,
       capasSeleccionadas: form.capasSeleccionadas,
-      capasConFicha: form.capasConFicha.filter((id) => form.capasSeleccionadas.includes(id)),
+      capasConFicha: capasConFichaActivas,
       colorPorTema: Object.fromEntries(
         Object.entries(form.colorPorTema).filter(([id]) => temasSeleccionados.includes(id)),
       ),
@@ -500,6 +513,11 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                                       {checked && conFicha && (
                                         <div className="mt-1 ml-5">
                                           <FichaCapaConfigRow conexionId={form.conexionGeoserverId} capaId={c.id} capaNombre={c.nombre} />
+                                          {errors[`ficha-${c.id}`] && capasSinConfigFichas.includes(c.id) && (
+                                            <p className="flex items-center gap-1.5 text-xs text-red-600 mt-1">
+                                              <AlertCircle className="w-3 h-3 shrink-0" /> {errors[`ficha-${c.id}`]}
+                                            </p>
+                                          )}
                                         </div>
                                       )}
                                     </div>

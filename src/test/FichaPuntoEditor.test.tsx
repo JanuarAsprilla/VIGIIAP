@@ -77,6 +77,38 @@ describe('FichaPuntoEditor — carga y mapa de referencia', () => {
   })
 })
 
+describe('FichaPuntoEditor — refresco de la ficha desde el servidor', () => {
+  const fichaConMedios = (n: number, extra: Record<string, unknown> = {}) => ({
+    data: { id: 'f1', titulo: 'Original', descripcion: 'Descripción original del punto.', medios: Array.from({ length: n }, (_, i) => ({ id: `m${i}` })), ...extra },
+    isLoading: false,
+  } as unknown as ReturnType<typeof useFicha>)
+
+  test('subir un medio (la ficha se refresca) no pisa el texto que aún no se guardó', async () => {
+    vi.mocked(useFicha).mockReturnValue(fichaConMedios(0))
+    const user = userEvent.setup()
+    const { rerender } = render(<FichaPuntoEditor configId="cfg1" feature={featureFixture} onGuardado={vi.fn()} onGuardarYSiguiente={vi.fn()} />)
+
+    await user.clear(screen.getByLabelText(/Descripción/i))
+    await user.type(screen.getByLabelText(/Descripción/i), 'Texto nuevo sin guardar todavía')
+
+    vi.mocked(useFicha).mockReturnValue(fichaConMedios(1))
+    rerender(<FichaPuntoEditor configId="cfg1" feature={featureFixture} onGuardado={vi.fn()} onGuardarYSiguiente={vi.fn()} />)
+
+    expect(screen.getByLabelText(/Descripción/i)).toHaveValue('Texto nuevo sin guardar todavía')
+    expect(screen.getByTestId('medios-grid')).toHaveAttribute('data-n-medios', '1')
+  })
+
+  test('sin cambios locales, un cambio llegado del servidor sí se refleja', () => {
+    vi.mocked(useFicha).mockReturnValue(fichaConMedios(0))
+    const { rerender } = render(<FichaPuntoEditor configId="cfg1" feature={featureFixture} onGuardado={vi.fn()} onGuardarYSiguiente={vi.fn()} />)
+
+    vi.mocked(useFicha).mockReturnValue(fichaConMedios(0, { descripcion: 'Descripción editada por otra persona.' }))
+    rerender(<FichaPuntoEditor configId="cfg1" feature={featureFixture} onGuardado={vi.fn()} onGuardarYSiguiente={vi.fn()} />)
+
+    expect(screen.getByLabelText(/Descripción/i)).toHaveValue('Descripción editada por otra persona.')
+  })
+})
+
 describe('FichaPuntoEditor — contador de descripción', () => {
   test('el contador refleja los caracteres escritos contra el mínimo de 20', async () => {
     const user = userEvent.setup()

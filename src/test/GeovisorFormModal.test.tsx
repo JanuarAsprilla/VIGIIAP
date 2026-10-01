@@ -41,7 +41,9 @@ vi.mock('@/hooks/useFichasPunto', () => ({
   useConfigFichasCapa: vi.fn(() => ({ data: null, isLoading: false })),
   useUpsertConfigFichasCapa: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   useFeaturesFichas: vi.fn(() => ({ data: undefined })),
+  useCapasSinConfigFichas: vi.fn(() => [] as string[]),
 }))
+import { useCapasSinConfigFichas } from '@/hooks/useFichasPunto'
 
 // El mapa en vivo (react-leaflet real) se prueba aparte en GeovisorMapaConstructor.test.tsx --
 // acá se reemplaza por botones de prueba que disparan los mismos callbacks que dispararía el
@@ -556,6 +558,42 @@ describe('GeovisorFormModal — miniatura (ThumbnailDropzone)', () => {
 describe('GeovisorFormModal — fichas por punto', () => {
   const elegirTipoFichas = (user: ReturnType<typeof userEvent.setup>) =>
     user.click(screen.getByRole('radio', { name: /fichas por punto/i }))
+
+  beforeEach(() => { vi.mocked(useCapasSinConfigFichas).mockReturnValue([]) })
+
+  test('no deja guardar si una capa con fichas aún no tiene su atributo identificador configurado', async () => {
+    vi.mocked(useCapasSinConfigFichas).mockReturnValue(['t_15_geologia:fallas'])
+    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Estaciones climáticas')
+    await elegirTipoFichas(user)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+
+    expect(mutateAsync).not.toHaveBeenCalled()
+    expect(screen.getAllByText(/atributo identificador/i, { selector: 'p' }).length).toBeGreaterThan(0)
+  })
+
+  test('con todas las capas configuradas, guarda con normalidad', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Estaciones climáticas')
+    await elegirTipoFichas(user)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+
+    expect(mutateAsync).toHaveBeenCalled()
+  })
 
   test('el tipo estándar es el valor por defecto y no ofrece fichas en las capas', async () => {
     const user = userEvent.setup()

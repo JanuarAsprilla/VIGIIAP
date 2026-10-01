@@ -42,6 +42,12 @@ vi.mock('@/hooks/useConexionesGeoserver', () => ({
 }))
 import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
 
+// El formulario consulta qué capas con fichas siguen sin configurar; el detalle se prueba
+// en useFichasPunto.test.tsx y GeovisorFormModal.test.tsx, acá basta con que no haya ninguna.
+vi.mock('@/hooks/useFichasPunto', () => ({
+  useCapasSinConfigFichas: () => [] as string[],
+}))
+
 function makeGeovisor(overrides: Record<string, unknown> = {}) {
   return {
     id: 'geovisor-1', slug: 'geologia-choco', titulo: 'Geología del Chocó',
@@ -168,6 +174,25 @@ describe('GestionGeovisores — activar/desactivar', () => {
     expect(screen.getByText('51 pendientes')).toBeInTheDocument()
     // Solo la capa con bloqueantes > 0 se lista -- la ya completa no aporta nada a este diálogo.
     expect(screen.queryByText('Capa ya completa')).not.toBeInTheDocument()
+  })
+
+  test('si el backend solo devuelve el id como nombre, el diálogo muestra un nombre legible', async () => {
+    const idCrudo = 't_19_clima:Estaciones_clima_IDEAM_2017'
+    const mutateAsync = vi.fn().mockRejectedValue(Object.assign(new Error('conflicto'), {
+      code: 'GEOVISOR_INCOMPLETO',
+      fields: { publicable: false, capas: [{ capaId: idCrudo, nombre: idCrudo, resumen: { totalFeatures: 5, completas: 1, incompletas: 4, sinIdentificador: 0, identificadoresDuplicados: 0, huerfanas: 0 }, bloqueantes: 4 }] },
+    }))
+    vi.mocked(useToggleGeovisorActivo).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useToggleGeovisorActivo>)
+    vi.mocked(useGeovisoresList).mockReturnValue({
+      data: { data: [makeGeovisor({ activo: false, capasConFicha: [idCrudo] })], meta: { total: 1 } }, isLoading: false,
+    } as unknown as ReturnType<typeof useGeovisoresList>)
+
+    const user = userEvent.setup()
+    render(<GestionGeovisores />)
+    await user.click(screen.getByTitle('Activar'))
+
+    expect(await screen.findByText('Estaciones clima IDEAM 2017')).toBeInTheDocument()
+    expect(screen.queryByText(idCrudo)).not.toBeInTheDocument()
   })
 
   test('"Editar geovisor" desde el diálogo de bloqueo abre el formulario de ese geovisor', async () => {
