@@ -8,9 +8,10 @@ vi.mock('@/hooks/useFichasPunto', () => ({
   useConfigFichasCapa: vi.fn(),
   useUpsertConfigFichasCapa: vi.fn(),
   useFeaturesFichas: vi.fn(),
+  useEliminarConfigFichasCapa: vi.fn(),
 }))
 import {
-  useAtributosCapa, useConfigFichasCapa, useUpsertConfigFichasCapa, useFeaturesFichas,
+  useAtributosCapa, useConfigFichasCapa, useUpsertConfigFichasCapa, useFeaturesFichas, useEliminarConfigFichasCapa,
 } from '@/hooks/useFichasPunto'
 
 vi.mock('@/components/admin/geovisores/fichas/FichasCapaModal', () => ({
@@ -30,6 +31,70 @@ beforeEach(() => {
   vi.mocked(useConfigFichasCapa).mockReturnValue({ data: null, isLoading: false } as unknown as ReturnType<typeof useConfigFichasCapa>)
   vi.mocked(useUpsertConfigFichasCapa).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue({}), isPending: false } as unknown as ReturnType<typeof useUpsertConfigFichasCapa>)
   vi.mocked(useFeaturesFichas).mockReturnValue({ data: undefined } as unknown as ReturnType<typeof useFeaturesFichas>)
+  vi.mocked(useEliminarConfigFichasCapa).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue(undefined), isPending: false } as unknown as ReturnType<typeof useEliminarConfigFichasCapa>)
+})
+
+describe('FichaCapaConfigRow — quitar la configuración', () => {
+  const configExistente = { id: 'cfg1', conexionGeoserverId: 'c1', capaId: 'ws:estaciones', campoIdentificador: 'codigo_estacion', campoEtiqueta: null, creadoEn: '', actualizadoEn: '' }
+  const conConfig = () => vi.mocked(useConfigFichasCapa).mockReturnValue({ data: configExistente, isLoading: false } as unknown as ReturnType<typeof useConfigFichasCapa>)
+  const montar = () => render(<FichaCapaConfigRow conexionId="c1" capaId="ws:estaciones" capaNombre="Estaciones" />)
+
+  test('sin config todavía no ofrece quitarla', () => {
+    montar()
+    expect(screen.queryByRole('button', { name: /Quitar configuración/i })).not.toBeInTheDocument()
+  })
+
+  test('con config, pide confirmación antes de quitarla y no llama a la mutación todavía', async () => {
+    conConfig()
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useEliminarConfigFichasCapa).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useEliminarConfigFichasCapa>)
+    const user = userEvent.setup()
+    montar()
+    await user.click(screen.getByRole('button', { name: /Quitar configuración/i }))
+
+    expect(screen.getByText(/¿Quitar la configuración de esta capa\?/i)).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('cancelar la confirmación no quita nada', async () => {
+    conConfig()
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useEliminarConfigFichasCapa).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useEliminarConfigFichasCapa>)
+    const user = userEvent.setup()
+    montar()
+    await user.click(screen.getByRole('button', { name: /Quitar configuración/i }))
+    await user.click(screen.getByRole('button', { name: /^Cancelar$/i }))
+
+    expect(screen.queryByText(/¿Quitar la configuración de esta capa\?/i)).not.toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('confirmar la quita y deja el selector de identificador en blanco para rehacerla', async () => {
+    conConfig()
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useEliminarConfigFichasCapa).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useEliminarConfigFichasCapa>)
+    const user = userEvent.setup()
+    montar()
+    expect(screen.getByLabelText(/Atributo identificador/i)).toHaveValue('codigo_estacion')
+    await user.click(screen.getByRole('button', { name: /Quitar configuración/i }))
+    await user.click(screen.getByRole('button', { name: /Sí, quitar/i }))
+
+    expect(mutateAsync).toHaveBeenCalledWith({ configId: 'cfg1', conexionId: 'c1', capaId: 'ws:estaciones' })
+    expect(await screen.findByLabelText(/Atributo identificador/i)).toHaveValue('')
+  })
+
+  test('si el servidor la rechaza (con fichas o en uso), muestra su mensaje y conserva el identificador', async () => {
+    conConfig()
+    const mutateAsync = vi.fn().mockRejectedValue(new Error('No se puede quitar la configuración: la capa ya tiene 3 fichas. Elimínalas antes.'))
+    vi.mocked(useEliminarConfigFichasCapa).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useEliminarConfigFichasCapa>)
+    const user = userEvent.setup()
+    montar()
+    await user.click(screen.getByRole('button', { name: /Quitar configuración/i }))
+    await user.click(screen.getByRole('button', { name: /Sí, quitar/i }))
+
+    expect(await screen.findByText(/la capa ya tiene 3 fichas/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Atributo identificador/i)).toHaveValue('codigo_estacion')
+  })
 })
 
 describe('FichaCapaConfigRow — configuración nueva', () => {
