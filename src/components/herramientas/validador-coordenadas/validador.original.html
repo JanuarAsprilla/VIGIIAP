@@ -21,21 +21,6 @@
         <select id="sel-col-lon"></select>
       </div>
     </div>
-    <div class="vc-grid2">
-      <div>
-        <label class="vc-etiqueta">Sistema de coordenadas</label>
-        <select id="sel-sistema">
-          <option value="wgs84">Grados decimales (WGS84)</option>
-          <option value="oeste">MAGNA-SIRGAS planas — Oeste (EPSG:3115)</option>
-          <option value="bogota">MAGNA-SIRGAS planas — Bogotá (EPSG:3116)</option>
-          <option value="utm18n">WGS84 / UTM zona 18N (EPSG:32618)</option>
-        </select>
-      </div>
-      <div>
-        <label class="vc-etiqueta">Columna de municipio (opcional)</label>
-        <select id="sel-col-muni"></select>
-      </div>
-    </div>
     <div class="vc-previa">
       <table>
         <thead><tr id="col-preview-head"></tr></thead>
@@ -50,9 +35,16 @@
   </div>
 </div>
 
+<div id="vc-cargando" class="vc-overlay" style="display:none;" role="status" aria-live="polite" aria-busy="true">
+  <div class="vc-modal vc-cargando-card">
+    <div class="vc-spinner" aria-hidden="true"></div>
+    <p id="vc-cargando-titulo" class="vc-cargando-titulo">Cargando información…</p>
+    <p id="vc-cargando-detalle" class="vc-cargando-detalle"></p>
+  </div>
+</div>
+
 <div class="bar">
   <button id="btn-cargar-excel" type="button" class="primary ht-primario"><i class="ti ti-upload" aria-hidden="true"></i> Cargar Excel</button>
-  <button id="btn-plantilla" type="button"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Plantilla</button>
   <input type="file" id="file-excel" accept=".xlsx,.csv" style="display:none">
   <button id="btn-modo-agregar" type="button"><i class="ti ti-map-pin-plus" aria-hidden="true"></i> <span id="txt-modo-agregar">Agregar puntos con clic: OFF</span></button>
   <button id="btn-modo-medir" type="button"><i class="ti ti-ruler-2" aria-hidden="true"></i> <span id="txt-modo-medir">Medir distancia: OFF</span></button>
@@ -62,7 +54,7 @@
 </div>
 <div id="progress" aria-live="polite"></div>
 
-<p id="vc-vacio" class="vc-vacio">Arrastra tu Excel (.xlsx o .csv) sobre la herramienta, o usa Cargar Excel. También puedes agregar puntos con clic sobre el mapa.</p>
+<p id="vc-vacio" class="vc-vacio">Arrastra tu Excel (.xlsx o .csv) sobre la herramienta, o usa Cargar Excel. Necesita una columna de latitud y otra de longitud. También puedes agregar puntos con clic sobre el mapa.</p>
 
 <div class="filtergroup vc-formato">
   <div class="label">Formato de coordenadas</div>

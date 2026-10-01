@@ -12,16 +12,17 @@ import { leerFilasExcel } from './leerFilasExcel'
 
 ChartBase.register(...registerables)
 
-export function iniciarPanelChoco(root, { puedeEditar }) {
+export function iniciarPanelChoco(root, { puedeEditar, portal = null }: { puedeEditar: boolean; portal?: HTMLElement | null }) {
   const W = {}
   const instanciasChart = new Set()
   class Chart extends ChartBase {
     constructor(...args) { super(...args); instanciasChart.add(this) }
   }
   const document = {
-    getElementById: (id) => root.querySelector('#' + CSS.escape(id)),
-    querySelector: (s) => root.querySelector(s),
-    querySelectorAll: (s) => root.querySelectorAll(s),
+    // Las ventanas viven en un portal del body (ver portalHerramienta.ts): se busca primero en la raíz y luego ahí.
+    getElementById: (id) => root.querySelector('#' + CSS.escape(id)) ?? (portal ? portal.querySelector('#' + CSS.escape(id)) : null),
+    querySelector: (s) => root.querySelector(s) ?? (portal ? portal.querySelector(s) : null),
+    querySelectorAll: (s) => (portal ? [...root.querySelectorAll(s), ...portal.querySelectorAll(s)] : root.querySelectorAll(s)),
     createElement: (t) => globalThis.document.createElement(t),
     addEventListener: (t, f, o) => root.addEventListener(t, f, o),
     body: root,
@@ -5218,7 +5219,7 @@ export function iniciarPanelChoco(root, { puedeEditar }) {
   const ACCIONES = { alternarCapas, abrirModalCarga, cerrarModalCarga, dispararCarga, loadFile, onCapaChange, onCuencaChange, onDeptoChange, onDeptoChangeCuencas, onMuniChange, onMuniChangeCuencas, onParamoCatChange, onRunapCatChange, onSzhChange, setSideCapa, setTipo, sortCienagasTable, sortCuencasTable, sortGenTable, sortHumedalTable, sortParamosDetail, sortParamosTable, sortPobTable, sortRunapDetail, sortRunapTable, sortTitTable, abrirSelector }
   const despachar = (tipo) => (e) => {
     const el = e.target.closest && e.target.closest('[data-on-' + tipo + ']')
-    if (!el || !root.contains(el)) return
+    if (!el || !(root.contains(el) || (portal && portal.contains(el)))) return
     if (el.hasAttribute('data-solo-fondo') && e.target !== el) return
     const m = /^(\w+)\((.*)\)$/.exec(el.getAttribute('data-on-' + tipo))
     const fn = m && Object.prototype.hasOwnProperty.call(ACCIONES, m[1]) ? ACCIONES[m[1]] : null
@@ -5233,10 +5234,18 @@ export function iniciarPanelChoco(root, { puedeEditar }) {
   const onChange = despachar('change')
   root.addEventListener('click', onClick)
   root.addEventListener('change', onChange)
+  if (portal) {
+    portal.addEventListener('click', onClick)
+    portal.addEventListener('change', onChange)
+  }
 
   return function destruir() {
     root.removeEventListener('click', onClick)
     root.removeEventListener('change', onChange)
+    if (portal) {
+      portal.removeEventListener('click', onClick)
+      portal.removeEventListener('change', onChange)
+    }
     root.removeEventListener('keydown', cerrarConEscape)
     globalThis.document.removeEventListener('click', cerrarSiFuera)
     instanciasChart.forEach((c) => { try { c.destroy() } catch {} })

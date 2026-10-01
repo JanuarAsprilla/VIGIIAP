@@ -117,12 +117,54 @@
 .vc-root .vc-previa table { width: 100%; font-size: 0.75rem; }
 .vc-root .vc-previa td { padding: 0.4rem 0.6rem; white-space: nowrap; }
 .vc-root .vc-previa th { padding: 0.45rem 0.6rem; text-align: left; white-space: nowrap; position: static; }
-.vc-root .vc-col-num { color: color-mix(in srgb, var(--ht-acento) 70%, var(--color-text)); }
-.vc-root .vc-col-txt { color: var(--text-muted); opacity: 0.8; }
+/* Vista previa de columnas: las numéricas se resaltan en verde y la elegida como latitud/longitud lleva su etiqueta */
+.vc-root .vc-previa th.vc-col-num {
+  color: color-mix(in srgb, var(--ht-acento) 75%, var(--color-text));
+  background: color-mix(in srgb, var(--ht-acento) 16%, var(--bg-card));
+}
+.vc-root .vc-previa td.vc-celda-num { background: color-mix(in srgb, var(--ht-acento) 7%, var(--bg-card)); font-weight: 600; }
+.vc-root .vc-previa th.vc-col-txt,
+.vc-root .vc-previa td.vc-celda-txt { color: var(--text-muted); opacity: 0.6; }
+.vc-root .vc-previa th[data-rol],
+.vc-root .vc-previa td[data-rol] { opacity: 1; }
+.vc-root .vc-previa th[data-rol] { background: color-mix(in srgb, var(--ht-acento) 30%, var(--bg-card)); }
+.vc-root .vc-previa td[data-rol] { background: color-mix(in srgb, var(--ht-acento) 16%, var(--bg-card)); }
+.vc-root .vc-previa th[data-rol]::after {
+  display: block;
+  width: fit-content;
+  margin-top: 0.25rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-800));
+}
+.vc-root .vc-previa th[data-rol="lat"]::after { content: 'LATITUD'; }
+.vc-root .vc-previa th[data-rol="lon"]::after { content: 'LONGITUD'; }
+.vc-root .vc-previa th[data-rol="conflicto"]::after { content: 'MISMA COLUMNA'; background: var(--ht-error); }
 .vc-root .vc-modal-msg { margin: 0 0 0.875rem; font-size: 0.75rem; color: var(--text-muted); }
 .vc-root .vc-modal-acciones { display: flex; gap: 0.5rem; }
 .vc-root .vc-modal-acciones button { flex: 1; min-height: 2.5rem; }
 .vc-root .vc-modal-acciones #btn-confirmar-columnas { flex: 2; }
+
+
+/* Aviso de carga: tarjeta centrada con indicador giratorio */
+.vc-root #vc-cargando { z-index: 1100; }
+.vc-root .vc-cargando-card { width: 22rem; text-align: center; padding: 1.75rem 1.5rem; }
+.vc-root .vc-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--ht-acento) 20%, transparent);
+  border-top-color: var(--ht-acento);
+  animation: vc-giro 0.8s linear infinite;
+}
+@keyframes vc-giro { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .vc-root .vc-spinner { animation: none; border-color: var(--ht-acento); } }
+.vc-root .vc-cargando-titulo { margin: 0 0 0.25rem; font-family: var(--font-display); font-size: 1.0625rem; font-weight: 600; color: var(--text-primary); }
+.vc-root .vc-cargando-detalle { margin: 0; min-height: 1.2em; font-size: 0.8125rem; color: var(--text-secondary); }
 
 /* Zona de soltar archivo (arrastrar y soltar) */
 .vc-root.vc-arrastrando { position: relative; }

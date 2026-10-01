@@ -3,6 +3,7 @@ import { Eye } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { puedeEditarModulo } from '@/lib/permisosModulo'
 import { iniciarPanelChoco } from './panelChoco.motor'
+import { crearPortal, moverAlPortal } from '../portalHerramienta'
 import marcado from './panelChoco.original.html?raw'
 import './panelChoco.original.css'
 import '../herramientaTema.css'
@@ -22,9 +23,12 @@ export default function PanelChocoBiogeografico() {
     const root = rootRef.current
     if (!root) return
     root.innerHTML = marcado
-    const destruir = iniciarPanelChoco(root, { puedeEditar })
+    const portal = crearPortal(['pc-root', 'ht-root', ...(puedeEditar ? [] : ['pc-solo-lectura'])])
+    moverAlPortal(root, portal.elemento, ['#modal-carga-overlay', '#toast-area'])
+    const destruir = iniciarPanelChoco(root, { puedeEditar, portal: portal.elemento })
     return () => {
       destruir()
+      portal.quitar()
       root.innerHTML = ''
     }
   }, [puedeEditar])
