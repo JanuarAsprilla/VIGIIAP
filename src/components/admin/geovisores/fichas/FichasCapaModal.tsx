@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  X, Loader2, Search, CircleCheck, CircleAlert, Circle, Trash2, AlertTriangle,
+  X, Loader2, Search, CircleCheck, CircleAlert, Circle, Trash2, AlertTriangle, Upload,
 } from 'lucide-react'
 import { panelAnim } from '@/lib/animations'
 import { useFeaturesFichas, useDeleteFicha } from '@/hooks/useFichasPunto'
 import FichaPuntoEditor from './FichaPuntoEditor'
+import ImportarFichasDialog from './ImportarFichasDialog'
 import type { FeatureFichaEstado, EstadoFeatureFicha } from '@/types'
 
 type Filtro = 'pendientes' | 'todas' | 'completas' | 'huerfanas' | 'sin_identificador'
@@ -41,6 +42,7 @@ export default function FichasCapaModal({ configId, capaNombre, onClose }: {
 
   const [filtro, setFiltro] = useState<Filtro>('pendientes')
   const [busqueda, setBusqueda] = useState('')
+  const [importarAbierto, setImportarAbierto] = useState(false)
   const [seleccionado, setSeleccionado] = useState<string | null>(
     () => data?.features.find((f) => f.estado !== 'completa')?.valor ?? null,
   )
@@ -108,9 +110,17 @@ export default function FichasCapaModal({ configId, capaNombre, onClose }: {
               </p>
             )}
           </div>
-          <button onClick={onClose} className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {data && (
+              <button onClick={() => setImportarAbierto(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-lg text-xs font-semibold text-text hover:border-primary-800 transition-colors">
+                <Upload className="w-3.5 h-3.5" aria-hidden="true" /> Importar desde Excel o CSV
+              </button>
+            )}
+            <button onClick={onClose} aria-label="Cerrar" className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -231,6 +241,11 @@ export default function FichasCapaModal({ configId, capaNombre, onClose }: {
           </div>
         )}
       </motion.div>
+
+      {importarAbierto && data && (
+        <ImportarFichasDialog configId={configId} capaNombre={capaNombre} features={data.features}
+          onClose={() => setImportarAbierto(false)} />
+      )}
     </div>
   )
 }
