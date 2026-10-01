@@ -1176,7 +1176,6 @@ export function iniciarValidador(root, { portal = null }: { portal?: HTMLElement
     rebuildMarkerIndex(markers);
     renderTabla();
     $('btn-exportar').disabled = ROWS.length===0 || validando;
-    $('vc-vacio').hidden = ROWS.length>0;
   }
   
   // ============================================================

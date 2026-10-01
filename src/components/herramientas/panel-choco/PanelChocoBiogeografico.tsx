@@ -6,7 +6,6 @@ import { iniciarPanelChoco } from './panelChoco.motor'
 import { crearPortal, moverAlPortal } from '../portalHerramienta'
 import marcado from './panelChoco.original.html?raw'
 import './panelChoco.original.css'
-import '../herramientaTema.css'
 import './panelChoco.tema.css'
 
 /** Panel del dashboard original, con su estructura y lógica intactas. Aquí solo se monta:

@@ -1,4 +1,6 @@
 /* Portado desde dashboard_choco_biogeografico.html; selectores acotados a .pc-root. El tema de la plataforma vive en panelChoco.tema.css */
+/* En capa de menor prioridad: el tema (sin capa) siempre gana, sin depender de la especificidad ni del orden de carga. */
+@layer ht-original {
 .pc-root{
   --verde:#1D9E75;--verde-dark:#0F6E56;--verde-deep:#085041;--verde-light:#E1F5EE;
   --purpura:#7F77DD;--purpura-dark:#534AB7;--purpura-light:#EEEDFE;
@@ -229,3 +231,4 @@
 .pc-root .controls-bar{padding:.6rem .75rem;top:56px;}
 .pc-root #controls-cuencas{top:56px!important;}
 .pc-root table{min-width:420px;}}
+}

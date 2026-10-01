@@ -3,7 +3,6 @@ import { iniciarValidador } from './validador.motor'
 import { crearPortal, moverAlPortal } from '../portalHerramienta'
 import marcado from './validador.original.html?raw'
 import './validador.original.css'
-import '../herramientaTema.css'
 import './validador.tema.css'
 
 /** Validador del HTML original, con su estructura y lógica intactas. Aquí solo se monta:

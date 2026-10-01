@@ -93,12 +93,24 @@ describe('Validador de coordenadas (port fiel del HTML original)', () => {
     await waitFor(() => expect((document.querySelector('#overlay-columnas') as HTMLElement).style.display).toBe('flex'))
   }
 
-  test('hay un único botón para cargar archivos y la pista de carga no trae botones propios', async () => {
+  test('hay un único botón para cargar archivos y ya no existe la pista de carga aparte', async () => {
     render(<ValidadorCoordenadas />)
     await waitFor(() => expect(document.querySelector('#btn-cargar-excel')).not.toBeNull())
     const botonesDeCarga = Array.from(document.querySelectorAll('button')).filter((b) => /^\s*Cargar/i.test(b.textContent ?? ''))
     expect(botonesDeCarga).toHaveLength(1)
-    expect(document.querySelector('#vc-vacio button')).toBeNull()
+    expect(document.querySelector('#vc-vacio')).toBeNull()
+    expect(document.body.textContent).not.toMatch(/Arrastra tu Excel \(\.xlsx o \.csv\)/)
+  })
+
+  test('el texto de la herramienta invita a cargar o arrastrar el archivo y resalta lo importante', async () => {
+    render(<ValidadorCoordenadas />)
+    await waitFor(() => expect(document.querySelector('.sub')).not.toBeNull())
+    const intro = document.querySelector('.sub') as HTMLElement
+    expect(intro.textContent).toBe('Carga o arrastra tu archivo Excel, selecciona las columnas correspondientes a latitud y longitud, y valida cada punto para determinar si se encuentra dentro de los límites de los 93 municipios del Chocó Biogeográfico.')
+    expect(Array.from(intro.querySelectorAll('strong')).map((s) => s.textContent)).toEqual([
+      'Carga o arrastra tu archivo Excel',
+      '93 municipios del Chocó Biogeográfico',
+    ])
   })
 
   test('los chips de origen se activan por clase, sin estilos en línea', async () => {
@@ -128,11 +140,11 @@ describe('Validador de coordenadas (port fiel del HTML original)', () => {
     expect(document.querySelector('#btn-confirmar-columnas')?.classList.contains('ht-primario')).toBe(true)
   })
 
-  test('sin datos muestra la pista de carga y el botón de corregir invertidas oculto', async () => {
+  test('sin datos el botón de corregir invertidas está oculto y exportar deshabilitado', async () => {
     render(<ValidadorCoordenadas />)
-    await waitFor(() => expect(document.querySelector('#vc-vacio')).not.toBeNull())
-    expect((document.querySelector('#vc-vacio') as HTMLElement).hidden).toBe(false)
+    await waitFor(() => expect(document.querySelector('#btn-corregir-invertidas')).not.toBeNull())
     expect((document.querySelector('#btn-corregir-invertidas') as HTMLElement).style.display).toBe('none')
+    expect((document.querySelector('#btn-exportar') as HTMLButtonElement).disabled).toBe(true)
   })
 
   test('la barra de acciones ya no trae plantilla; Cargar y Exportar siguen ahí', async () => {

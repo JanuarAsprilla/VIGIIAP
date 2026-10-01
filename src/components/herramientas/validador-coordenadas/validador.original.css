@@ -1,4 +1,6 @@
 /* Portado desde validador_coordenadas_IIAP.html; selectores acotados a .vc-root. El tema de la plataforma vive en validador.tema.css */
+/* En capa de menor prioridad: el tema (sin capa) siempre gana, sin depender de la especificidad ni del orden de carga. */
+@layer ht-original {
 .vc-root{
     --bg-page:#FAFAF8; --bg-card:#ffffff; --bg-filter:#F1EFE8; --bg-hover:#F1EFE8;
     --text-primary:#2C2C2A; --text-secondary:#5F5E5A; --text-muted:#6E6D66;
@@ -59,3 +61,4 @@
 .vc-root #tableWrap{ overflow:auto; max-height:420px; }
 .vc-root #progress{ font-size:11px; color:var(--text-secondary); margin-top:6px; }
 .vc-root .errbox{ background:#FDECEC; border:1px solid #E34948; color:#8a2323; border-radius:6px; padding:8px 10px; font-size:12px; margin-bottom:10px; display:none; }
+}
