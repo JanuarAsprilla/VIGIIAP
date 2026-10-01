@@ -1,27 +1,31 @@
 /**
  * Smoke test del registro estático real (sin mockear nada) -- confirma que
- * cada entrada tiene un componente real importable y que las herramientas
- * "focusable" traen ícono y color (los requiere HerramientaLauncherCard).
+ * cada entrada tiene un componente real importable y trae ícono y color
+ * (los requiere HerramientaLauncherCard).
  */
 import { describe, test, expect } from 'vitest'
 import { REGISTRO_HERRAMIENTAS } from '@/lib/herramientasRegistro'
 
 describe('REGISTRO_HERRAMIENTAS', () => {
-  test('incluye conversor y panel-choco con un componente real', () => {
-    expect(REGISTRO_HERRAMIENTAS.conversor).toBeDefined()
-    expect(typeof REGISTRO_HERRAMIENTAS.conversor.Component).toBe('function')
-    expect(REGISTRO_HERRAMIENTAS['panel-choco']).toBeDefined()
-    expect(typeof REGISTRO_HERRAMIENTAS['panel-choco'].Component).toBe('function')
+  test('incluye panel-choco y validador-coordenadas con un componente real', () => {
+    for (const clave of ['panel-choco', 'validador-coordenadas']) {
+      expect(REGISTRO_HERRAMIENTAS[clave], clave).toBeDefined()
+      expect(['function', 'object']).toContain(typeof REGISTRO_HERRAMIENTAS[clave].Component)
+    }
   })
 
-  test('panel-choco es focusable y trae icon/color para su tarjeta lanzadora', () => {
-    const entrada = REGISTRO_HERRAMIENTAS['panel-choco']
-    expect(entrada.focusable).toBe(true)
-    expect(entrada.icon).toBeDefined()
-    expect(entrada.color).toBe('gold')
+  test('el conversor de coordenadas ya no está: lo reemplaza el validador', () => {
+    expect(REGISTRO_HERRAMIENTAS.conversor).toBeUndefined()
   })
 
-  test('conversor no es focusable (renderiza su propio ToolCard internamente)', () => {
-    expect(REGISTRO_HERRAMIENTAS.conversor.focusable).toBeUndefined()
+  test('toda herramienta trae icon y color para su tarjeta', () => {
+    for (const [clave, entrada] of Object.entries(REGISTRO_HERRAMIENTAS)) {
+      expect(entrada.icon, clave).toBeDefined()
+      expect(['primary', 'orange', 'gold', 'green'], clave).toContain(entrada.color)
+    }
+  })
+
+  test('panel-choco usa el color dorado', () => {
+    expect(REGISTRO_HERRAMIENTAS['panel-choco'].color).toBe('gold')
   })
 })
