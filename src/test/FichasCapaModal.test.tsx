@@ -27,6 +27,14 @@ vi.mock('@/components/admin/geovisores/fichas/FichaPuntoEditor', () => ({
   ),
 }))
 
+vi.mock('@/components/admin/geovisores/fichas/ImportarFichasDialog', () => ({
+  default: ({ capaNombre, features, onClose }: { capaNombre: string; features: unknown[]; onClose: () => void }) => (
+    <div data-testid="dialogo-importar" data-capa={capaNombre} data-n-features={features.length}>
+      <button onClick={onClose}>cerrar-importar-test</button>
+    </div>
+  ),
+}))
+
 vi.mock('@/hooks/useFichasPunto', () => ({
   useFeaturesFichas: vi.fn(),
   useDeleteFicha: vi.fn(() => ({ mutate: vi.fn() })),
@@ -197,13 +205,45 @@ describe('FichasCapaModal — huérfanas y sin identificador', () => {
   })
 })
 
+describe('FichasCapaModal — importar desde Excel o CSV', () => {
+  test('el botón abre el diálogo de importación con los puntos de la capa', async () => {
+    const user = userEvent.setup()
+    render(<FichasCapaModal configId="cfg1" capaNombre="Estaciones" onClose={vi.fn()} />)
+
+    expect(screen.queryByTestId('dialogo-importar')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /importar desde excel o csv/i }))
+
+    const dialogo = screen.getByTestId('dialogo-importar')
+    expect(dialogo).toHaveAttribute('data-capa', 'Estaciones')
+    expect(dialogo).toHaveAttribute('data-n-features', '3')
+  })
+
+  test('cerrar el diálogo de importación no cierra el modal de fichas', async () => {
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    render(<FichasCapaModal configId="cfg1" capaNombre="Estaciones" onClose={onClose} />)
+    await user.click(screen.getByRole('button', { name: /importar desde excel o csv/i }))
+    await user.click(screen.getByRole('button', { name: 'cerrar-importar-test' }))
+
+    expect(screen.queryByTestId('dialogo-importar')).not.toBeInTheDocument()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  test('mientras carga la capa no se ofrece importar', () => {
+    vi.mocked(useFeaturesFichas).mockReturnValue({ data: undefined, isLoading: true } as unknown as ReturnType<typeof useFeaturesFichas>)
+    render(<FichasCapaModal configId="cfg1" capaNombre="Estaciones" onClose={vi.fn()} />)
+
+    expect(screen.queryByRole('button', { name: /importar desde excel o csv/i })).not.toBeInTheDocument()
+  })
+})
+
 describe('FichasCapaModal — cierre', () => {
   test('el botón de cerrar llama a onClose', async () => {
     const onClose = vi.fn()
     const user = userEvent.setup()
     render(<FichasCapaModal configId="cfg1" capaNombre="Estaciones" onClose={onClose} />)
 
-    await user.click(screen.getByRole('button', { name: '' }))
+    await user.click(screen.getByRole('button', { name: 'Cerrar' }))
     expect(onClose).toHaveBeenCalled()
   })
 
