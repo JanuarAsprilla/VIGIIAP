@@ -6,6 +6,8 @@ import { matches } from '@/lib/search'
 import { fadeUp, staggerContainer, staggerItem3D } from '@/lib/animations'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { useHerramientasCatalogo, type HerramientaCatalogo } from '@/hooks/useHerramientasCatalogo'
+import { useColumnasGrid, CLASES_GRID_COLUMNAS } from '@/hooks/useColumnasGrid'
+import SelectorColumnas from '@/components/ui/SelectorColumnas'
 
 import HerramientaLauncherCard  from '@/components/herramientas/HerramientaLauncherCard'
 import ResumenActividad        from '@/components/herramientas/ResumenActividad'
@@ -13,8 +15,8 @@ import SolicitarHerramientaModal from '@/components/herramientas/SolicitarHerram
 
 function GridSkeleton() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse" role="status" aria-label="Cargando herramientas">
-      {[0, 1].map((i) => <div key={i} className="h-64 bg-bg-alt rounded-xl" />)}
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-pulse" role="status" aria-label="Cargando herramientas">
+      {[0, 1, 2].map((i) => <div key={i} className="h-28 bg-bg-alt rounded-xl" />)}
     </div>
   )
 }
@@ -23,6 +25,7 @@ export default function Herramientas() {
   const { query }                    = useSearch()
   const [showSolicitar, setShowSolicitar] = useState(false)
   const [herramientaAbiertaId, setHerramientaAbiertaId] = useState<string | null>(null)
+  const { columnas, setColumnas } = useColumnasGrid('vigiiap:herramientas-cols')
   const { toasts, toast, dismiss }   = useToast()
   const { items: herramientas, isLoading, isError } = useHerramientasCatalogo()
 
@@ -85,28 +88,29 @@ export default function Herramientas() {
           </p>
         </motion.div>
       ) : filteredTools.length > 0 ? (
-        <motion.div
-          variants={staggerContainer(0.07, 0.08)}
-          initial="initial" animate="animate"
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-        >
-          {filteredTools.map((tool: HerramientaCatalogo) => (
-            <motion.div key={tool.clave} variants={staggerItem3D}>
-              {tool.focusable ? (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <SelectorColumnas columnas={columnas} onChange={setColumnas} />
+          </div>
+          <motion.div
+            variants={staggerContainer(0.07, 0.08)}
+            initial="initial" animate="animate"
+            className={`grid ${CLASES_GRID_COLUMNAS[columnas]} gap-6`}
+          >
+            {filteredTools.map((tool: HerramientaCatalogo) => (
+              <motion.div key={tool.clave} variants={staggerItem3D}>
                 <HerramientaLauncherCard
                   tag={tool.tag}
                   title={tool.titulo}
                   description={tool.descripcion ?? ''}
-                  icon={tool.icon!}
+                  icon={tool.icon}
                   color={tool.color}
                   onAbrir={() => setHerramientaAbiertaId(tool.clave)}
                 />
-              ) : (
-                React.createElement(tool.Component, { onToast: toast })
-              )}
-            </motion.div>
-          ))}
-        </motion.div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
       ) : (
         <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
           <SearchX className="w-10 h-10 mx-auto mb-3 opacity-30" aria-hidden="true" />

@@ -6,6 +6,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.8.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.7.0...v1.8.0) (2026-10-01)
+
+
+### Features
+
+* Herramientas como tarjetas pequeñas con selector de columnas; retira el conversor ([#249](https://github.com/JanuarAsprilla/VIGIIAP/issues/249)) ([f8039fd](https://github.com/JanuarAsprilla/VIGIIAP/commit/f8039fd36b20496443f9b366a34093578f9025ec))
+* validador acepta CSV y coordenadas planas, compara municipio declarado y valida en bloques ([#248](https://github.com/JanuarAsprilla/VIGIIAP/issues/248)) ([d08d74f](https://github.com/JanuarAsprilla/VIGIIAP/commit/d08d74f67a7affd495d8f15811335513317e84cf))
+
 ## [1.7.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.6.0...v1.7.0) (2026-10-01)
 
 
