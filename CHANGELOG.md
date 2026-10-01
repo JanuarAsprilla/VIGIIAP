@@ -6,6 +6,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.9.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.8.0...v1.9.0) (2026-10-01)
+
+
+### Features
+
+* **fichas:** botón para quitar la configuración de fichas de una capa ([#256](https://github.com/JanuarAsprilla/VIGIIAP/issues/256)) ([23d9e35](https://github.com/JanuarAsprilla/VIGIIAP/commit/23d9e353dae15189cd2b98154b0fd475aadd96f8))
+* **fichas:** importar títulos y descripciones desde Excel o CSV ([#254](https://github.com/JanuarAsprilla/VIGIIAP/issues/254)) ([2ce9d9f](https://github.com/JanuarAsprilla/VIGIIAP/commit/2ce9d9fd866c130a48b07ca4fcd58c5a386d2e81))
+* **fichas:** no perder texto al subir medios, validar identificador al guardar y nombre legible en el diálogo ([#250](https://github.com/JanuarAsprilla/VIGIIAP/issues/250)) ([bc74a81](https://github.com/JanuarAsprilla/VIGIIAP/commit/bc74a815f4ee40a1b55b6fed881c32eeb71b5f88))
+
 ## [1.8.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.7.0...v1.8.0) (2026-10-01)
 
 
