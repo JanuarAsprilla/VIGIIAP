@@ -1,5 +1,5 @@
-/* Tema VIGIIAP sobre el panel original: solo cambia apariencia (tokens, tipografía, cabecera),
-   no la estructura ni el comportamiento. Los colores de datos de cada capa se conservan. */
+/* Tema del panel: solo lo propio de esta herramienta. Botones, campos, tarjetas, tablas y ventanas
+   vienen de ../herramientaTema.css (sistema común); los colores de datos de cada capa se conservan. */
 .pc-root {
   --verde: var(--color-primary-600);
   --verde-dark: var(--color-primary-700);
@@ -20,7 +20,6 @@
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --pc-sticky-top: 4.5rem;
 
-  font-family: var(--font-body);
   background: transparent;
   min-height: 0;
 }
@@ -29,6 +28,7 @@
 .pc-root .nota-slot:empty,
 .pc-root .nota-slot:has(> #nota-panel-wrap:empty) { display: none; }
 .pc-root .nota-slot { margin-bottom: 1rem; }
+.pc-root .nota-panel { border-radius: var(--radius-2xl); }
 
 /* Barra de herramientas: selector de capa protagonista + carga de datos */
 .pc-root .top-bar {
@@ -52,19 +52,14 @@
   grid-template-areas: "etq chev" "act chev";
   column-gap: 0.75rem;
   align-items: center;
+  justify-content: stretch;
   text-align: left;
-  padding: 0.65rem 1rem;
-  background: var(--surface);
-  border: 1.5px solid var(--color-primary-800);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card);
-  color: var(--color-text);
-  font-family: var(--font-body);
-  cursor: pointer;
-  transition: box-shadow var(--duration-fast) var(--ease-out-expo), background-color var(--duration-fast);
+  min-height: 0;
+  padding: 0.65rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--ht-acento) 45%, var(--color-border));
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--ht-sombra);
 }
-.pc-root .capa-toggle:hover { background: var(--color-primary-50); }
-.pc-root .capa-toggle:focus-visible { outline: 2px solid var(--color-primary-600); outline-offset: 2px; }
 .pc-root .capa-toggle-label {
   grid-area: etq;
   font-size: 0.6875rem;
@@ -103,35 +98,29 @@
   overflow: visible;
   background: var(--surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-float);
 }
 .pc-root .capa-selector .sidebar-nav[hidden] { display: none; }
 .pc-root .capa-selector .sidebar-nav .side-item {
   width: 100%;
+  justify-content: flex-start;
+  min-height: 0;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+  background: transparent;
   padding: 0.6rem 0.75rem;
   font-size: 0.875rem;
+  font-weight: 500;
   white-space: normal;
 }
 .pc-root .capa-selector .sidebar-nav .side-item.active {
-  background: var(--color-primary-50);
-  color: var(--color-primary-800);
+  background: color-mix(in srgb, var(--ht-acento) 14%, var(--surface));
+  color: color-mix(in srgb, var(--ht-acento) 62%, var(--color-text));
   font-weight: 600;
-  border: none;
 }
-.pc-root .capa-selector .sidebar-nav .side-item:hover { background: var(--color-bg-alt); }
-
-.pc-root .cargar-btn {
-  background: var(--color-primary-800);
-  border-color: var(--color-primary-800);
-  color: #fff;
-  font-weight: 600;
-  padding: 0.65rem 1rem;
-  border-radius: var(--radius-lg);
-}
-.pc-root .cargar-btn:hover { background: var(--color-primary-700); }
+.pc-root .capa-selector .sidebar-nav .side-item:hover:not(.active) { background: var(--color-bg-alt); border: none; }
 .pc-root .pending-badge { border-color: var(--color-bg); }
 
 /* Sticky: los filtros quedan bajo la cabecera de la plataforma */
@@ -140,23 +129,36 @@
 .pc-root .content-area { padding: 0; }
 .pc-root .main { padding: 0; }
 .pc-root .hero { background: var(--color-primary-800); }
-.pc-root .footer {
-  background: transparent;
-  color: var(--color-text-muted);
-  border-top: 1px solid var(--color-border);
-  border-radius: 0;
-}
 
-.pc-root .sidebar-nav .side-item:focus-visible,
-.pc-root .cargar-btn:focus-visible,
-.pc-root .tipo-btn:focus-visible {
-  outline: 2px solid var(--color-primary-600);
-  outline-offset: -2px;
-}
-
-/* Modal y avisos deben quedar sobre la cabecera de la plataforma */
+/* ── Diálogo "Actualizar capas de datos" ──────────────────────────────────── */
 .pc-root .modal-overlay { z-index: 1000; }
+.pc-root .modal-carga { max-width: 36rem; }
+.pc-root .modal-carga-header { padding: 1.25rem 1.5rem 1rem; border-bottom: 1px solid var(--color-border); }
+.pc-root .modal-carga-title { font-family: var(--font-display); font-size: 1.1875rem; font-weight: 600; }
+.pc-root .modal-carga-sub { font-size: 0.8125rem; color: var(--color-text-light); }
+.pc-root .modal-carga-close { width: 2rem; height: 2rem; min-height: 0; padding: 0; border-radius: 999px; box-shadow: none; font-size: 0.875rem; }
+.pc-root .modal-carga-body { padding: 0.5rem 0.75rem; }
+.pc-root .mc-section-label { padding: 0.75rem 0.75rem 0.25rem; letter-spacing: 0.08em; color: var(--color-text-muted); }
+.pc-root .mc-row { padding: 0.7rem 0.75rem; border-radius: var(--radius-xl); transition: background-color 120ms; }
+.pc-root .mc-row:hover { background: color-mix(in srgb, var(--ht-acento) 7%, var(--surface)); }
+.pc-root .mc-divider { display: none; }
+.pc-root .mc-state-bar { display: none; }
+.pc-root .mc-name { font-size: 0.875rem; }
+.pc-root .mc-chip { padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.6875rem; border: none; }
+.pc-root .mc-chip.req { background: color-mix(in srgb, var(--ht-acento) 14%, var(--surface)); color: color-mix(in srgb, var(--ht-acento) 62%, var(--color-text)); }
+.pc-root .mc-chip.opt { background: var(--color-bg-alt); color: var(--color-text-muted); }
+.pc-root .mc-action { padding: 0.28rem 0.7rem; border-radius: 999px; font-size: 0.75rem; }
+.pc-root .mc-action.ok { background: color-mix(in srgb, var(--ht-ok) 14%, var(--surface)); color: color-mix(in srgb, var(--ht-ok) 55%, var(--color-text)); }
+.pc-root .mc-action.pend { background: color-mix(in srgb, var(--ht-aviso) 20%, var(--surface)); color: color-mix(in srgb, #8a5a00 70%, var(--color-text)); }
+.pc-root .mc-action.loading { background: color-mix(in srgb, var(--azul) 14%, var(--surface)); color: color-mix(in srgb, var(--azul) 70%, var(--color-text)); }
+.pc-root .mc-ts { color: var(--color-text-muted); }
+.pc-root .mc-footer { padding: 0.875rem 1.5rem; background: transparent; border-top: 1px solid var(--color-border); }
+.pc-root .mc-leg-bar { width: 0.5rem; height: 0.5rem; border-radius: 50%; }
+.pc-root .mc-legend, .pc-root .mc-legend-cols { color: var(--color-text-muted); }
+
+/* Avisos */
 .pc-root .toast-area { z-index: 1001; }
+.pc-root .toast { border-radius: var(--radius-xl); box-shadow: var(--shadow-card); }
 
 /* Sin permiso de edición: no existe ninguna vía de carga en pantalla */
 .pc-solo-lectura .cargar-btn-wrap,

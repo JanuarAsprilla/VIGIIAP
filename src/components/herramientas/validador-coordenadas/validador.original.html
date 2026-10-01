@@ -14,17 +14,17 @@
     <div class="vc-grid2">
       <div>
         <label id="lbl-col-lat" class="vc-etiqueta">Columna de latitud</label>
-        <select id="sel-col-lat" class="vc-select"></select>
+        <select id="sel-col-lat"></select>
       </div>
       <div>
         <label id="lbl-col-lon" class="vc-etiqueta">Columna de longitud</label>
-        <select id="sel-col-lon" class="vc-select"></select>
+        <select id="sel-col-lon"></select>
       </div>
     </div>
     <div class="vc-grid2">
       <div>
         <label class="vc-etiqueta">Sistema de coordenadas</label>
-        <select id="sel-sistema" class="vc-select">
+        <select id="sel-sistema">
           <option value="wgs84">Grados decimales (WGS84)</option>
           <option value="oeste">MAGNA-SIRGAS planas — Oeste (EPSG:3115)</option>
           <option value="bogota">MAGNA-SIRGAS planas — Bogotá (EPSG:3116)</option>
@@ -33,7 +33,7 @@
       </div>
       <div>
         <label class="vc-etiqueta">Columna de municipio (opcional)</label>
-        <select id="sel-col-muni" class="vc-select"></select>
+        <select id="sel-col-muni"></select>
       </div>
     </div>
     <div class="vc-previa">
@@ -45,13 +45,13 @@
     <p id="col-mensaje" class="vc-modal-msg"></p>
     <div class="vc-modal-acciones">
       <button id="btn-cancelar-columnas" type="button">Cancelar</button>
-      <button id="btn-confirmar-columnas" type="button" class="primary">Confirmar y validar</button>
+      <button id="btn-confirmar-columnas" type="button" class="primary ht-primario">Confirmar y validar</button>
     </div>
   </div>
 </div>
 
 <div class="bar">
-  <button id="btn-cargar-excel" type="button" class="primary"><i class="ti ti-upload" aria-hidden="true"></i> Cargar Excel</button>
+  <button id="btn-cargar-excel" type="button" class="primary ht-primario"><i class="ti ti-upload" aria-hidden="true"></i> Cargar Excel</button>
   <button id="btn-plantilla" type="button"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Plantilla</button>
   <input type="file" id="file-excel" accept=".xlsx,.csv" style="display:none">
   <button id="btn-modo-agregar" type="button"><i class="ti ti-map-pin-plus" aria-hidden="true"></i> <span id="txt-modo-agregar">Agregar puntos con clic: OFF</span></button>
@@ -67,9 +67,9 @@
 <div class="filtergroup vc-formato">
   <div class="label">Formato de coordenadas</div>
   <div class="vc-chips">
-    <button id="fmt-dd" type="button" class="fmt-btn">DD (grados decimales)</button>
-    <button id="fmt-dms" type="button" class="fmt-btn">DMS (grados, min, seg)</button>
-    <button id="fmt-utm" type="button" class="fmt-btn">UTM</button>
+    <button id="fmt-dd" type="button" class="ht-chip fmt-btn">DD (grados decimales)</button>
+    <button id="fmt-dms" type="button" class="ht-chip fmt-btn">DMS (grados, min, seg)</button>
+    <button id="fmt-utm" type="button" class="ht-chip fmt-btn">UTM</button>
   </div>
 </div>
 
@@ -82,10 +82,10 @@
     <select id="f-error"><option value="">Tipo de error: todos</option></select>
   </div>
   <div class="vc-chips vc-chips-origen">
-    <button class="chip-origen activo" data-origen="" type="button">Todos</button>
-    <button class="chip-origen" data-origen="agregado" type="button">Agregados manualmente</button>
-    <button class="chip-origen" data-origen="movido" type="button">Movidos manualmente</button>
-    <button class="chip-origen" data-origen="confirmado" type="button">Confirmados como válidos</button>
+    <button class="ht-chip chip-origen activo" data-origen="" type="button">Todos</button>
+    <button class="ht-chip chip-origen" data-origen="agregado" type="button">Agregados manualmente</button>
+    <button class="ht-chip chip-origen" data-origen="movido" type="button">Movidos manualmente</button>
+    <button class="ht-chip chip-origen" data-origen="confirmado" type="button">Confirmados como válidos</button>
   </div>
 </div>
 
@@ -118,8 +118,8 @@
 <div class="card">
   <div class="vc-registros-cab">
     <h3>Registros (<span id="tabla-count">0</span>)</h3>
-    <button id="btn-corregir-invertidas" type="button" class="vc-aviso" style="display:none;">Corregir invertidas</button>
-    <button id="btn-confirmar-todas-dup" type="button" class="vc-ok" style="display:none;">Confirmar repetidas como válidas</button>
+    <button id="btn-corregir-invertidas" type="button" class="ht-aviso" style="display:none;">Corregir invertidas</button>
+    <button id="btn-confirmar-todas-dup" type="button" class="ht-ok" style="display:none;">Confirmar repetidas como válidas</button>
   </div>
   <div id="tableWrap">
     <table>
@@ -134,9 +134,9 @@
   <div id="pager">
     <span class="vc-rango">
       <label for="f-fila-desde">Fila Excel</label>
-      <input id="f-fila-desde" class="vc-input" type="number" placeholder="Desde">
+      <input id="f-fila-desde" class="ht-input" type="number" placeholder="Desde">
       <span>a</span>
-      <input id="f-fila-hasta" class="vc-input" type="number" placeholder="Hasta">
+      <input id="f-fila-hasta" class="ht-input" type="number" placeholder="Hasta">
     </span>
     <span><span id="pager-info"></span> <button id="prev" type="button">Anterior</button> <button id="next" type="button">Siguiente</button></span>
   </div>
