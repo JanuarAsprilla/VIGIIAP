@@ -70,6 +70,23 @@ describe('sistema común', () => {
   })
 })
 
+describe('responsivo de las herramientas', () => {
+  test.each([
+    ['validador', 'validador-coordenadas/validador.tema.css', 'vc', '.vc-root #wrap'],
+    ['panel Chocó', 'panel-choco/panelChoco.tema.css', 'pc', '.pc-root .main'],
+  ])('%s: el contenedor de consultas va en el wrapper interno, no en la raíz', (_n, ruta, id, selector) => {
+    const css = leer(ruta)
+    expect(css).toContain(`${selector} { container: ${id} / inline-size; }`)
+    // En la raíz atraparía los diálogos fixed (contención de layout).
+    expect(css).not.toMatch(new RegExp(`\\.${id}-root\\s*\\{[^}]*container:`))
+    expect(css).toMatch(new RegExp(`@container ${id} \\(max-width`))
+  })
+
+  test('los botones y campos táctiles miden al menos 44 px', () => {
+    expect(temaComun).toMatch(/@media \(pointer: coarse\)[\s\S]*min-height: 2\.75rem/)
+  })
+})
+
 describe('texto de introducción del validador', () => {
   test('comparte una sola regla de estilo con la nota de límites (mismo tamaño y color)', () => {
     const tema = leer('validador-coordenadas/validador.tema.css')
