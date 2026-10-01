@@ -6,9 +6,8 @@ import { REGISTRO_HERRAMIENTAS } from '@/lib/herramientasRegistro'
 
 export interface HerramientaCatalogo extends Herramienta {
   Component: ComponentType<{ onToast?: (msg: string) => void }>
-  focusable: boolean
-  icon?: LucideIcon
-  color?: 'primary' | 'orange' | 'gold' | 'green'
+  icon: LucideIcon
+  color: 'primary' | 'orange' | 'gold' | 'green'
 }
 
 /**
@@ -23,7 +22,7 @@ export function useHerramientasCatalogo() {
 
   const items: HerramientaCatalogo[] = (data ?? [])
     .filter((h) => h.clave in REGISTRO_HERRAMIENTAS)
-    .map((h) => ({ ...h, ...REGISTRO_HERRAMIENTAS[h.clave], focusable: REGISTRO_HERRAMIENTAS[h.clave].focusable ?? false }))
+    .map((h) => ({ ...h, ...REGISTRO_HERRAMIENTAS[h.clave] }))
 
   return { items, isLoading, isError }
 }

@@ -7,7 +7,7 @@ const SECTIONS = [
   { title: 'Módulo de Mapas', description: 'Buscar, filtrar y descargar cartografía temática. Uso de formatos y visualización en los Geovisores.' },
   { title: 'Centro de Documentos', description: 'Navegación por categorías, búsqueda avanzada y descarga de protocolos y guías técnicas.' },
   { title: 'Geovisores SIAT-PC', description: 'Capas de información, herramientas de medición, exportación y cambio de estilos de mapa.' },
-  { title: 'Herramientas SIG', description: 'Calculadora de áreas, generador de buffers, conversor de coordenadas y analizador de superposición.' },
+  { title: 'Herramientas SIG', description: 'Panel de análisis territorial del Chocó Biogeográfico y validador de coordenadas contra los 93 municipios.' },
   { title: 'Solicitudes y Trámites', description: 'Cómo crear solicitudes, hacer seguimiento y descargar formatos oficiales.' },
 ]
 
