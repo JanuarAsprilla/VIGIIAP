@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { iniciarValidador } from './validador.motor'
+import { crearPortal, moverAlPortal } from '../portalHerramienta'
 import marcado from './validador.original.html?raw'
 import './validador.original.css'
 import '../herramientaTema.css'
@@ -15,9 +16,12 @@ export default function ValidadorCoordenadas() {
     const root = rootRef.current
     if (!root) return
     root.innerHTML = marcado
-    const destruir = iniciarValidador(root)
+    const portal = crearPortal(['vc-root', 'ht-root'])
+    moverAlPortal(root, portal.elemento, ['#overlay-columnas', '#vc-cargando'])
+    const destruir = iniciarValidador(root, { portal: portal.elemento })
     return () => {
       destruir()
+      portal.quitar()
       root.innerHTML = ''
     }
   }, [])

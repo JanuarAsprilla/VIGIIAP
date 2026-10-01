@@ -16,21 +16,21 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import centroid from '@turf/centroid'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon'
 import { point } from '@turf/helpers'
-import { magnaToWgs84, utm18NToWgs84 } from '@/lib/proyeccionMagna'
 import { leerLibroExcel, leerLibroCsv, escribirLibroExcel } from './excelIO'
 
-export function iniciarValidador(root) {
+export function iniciarValidador(root, { portal = null }: { portal?: HTMLElement | null } = {}) {
   const L = globalThis.L
   const turf = { centroid, booleanPointInPolygon, point }
   const W = {}
   let observadorTema = null
-  let colMuni = ''
+  let destruido = false // la herramienta se cerró: ningún trabajo pendiente debe tocar el DOM
   let validacionId = 0
   let validando = false
   const document = {
-    getElementById: (id) => root.querySelector('#' + CSS.escape(id)),
-    querySelector: (s) => root.querySelector(s),
-    querySelectorAll: (s) => root.querySelectorAll(s),
+    // Las ventanas viven en un portal del body (ver portalHerramienta.ts): se busca primero en la raíz y luego ahí.
+    getElementById: (id) => root.querySelector('#' + CSS.escape(id)) ?? (portal ? portal.querySelector('#' + CSS.escape(id)) : null),
+    querySelector: (s) => root.querySelector(s) ?? (portal ? portal.querySelector(s) : null),
+    querySelectorAll: (s) => (portal ? [...root.querySelectorAll(s), ...portal.querySelectorAll(s)] : root.querySelectorAll(s)),
     createElement: (t) => globalThis.document.createElement(t),
     addEventListener: (t, f, o) => root.addEventListener(t, f, o),
     body: root,
@@ -42,7 +42,12 @@ export function iniciarValidador(root) {
       json_to_sheet: (filas) => filas,
       book_append_sheet: (wb, filas, nombre) => { wb.hojas.push({ nombre, filas }) },
     },
-    writeFile: (wb, nombre) => { void escribirLibroExcel(wb.hojas, nombre) },
+    writeFile: (wb, nombre) => {
+      mostrarCargando('Preparando el Excel…', nombre)
+      escribirLibroExcel(wb.hojas, nombre)
+        .catch(() => showError('No se pudo generar el Excel.'))
+        .finally(ocultarCargando)
+    },
   }
   // ── Script original ──
   
@@ -117,6 +122,32 @@ export function iniciarValidador(root) {
   
   function $(id){ return document.getElementById(id); }
   function showError(msg){ const b=$('errbox'); b.style.display='block'; b.textContent=msg; }
+  // Aviso de "cargando": aparece de inmediato y se mantiene un mínimo para que no parpadee.
+  const MIN_CARGANDO_MS = 400;
+  let cargaVisible = false, cargaDesde = 0, temporizadorOcultar = null;
+  function mostrarCargando(titulo, detalle){
+    if(destruido) return;
+    $('vc-cargando-titulo').textContent = titulo;
+    $('vc-cargando-detalle').textContent = detalle || '';
+    if(temporizadorOcultar){ clearTimeout(temporizadorOcultar); temporizadorOcultar = null; }
+    if(cargaVisible) return;
+    $('vc-cargando').style.display = 'flex';
+    cargaVisible = true;
+    cargaDesde = Date.now();
+  }
+  function actualizarCargando(detalle){ if(!destruido) $('vc-cargando-detalle').textContent = detalle; }
+  function ocultarCargando(){
+    if(destruido || !cargaVisible) return;
+    if(temporizadorOcultar) clearTimeout(temporizadorOcultar);
+    const ocultar = ()=>{ temporizadorOcultar = null; $('vc-cargando').style.display = 'none'; cargaVisible = false; };
+    const falta = MIN_CARGANDO_MS - (Date.now() - cargaDesde);
+    if(falta > 0) temporizadorOcultar = setTimeout(ocultar, falta); else ocultar();
+  }
+  // Cede el hilo un instante para que el navegador pinte el aviso antes del trabajo pesado.
+  const dejarPintar = ()=> new Promise((res)=>{
+    if(typeof requestAnimationFrame === 'function') requestAnimationFrame(()=> setTimeout(res, 0));
+    else setTimeout(res, 0);
+  });
   function hideError(){ $('errbox').style.display='none'; }
   
   // ============================================================
@@ -218,34 +249,8 @@ export function iniciarValidador(root) {
     });
   }
   
-  const NOMBRES_MUNI_PROBABLES = ['municipio','mpio','municipality','nombre municipio','nombre_municipio','mun','municipio_nombre','mpio_cnmbre'];
-
-  function actualizarEtiquetasSistema(){
-    const plano = $('sel-sistema').value !== 'wgs84';
-    $('lbl-col-lat').textContent = plano ? 'Columna Norte (Y)' : 'Columna de latitud';
-    $('lbl-col-lon').textContent = plano ? 'Columna Este (X)' : 'Columna de longitud';
-  }
-  $('sel-sistema').addEventListener('change', actualizarEtiquetasSistema);
-
-  // Pasa coordenadas planas a grados y las deja en columnas calculadas (las originales se conservan).
-  function convertirPlanasAGrados(rows, colNorte, colEste, sistema){
-    const COL_LAT = 'Latitud (calculada)', COL_LON = 'Longitud (calculada)';
-    rows.forEach(row=>{
-      const y = limpiarCoord(row[colNorte]), x = limpiarCoord(row[colEste]);
-      let lat = '', lon = '';
-      if(!isNaN(x) && !isNaN(y)){
-        try{
-          const g = sistema==='utm18n' ? utm18NToWgs84(x, y) : magnaToWgs84(x, y, sistema);
-          if(isFinite(g.lat) && isFinite(g.lon)){ lat = +g.lat.toFixed(6); lon = +g.lon.toFixed(6); }
-        }catch(e){ /* fila sin conversión: queda vacía y se marca inválida */ }
-      }
-      row[COL_LAT] = lat; row[COL_LON] = lon;
-    });
-    return { colLat: COL_LAT, colLon: COL_LON };
-  }
-
-  const NOMBRES_LAT_PROBABLES = ['decimallatitude','latitude','latitud','lat','y','norte','northing','north'];
-  const NOMBRES_LON_PROBABLES = ['decimallongitude','longitude','longitud','lon','lng','long','x','este','easting','east'];
+  const NOMBRES_LAT_PROBABLES = ['decimallatitude','latitude','latitud','lat','y'];
+  const NOMBRES_LON_PROBABLES = ['decimallongitude','longitude','longitud','lon','lng','long','x'];
   
   function adivinarColumna(numCols, nombresProbables){
     for(const nombre of nombresProbables){
@@ -273,44 +278,50 @@ export function iniciarValidador(root) {
       const o2 = document.createElement('option'); o2.value=c; o2.textContent=c; if(c===lonSugerida) o2.selected=true; selLon.appendChild(o2);
     });
   
-    const selMuni = $('sel-col-muni');
-    selMuni.innerHTML = '';
-    const sinMuni = document.createElement('option'); sinMuni.value = ''; sinMuni.textContent = '— Ninguna —'; selMuni.appendChild(sinMuni);
-    const muniSugerida = Object.keys(rows[0]).find(c=> NOMBRES_MUNI_PROBABLES.includes(normalizar(c).toLowerCase())) || '';
-    Object.keys(rows[0]).forEach(c=>{
-      const o = document.createElement('option'); o.value = c; o.textContent = c; if(c===muniSugerida) o.selected = true; selMuni.appendChild(o);
-    });
-    // Valores muy grandes (> 360) no pueden ser grados: se propone coordenadas planas.
-    const muestraLat = rows.slice(0, 50).map(r=>Math.abs(limpiarCoord(r[latSugerida]))).filter(v=>!isNaN(v)).sort((a,b)=>a-b);
-    const mediana = muestraLat.length ? muestraLat[Math.floor(muestraLat.length/2)] : 0;
-    $('sel-sistema').value = mediana > 360 ? 'oeste' : 'wgs84';
-    actualizarEtiquetasSistema();
-
     $('col-sub').textContent = `Hoja "${sheetName}": ${rows.length.toLocaleString('es-CO')} filas, ${Object.keys(rows[0]).length} columnas (${pendingNumCols.length} numéricas). Solo las columnas numéricas aparecen en los desplegables.`;
   
     const cols = Object.keys(rows[0]);
     const headTr = $('col-preview-head'); headTr.innerHTML = '';
-    cols.forEach(c=>{
+    cols.forEach((c, idx)=>{
       const th = document.createElement('th');
       th.textContent = c;
-      const esNum = pendingNumCols.includes(c);
-      th.className = esNum ? 'vc-col-num' : 'vc-col-txt';
+      th.dataset.col = String(idx);
+      th.className = pendingNumCols.includes(c) ? 'vc-col-num' : 'vc-col-txt';
       headTr.appendChild(th);
     });
     const bodyTbody = $('col-preview-body'); bodyTbody.innerHTML='';
     rows.slice(0,5).forEach(row=>{
       const tr = document.createElement('tr');
-      cols.forEach(c=>{
+      cols.forEach((c, idx)=>{
         const td = document.createElement('td');
         td.textContent = row[c];
+        td.dataset.col = String(idx);
+        td.className = pendingNumCols.includes(c) ? 'vc-celda-num' : 'vc-celda-txt';
         tr.appendChild(td);
       });
       bodyTbody.appendChild(tr);
     });
   
-    $('col-mensaje').textContent = 'Las columnas en gris son de texto y no se pueden usar como coordenadas.';
+    $('col-mensaje').style.color = '';
+    $('col-mensaje').textContent = 'Las columnas resaltadas en verde son numéricas: elige entre ellas la latitud y la longitud. Las grises son texto y no sirven como coordenadas.';
+    marcarRolesColumnas();
     $('overlay-columnas').style.display = 'flex';
   }
+
+  // Marca en la vista previa cuál columna es la latitud y cuál la longitud según lo elegido.
+  function marcarRolesColumnas(){
+    const cols = pendingRows && pendingRows[0] ? Object.keys(pendingRows[0]) : [];
+    const lat = cols.indexOf($('sel-col-lat').value), lon = cols.indexOf($('sel-col-lon').value);
+    document.querySelectorAll('#col-preview-head th, #col-preview-body td').forEach((el)=>{
+      const i = Number(el.dataset.col);
+      if(i === lat && i === lon) el.dataset.rol = 'conflicto';
+      else if(i === lat) el.dataset.rol = 'lat';
+      else if(i === lon) el.dataset.rol = 'lon';
+      else delete el.dataset.rol;
+    });
+  }
+  $('sel-col-lat').addEventListener('change', marcarRolesColumnas);
+  $('sel-col-lon').addEventListener('change', marcarRolesColumnas);
   
   $('btn-cancelar-columnas').addEventListener('click', ()=>{
     $('overlay-columnas').style.display = 'none';
@@ -318,30 +329,28 @@ export function iniciarValidador(root) {
     $('estado-datos').textContent = '';
   });
   
-  $('btn-confirmar-columnas').addEventListener('click', ()=>{
+  $('btn-confirmar-columnas').addEventListener('click', async ()=>{
     const latCol = $('sel-col-lat').value, lonCol = $('sel-col-lon').value;
     if(latCol === lonCol){
       $('col-mensaje').textContent = 'La columna de latitud y de longitud no pueden ser la misma.';
       $('col-mensaje').style.color = '#E34948';
       return;
     }
-    const sistema = $('sel-sistema').value;
-    colMuni = $('sel-col-muni').value || '';
-    if(sistema !== 'wgs84'){
-      const conv = convertirPlanasAGrados(pendingRows, latCol, lonCol, sistema);
-      colLat = conv.colLat; colLon = conv.colLon;
-    } else {
-      colLat = latCol; colLon = lonCol;
-    }
+    colLat = latCol; colLon = lonCol;
     ROWS = pendingRows;
     RESULTS = ROWS.map((row,i)=>({estado:'', tipo_error:'', observacion:'', depDet:'', muniDet:'', codigoDivipola:'', latIntercambiada:false, _filaExcel: i+2}));
     $('overlay-columnas').style.display = 'none';
     $('estado-datos').textContent = `Excel cargado (${ROWS.length.toLocaleString('es-CO')} registros) — lat: ${colLat}, lon: ${colLon}`;
     $('foot').textContent = `Última actualización: ${new Date().toLocaleString('es-CO')}`;
+    mostrarCargando('Validando las coordenadas…', `${ROWS.length.toLocaleString('es-CO')} registros`);
+    await dejarPintar();
+    if(destruido) return;
     validarBasico();
     renderAll();
     const miId = ++validacionId;
-    validarContraMunicipios(miId).then((completo)=>{ if(completo) renderAll(); });
+    validarContraMunicipios(miId)
+      .then((completo)=>{ if(completo) renderAll(); })
+      .finally(()=>{ if(miId === validacionId) ocultarCargando(); });
     pendingRows = null;
   });
   
@@ -350,10 +359,13 @@ export function iniciarValidador(root) {
     if(!file) return;
     hideError();
     $('estado-datos').textContent = 'Leyendo archivo...';
+    mostrarCargando('Cargando el archivo…', file.name);
     const esCsv = /\.csv$/i.test(file.name);
     const reader = new FileReader();
     reader.onload = async (ev)=>{
       try{
+        await dejarPintar();
+        if(destruido) return;
         const wb = esCsv ? leerLibroCsv(ev.target.result) : await leerLibroExcel(ev.target.result);
         // Elige la hoja con más filas de datos (normalmente la principal)
         let mejorHoja = null, mejorFilas = [];
@@ -370,7 +382,14 @@ export function iniciarValidador(root) {
       }catch(err){
         showError('No se pudo procesar el archivo: '+err.message);
         $('estado-datos').textContent = '';
+      }finally{
+        ocultarCargando();
       }
+    };
+    reader.onerror = ()=>{
+      ocultarCargando();
+      showError('No se pudo leer el archivo.');
+      $('estado-datos').textContent = '';
     };
     reader.readAsArrayBuffer(file);
     e.target.value = '';
@@ -465,8 +484,9 @@ export function iniciarValidador(root) {
     for(let i=0;i<total;i++){
       if(i>0 && i%400===0){
         $('progress').textContent = `Validando ubicación geográfica... ${i.toLocaleString('es-CO')} de ${total.toLocaleString('es-CO')}`;
+        actualizarCargando(`${i.toLocaleString('es-CO')} de ${total.toLocaleString('es-CO')} registros`);
         await new Promise(res=>setTimeout(res, 0));
-        if(miId !== validacionId) return false; // se cargó otro archivo: esta validación ya no aplica
+        if(miId !== validacionId || destruido) return false; // se cargó otro archivo o se cerró la herramienta
       }
       const r = RESULTS[i];
       if(r.estado==='INVÁLIDA' && r.tipo_error.indexOf('vacías')>=0) continue; // ya sin coords válidas
@@ -494,32 +514,11 @@ export function iniciarValidador(root) {
     detectarIntercambiadas();
     detectarPrecision();
     detectarDuplicadas();
-    detectarMunicipioDeclarado();
     validando = false;
     $('progress').textContent = '';
     return true;
   }
 
-  // ── Municipio declarado en el Excel vs. municipio donde cae la coordenada ──
-  function coincideMunicipio(declarado, detectado){
-    const nd = normalizar(declarado), nm = normalizar(detectado);
-    if(!nd || nd === nm || nd.includes(nm) || nm.includes(nd)) return true;
-    return (ALIASES_MUNI[detectado] || []).some(a=>{ const na = normalizar(a); return nd === na || nd.includes(na); });
-  }
-  function marcarMunicipioDeclarado(i){
-    if(!colMuni) return;
-    const r = RESULTS[i];
-    if(r.estado !== 'VÁLIDA' || !r.muniDet) return;
-    const declarado = String(ROWS[i][colMuni] === undefined || ROWS[i][colMuni] === null ? '' : ROWS[i][colMuni]).trim();
-    if(!declarado || coincideMunicipio(declarado, r.muniDet)) return;
-    r.estado = 'SOSPECHOSA';
-    r.tipo_error = 'Municipio declarado no coincide';
-    r.observacion = `El Excel indica "${declarado}", pero la coordenada cae en ${r.muniDet}, ${r.depDet}.`;
-  }
-  function detectarMunicipioDeclarado(){
-    for(let i=0;i<ROWS.length;i++) marcarMunicipioDeclarado(i);
-  }
-  
   function detectarIntercambiadas(){
     for(let i=0;i<ROWS.length;i++){
       const r = RESULTS[i];
@@ -878,7 +877,6 @@ export function iniciarValidador(root) {
         }
       }
     }
-    marcarMunicipioDeclarado(i);
   }
   
   W.__confirmarNuevoPunto = function(lat, lon){
@@ -1267,21 +1265,6 @@ export function iniciarValidador(root) {
   root.addEventListener('dragleave', alSalirArrastre);
   root.addEventListener('drop', alSoltar);
 
-  // ── Plantilla descargable ──
-  $('btn-plantilla').addEventListener('click', ()=>{
-    void escribirLibroExcel([
-      { nombre: 'Plantilla', filas: [
-        { ID: 1, Especie: 'Ejemplo A', Latitud: 5.6919, Longitud: -76.6583, Municipio: 'Quibdó' },
-        { ID: 2, Especie: 'Ejemplo B', Latitud: 4.2153, Longitud: -77.3654, Municipio: 'Bajo Baudó' },
-      ] },
-      { nombre: 'Instrucciones', filas: [
-        { Campo: 'Latitud', Descripción: 'Grados decimales (ej. 5.6919). Usa punto o coma decimal.' },
-        { Campo: 'Longitud', Descripción: 'Grados decimales, negativa al occidente de Greenwich (ej. -76.6583).' },
-        { Campo: 'Otras columnas', Descripción: 'Se conservan tal cual en el Excel de resultados.' },
-      ] },
-    ], 'PLANTILLA_VALIDADOR_COORDENADAS.xlsx');
-  });
-
   initMap();
   
 
@@ -1300,6 +1283,8 @@ export function iniciarValidador(root) {
   root.addEventListener('click', despachar, true)
 
   return function destruir() {
+    destruido = true
+    if (temporizadorOcultar) clearTimeout(temporizadorOcultar)
     root.removeEventListener('click', despachar, true)
     root.removeEventListener('dragenter', alArrastrar)
     root.removeEventListener('dragover', alArrastrar)
