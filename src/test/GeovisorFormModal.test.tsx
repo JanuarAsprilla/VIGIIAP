@@ -782,3 +782,39 @@ describe('GeovisorFormModal — categoría por módulo', () => {
   })
 })
 
+describe('GeovisorFormModal — capas nuevas del servidor en el selector', () => {
+  const conNuevas: WorkspaceOption[] = [
+    {
+      id: 't_15_geologia', nombre: 'Geologia', totalCapas: 2,
+      capas: [
+        { id: 't_15_geologia:unidades', nombre: 'Unidades', tipo: 'vectorial' },
+        { id: 't_15_geologia:fallas', nombre: 'Fallas', tipo: 'vectorial', nueva: true },
+      ],
+    },
+    { id: 't_20_hidrologia', nombre: 'Hidrologia', totalCapas: 1, capas: [{ id: 't_20_hidrologia:rios', nombre: 'Ríos', tipo: 'vectorial' }] },
+  ]
+
+  test('avisa en el tema cuántas capas nuevas tiene y marca solo la capa nueva', async () => {
+    vi.mocked(useWorkspacesDeConexion).mockReturnValue({
+      data: conNuevas, isFetching: false,
+    } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+
+    expect(screen.getAllByText('1 nueva')).toHaveLength(1)
+    await abrirTema(user, /Geologia/i)
+    expect(screen.getAllByText('Nueva')).toHaveLength(1)
+  })
+
+  test('sin capas nuevas no muestra avisos', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+
+    expect(screen.queryByText('Nueva')).not.toBeInTheDocument()
+    expect(screen.queryByText(/\d+ nuevas?$/)).not.toBeInTheDocument()
+  })
+})
+

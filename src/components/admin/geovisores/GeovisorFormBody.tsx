@@ -466,6 +466,11 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                               <ChevronRight aria-hidden="true"
                                 className={`w-3.5 h-3.5 text-text-faint shrink-0 transition-transform ${abierto ? 'rotate-90' : ''}`} />
                               <span className="text-[0.62rem] font-bold uppercase tracking-wider text-text-faint flex-1 truncate">{w.nombre}</span>
+                              {w.capas.some((c) => c.nueva) && (
+                                <span className="rounded-full bg-accent/15 text-primary-800 px-1.5 py-0.5 text-[0.55rem] font-bold shrink-0">
+                                  {w.capas.filter((c) => c.nueva).length} nueva{w.capas.filter((c) => c.nueva).length === 1 ? '' : 's'}
+                                </span>
+                              )}
                               <span className="text-[0.58rem] text-text-muted shrink-0">
                                 {w.capas.length} capa{w.capas.length === 1 ? '' : 's'}
                               </span>
@@ -495,6 +500,9 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                                           <input type="checkbox" checked={checked} onChange={() => toggleCapa(c)}
                                             className="w-3.5 h-3.5 rounded border-border text-primary-800 focus:ring-primary-800/30 shrink-0" />
                                           <span className="truncate flex-1">{c.nombre}</span>
+                                          {c.nueva && (
+                                            <span className="rounded-full bg-accent/15 text-primary-800 px-1.5 py-0.5 text-[0.55rem] font-bold shrink-0">Nueva</span>
+                                          )}
                                         </label>
                                         <span className={`text-[0.55rem] font-semibold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${
                                           c.tipo === 'raster' ? 'bg-gold-500/12 text-gold-500' : 'bg-primary-500/12 text-primary-500'
