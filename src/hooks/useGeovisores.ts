@@ -70,7 +70,12 @@ export function useCapasDeGeovisor(slug: string | null | undefined) {
     queryFn:  () => api.get(`/geovisores/${slug}/capas`) as Promise<{ temas: TemaCapas[] }>,
     select:   (res) => res.temas,
     enabled:  !!slug,
-    staleTime: 60_000,
+    // Las capas se publican en GeoServer sin pasar por esta plataforma: se vuelve a pedir el
+    // catálogo cada minuto (React Query lo pausa solo con la pestaña oculta) y al volver a la
+    // ventana, para que una capa nueva aparezca sin recargar la página.
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   })
 }
 

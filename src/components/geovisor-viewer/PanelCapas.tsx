@@ -102,6 +102,7 @@ export default function PanelCapas({ temas, capasActivas, colorPorTema, apiBase,
   const [colapsado, setColapsado] = useState(false)
 
   const idsActivos = new Set(capasActivas.map((c) => c.capa.id))
+  const totalNuevas = temas.reduce((n, t) => n + t.capas.filter((c) => c.nueva).length, 0)
 
   const toggleTema = (temaId: string) => setTemasExpandidos((prev) => {
     const next = new Set(prev)
@@ -128,6 +129,11 @@ export default function PanelCapas({ temas, capasActivas, colorPorTema, apiBase,
           className="flex items-center gap-2 px-3 py-2.5 text-xs font-bold text-text uppercase tracking-wide shrink-0">
           <Layers className="w-4 h-4 text-primary-700" aria-hidden="true" />
           Capas
+          {totalNuevas > 0 && (
+            <span className="rounded-full bg-accent/15 text-primary-800 px-1.5 py-0.5 text-[0.55rem] font-bold normal-case tracking-normal">
+              {totalNuevas === 1 ? '1 nueva' : `${totalNuevas} nuevas`}
+            </span>
+          )}
           <ChevronDown className={`w-3.5 h-3.5 ml-auto text-text-muted transition-transform ${colapsado ? '-rotate-90' : ''}`} />
         </button>
 
@@ -165,12 +171,18 @@ export default function PanelCapas({ temas, capasActivas, colorPorTema, apiBase,
               )}
               {temas.map((tema) => {
                 const abierto = temasExpandidos.has(tema.id)
+                const nuevasDelTema = tema.capas.filter((c) => c.nueva).length
                 return (
                   <div key={tema.id} className="border border-border/60 rounded-lg overflow-hidden">
                     <button type="button" onClick={() => toggleTema(tema.id)}
                       className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-semibold text-text hover:bg-bg-alt transition-colors">
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ background: colorPorTema[tema.id] ?? colorDeTemaRespaldo(tema.id) }} aria-hidden="true" />
                       <span className="truncate flex-1 text-left">{tema.nombre}</span>
+                      {nuevasDelTema > 0 && (
+                        <span className="rounded-full bg-accent/15 text-primary-800 px-1.5 py-0.5 text-[0.55rem] font-bold">
+                          {nuevasDelTema} {nuevasDelTema === 1 ? 'nueva' : 'nuevas'}
+                        </span>
+                      )}
                       <span className="text-[0.6rem] text-text-muted">{tema.capas.length}</span>
                       <ChevronRight className={`w-3.5 h-3.5 text-text-muted transition-transform ${abierto ? 'rotate-90' : ''}`} />
                     </button>
@@ -181,6 +193,9 @@ export default function PanelCapas({ temas, capasActivas, colorPorTema, apiBase,
                             <input type="checkbox" checked={idsActivos.has(capa.id)} onChange={() => onToggleCapa(capa, tema.id)}
                               className="w-3.5 h-3.5 rounded border-border text-primary-800 focus:ring-primary-800/30 shrink-0" />
                             <span className="truncate flex-1">{capa.nombre}</span>
+                            {capa.nueva && (
+                              <span className="rounded-full bg-accent/15 text-primary-800 px-1.5 py-0.5 text-[0.55rem] font-bold shrink-0">Nueva</span>
+                            )}
                             <span className="text-[0.55rem] uppercase font-bold text-text-muted/70 shrink-0">{capa.tipo === 'raster' ? 'raster' : 'vector'}</span>
                           </label>
                         ))}

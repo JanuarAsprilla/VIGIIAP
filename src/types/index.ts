@@ -215,6 +215,8 @@ export interface GeovisorRaw {
   capasSeleccionadas: string[]
   /** Subconjunto de capasSeleccionadas con "fichas por punto" habilitado -- ver useFichasPunto.ts. */
   capasConFicha: string[]
+  /** true = además de capasSeleccionadas, el visor muestra las capas nuevas que se publiquen en GeoServer dentro de los mismos temas. */
+  incluirCapasNuevas: boolean
   colorPorTema: Record<string, string>
   centro: { lat: number; lng: number }
   zoomInicial: number
@@ -240,6 +242,7 @@ export interface GeovisorInput {
   workspacesGeoserver: string[]
   capasSeleccionadas: string[]
   capasConFicha: string[]
+  incluirCapasNuevas: boolean
   colorPorTema: Record<string, string>
   centroLat: number
   centroLng: number
@@ -298,6 +301,8 @@ export interface CapaGeoserver {
   tipo: 'vectorial' | 'raster'
   bbox?: BboxGeografico
   tema: string
+  /** Publicada en GeoServer hace menos de una semana (el backend la marca). */
+  nueva?: boolean
 }
 
 export interface TemaCapas {
