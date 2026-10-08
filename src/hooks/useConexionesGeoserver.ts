@@ -21,7 +21,7 @@ export function useWorkspacesDeConexion(conexionId: string | null | undefined) {
     queryKey: KEYS.workspaces(conexionId),
     queryFn:  () => api.get(`/admin/conexiones-geoserver/${conexionId}/workspaces`),
     enabled:  !!conexionId,
-    staleTime: 60_000,
+    staleTime: 30_000,
   })
 }
 
