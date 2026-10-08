@@ -59,6 +59,8 @@ interface FormState {
   capasSeleccionadas: string[]
   /** Subconjunto de capasSeleccionadas con "fichas por punto" habilitado. */
   capasConFicha: string[]
+  /** Mostrar solas las capas nuevas que se publiquen en GeoServer dentro de los temas usados. */
+  incluirCapasNuevas: boolean
   colorPorTema: Record<string, string>
   centroLat: number
   centroLng: number
@@ -77,7 +79,7 @@ interface FormState {
 function emptyForm(): FormState {
   return {
     titulo: '', subtitulo: '', descripcion: '', cita: '', categoria: '',
-    conexionGeoserverId: '', capasSeleccionadas: [], capasConFicha: [], colorPorTema: {},
+    conexionGeoserverId: '', capasSeleccionadas: [], capasConFicha: [], incluirCapasNuevas: true, colorPorTema: {},
     centroLat: 5.55, centroLng: -76.6, zoomInicial: 8, basemapDefecto: 'calles',
     areaMaxHa: '', presetsArea: [], visibilidad: 'publico',
     thumbnailUrl: '', mostrarMetricas: true, mostrarImagenes: false, campoImagenUrl: '',
@@ -90,7 +92,7 @@ function formFromGeovisor(g: GeovisorRaw): FormState {
     titulo: g.titulo, subtitulo: g.subtitulo ?? '', descripcion: g.descripcion ?? '',
     cita: g.cita ?? '', categoria: g.categoria ?? '',
     conexionGeoserverId: g.conexionGeoserverId, capasSeleccionadas: g.capasSeleccionadas,
-    capasConFicha: g.capasConFicha,
+    capasConFicha: g.capasConFicha, incluirCapasNuevas: g.incluirCapasNuevas,
     colorPorTema: g.colorPorTema, centroLat: g.centro.lat, centroLng: g.centro.lng,
     zoomInicial: g.zoomInicial, basemapDefecto: g.basemapDefecto,
     areaMaxHa: g.areaMaxHa != null ? String(g.areaMaxHa) : '',
@@ -299,6 +301,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
       workspacesGeoserver: temasSeleccionados,
       capasSeleccionadas: form.capasSeleccionadas,
       capasConFicha: capasConFichaActivas,
+      incluirCapasNuevas: form.incluirCapasNuevas,
       colorPorTema: Object.fromEntries(
         Object.entries(form.colorPorTema).filter(([id]) => temasSeleccionados.includes(id)),
       ),
@@ -540,6 +543,21 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
                       ? 'Sin selección — el geovisor mostrará todas las capas de esta conexión.'
                       : `${form.capasSeleccionadas.length} capa${form.capasSeleccionadas.length === 1 ? '' : 's'} seleccionada${form.capasSeleccionadas.length === 1 ? '' : 's'}, de ${temasSeleccionados.length} tema${temasSeleccionados.length === 1 ? '' : 's'} distinto${temasSeleccionados.length === 1 ? '' : 's'}.`}
                   </p>
+                  {form.capasSeleccionadas.length > 0 && (
+                    <div className="flex items-start justify-between gap-3 pt-1">
+                      <div>
+                        <span className="text-sm text-text">Mostrar automáticamente las capas nuevas de estos temas</span>
+                        <p className="text-[0.65rem] text-text-muted leading-snug">
+                          Cuando se publique una capa nueva en GeoServer dentro de {temasSeleccionados.length === 1 ? 'este tema' : 'estos temas'}, aparece sola en el visor, sin editar el geovisor. Las capas de comunidades étnicas nunca se muestran.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={form.incluirCapasNuevas}
+                        onChange={(v) => setForm((f) => ({ ...f, incluirCapasNuevas: v }))}
+                        label="Mostrar automáticamente las capas nuevas de estos temas"
+                      />
+                    </div>
+                  )}
                 </>
               )}
             </AccordionSection>

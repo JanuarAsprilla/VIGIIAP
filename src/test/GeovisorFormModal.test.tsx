@@ -81,7 +81,7 @@ function makeGeovisor(overrides: Partial<GeovisorRaw> = {}): GeovisorRaw {
   return {
     id: '1', slug: 'geologia-choco', titulo: 'Geología del Chocó', subtitulo: 'Unidades',
     descripcion: 'Descripción', cita: 'Cita sugerida', categoria: 'Geología', conexionGeoserverId: 'c1',
-    workspacesGeoserver: ['t_15_geologia'], capasSeleccionadas: ['t_15_geologia:fallas'], capasConFicha: [],
+    workspacesGeoserver: ['t_15_geologia'], capasSeleccionadas: ['t_15_geologia:fallas'], capasConFicha: [], incluirCapasNuevas: false,
     colorPorTema: { t_15_geologia: '#123456' },
     centro: { lat: 5.55, lng: -76.6 }, zoomInicial: 9, basemapDefecto: 'satelite',
     areaMaxHa: 5000, presetsArea: [{ nombre: 'Zona norte', geometria: { type: 'Polygon', coordinates: [[[1, 2], [3, 4], [5, 6], [1, 2]]] } }],
@@ -696,6 +696,65 @@ describe('GeovisorFormModal — fichas por punto', () => {
     await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ capasConFicha: [] }))
+  })
+
+  describe('capas nuevas automáticas', () => {
+    const NOMBRE_SWITCH = /Mostrar automáticamente las capas nuevas/i
+
+    test('no ofrece la opción mientras no haya capas elegidas', async () => {
+      const user = userEvent.setup()
+      render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+      await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+
+      expect(screen.queryByRole('switch', { name: NOMBRE_SWITCH })).not.toBeInTheDocument()
+    })
+
+    test('en un geovisor nuevo la opción aparece activada al elegir una capa', async () => {
+      const user = userEvent.setup()
+      render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+      await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+      await abrirTema(user, /Geologia/i)
+      await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+
+      expect(screen.getByRole('switch', { name: NOMBRE_SWITCH })).toHaveAttribute('aria-checked', 'true')
+    })
+
+    test('incluirCapasNuevas llega en el payload (true por defecto al crear)', async () => {
+      const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+      vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+      const user = userEvent.setup()
+      render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+      await user.type(screen.getByLabelText(/^Título/i), 'Geología')
+      await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+      await abrirTema(user, /Geologia/i)
+      await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+      await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+
+      expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ incluirCapasNuevas: true }))
+    })
+
+    test('apagar la opción envía incluirCapasNuevas en false', async () => {
+      const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+      vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+      const user = userEvent.setup()
+      render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+      await user.type(screen.getByLabelText(/^Título/i), 'Geología')
+      await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+      await abrirTema(user, /Geologia/i)
+      await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+      await user.click(screen.getByRole('switch', { name: NOMBRE_SWITCH }))
+      await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+
+      expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ incluirCapasNuevas: false }))
+    })
+
+    test('al editar un geovisor existente respeta lo guardado (no lo activa por su cuenta)', () => {
+      render(<GeovisorFormModal open editing={makeGeovisor({ capasSeleccionadas: ['t_15_geologia:fallas'], incluirCapasNuevas: false })} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+      expect(screen.getByRole('switch', { name: NOMBRE_SWITCH })).toHaveAttribute('aria-checked', 'false')
+    })
   })
 
   test('al editar un geovisor con capasConFicha ya guardado, precarga el tipo con fichas', () => {
