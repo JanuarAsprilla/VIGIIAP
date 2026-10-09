@@ -125,7 +125,7 @@ describe('MediosFichaGrid — edición y borrado', () => {
     await user.type(campo, 'Vista frontal')
     await user.tab()
 
-    expect(mutate).toHaveBeenCalledWith({ medioId: 'm1', leyenda: 'Vista frontal' })
+    expect(mutate).toHaveBeenCalledWith({ medioId: 'm1', leyenda: 'Vista frontal' }, expect.objectContaining({ onError: expect.any(Function) }))
   })
 
   test('eliminar un medio llama a la mutación de borrado con su id', async () => {
@@ -135,7 +135,7 @@ describe('MediosFichaGrid — edición y borrado', () => {
     render(<MediosFichaGrid configId="cfg1" valor="EST-01" medios={[medio()]} />)
 
     await user.click(screen.getByTitle('Eliminar'))
-    expect(mutate).toHaveBeenCalledWith('m1')
+    expect(mutate).toHaveBeenCalledWith('m1', expect.objectContaining({ onError: expect.any(Function) }))
   })
 
   test('mover el segundo medio "antes" reordena y llama a la mutación con el nuevo orden', async () => {
@@ -147,7 +147,7 @@ describe('MediosFichaGrid — edición y borrado', () => {
     const botones = screen.getAllByTitle('Mover antes')
     await user.click(botones[1])
 
-    expect(mutate).toHaveBeenCalledWith({ valor: 'EST-01', ids: ['b', 'a'] })
+    expect(mutate).toHaveBeenCalledWith({ valor: 'EST-01', ids: ['b', 'a'] }, expect.objectContaining({ onError: expect.any(Function) }))
   })
 
   test('el primer medio no puede moverse "antes" (deshabilitado)', () => {

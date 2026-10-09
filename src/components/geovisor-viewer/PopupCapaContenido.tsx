@@ -86,7 +86,7 @@ function TarjetaFeature({ feature, presentacion, nombreCapa, onVerFicha }: {
 
   return (
     <div className="space-y-1.5">
-      {typeof urlImagen === 'string' && urlImagen ? (
+      {typeof urlImagen === 'string' && urlImagen && isTrustedUrl(urlImagen) ? (
         <img src={urlImagen} alt={`Foto de ${nombreCapa}`} className="w-full h-24 object-cover rounded-lg" loading="lazy" />
       ) : presentacion.mostrarImagenes ? (
         <div className="w-full h-16 rounded-lg bg-bg-alt flex items-center justify-center text-text-muted/50">

@@ -114,6 +114,11 @@ export default function MediosFichaGrid({ configId, valor, medios }: {
 
   const [subiendo, setSubiendo] = useState<Subiendo[]>([])
   const [rechazados, setRechazados] = useState<ArchivoRechazado[]>([])
+  // Reordenar/editar/eliminar fallaban en silencio -- sin esto, una sesión
+  // vencida a mitad de edición o un medio ya borrado por otra pestaña no
+  // dejaba ninguna señal visible; el campo de leyenda/créditos seguía
+  // mostrando el texto tecleado como si se hubiera guardado.
+  const [errorAccion, setErrorAccion] = useState<string | null>(null)
 
   const ordenados = [...medios].sort((a, b) => a.orden - b.orden)
   const nImagenes = ordenados.filter((m) => m.tipo === 'imagen').length + subiendo.filter((s) => s.tipo === 'imagen').length
@@ -171,6 +176,13 @@ export default function MediosFichaGrid({ configId, valor, medios }: {
     <div className="space-y-3">
       <MedioDropzone onArchivos={handleArchivos} disabled={nImagenes >= MAX_IMAGENES && nVideos >= MAX_VIDEOS} />
 
+      {errorAccion && (
+        <p className="flex items-center gap-1.5 text-[0.65rem] text-red-600">
+          <AlertTriangle className="w-3 h-3 shrink-0" />
+          <span className="truncate">{errorAccion}</span>
+        </p>
+      )}
+
       {rechazados.length > 0 && (
         <div className="space-y-1">
           {rechazados.map((r, i) => (
@@ -194,10 +206,23 @@ export default function MediosFichaGrid({ configId, valor, medios }: {
                 if (nuevoIdx < 0 || nuevoIdx >= ordenados.length) return
                 const copia = [...ordenados]
                 ;[copia[i], copia[nuevoIdx]] = [copia[nuevoIdx], copia[i]]
-                reordenarMedios.mutate({ valor, ids: copia.map((m) => m.id) })
+                setErrorAccion(null)
+                reordenarMedios.mutate({ valor, ids: copia.map((m) => m.id) }, {
+                  onError: (err) => setErrorAccion(getApiErrorMessage(err, 'No se pudo reordenar')),
+                })
               }}
-              onEliminar={() => eliminarMedio.mutate(medio.id)}
-              onActualizar={(data) => actualizarMedio.mutate({ medioId: medio.id, ...data })}
+              onEliminar={() => {
+                setErrorAccion(null)
+                eliminarMedio.mutate(medio.id, {
+                  onError: (err) => setErrorAccion(getApiErrorMessage(err, 'No se pudo eliminar')),
+                })
+              }}
+              onActualizar={(data) => {
+                setErrorAccion(null)
+                actualizarMedio.mutate({ medioId: medio.id, ...data }, {
+                  onError: (err) => setErrorAccion(getApiErrorMessage(err, 'No se pudo guardar')),
+                })
+              }}
             />
           ))}
           {subiendo.map((s) => (
