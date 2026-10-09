@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import GestionGeovisores from '@/pages/admin/GestionGeovisores'
@@ -65,6 +65,14 @@ function makeGeovisor(overrides: Record<string, unknown> = {}) {
 
 function makeConexion(overrides: Record<string, unknown> = {}) {
   return { id: 'conexion-1', nombre: 'GeoServer institucional', url: 'https://geoserver.test/geoserver', usuario_lectura: 'lector', timeout_ms: 20000, activo: true, creado_en: '', actualizado_en: '', ...overrides }
+}
+
+/** Avanza con «Siguiente» hasta el último paso y pulsa «Crear geovisor». */
+async function crearGeovisor(user: ReturnType<typeof userEvent.setup>) {
+  for (let i = 0; i < 5 && !screen.queryByRole('button', { name: /Crear geovisor/i }); i++) {
+    await user.click(screen.getByRole('button', { name: /Siguiente/i }))
+  }
+  await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
 }
 
 beforeEach(() => {
@@ -324,7 +332,7 @@ describe('GestionGeovisores — formulario de creación', () => {
     render(<GestionGeovisores />)
     await user.click(screen.getByRole('button', { name: /Nuevo geovisor/i }))
     await user.type(screen.getByLabelText(/^Título/i), 'Ab')
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(await screen.findByText('Mínimo 3 caracteres')).toBeInTheDocument()
     expect(mutateAsync).not.toHaveBeenCalled()
@@ -339,9 +347,9 @@ describe('GestionGeovisores — formulario de creación', () => {
     await user.click(screen.getByRole('button', { name: /Nuevo geovisor/i }))
     await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'conexion-1')
-    await user.click(screen.getByRole('button', { name: /Visibilidad y presentación/i }))
+    await user.click(within(screen.getByRole('navigation', { name: /Pasos/i })).getByRole('button', { name: /Publicar$/ }))
     await user.click(screen.getByRole('switch', { name: 'Mostrar imágenes en el popup' }))
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(await screen.findByText('Indica qué atributo trae la URL de la imagen')).toBeInTheDocument()
     expect(mutateAsync).not.toHaveBeenCalled()
@@ -356,7 +364,7 @@ describe('GestionGeovisores — formulario de creación', () => {
     await user.click(screen.getByRole('button', { name: /Nuevo geovisor/i }))
     await user.type(screen.getByLabelText(/^Título/i), 'Hidrología Amazónica')
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'conexion-1')
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
       titulo: 'Hidrología Amazónica',

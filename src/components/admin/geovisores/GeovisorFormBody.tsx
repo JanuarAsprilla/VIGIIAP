@@ -1,113 +1,31 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import {
-  X, Loader2, AlertCircle, Plus, Trash2, Globe, Users, ShieldCheck,
-  Layers, Map as MapIcon, Eye, Search, MapPinned, ChevronRight, Images,
-} from 'lucide-react'
+import { X, Loader2, AlertCircle, ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import { panelAnim } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
 import { useCreateGeovisor, useUpdateGeovisor, useUploadGeovisorThumbnail } from '@/hooks/useGeovisores'
 import { useCategoriasList } from '@/hooks/useCategorias'
 import { useCapasSinConfigFichas } from '@/hooks/useFichasPunto'
-import Switch from '@/components/ui/Switch'
-import ThumbnailDropzone from '@/components/ui/ThumbnailDropzone'
-import AccordionSection from './AccordionSection'
 import GeovisorMapaConstructor from './GeovisorMapaConstructor'
-import CategoryCombobox from '@/components/admin/CategoryCombobox'
-import FichaCapaConfigRow from './fichas/FichaCapaConfigRow'
-import SelectorTipoGeovisor from './SelectorTipoGeovisor'
+import PasosGeovisor, { type PasoInfo } from './PasosGeovisor'
+import PasoInformacion from './pasos/PasoInformacion'
+import PasoCapas from './pasos/PasoCapas'
+import PasoFichas from './pasos/PasoFichas'
+import PasoMapa from './pasos/PasoMapa'
+import PasoPublicar from './pasos/PasoPublicar'
+import {
+  emptyForm, formFromGeovisor, pasoDeError, workspaceDeCapa,
+  type CapaWorkspace, type FormState, type PasoId,
+} from './formState'
 import { tipoDeGeovisor, capasVectorialesSeleccionadas, type TipoGeovisor } from './tiposGeovisor'
-import type { GeovisorRaw, GeovisorInput, MapaVisibilidad, PresetArea, WorkspaceOption } from '@/types'
+import type { GeovisorRaw, GeovisorInput, PresetArea } from '@/types'
 import type { FormErrors } from '@/types/forms'
 
-type CapaWorkspace = WorkspaceOption['capas'][number]
-
-/** Workspace ("tema") al que pertenece una capa, a partir de su id "workspace:layername". */
-function workspaceDeCapa(capaId: string): string {
-  return capaId.split(':')[0] ?? capaId
+const ORDEN_PASOS: readonly PasoId[] = ['informacion', 'capas', 'fichas', 'mapa', 'publicar']
+const ETIQUETA_PASO: Record<PasoId, string> = {
+  informacion: 'Información', capas: 'Capas', fichas: 'Fichas', mapa: 'Mapa', publicar: 'Publicar',
 }
-
-const BASEMAPS = [
-  { id: 'calles', label: 'Calles' },
-  { id: 'claro', label: 'Claro' },
-  { id: 'oscuro', label: 'Oscuro' },
-  { id: 'satelite', label: 'Satélite' },
-  { id: 'hibrido', label: 'Híbrido' },
-  { id: 'topografico', label: 'Topográfico' },
-  { id: 'relieve', label: 'Relieve' },
-]
-
-const VISIBILIDAD = [
-  { value: 'publico', label: 'Público', desc: 'Visible para todos', Icon: Globe, border: 'border-primary-600', bg: 'bg-primary-600/8', text: 'text-primary-700' },
-  { value: 'usuarios', label: 'Usuarios', desc: 'Solo usuarios registrados', Icon: Users, border: 'border-gold-400', bg: 'bg-gold-400/10', text: 'text-gold-400' },
-  { value: 'acreditados', label: 'Acreditados', desc: 'Investigadores y admins', Icon: ShieldCheck, border: 'border-magenta', bg: 'bg-magenta/10', text: 'text-magenta' },
-] as const
-
-const PALETA_AUTO = ['#1B4332', '#B08D57', '#C0357C', '#2563EB', '#B45309', '#0F766E', '#7C3AED', '#DC2626']
-
-type CampoPopupForm = { campo: string; alias: string }
-
-interface FormState {
-  titulo: string
-  subtitulo: string
-  descripcion: string
-  cita: string
-  categoria: string
-  conexionGeoserverId: string
-  /** IDs de capa ("workspace:layername") — pueden venir de distintos workspaces/temas. */
-  capasSeleccionadas: string[]
-  /** Subconjunto de capasSeleccionadas con "fichas por punto" habilitado. */
-  capasConFicha: string[]
-  /** Mostrar solas las capas nuevas que se publiquen en GeoServer dentro de los temas usados. */
-  incluirCapasNuevas: boolean
-  colorPorTema: Record<string, string>
-  centroLat: number
-  centroLng: number
-  zoomInicial: number
-  basemapDefecto: string
-  areaMaxHa: string
-  presetsArea: PresetArea[]
-  visibilidad: MapaVisibilidad
-  thumbnailUrl: string
-  mostrarMetricas: boolean
-  mostrarImagenes: boolean
-  campoImagenUrl: string
-  camposPopup: CampoPopupForm[]
-}
-
-function emptyForm(): FormState {
-  return {
-    titulo: '', subtitulo: '', descripcion: '', cita: '', categoria: '',
-    conexionGeoserverId: '', capasSeleccionadas: [], capasConFicha: [], incluirCapasNuevas: true, colorPorTema: {},
-    centroLat: 5.55, centroLng: -76.6, zoomInicial: 8, basemapDefecto: 'calles',
-    areaMaxHa: '', presetsArea: [], visibilidad: 'publico',
-    thumbnailUrl: '', mostrarMetricas: true, mostrarImagenes: false, campoImagenUrl: '',
-    camposPopup: [],
-  }
-}
-
-function formFromGeovisor(g: GeovisorRaw): FormState {
-  return {
-    titulo: g.titulo, subtitulo: g.subtitulo ?? '', descripcion: g.descripcion ?? '',
-    cita: g.cita ?? '', categoria: g.categoria ?? '',
-    conexionGeoserverId: g.conexionGeoserverId, capasSeleccionadas: g.capasSeleccionadas,
-    capasConFicha: g.capasConFicha, incluirCapasNuevas: g.incluirCapasNuevas,
-    colorPorTema: g.colorPorTema, centroLat: g.centro.lat, centroLng: g.centro.lng,
-    zoomInicial: g.zoomInicial, basemapDefecto: g.basemapDefecto,
-    areaMaxHa: g.areaMaxHa != null ? String(g.areaMaxHa) : '',
-    presetsArea: g.presetsArea,
-    visibilidad: g.visibilidad, thumbnailUrl: g.thumbnailUrl ?? '',
-    mostrarMetricas: g.presentacion.mostrarMetricas, mostrarImagenes: g.presentacion.mostrarImagenes,
-    campoImagenUrl: g.presentacion.campoImagenUrl ?? '', camposPopup: g.presentacion.camposPopup,
-  }
-}
-
-const inputCls = (invalid?: boolean) =>
-  `w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
-    invalid ? 'border-red-400' : 'border-border focus:border-primary-800'
-  }`
-const labelCls = 'block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5'
 
 export default function GeovisorFormBody({ editing, onClose, onSaved }: {
   editing: GeovisorRaw | null
@@ -117,7 +35,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
   const [form, setForm] = useState<FormState>(() => editing ? formFromGeovisor(editing) : emptyForm())
   const [errors, setErrors] = useState<FormErrors>({})
   const [tipo, setTipo] = useState<TipoGeovisor>(() => tipoDeGeovisor(editing?.capasConFicha ?? []))
-  const [filtroCapa, setFiltroCapa] = useState('')
+  const [paso, setPaso] = useState<PasoId>('informacion')
   const [uploadedThumb, setUploadedThumb] = useState<File | null>(null)
   // Distingue "nunca se tocó la miniatura" de "se quitó explícitamente" --
   // ThumbnailDropzone llama onFile(null) solo desde el botón "Quitar", nunca
@@ -132,6 +50,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
   const [temasExpandidos, setTemasExpandidos] = useState<Set<string>>(
     () => new Set(editing ? editing.capasSeleccionadas.map(workspaceDeCapa) : []),
   )
+  const cuerpoRef = useRef<HTMLDivElement>(null)
 
   const { data: conexiones = [] } = useConexionesGeoserverList()
   const { data: workspaces = [], isFetching: loadingWorkspaces } = useWorkspacesDeConexion(form.conexionGeoserverId || null)
@@ -167,16 +86,6 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
     setForm((f) => (f.capasSeleccionadas.length > 0 ? f : { ...f, capasSeleccionadas: capasLegado }))
     setTemasExpandidos((prev) => new Set([...prev, ...capasLegado.map(workspaceDeCapa)]))
   }, [editing, workspaces])
-
-  const gruposFiltrados = useMemo(() => {
-    const q = filtroCapa.trim().toLowerCase()
-    return workspaces
-      .map((w) => ({
-        ...w,
-        capas: q ? w.capas.filter((c) => c.nombre.toLowerCase().includes(q) || c.id.toLowerCase().includes(q)) : w.capas,
-      }))
-      .filter((w) => w.capas.length > 0)
-  }, [workspaces, filtroCapa])
 
   const catalogoCapas = useMemo(() => workspaces.flatMap((w) => w.capas), [workspaces])
 
@@ -244,15 +153,31 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
   const agregarPreset = (preset: PresetArea) => setForm((f) => ({ ...f, presetsArea: [...f.presetsArea, preset] }))
   const eliminarPreset = (nombre: string) => setForm((f) => ({ ...f, presetsArea: f.presetsArea.filter((p) => p.nombre !== nombre) }))
 
-  const addCampoPopup = () => setForm((f) => ({
-    ...f, camposPopup: [...f.camposPopup, { campo: '', alias: '' }],
+  // El paso "Fichas" solo existe en geovisores con fichas; si el admin cambia de
+  // tipo estando en él, se vuelve a "Capas" en vez de quedar en un paso inexistente.
+  const idsPasos = ORDEN_PASOS.filter((id) => id !== 'fichas' || tipo === 'fichas')
+  const pasoActivo = idsPasos.includes(paso) ? paso : 'capas'
+  const indicePaso = idsPasos.indexOf(pasoActivo)
+  const esUltimoPaso = indicePaso === idsPasos.length - 1
+
+  const pasosConError = new Set(Object.keys(errors).map(pasoDeError))
+  const pasoCompleto: Record<PasoId, boolean> = {
+    informacion: form.titulo.trim().length >= 3,
+    capas: !!form.conexionGeoserverId,
+    fichas: capasSinConfigFichas.length === 0,
+    mapa: true,
+    publicar: true,
+  }
+  const pasos: PasoInfo[] = idsPasos.map((id) => ({
+    id, label: ETIQUETA_PASO[id], conError: pasosConError.has(id), completo: pasoCompleto[id],
   }))
-  const updateCampoPopup = (i: number, patch: Partial<CampoPopupForm>) => setForm((f) => ({
-    ...f, camposPopup: f.camposPopup.map((c, idx) => idx === i ? { ...c, ...patch } : c),
-  }))
-  const removeCampoPopup = (i: number) => setForm((f) => ({
-    ...f, camposPopup: f.camposPopup.filter((_, idx) => idx !== i),
-  }))
+
+  const irAPaso = (id: PasoId) => {
+    setPaso(id)
+    cuerpoRef.current?.scrollTo?.({ top: 0 })
+  }
+  const irSiguiente = () => irAPaso(idsPasos[Math.min(indicePaso + 1, idsPasos.length - 1)])
+  const irAnterior = () => irAPaso(idsPasos[Math.max(indicePaso - 1, 0)])
 
   function validate(): GeovisorInput | null {
     const e: FormErrors = {}
@@ -282,11 +207,16 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
       e[`ficha-${id}`] = 'Elige el atributo identificador y pulsa «Habilitar» para poder guardar.'
     })
     if (capasSinConfigFichas.length > 0) {
-      e._root = 'Hay capas con fichas por punto sin su atributo identificador. Configúralas en cada capa.'
+      e._root = 'Hay capas con fichas por punto sin su atributo identificador. Configúralas en el paso «Fichas».'
     }
 
     setErrors(e)
-    if (Object.keys(e).length) return null
+    if (Object.keys(e).length) {
+      // Lleva al admin al primer paso con un campo por corregir.
+      const primero = ORDEN_PASOS.find((id) => Object.keys(e).some((k) => pasoDeError(k) === id))
+      if (primero) irAPaso(primero)
+      return null
+    }
 
     return {
       titulo: form.titulo.trim(),
@@ -320,8 +250,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
     }
   }
 
-  const handleSubmit = async (ev: FormEvent<HTMLFormElement>) => {
-    ev.preventDefault()
+  const guardar = async () => {
     const payload = validate()
     if (!payload) return
     try {
@@ -341,12 +270,28 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
     }
   }
 
+  // Enter dentro de un campo avanza al siguiente paso al crear; solo guarda en el
+  // último paso, o en cualquiera al editar (donde ya hay un geovisor completo).
+  const handleSubmit = (ev: FormEvent<HTMLFormElement>) => {
+    ev.preventDefault()
+    if (esUltimoPaso || editing) void guardar()
+    else irSiguiente()
+  }
+
   // Filtra también .capas a las marcadas — pasar el workspace completo aquí
   // dispararía un WMSTileLayer por cada capa publicada en ese tema (todas,
   // no solo la elegida), saturando GeoServer con peticiones de más.
   const workspacesSeleccionados = workspaces
     .filter((w) => temasSeleccionados.includes(w.id))
     .map((w) => ({ ...w, capas: w.capas.filter((c) => form.capasSeleccionadas.includes(c.id)) }))
+
+  const capasFichaConNombre = capasConFichaActivas.map((id) => ({
+    id, nombre: catalogoCapas.find((c) => c.id === id)?.nombre ?? id,
+  }))
+
+  // Todos los pasos quedan montados y solo se oculta el inactivo: así no se
+  // pierde lo escrito ni se vuelven a pedir los datos al volver a un paso.
+  const visiblePaso = (id: PasoId) => (pasoActivo === id ? '' : 'hidden')
 
   return (
     <div
@@ -358,325 +303,107 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
         className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-6xl my-8 flex flex-col lg:flex-row overflow-hidden"
         style={{ maxHeight: '90vh' }}
       >
-        {/* ── Panel izquierdo: configuración ── */}
-        <div className="flex flex-col min-h-0 lg:w-[26rem] lg:shrink-0 border-b lg:border-b-0 lg:border-r border-border">
+        {/* ── Panel izquierdo: asistente ── */}
+        <div className="flex flex-col min-h-0 lg:w-[30rem] lg:shrink-0 border-b lg:border-b-0 lg:border-r border-border">
           <div className="flex items-center justify-between px-6 py-5 border-b border-border shrink-0">
             <div>
               <h3 className="text-base font-bold text-text">{editing ? 'Editar geovisor' : 'Nuevo geovisor'}</h3>
-              <p className="text-xs text-text-muted mt-0.5">Configura la plantilla — mira el resultado en vivo a la derecha.</p>
+              <p className="text-xs text-text-muted mt-0.5">
+                Paso {indicePaso + 1} de {idsPasos.length} — el mapa muestra el resultado en vivo.
+              </p>
             </div>
-            <button onClick={onClose} disabled={isSaving}
+            <button onClick={onClose} disabled={isSaving} aria-label="Cerrar"
               className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors disabled:opacity-40">
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-3">
-            {errors._root && (
-              <p className="flex items-center gap-2 text-xs text-red-600 bg-red/10 border border-red-300/40 rounded-lg px-3 py-2">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />{errors._root}
-              </p>
-            )}
+          <PasosGeovisor pasos={pasos} actual={pasoActivo} onIr={irAPaso} />
 
-            <SelectorTipoGeovisor value={tipo} onChange={cambiarTipo} />
+          <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+            <div ref={cuerpoRef} className="flex-1 overflow-y-auto p-6 space-y-4">
+              {errors._root && (
+                <p role="alert" className="flex items-center gap-2 text-xs text-red-600 bg-red/10 border border-red-300/40 rounded-lg px-3 py-2">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />{errors._root}
+                </p>
+              )}
 
-            <AccordionSection n={1} title="Información general" hint="Cómo se presenta en el portal público" icon={Layers} defaultOpen>
-              <div>
-                <label htmlFor="gv-titulo" className={labelCls}>Título <span className="text-orange-500" aria-hidden="true">*</span></label>
-                <input id="gv-titulo" type="text" value={form.titulo} autoFocus placeholder="Ej: Geología del Chocó"
-                  onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
-                  className={inputCls(!!errors.titulo)} />
-                {errors.titulo && <p className="text-xs text-red-500 mt-1">{errors.titulo}</p>}
+              <div className={visiblePaso('informacion')}>
+                <PasoInformacion
+                  form={form} setForm={setForm} errors={errors}
+                  tipo={tipo} onCambiarTipo={cambiarTipo}
+                  categorias={categoriasCompartidas.filter((c) => c.modulos?.includes('geovisores')).map((c) => c.nombre)}
+                  onThumb={handleThumbChange} thumbRemoved={thumbRemoved}
+                />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="gv-subtitulo" className={labelCls}>Subtítulo</label>
-                  <input id="gv-subtitulo" type="text" value={form.subtitulo}
-                    onChange={(e) => setForm((f) => ({ ...f, subtitulo: e.target.value }))} className={inputCls()} />
-                </div>
-                <div>
-                  <label htmlFor="gv-categoria" className={labelCls}>Categoría</label>
-                  <CategoryCombobox
-                    id="gv-categoria"
-                    value={form.categoria}
-                    onChange={(cat) => setForm((f) => ({ ...f, categoria: cat }))}
-                    options={categoriasCompartidas.filter((c) => c.modulos?.includes('geovisores')).map((c) => c.nombre)}
+
+              <div className={visiblePaso('capas')}>
+                <PasoCapas
+                  form={form} setForm={setForm} errors={errors} tipo={tipo}
+                  conexiones={conexiones} workspaces={workspaces} cargando={loadingWorkspaces}
+                  temasSeleccionados={temasSeleccionados} temasExpandidos={temasExpandidos}
+                  onToggleTema={toggleTema} onToggleCapa={toggleCapa} onToggleFicha={toggleFicha} onSetColor={setColor}
+                />
+              </div>
+
+              {tipo === 'fichas' && (
+                <div className={visiblePaso('fichas')}>
+                  <PasoFichas
+                    conexionId={form.conexionGeoserverId} capas={capasFichaConNombre}
+                    sinConfigurar={capasSinConfigFichas} errors={errors}
                   />
                 </div>
-              </div>
-              <div>
-                <label htmlFor="gv-descripcion" className={labelCls}>Descripción</label>
-                <textarea id="gv-descripcion" rows={2} value={form.descripcion}
-                  onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))} className={inputCls()} />
-              </div>
-              <div>
-                <label htmlFor="gv-cita" className={labelCls}>Cita sugerida</label>
-                <input id="gv-cita" type="text" value={form.cita}
-                  onChange={(e) => setForm((f) => ({ ...f, cita: e.target.value }))} className={inputCls()} />
-              </div>
-              <ThumbnailDropzone label="Portada del geovisor" onFile={handleThumbChange} existing={thumbRemoved ? null : (form.thumbnailUrl || null)} />
-            </AccordionSection>
+              )}
 
-            <AccordionSection n={2} title="Conexión y capas" hint="Elige de dónde vienen los datos y qué mostrar" icon={Globe} defaultOpen>
-              <div>
-                <label htmlFor="gv-conexion" className={labelCls}>Conexión <span className="text-orange-500" aria-hidden="true">*</span></label>
-                <select id="gv-conexion" value={form.conexionGeoserverId}
-                  onChange={(e) => setForm((f) => ({ ...f, conexionGeoserverId: e.target.value, capasSeleccionadas: [], capasConFicha: [], colorPorTema: {} }))}
-                  className={inputCls(!!errors.conexionGeoserverId)}>
-                  <option value="">Selecciona una conexión…</option>
-                  {conexiones.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </select>
-                {errors.conexionGeoserverId && <p className="text-xs text-red-500 mt-1">{errors.conexionGeoserverId}</p>}
+              <div className={visiblePaso('mapa')}>
+                <PasoMapa form={form} setForm={setForm} errors={errors} />
               </div>
 
-              {!form.conexionGeoserverId ? (
-                <div className="flex flex-col items-center justify-center gap-2 py-8 px-4 border border-dashed border-border rounded-xl text-center">
-                  <MapPinned className="w-6 h-6 text-text-faint" aria-hidden="true" />
-                  <p className="text-sm text-text-muted">Elige una conexión GeoServer para ver la vista previa en vivo de sus capas.</p>
-                </div>
-              ) : loadingWorkspaces ? (
-                <p className="text-xs text-text-muted flex items-center gap-2 py-4"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Descubriendo capas…</p>
-              ) : workspaces.length === 0 ? (
-                <p className="text-xs text-text-muted py-4">Esta conexión no publica capas todavía.</p>
+              <div className={visiblePaso('publicar')}>
+                <PasoPublicar form={form} setForm={setForm} errors={errors} totalTemas={temasSeleccionados.length} />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 px-6 py-4 border-t border-border shrink-0">
+              {indicePaso === 0 ? (
+                <button type="button" onClick={onClose} disabled={isSaving}
+                  className="px-4 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 disabled:opacity-40 transition-colors">
+                  Cancelar
+                </button>
               ) : (
-                <>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-faint" aria-hidden="true" />
-                    <input type="text" value={filtroCapa} onChange={(e) => setFiltroCapa(e.target.value)}
-                      placeholder="Buscar capa por nombre…"
-                      className="w-full pl-8 pr-3 py-2 bg-[var(--card-bg)] border border-border rounded-lg text-xs focus:outline-none focus:border-primary-800 transition" />
-                  </div>
-                  {gruposFiltrados.length === 0 ? (
-                    <p className="text-xs text-text-muted py-3 text-center">Ninguna capa coincide con "{filtroCapa}".</p>
-                  ) : (
-                    <div className={`space-y-2 overflow-y-auto pr-1 ${tipo === 'fichas' ? 'max-h-[28rem]' : 'max-h-72'}`}>
-                      {gruposFiltrados.map((w, i) => {
-                        const activo = temasSeleccionados.includes(w.id)
-                        const color = form.colorPorTema[w.id] ?? PALETA_AUTO[i % PALETA_AUTO.length]
-                        // Con filtro de búsqueda activo se fuerza abierto para que los
-                        // resultados sean visibles de inmediato, sin un clic extra.
-                        const abierto = filtroCapa.trim() !== '' || temasExpandidos.has(w.id)
-                        return (
-                          <div key={w.id} className={`border rounded-lg overflow-hidden transition-colors ${activo ? 'border-primary-600 bg-primary-600/5' : 'border-border'}`}>
-                            <div
-                              role="button" tabIndex={0} aria-expanded={abierto}
-                              onClick={() => toggleTema(w.id)}
-                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTema(w.id) } }}
-                              className="flex items-center gap-2.5 p-2.5 cursor-pointer select-none">
-                              <ChevronRight aria-hidden="true"
-                                className={`w-3.5 h-3.5 text-text-faint shrink-0 transition-transform ${abierto ? 'rotate-90' : ''}`} />
-                              <span className="text-[0.62rem] font-bold uppercase tracking-wider text-text-faint flex-1 truncate">{w.nombre}</span>
-                              {w.capas.some((c) => c.nueva) && (
-                                <span className="rounded-full bg-accent/15 text-primary-800 px-1.5 py-0.5 text-[0.55rem] font-bold shrink-0">
-                                  {w.capas.filter((c) => c.nueva).length} nueva{w.capas.filter((c) => c.nueva).length === 1 ? '' : 's'}
-                                </span>
-                              )}
-                              <span className="text-[0.58rem] text-text-muted shrink-0">
-                                {w.capas.length} capa{w.capas.length === 1 ? '' : 's'}
-                              </span>
-                              {activo && (
-                                <>
-                                  <input type="color" value={color} onClick={(e) => e.stopPropagation()}
-                                    onChange={(e) => setColor(w.id, e.target.value)}
-                                    aria-label={`Color de ${w.nombre}`}
-                                    className="w-5 h-5 rounded-md border border-border cursor-pointer shrink-0" />
-                                  <span className="text-[0.58rem] text-text-muted font-mono shrink-0">{color}</span>
-                                </>
-                              )}
-                            </div>
-                            {abierto && (
-                              <div className="space-y-1 px-2.5 pb-2.5">
-                                {w.capas.map((c: CapaWorkspace) => {
-                                  const checked = form.capasSeleccionadas.includes(c.id)
-                                  const conFicha = form.capasConFicha.includes(c.id)
-                                  const modoFichas = tipo === 'fichas'
-                                  return (
-                                    <div key={c.id}>
-                                      <div
-                                        className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors ${
-                                          checked ? 'bg-primary-600/8 text-primary-800' : 'hover:bg-bg-alt text-text'
-                                        }`}>
-                                        <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
-                                          <input type="checkbox" checked={checked} onChange={() => toggleCapa(c)}
-                                            className="w-3.5 h-3.5 rounded border-border text-primary-800 focus:ring-primary-800/30 shrink-0" />
-                                          <span className="truncate flex-1">{c.nombre}</span>
-                                          {c.nueva && (
-                                            <span className="rounded-full bg-accent/15 text-primary-800 px-1.5 py-0.5 text-[0.55rem] font-bold shrink-0">Nueva</span>
-                                          )}
-                                        </label>
-                                        <span className={`text-[0.55rem] font-semibold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${
-                                          c.tipo === 'raster' ? 'bg-gold-500/12 text-gold-500' : 'bg-primary-500/12 text-primary-500'
-                                        }`}>{c.tipo === 'raster' ? 'raster' : 'vector'}</span>
-                                        {modoFichas && c.tipo === 'raster' && (
-                                          <span className="text-[0.58rem] text-text-faint shrink-0">sin fichas</span>
-                                        )}
-                                        {modoFichas && checked && c.tipo === 'vectorial' && (
-                                          <button type="button" onClick={() => toggleFicha(c.id)} aria-pressed={conFicha}
-                                            title={conFicha ? 'Esta capa exige fichas — clic para quitarlas' : 'Exigir fichas en esta capa'}
-                                            className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[0.58rem] font-semibold transition-colors ${
-                                              conFicha ? 'text-gold-500 bg-gold-500/12' : 'text-text-muted bg-bg-alt hover:text-text'
-                                            }`}>
-                                            <Images className="w-3 h-3" aria-hidden="true" />
-                                            {conFicha ? 'Con fichas' : 'Sin fichas'}
-                                          </button>
-                                        )}
-                                      </div>
-                                      {checked && conFicha && (
-                                        <div className="mt-1 ml-5">
-                                          <FichaCapaConfigRow conexionId={form.conexionGeoserverId} capaId={c.id} capaNombre={c.nombre} />
-                                          {errors[`ficha-${c.id}`] && capasSinConfigFichas.includes(c.id) && (
-                                            <p className="flex items-center gap-1.5 text-xs text-red-600 mt-1">
-                                              <AlertCircle className="w-3 h-3 shrink-0" /> {errors[`ficha-${c.id}`]}
-                                            </p>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                  {tipo === 'fichas' && form.capasConFicha.length === 0 && (
-                    <p className="text-[0.65rem] text-gold-500 leading-snug">
-                      Marca al menos una capa vectorial: cada una exigirá foto o video y descripción en todos sus puntos.
-                    </p>
-                  )}
-                  <p className="text-[0.65rem] text-text-muted">
-                    {form.capasSeleccionadas.length === 0
-                      ? 'Sin selección — el geovisor mostrará todas las capas de esta conexión.'
-                      : `${form.capasSeleccionadas.length} capa${form.capasSeleccionadas.length === 1 ? '' : 's'} seleccionada${form.capasSeleccionadas.length === 1 ? '' : 's'}, de ${temasSeleccionados.length} tema${temasSeleccionados.length === 1 ? '' : 's'} distinto${temasSeleccionados.length === 1 ? '' : 's'}.`}
-                  </p>
-                  {form.capasSeleccionadas.length > 0 && (
-                    <div className="flex items-start justify-between gap-3 pt-1">
-                      <div>
-                        <span className="text-sm text-text">Mostrar automáticamente las capas nuevas de estos temas</span>
-                        <p className="text-[0.65rem] text-text-muted leading-snug">
-                          Cuando se publique una capa nueva en GeoServer dentro de {temasSeleccionados.length === 1 ? 'este tema' : 'estos temas'}, aparece sola en el visor, sin editar el geovisor. Las capas de comunidades étnicas nunca se muestran.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={form.incluirCapasNuevas}
-                        onChange={(v) => setForm((f) => ({ ...f, incluirCapasNuevas: v }))}
-                        label="Mostrar automáticamente las capas nuevas de estos temas"
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-            </AccordionSection>
-
-            <AccordionSection n={3} title="Mapa y área" hint="El mapa de la derecha ES el control — arrastra y haz zoom ahí" icon={MapIcon}>
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                <div><span className="text-text-muted">Lat </span><span className="font-mono text-text">{form.centroLat}</span></div>
-                <div><span className="text-text-muted">Lng </span><span className="font-mono text-text">{form.centroLng}</span></div>
-                <div><span className="text-text-muted">Zoom </span><span className="font-mono text-text">{form.zoomInicial}</span></div>
-              </div>
-              <div>
-                <label htmlFor="gv-basemap" className={labelCls}>Mapa base por defecto</label>
-                <select id="gv-basemap" value={form.basemapDefecto}
-                  onChange={(e) => setForm((f) => ({ ...f, basemapDefecto: e.target.value }))} className={inputCls()}>
-                  {BASEMAPS.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="gv-area-max" className={labelCls}>
-                  Área máxima <span className="font-normal normal-case tracking-normal text-text-muted">(hectáreas, opcional)</span>
-                </label>
-                <input id="gv-area-max" type="number" min={0} step="any" value={form.areaMaxHa}
-                  onChange={(e) => setForm((f) => ({ ...f, areaMaxHa: e.target.value }))} className={inputCls(!!errors.areaMaxHa)} />
-                {errors.areaMaxHa && <p className="text-xs text-red-500 mt-1">{errors.areaMaxHa}</p>}
-              </div>
-              <p className="text-[0.65rem] text-text-muted leading-relaxed">
-                {form.presetsArea.length > 0
-                  ? `${form.presetsArea.length} preset${form.presetsArea.length === 1 ? '' : 's'} de área: ${form.presetsArea.map((p) => p.nombre).join(', ')}.`
-                  : 'Dibuja presets de área directamente en el mapa con el botón "Dibujar preset de área".'}
-              </p>
-            </AccordionSection>
-
-            <AccordionSection n={4} title="Visibilidad y presentación" hint="Quién lo ve, y cómo se muestra la información de cada capa" icon={Eye}>
-              <div>
-                <label className={labelCls}>Visibilidad</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {VISIBILIDAD.map(({ value, label, desc, Icon, border, bg, text }) => {
-                    const active = form.visibilidad === value
-                    return (
-                      <button key={value} type="button" onClick={() => setForm((f) => ({ ...f, visibilidad: value }))}
-                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${active ? `${border} ${bg}` : 'border-border bg-[var(--card-bg)] hover:bg-bg-alt'}`}>
-                        <Icon className={`w-4 h-4 ${active ? text : 'text-text-muted'}`} />
-                        <span className={`text-[0.65rem] font-bold uppercase tracking-wide ${active ? text : 'text-text-muted'}`}>{label}</span>
-                        <span className="text-[0.6rem] text-text-muted leading-tight hidden sm:block">{desc}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-text">Mostrar métricas al medir o consultar una capa</span>
-                <Switch checked={form.mostrarMetricas} onChange={(v) => setForm((f) => ({ ...f, mostrarMetricas: v }))} label="Mostrar métricas" />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-text">Mostrar imágenes en el popup</span>
-                <Switch checked={form.mostrarImagenes} onChange={(v) => setForm((f) => ({ ...f, mostrarImagenes: v }))} label="Mostrar imágenes en el popup" />
-              </div>
-              {form.mostrarImagenes && (
-                <div>
-                  <label htmlFor="gv-campo-img" className={labelCls}>Atributo con la URL de la imagen</label>
-                  <input id="gv-campo-img" type="text" value={form.campoImagenUrl} placeholder="Ej: foto_url"
-                    onChange={(e) => setForm((f) => ({ ...f, campoImagenUrl: e.target.value }))}
-                    className={inputCls(!!errors.campoImagenUrl)} />
-                  {errors.campoImagenUrl && <p className="text-xs text-red-500 mt-1">{errors.campoImagenUrl}</p>}
-                </div>
+                <button type="button" onClick={irAnterior} disabled={isSaving}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 disabled:opacity-40 transition-colors">
+                  <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Atrás
+                </button>
               )}
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className={labelCls}>
-                    Atributos a mostrar en el popup <span className="font-normal normal-case tracking-normal text-text-muted">(vacío = todos)</span>
-                  </label>
-                  <button type="button" onClick={addCampoPopup}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary-800 hover:text-primary-700">
-                    <Plus className="w-3.5 h-3.5" /> Agregar
-                  </button>
-                </div>
-                {form.camposPopup.map((c, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input type="text" value={c.campo} placeholder="Atributo"
-                      onChange={(e) => updateCampoPopup(i, { campo: e.target.value })} className={inputCls()} />
-                    <input type="text" value={c.alias} placeholder="Nombre legible"
-                      onChange={(e) => updateCampoPopup(i, { alias: e.target.value })} className={inputCls()} />
-                    <button type="button" onClick={() => removeCampoPopup(i)} title="Eliminar" aria-label={`Eliminar atributo ${i + 1}`}
-                      className="p-2 rounded-lg text-text-muted hover:text-red-dark hover:bg-red/10 transition-colors shrink-0">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                    {errors[`campo-${i}`] && <p className="text-xs text-red-500 col-span-2">{errors[`campo-${i}`]}</p>}
-                  </div>
-                ))}
-              </div>
-            </AccordionSection>
+              <div className="flex-1" />
 
-            <div className="flex gap-3 pt-2 sticky bottom-0 bg-[var(--card-bg)] pb-1 -mb-1">
-              <button type="button" onClick={onClose} disabled={isSaving}
-                className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 disabled:opacity-40 transition-colors">
-                Cancelar
-              </button>
-              <button type="submit" disabled={isSaving}
-                className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors">
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {isSaving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear geovisor'}
-              </button>
+              {editing && !esUltimoPaso && (
+                <button type="button" onClick={() => void guardar()} disabled={isSaving}
+                  className="px-4 py-2.5 border border-primary-800 rounded-lg text-sm font-semibold text-primary-800 hover:bg-primary-800/5 disabled:opacity-40 transition-colors">
+                  Guardar cambios
+                </button>
+              )}
+
+              {esUltimoPaso ? (
+                <button type="submit" disabled={isSaving}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors">
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" aria-hidden="true" />}
+                  {isSaving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Crear geovisor'}
+                </button>
+              ) : (
+                <button type="button" onClick={irSiguiente} disabled={isSaving}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors">
+                  Siguiente <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </button>
+              )}
             </div>
           </form>
         </div>
 
         {/* ── Panel derecho: vista previa en vivo ── */}
-        <div className="flex-1 min-h-[320px] lg:min-h-0 relative">
+        <div className={`flex-1 min-h-[200px] lg:min-h-0 relative lg:block ${pasoActivo === 'mapa' ? 'block' : 'hidden'}`}>
           <GeovisorMapaConstructor
             conexionId={form.conexionGeoserverId || null}
             workspacesSeleccionados={workspacesSeleccionados}

@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import GeovisorFormModal from '@/components/admin/geovisores/GeovisorFormModal'
@@ -91,9 +91,18 @@ function makeGeovisor(overrides: Partial<GeovisorRaw> = {}): GeovisorRaw {
   }
 }
 
-/** Abre una sección del acordeón por su título (secciones 3 y 4 empiezan cerradas). */
+/** Lleva el asistente a un paso por su nombre en el indicador de pasos. */
 async function abrirSeccion(user: ReturnType<typeof userEvent.setup>, titulo: RegExp) {
-  await user.click(screen.getByRole('button', { name: titulo }))
+  const paso = /Mapa/i.test(titulo.source) ? /Mapa$/ : /Publicar$/
+  await user.click(within(screen.getByRole('navigation', { name: /Pasos/i })).getByRole('button', { name: paso }))
+}
+
+/** Avanza con «Siguiente» hasta el último paso y pulsa «Crear geovisor». */
+async function crearGeovisor(user: ReturnType<typeof userEvent.setup>) {
+  for (let i = 0; i < 5 && !screen.queryByRole('button', { name: /Crear geovisor/i }); i++) {
+    await user.click(screen.getByRole('button', { name: /Siguiente/i }))
+  }
+  await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
 }
 
 /** Abre el desplegable de un tema/workspace en el picker de capas (empiezan cerrados salvo al editar). */
@@ -298,7 +307,7 @@ describe('GeovisorFormModal — mapa y área (constructor visual)', () => {
     await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
     await user.click(screen.getByRole('button', { name: 'agregar-preset-test' }))
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
       presetsArea: [{ nombre: 'Zona norte', geometria: { type: 'Polygon', coordinates: [[[1, 2], [3, 4], [5, 6], [1, 2]]] } }],
@@ -329,7 +338,7 @@ describe('GeovisorFormModal — mapa y área (constructor visual)', () => {
     // antes de correr la validación JS con un valor negativo) pero sigue siendo
     // inválido para la regla de negocio "> 0" -- ejercita el validate() real.
     fireEvent.change(screen.getByLabelText(/Área máxima/i), { target: { value: '0' } })
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(await screen.findByText('Debe ser un número positivo')).toBeInTheDocument()
     expect(mutateAsync).not.toHaveBeenCalled()
@@ -348,7 +357,7 @@ describe('GeovisorFormModal — atributos del popup (camposPopup)', () => {
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
     await user.click(screen.getByRole('button', { name: /^Agregar$/i }))
     await user.type(screen.getByPlaceholderText('Atributo'), 'MGUCR_SIMBL')
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(await screen.findByText('Completa el campo y su alias (o elimina la fila)')).toBeInTheDocument()
     expect(mutateAsync).not.toHaveBeenCalled()
@@ -377,7 +386,7 @@ describe('GeovisorFormModal — visibilidad', () => {
     await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
     await user.click(screen.getByRole('button', { name: /Acreditados/i }))
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ visibilidad: 'acreditados' }))
   })
@@ -392,7 +401,7 @@ describe('GeovisorFormModal — visibilidad', () => {
     await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
     await user.click(screen.getByRole('switch', { name: 'Mostrar imágenes en el popup' }))
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(await screen.findByText('Indica qué atributo trae la URL de la imagen')).toBeInTheDocument()
     expect(mutateAsync).not.toHaveBeenCalled()
@@ -422,7 +431,7 @@ describe('GeovisorFormModal — cierre', () => {
 
     await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(await screen.findByText('Ya existe un geovisor con ese título')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Título/i)).toBeInTheDocument()
@@ -464,7 +473,7 @@ describe('GeovisorFormModal — todos los campos opcionales se envían', () => {
     await user.type(screen.getByPlaceholderText('Atributo'), 'MGUCR_SIMBL')
     await user.type(screen.getByPlaceholderText('Nombre legible'), 'Símbolo')
 
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
       titulo: 'Geología del Chocó', subtitulo: 'Unidades litoestratigráficas', categoria: 'Geología',
@@ -494,7 +503,7 @@ describe('GeovisorFormModal — miniatura (ThumbnailDropzone)', () => {
     await user.upload(screen.getByLabelText('Portada del geovisor'), file)
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
 
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(uploadMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ id: 'nuevo-id', file }))
   })
@@ -507,7 +516,7 @@ describe('GeovisorFormModal — miniatura (ThumbnailDropzone)', () => {
     render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
     await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(uploadMutateAsync).not.toHaveBeenCalled()
   })
@@ -574,7 +583,7 @@ describe('GeovisorFormModal — fichas por punto', () => {
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
     await abrirTema(user, /Geologia/i)
     await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(mutateAsync).not.toHaveBeenCalled()
     expect(screen.getAllByText(/atributo identificador/i, { selector: 'p' }).length).toBeGreaterThan(0)
@@ -591,7 +600,7 @@ describe('GeovisorFormModal — fichas por punto', () => {
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
     await abrirTema(user, /Geologia/i)
     await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(mutateAsync).toHaveBeenCalled()
   })
@@ -674,7 +683,7 @@ describe('GeovisorFormModal — fichas por punto', () => {
     await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
     await abrirTema(user, /Geologia/i)
     await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
       capasConFicha: ['t_15_geologia:fallas'],
@@ -693,7 +702,7 @@ describe('GeovisorFormModal — fichas por punto', () => {
     await abrirTema(user, /Geologia/i)
     await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
     await user.click(screen.getByRole('radio', { name: /estándar/i }))
-    await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+    await crearGeovisor(user)
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ capasConFicha: [] }))
   })
@@ -729,7 +738,7 @@ describe('GeovisorFormModal — fichas por punto', () => {
       await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
       await abrirTema(user, /Geologia/i)
       await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
-      await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+      await crearGeovisor(user)
 
       expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ incluirCapasNuevas: true }))
     })
@@ -745,7 +754,7 @@ describe('GeovisorFormModal — fichas por punto', () => {
       await abrirTema(user, /Geologia/i)
       await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
       await user.click(screen.getByRole('switch', { name: NOMBRE_SWITCH }))
-      await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+      await crearGeovisor(user)
 
       expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ incluirCapasNuevas: false }))
     })
@@ -815,6 +824,60 @@ describe('GeovisorFormModal — capas nuevas del servidor en el selector', () =>
 
     expect(screen.queryByText('Nueva')).not.toBeInTheDocument()
     expect(screen.queryByText(/\d+ nuevas?$/)).not.toBeInTheDocument()
+  })
+})
+
+describe('GeovisorFormModal — asistente por pasos', () => {
+  const nav = () => within(screen.getByRole('navigation', { name: /Pasos/i }))
+
+  test('empieza en el paso 1 de 4 y marca el paso actual', () => {
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    expect(screen.getByText(/Paso 1 de 4/)).toBeInTheDocument()
+    expect(nav().getByRole('button', { name: /Información/ })).toHaveAttribute('aria-current', 'step')
+  })
+
+  test('Siguiente avanza un paso y Atrás regresa', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: /Siguiente/i }))
+    expect(screen.getByText(/Paso 2 de 4/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Atrás/i }))
+    expect(screen.getByText(/Paso 1 de 4/)).toBeInTheDocument()
+  })
+
+  test('el paso Fichas solo existe en el tipo con fichas', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(nav().queryByRole('button', { name: /Fichas/ })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('radio', { name: /Con fichas por punto/i }))
+
+    expect(screen.getByText(/Paso 1 de 5/)).toBeInTheDocument()
+    expect(nav().getByRole('button', { name: /Fichas/ })).toBeInTheDocument()
+  })
+
+  test('crear con datos incompletos devuelve al primer paso con error', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await crearGeovisor(user)
+
+    expect(screen.getByText(/Paso 1 de 4/)).toBeInTheDocument()
+    expect(screen.getByText('Mínimo 3 caracteres')).toBeInTheDocument()
+  })
+
+  test('el último paso muestra el resumen antes de guardar', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.type(screen.getByLabelText(/^Título/i), 'Geología')
+    await abrirSeccion(user, /Visibilidad y presentación/i)
+
+    const resumen = within(screen.getByRole('region', { name: /Resumen del geovisor/i }))
+    expect(resumen.getByText('Geología')).toBeInTheDocument()
+    expect(resumen.getByText('No usa fichas')).toBeInTheDocument()
   })
 })
 
