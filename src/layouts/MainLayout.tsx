@@ -25,6 +25,10 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   access_denied: 'Cancelaste el inicio de sesión.',
   ACCOUNT_INACTIVE: 'Tu cuenta está pendiente de aprobación. Recibirás un correo cuando sea activada.',
   missing_code: 'No se pudo completar el inicio de sesión. Intenta de nuevo.',
+  // Cuenta nueva por Google/Microsoft (ver oauth.service.js#findOrCreateUser) —
+  // el backend ya no da por verificado el correo que solo afirma el proveedor.
+  EMAIL_VERIFICATION_SENT: 'Te enviamos un correo para verificar tu cuenta. Confírmalo antes de poder ingresar.',
+  EMAIL_NOT_VERIFIED: 'Debes verificar tu correo antes de ingresar. Revisa el enlace que te enviamos o solicita uno nuevo.',
 }
 
 // pb-20 compensa la altura del BottomTabs fijo — solo hace falta por debajo

@@ -186,6 +186,16 @@ describe('MainLayout — ?oauthError=... (redirect de vuelta tras un login OAuth
     expect(await screen.findByText('No se pudo iniciar sesión. Intenta de nuevo.')).toBeInTheDocument()
   })
 
+  test('REGRESIÓN (nOAuth / email squatting): muestra el mensaje de "verifica tu correo" para una cuenta nueva por OAuth', async () => {
+    renderMainLayout({ pathname: '/', search: '?oauthError=EMAIL_VERIFICATION_SENT' })
+    expect(await screen.findByText('Te enviamos un correo para verificar tu cuenta. Confírmalo antes de poder ingresar.')).toBeInTheDocument()
+  })
+
+  test('REGRESIÓN (nOAuth / email squatting): muestra el mensaje de bloqueo cuando el correo sigue sin verificar en un reintento', async () => {
+    renderMainLayout({ pathname: '/', search: '?oauthError=EMAIL_NOT_VERIFIED' })
+    expect(await screen.findByText('Debes verificar tu correo antes de ingresar. Revisa el enlace que te enviamos o solicita uno nuevo.')).toBeInTheDocument()
+  })
+
   test('sin oauthError en la URL, no aparece ningún toast', () => {
     renderMainLayout('/')
     expect(screen.queryByText(/Cancelaste el inicio de sesión|No se pudo iniciar sesión/)).not.toBeInTheDocument()
