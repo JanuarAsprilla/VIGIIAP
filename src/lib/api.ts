@@ -43,7 +43,7 @@ function isAuthAttemptEndpoint(url?: string): boolean {
   return !!url && AUTH_ATTEMPT_ENDPOINTS.some((path) => url.includes(path))
 }
 
-function clearCsrfToken() {
+export function clearCsrfToken() {
   csrfToken = null
 }
 

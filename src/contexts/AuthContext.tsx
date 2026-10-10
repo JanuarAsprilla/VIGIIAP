@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
-import api from '@/lib/api'
+import api, { clearCsrfToken } from '@/lib/api'
 import queryClient from '@/lib/queryClient'
 import { ROLES } from '@/lib/constants/roles'
 import type { PermisoModulo } from '@/lib/constants/modulos'
@@ -133,6 +133,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Limpia cualquier residuo de sesiones anteriores y el estado en memoria.
     localStorage.removeItem('vigiiap_token')
     localStorage.removeItem('vigiiap_user')
+    // Sin esto, el token CSRF cacheado de la sesión que se está cerrando
+    // seguía vivo para la siguiente persona que inicie sesión en la misma
+    // pestaña (equipo compartido) -- el backend lo rechaza igual (atado al
+    // cookie de sesión vía HMAC), pero fuerza un round-trip extra confuso
+    // en el primer intento. clearLocalSession() en api.ts ya lo hacía en el
+    // logout forzado por 401; faltaba aquí, en el logout explícito.
+    clearCsrfToken()
     setUser(null)
     queryClient.clear()
   }, [])

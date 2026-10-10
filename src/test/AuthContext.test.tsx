@@ -15,6 +15,7 @@ vi.mock('@/lib/api', () => ({
     post:  vi.fn(),
     patch: vi.fn(),
   },
+  clearCsrfToken: vi.fn(),
 }))
 
 import api from '@/lib/api'
