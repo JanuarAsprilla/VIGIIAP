@@ -5,7 +5,7 @@
  */
 import type { AuthUser } from '@/contexts/AuthContext'
 import { NavLink, Link } from 'react-router-dom'
-import { X, Lock, Shield, ChevronRight, type LucideIcon } from 'lucide-react'
+import { X, Lock, Shield, LogIn, ChevronRight, type LucideIcon } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -229,8 +229,8 @@ function SidebarInner({ onClose, user, isAuthenticated }: {
                 boxShadow: '0 4px 14px rgba(0,152,70,0.30)',
               }}
             >
-              <Shield className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-              <span>Iniciar sesión</span>
+              <LogIn className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span>Ingresar</span>
               <ChevronRight className="w-3.5 h-3.5 ml-auto shrink-0" aria-hidden="true" />
             </Link>
           </motion.div>
