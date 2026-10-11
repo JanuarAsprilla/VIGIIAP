@@ -233,25 +233,33 @@ const DYNAMIC_PILLAR_META: Record<'mapas' | 'documentos', { icon: typeof Map; un
   mapas: {
     icon: Map, unit: 'mapas temáticos',
     desc: 'Cartografía de biodiversidad, hidrología, suelos, cobertura vegetal y zonificación del territorio.',
-    accent: '#1A5632', bg: 'rgba(26,86,50,0.06)',
+    accent: '#1A5632', bg: 'rgba(26,86,50,0.10)',
   },
   documentos: {
     icon: FileText, unit: 'documentos técnicos',
     desc: 'Informes científicos, protocolos ambientales, estudios de impacto y publicaciones institucionales del IIAP.',
-    accent: '#C45A1A', bg: 'rgba(247,172,66,0.06)',
+    accent: '#C45A1A', bg: 'rgba(196,90,26,0.10)',
   },
 }
 
+// REGRESIÓN (revisión de diseño): Capas SIG y Alta disponibilidad usaban
+// variantes del mismo verde oscuro que ya usan mapas/documentos arriba --
+// en la grilla de 4 tarjetas, dos lucían casi idénticas y las otras dos se
+// veían "lavadas"/grises en vez de con tinte de color. Los 4 acentos ahora
+// son tonos de la paleta oficial IIAP claramente distintos entre sí
+// (verde, naranja, rosa, rojo — ver CATEGORY_COLORS en
+// documentos.constants.ts para la misma paleta), y cada `bg` usa el RGB
+// real de su propio `accent` en vez de un color sin relación.
 const STATIC_PILLARS = [
   {
     icon: Globe, number: 'Capas SIG', unit: 'interactivas',
     desc: 'Geovisor con capas temáticas superpuestas para análisis espacial sin instalación de software.',
-    accent: '#1A5632', bg: 'rgba(26,86,50,0.06)',
+    accent: '#E95B8C', bg: 'rgba(233,91,140,0.10)',
   },
   {
     icon: Shield, number: 'Alta', unit: 'disponibilidad',
     desc: 'Plataforma activa 24/7 con acceso diferenciado por rol: público, investigador y administrador SIG.',
-    accent: '#284E39', bg: 'rgba(40,78,57,0.06)',
+    accent: '#C12A2B', bg: 'rgba(193,42,43,0.10)',
   },
 ]
 
@@ -336,6 +344,15 @@ function ModuleVisual({ mod, isDark }: { mod: ModuleItem; isDark: boolean }) {
       <div
         className="absolute inset-0 opacity-[0.05]"
         style={{ backgroundImage: `radial-gradient(circle, ${mod.ctaColor} 1px, transparent 1px)`, backgroundSize: '24px 24px' }}
+      />
+      {/* Marca de agua — el mismo ícono del módulo, gigante y rotado en una
+          esquina. Sin esto las 5 tarjetas eran idénticas entre sí (un
+          ícono solo flotando en una caja vacía); esta capa le da identidad
+          propia a cada una sin depender de ilustraciones/fotos nuevas. */}
+      <mod.icon
+        className="absolute -bottom-10 -right-10 w-48 h-48 pointer-events-none select-none"
+        style={{ color: mod.ctaColor, opacity: isDark ? 0.10 : 0.07, transform: 'rotate(-12deg)' }}
+        aria-hidden="true"
       />
       {/* Centered icon — halo de vidrio + insignia con filo especular */}
       <div className="absolute inset-0 flex items-center justify-center">
