@@ -44,6 +44,10 @@ export interface OpcionesExportarActividad {
   busqueda?: string
   desde?: string
   hasta?: string
+  severidad?: string
+  resultado?: string
+  usuario?: string
+  ip?: string
 }
 
 /**
@@ -56,7 +60,12 @@ export interface OpcionesExportarActividad {
  */
 export async function exportarActividadExcel(opciones: OpcionesExportarActividad = {}): Promise<void> {
   const crudo = await api.get('/admin/export/audit', {
-    params: { formato: 'json', desde: opciones.desde, hasta: opciones.hasta },
+    params: {
+      formato: 'json', desde: opciones.desde, hasta: opciones.hasta,
+      modulo: opciones.filtroModulo, accion: opciones.filtroAccion,
+      severidad: opciones.severidad, resultado: opciones.resultado,
+      usuario: opciones.usuario, ip: opciones.ip,
+    },
   }) as AuditExportRaw[]
   const crudoFiltrado = opciones.filtroAccion
     ? crudo.filter((r) => r.accion === opciones.filtroAccion)

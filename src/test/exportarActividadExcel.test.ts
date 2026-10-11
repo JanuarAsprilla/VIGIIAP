@@ -29,6 +29,18 @@ describe('exportarActividadExcel', () => {
     expect(api.get).toHaveBeenCalledWith('/admin/export/audit', { params: { formato: 'json' } })
   })
 
+  test('envía al backend los filtros activos de la pantalla', async () => {
+    vi.mocked(api.get).mockResolvedValue([makeLog()])
+    await exportarActividadExcel({
+      filtroModulo: 'seguridad', filtroAccion: 'acceso_denegado', severidad: 'advertencia',
+      resultado: 'denegado', usuario: 'ana@', ip: '186.96', desde: '2026-01-01', hasta: '2026-01-31',
+    })
+    expect(api.get).toHaveBeenCalledWith('/admin/export/audit', { params: {
+      formato: 'json', desde: '2026-01-01', hasta: '2026-01-31', modulo: 'seguridad', accion: 'acceso_denegado',
+      severidad: 'advertencia', resultado: 'denegado', usuario: 'ana@', ip: '186.96',
+    } })
+  })
+
   test('genera y descarga el libro sin lanzar errores', async () => {
     vi.mocked(api.get).mockResolvedValue([makeLog(), makeLog({ id: '2', modulo: 'usuarios', accion: 'create_usuario' })])
     await expect(exportarActividadExcel()).resolves.toBeUndefined()

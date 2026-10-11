@@ -34,18 +34,20 @@ function Celda({ etiqueta, valor, detalle, tono = 'normal', onClick }: {
 /** Franja con lo más importante de las últimas 24 horas. Los contadores con eventos filtran la tabla. */
 export default function ResumenAuditoria({ resumen, onFiltrar }: {
   resumen?: Partial<AuditResumen>
-  onFiltrar: (filtro: { accion?: string; severidad?: string }) => void
+  onFiltrar: (filtro: { accion?: string; severidad?: string; resultado?: string }) => void
 }) {
   const r = resumen ?? {}
   return (
     <section aria-label="Resumen de las últimas 24 horas"
-      className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-border/70 bg-[var(--card-bg)] border border-border/70 rounded-xl overflow-hidden">
+      className="grid grid-cols-2 lg:grid-cols-5 divide-x divide-y lg:divide-y-0 divide-border/70 bg-[var(--card-bg)] border border-border/70 rounded-xl overflow-hidden">
       <Celda etiqueta="Eventos hoy" valor={r.eventosHoy ?? 0} detalle={`${r.eventos24h ?? 0} en 24 h`} />
       <Celda etiqueta="Intentos fallidos" valor={r.loginsFallidos24h ?? 0} tono="alerta"
         detalle={r.bloqueos24h ? `${r.bloqueos24h} cuenta${r.bloqueos24h === 1 ? '' : 's'} bloqueada${r.bloqueos24h === 1 ? '' : 's'}` : 'últimas 24 h'}
         onClick={() => onFiltrar({ accion: 'login_failed' })} />
       <Celda etiqueta="Eventos críticos" valor={r.criticos24h ?? 0} tono="critico" detalle="últimas 24 h"
         onClick={() => onFiltrar({ severidad: 'critica' })} />
+      <Celda etiqueta="Accesos denegados" valor={r.accesosDenegados24h ?? 0} tono="alerta" detalle="últimas 24 h"
+        onClick={() => onFiltrar({ resultado: 'denegado' })} />
       <Celda etiqueta="Orígenes distintos" valor={r.ipsDistintas24h ?? 0}
         detalle={`${r.usuariosActivos24h ?? 0} usuario${r.usuariosActivos24h === 1 ? '' : 's'} activo${r.usuariosActivos24h === 1 ? '' : 's'}`} />
     </section>
