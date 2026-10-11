@@ -36,7 +36,7 @@ function esPestana(valor: string | null): valor is Pestana {
  * (audit_log, ligado a usuario/IP); "Reportes" son agregados por período
  * sobre esa misma auditoría (antes una página aparte, /admin/reportes);
  * "Analítica" es comportamiento de navegación anónimo
- * (analytics_sessions/pageviews, sin IP ni identidad). Viven juntas aquí
+ * (analytics_sessions/pageviews, con IP y ubicación aproximada pero sin identidad). Viven juntas aquí
  * porque las tres responden "qué pasa en la plataforma", pero el backend las
  * mantiene en tablas y módulos separados a propósito -- "Auditoría" y
  * "Analítica" se gatean con el módulo 'actividad', "Reportes" con 'reportes'
