@@ -17,7 +17,7 @@ Cómo ejercer sus derechos: Escriba a info@iiap.org.co indicando claramente el d
 
 Autorización y vigencia: Al marcar la casilla de aceptación en el formulario de solicitud de acceso, usted otorga autorización previa, expresa e informada para el tratamiento aquí descrito. Sus datos se conservan mientras su cuenta permanezca activa y el tiempo adicional que exijan obligaciones legales aplicables. El IIAP aplica medidas técnicas razonables para proteger su información (cifrado de contraseñas, control de acceso por roles, registros de auditoría), sin que ello constituya una garantía absoluta frente a cualquier incidente de seguridad.
 
-Analítica de uso: Para entender cómo se usa la plataforma y mejorarla, VIGIIAP registra de forma completamente anónima las páginas visitadas (ruta, tipo de dispositivo, navegador y sitio de referencia). Este registro nunca incluye su dirección IP ni su identidad, ni siquiera si tiene una sesión iniciada -- no es posible vincular esta información a una persona.`
+Analítica de uso: Para entender cómo se usa la plataforma y mejorarla, VIGIIAP registra las páginas visitadas (ruta, tipo de dispositivo, navegador y sitio de referencia) junto con la dirección IP y la ubicación aproximada (país, departamento y ciudad) que se deduce de ella con una base local, sin compartirla con terceros. Este registro no incluye su identidad ni se vincula a su cuenta, aunque tenga una sesión iniciada. La dirección IP se elimina automáticamente a los 90 días y el resto de la información de la sesión a los 2 años.`
 
 interface PublicConfig { politicaPrivacidad?: string | null }
 

@@ -106,6 +106,8 @@ export const ACCION_LABEL: Record<string, { label: string; badge: string }> = {
   export_descargas:                { label: 'Exportar descargas',        badge: 'bg-gold-500/12 text-gold-500' },
   export_audit:                    { label: 'Exportar auditoría',        badge: 'bg-gold-500/12 text-gold-500' },
   acceso_denegado:                 { label: 'Acceso denegado',           badge: 'bg-gold-500/12 text-gold-500' },
+  alerta_rafaga_login:             { label: 'Ráfaga de logins fallidos', badge: 'bg-red/10 text-red-dark' },
+  login_ubicacion_nueva:           { label: 'Login desde ubicación nueva', badge: 'bg-gold-500/12 text-gold-500' },
   descarga_restringida:            { label: 'Descarga restringida',      badge: 'bg-indigo-600/10 text-indigo-700' },
 }
 
