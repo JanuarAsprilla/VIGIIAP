@@ -37,6 +37,11 @@ import {
   useMapasList, useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa,
 } from '@/hooks/useMapas'
 
+vi.mock('@/hooks/useCategorias', () => ({
+  useCategoriasList: vi.fn(() => ({ data: [] })),
+}))
+import { useCategoriasList } from '@/hooks/useCategorias'
+
 beforeEach(() => {
   vi.clearAllMocks()
   Object.defineProperty(window, 'matchMedia', {
@@ -63,6 +68,9 @@ beforeEach(() => {
   vi.mocked(useDeleteMapa).mockReturnValue({
     mutateAsync: vi.fn(), isPending: false,
   } as unknown as ReturnType<typeof useDeleteMapa>)
+  vi.mocked(useCategoriasList).mockReturnValue({
+    data: [{ nombre: 'Cartografía', modulos: ['mapas'] }, { nombre: 'Riesgo', modulos: ['mapas'] }],
+  } as unknown as ReturnType<typeof useCategoriasList>)
 })
 
 async function openCreateModal() {
@@ -72,6 +80,12 @@ async function openCreateModal() {
   return user
 }
 
+// La categoría solo se elige de la lista -- ya no se puede escribir una nueva.
+async function selectCategoria(user: ReturnType<typeof userEvent.setup>, nombre: string) {
+  await user.click(screen.getByPlaceholderText('Selecciona una categoría…'))
+  await user.click(screen.getByText(nombre))
+}
+
 function makeMapa(overrides: Partial<MapaData> = {}): MapaData {
   return {
     id: 'm1', slug: 'mapa-1', titulo: 'Zonificación Chocó', categoria: 'Zonificación', anio: 2025,
@@ -79,7 +93,8 @@ function makeMapa(overrides: Partial<MapaData> = {}): MapaData {
     archivo_img_url: null, geovisor_url: null, activo: true, visibilidad: 'publico', creado_en: '2025-01-01T00:00:00Z',
     title: 'Zonificación Chocó', category: 'Zonificación', categoryKey: 'zonificacion', excerpt: '', year: '2025',
     formats: ['PDF'], badge: 'PDF', badgeColor: 'primary', geovisorLink: '/geovisor', department: '',
-    nombre: 'Zonificación Chocó', tematica: 'Zonificación', escala: '1:100.000', autor: 'IIAP',
+    nombre: 'Zonificación Chocó', tematica: 'Zonificación', autor: 'IIAP',
+    epsg: null, escala: null, fuente: null, bboxNorte: null, bboxSur: null, bboxEste: null, bboxOeste: null,
     fecha: '01/01/2025', visible: true, formato: 'PDF', url: '', consultas: 0,
     ...overrides,
   }
@@ -91,7 +106,7 @@ describe('GestionMapas — validación del formulario', () => {
     await user.click(screen.getByRole('button', { name: /Registrar mapa/i }))
 
     expect(await screen.findByText('El nombre del mapa es obligatorio')).toBeInTheDocument()
-    expect(screen.getByText('Selecciona o escribe una temática')).toBeInTheDocument()
+    expect(screen.getByText('Selecciona una categoría')).toBeInTheDocument()
     expect(screen.getByText('Debes seleccionar el archivo del mapa para continuar')).toBeInTheDocument()
   })
 
@@ -127,7 +142,7 @@ describe('GestionMapas — validación del formulario', () => {
     const user = await openCreateModal()
     await user.click(screen.getByRole('button', { name: 'Geovisor' }))
     await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa geovisor de prueba')
-    await user.type(screen.getByPlaceholderText('Selecciona o crea una temática…'), 'Cartografía')
+    await selectCategoria(user, 'Cartografía')
     await user.type(screen.getByLabelText(/URL del Geovisor/i), 'https://geovisor.iiap.org.co/mapa')
     await user.click(screen.getByRole('button', { name: /Registrar mapa/i }))
 
@@ -143,7 +158,7 @@ describe('GestionMapas — validación del formulario', () => {
     const user = await openCreateModal()
     await user.click(screen.getByRole('button', { name: 'Geovisor' }))
     await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa geovisor de prueba')
-    await user.type(screen.getByPlaceholderText('Selecciona o crea una temática…'), 'Cartografía')
+    await selectCategoria(user, 'Cartografía')
     await user.type(screen.getByLabelText(/URL del Geovisor/i), 'https://geovisor.iiap.org.co/mapa')
     await user.clear(screen.getByLabelText('Año'))
     await user.type(screen.getByLabelText('Año'), '1500')
@@ -166,6 +181,26 @@ describe('GestionMapas — guarda de doble envío', () => {
   })
 })
 
+// Regresión: antes se ofrecían TODAS las categorías del sistema, aunque
+// solo las usara Documentos o Geovisores -- ahora solo se sugieren las
+// asignadas explícitamente al módulo "mapas" (ver categorias.modulos, migración 048).
+describe('GestionMapas — categoría por módulo', () => {
+  test('no sugiere una categoría usada solo por otro módulo (Documentos/Geovisores)', async () => {
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [
+        { nombre: 'Solo en Documentos', modulos: ['documentos'] },
+        { nombre: 'Zonificación Costera', modulos: ['mapas'] },
+      ],
+    } as unknown as ReturnType<typeof useCategoriasList>)
+
+    const user = await openCreateModal()
+    await user.click(screen.getByPlaceholderText('Selecciona una categoría…'))
+
+    expect(screen.getByText('Zonificación Costera')).toBeInTheDocument()
+    expect(screen.queryByText('Solo en Documentos')).not.toBeInTheDocument()
+  })
+})
+
 describe('GestionMapas — tarjetas y filtros', () => {
   test('muestra el mapa con temática, formato, autor y fecha', () => {
     vi.mocked(useMapasList).mockReturnValue({
@@ -173,9 +208,11 @@ describe('GestionMapas — tarjetas y filtros', () => {
     } as unknown as ReturnType<typeof useMapasList>)
 
     render(<GestionMapas />)
-    expect(screen.getByText('Zonificación Chocó')).toBeInTheDocument()
+    // El nombre aparece dos veces: en el título siempre-visible de la tarjeta
+    // y dentro del panel de detalle (oculto por opacidad, no desmontado).
+    expect(screen.getAllByText('Zonificación Chocó').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Zonificación').length).toBeGreaterThan(0)
-    expect(screen.getByText(/IIAP · 01\/01\/2025/)).toBeInTheDocument()
+    expect(screen.getAllByText(/IIAP · 01\/01\/2025/).length).toBeGreaterThan(0)
   })
 
   test('un mapa oculto muestra la etiqueta "Oculto"', () => {
@@ -218,7 +255,7 @@ describe('GestionMapas — tarjetas y filtros', () => {
     render(<GestionMapas />)
     await user.type(screen.getByLabelText('Buscar mapas por nombre o autor'), 'cvc')
 
-    expect(screen.getByText('Cobertura Nariño')).toBeInTheDocument()
+    expect(screen.getAllByText('Cobertura Nariño').length).toBeGreaterThan(0)
     expect(screen.queryByText('Zonificación Chocó')).not.toBeInTheDocument()
   })
 
@@ -237,7 +274,7 @@ describe('GestionMapas — tarjetas y filtros', () => {
     render(<GestionMapas />)
     await user.click(screen.getByRole('button', { name: 'Zonificación' }))
 
-    expect(screen.getByText('Zonificación Chocó')).toBeInTheDocument()
+    expect(screen.getAllByText('Zonificación Chocó').length).toBeGreaterThan(0)
     expect(screen.queryByText('Cobertura Nariño')).not.toBeInTheDocument()
   })
 
@@ -249,7 +286,8 @@ describe('GestionMapas — tarjetas y filtros', () => {
 
     const user = userEvent.setup()
     render(<GestionMapas />)
-    await user.click(screen.getByTitle('Ver archivo'))
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Ver archivo'))
 
     expect(openSpy).toHaveBeenCalledWith('/m1.pdf', '_blank', 'noopener,noreferrer')
     openSpy.mockRestore()
@@ -281,7 +319,8 @@ describe('GestionMapas — edición y eliminación', () => {
 
     const user = userEvent.setup()
     render(<GestionMapas />)
-    await user.click(screen.getByTitle('Editar mapa'))
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Editar'))
 
     expect(screen.getByText('Editar mapa')).toBeInTheDocument()
     expect(screen.getByLabelText(/Nombre del mapa/i)).toHaveValue('Zonificación Chocó')
@@ -298,10 +337,33 @@ describe('GestionMapas — edición y eliminación', () => {
 
     const user = userEvent.setup()
     render(<GestionMapas />)
-    await user.click(screen.getByTitle('Editar mapa'))
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Editar'))
     await user.click(screen.getByRole('button', { name: /^Guardar cambios$/i }))
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ id: 'm1' }))
+  })
+
+  test('quitar la miniatura y guardar le pide al backend borrarla (thumbnail_url vacío), no solo la esconde localmente', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useUpdateMapa).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useUpdateMapa>)
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMapa({ thumbnail_url: 'https://vigiiap.iiap.org.co/files/vigiiap-files-public/mapas/thumbnails/old.jpg' })], meta: { total: 1 } },
+      isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Editar'))
+    await user.click(screen.getByRole('button', { name: 'Quitar' }))
+    await user.click(screen.getByRole('button', { name: /^Guardar cambios$/i }))
+
+    const call = mutateAsync.mock.calls[0][0] as { formData: FormData }
+    expect(call.formData.get('thumbnail_url')).toBe('')
+    expect(call.formData.get('thumbnail')).toBeNull()
   })
 
   test('confirmar eliminación llama a la mutación con el id y muestra el toast', async () => {
@@ -315,7 +377,8 @@ describe('GestionMapas — edición y eliminación', () => {
 
     const user = userEvent.setup()
     render(<GestionMapas />)
-    await user.click(screen.getByTitle('Eliminar mapa'))
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Eliminar'))
     await user.click(screen.getByRole('button', { name: 'Sí, eliminar' }))
 
     expect(mutateAsync).toHaveBeenCalledWith('m1')
@@ -333,7 +396,8 @@ describe('GestionMapas — edición y eliminación', () => {
 
     const user = userEvent.setup()
     render(<GestionMapas />)
-    await user.click(screen.getByTitle('Eliminar mapa'))
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Eliminar'))
     await user.click(screen.getByRole('button', { name: 'Cancelar' }))
 
     expect(mutateAsync).not.toHaveBeenCalled()
@@ -386,6 +450,76 @@ describe('GestionMapas — dropzone y detección de formato', () => {
     await user.click(checkbox)
     expect(checkbox).not.toBeChecked()
   })
+
+  test('destildar "Publicar en el portal público" al crear un mapa lo despublica justo después de crearlo', async () => {
+    const createMutate = vi.fn().mockResolvedValue({ id: 'nuevo-1' })
+    const toggleMutate  = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useCreateMapa).mockReturnValue({
+      mutateAsync: createMutate, isPending: false,
+    } as unknown as ReturnType<typeof useCreateMapa>)
+    vi.mocked(useToggleMapaActivo).mockReturnValue({
+      mutateAsync: toggleMutate, isPending: false,
+    } as unknown as ReturnType<typeof useToggleMapaActivo>)
+
+    const user = userEvent.setup()
+    const { container } = render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Ingresar nuevo mapa/i }))
+
+    const file = new File(['contenido'], 'mapa.pdf', { type: 'application/pdf' })
+    await user.upload(container.querySelector('input[type="file"]:not([accept="image/*"])') as HTMLInputElement, file)
+    await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa oculto')
+    await selectCategoria(user, 'Riesgo')
+    await user.click(screen.getByRole('checkbox', { name: /Publicar en el portal público/i }))
+    await user.click(screen.getByRole('button', { name: /^Registrar mapa$/i }))
+
+    expect(createMutate).toHaveBeenCalledTimes(1)
+    expect(toggleMutate).toHaveBeenCalledWith({ id: 'nuevo-1', activo: false })
+  })
+
+  test('destildar "Publicar en el portal público" al editar un mapa publicado lo despublica', async () => {
+    const updateMutate = vi.fn().mockResolvedValue(undefined)
+    const toggleMutate  = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useUpdateMapa).mockReturnValue({
+      mutateAsync: updateMutate, isPending: false,
+    } as unknown as ReturnType<typeof useUpdateMapa>)
+    vi.mocked(useToggleMapaActivo).mockReturnValue({
+      mutateAsync: toggleMutate, isPending: false,
+    } as unknown as ReturnType<typeof useToggleMapaActivo>)
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMapa({ visible: true })], meta: { total: 1 } }, isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Editar'))
+    await user.click(screen.getByRole('checkbox', { name: /Publicar en el portal público/i }))
+    await user.click(screen.getByRole('button', { name: /^Guardar cambios$/i }))
+
+    expect(toggleMutate).toHaveBeenCalledWith({ id: 'm1', activo: false })
+  })
+
+  test('guardar sin tocar el checkbox no llama a cambiar la visibilidad', async () => {
+    const updateMutate = vi.fn().mockResolvedValue(undefined)
+    const toggleMutate  = vi.fn()
+    vi.mocked(useUpdateMapa).mockReturnValue({
+      mutateAsync: updateMutate, isPending: false,
+    } as unknown as ReturnType<typeof useUpdateMapa>)
+    vi.mocked(useToggleMapaActivo).mockReturnValue({
+      mutateAsync: toggleMutate, isPending: false,
+    } as unknown as ReturnType<typeof useToggleMapaActivo>)
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMapa({ visible: true })], meta: { total: 1 } }, isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+
+    const user = userEvent.setup()
+    render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByText('Editar'))
+    await user.click(screen.getByRole('button', { name: /^Guardar cambios$/i }))
+
+    expect(toggleMutate).not.toHaveBeenCalled()
+  })
 })
 
 describe('GestionMapas — creación con datos válidos', () => {
@@ -406,7 +540,7 @@ describe('GestionMapas — creación con datos válidos', () => {
     const file = new File(['contenido'], 'mapa.pdf', { type: 'application/pdf' })
     await user.upload(getFileInput(container), file)
     await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa de riesgo')
-    await user.type(screen.getByPlaceholderText('Selecciona o crea una temática…'), 'Riesgo')
+    await selectCategoria(user, 'Riesgo')
     await user.click(screen.getByRole('button', { name: /^Registrar mapa$/i }))
 
     expect(mutateAsync).toHaveBeenCalledTimes(1)
@@ -415,5 +549,129 @@ describe('GestionMapas — creación con datos válidos', () => {
     expect(call.formData.get('categoria')).toBe('Riesgo')
     expect(call.formData.get('archivo_pdf')).toBeInstanceOf(File)
     expect(await screen.findByText('Mapa "Mapa de riesgo" registrado correctamente')).toBeInTheDocument()
+  })
+
+  test('los metadatos técnicos se envían en el payload cuando se completan', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(useCreateMapa).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useCreateMapa>)
+
+    const user = userEvent.setup()
+    const { container } = render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Ingresar nuevo mapa/i }))
+
+    const file = new File(['contenido'], 'mapa.pdf', { type: 'application/pdf' })
+    await user.upload(getFileInput(container), file)
+    await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa de riesgo')
+    await selectCategoria(user, 'Riesgo')
+
+    await user.click(screen.getByRole('button', { name: /Metadatos técnicos/i }))
+    await user.selectOptions(screen.getByLabelText(/Sistema de coordenadas/i), '4326')
+    await user.type(screen.getByLabelText(/^Escala/i), '100000')
+    await user.type(screen.getByLabelText(/Fuente de los datos/i), 'Imágenes Sentinel-2')
+    await user.type(screen.getByLabelText('Norte'), '5.5')
+    await user.type(screen.getByLabelText('Sur'), '4.0')
+    await user.type(screen.getByLabelText('Este'), '-76')
+    await user.type(screen.getByLabelText('Oeste'), '-77.5')
+
+    await user.click(screen.getByRole('button', { name: /^Registrar mapa$/i }))
+
+    expect(mutateAsync).toHaveBeenCalledTimes(1)
+    const call = mutateAsync.mock.calls[0][0] as { formData: FormData }
+    expect(call.formData.get('epsg')).toBe('4326')
+    expect(call.formData.get('escala')).toBe('100000')
+    expect(call.formData.get('fuente')).toBe('Imágenes Sentinel-2')
+    expect(call.formData.get('bbox_norte')).toBe('5.5')
+    expect(call.formData.get('bbox_este')).toBe('-76')
+  })
+
+  test('"otro" código EPSG sin valor bloquea el envío con un error claro', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useCreateMapa).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useCreateMapa>)
+
+    const user = userEvent.setup()
+    const { container } = render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Ingresar nuevo mapa/i }))
+
+    const file = new File(['contenido'], 'mapa.pdf', { type: 'application/pdf' })
+    await user.upload(getFileInput(container), file)
+    await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa de riesgo')
+    await selectCategoria(user, 'Riesgo')
+
+    await user.click(screen.getByRole('button', { name: /Metadatos técnicos/i }))
+    await user.selectOptions(screen.getByLabelText(/Sistema de coordenadas/i), 'otro')
+    await user.click(screen.getByRole('button', { name: /^Registrar mapa$/i }))
+
+    expect(await screen.findByText('Indica el código EPSG')).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('norte menor o igual que sur bloquea el envío', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useCreateMapa).mockReturnValue({
+      mutateAsync, isPending: false,
+    } as unknown as ReturnType<typeof useCreateMapa>)
+
+    const user = userEvent.setup()
+    const { container } = render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Ingresar nuevo mapa/i }))
+
+    const file = new File(['contenido'], 'mapa.pdf', { type: 'application/pdf' })
+    await user.upload(getFileInput(container), file)
+    await user.type(screen.getByLabelText(/Nombre del mapa/i), 'Mapa de riesgo')
+    await selectCategoria(user, 'Riesgo')
+
+    await user.click(screen.getByRole('button', { name: /Metadatos técnicos/i }))
+    await user.type(screen.getByLabelText('Norte'), '4.0')
+    await user.type(screen.getByLabelText('Sur'), '5.5')
+    await user.click(screen.getByRole('button', { name: /^Registrar mapa$/i }))
+
+    expect(await screen.findByText('El límite norte debe ser mayor que el límite sur')).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+})
+
+describe('GestionMapas — metadatos técnicos al editar', () => {
+  async function openEditModal() {
+    const user = userEvent.setup()
+    render(<GestionMapas />)
+    await user.click(screen.getByRole('button', { name: /Zonificación Chocó, Zonificación\. Clic para ver detalles/ }))
+    await user.click(screen.getByRole('button', { name: /Editar/i }))
+    return user
+  }
+
+  test('colapsados por defecto si el mapa no tiene ninguno cargado', async () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMapa()], meta: { total: 1 } }, isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+    await openEditModal()
+
+    expect(screen.queryByLabelText(/Sistema de coordenadas/i)).not.toBeInTheDocument()
+  })
+
+  test('abiertos automáticamente si el mapa ya tiene algún metadato', async () => {
+    vi.mocked(useMapasList).mockReturnValue({
+      data: { data: [makeMapa({ epsg: 4326, escala: 100000 })], meta: { total: 1 } }, isLoading: false, isError: false,
+    } as unknown as ReturnType<typeof useMapasList>)
+    await openEditModal()
+
+    expect(screen.getByLabelText(/Sistema de coordenadas/i)).toHaveValue('4326')
+    expect(screen.getByLabelText(/^Escala/i)).toHaveValue(100000)
+  })
+})
+
+describe('GestionMapas — columnas de la lista', () => {
+  beforeEach(() => { vi.clearAllMocks(); localStorage.clear() })
+
+  test('elegir "2 columnas" queda marcado y se recuerda en este navegador', async () => {
+    const user = userEvent.setup()
+    render(<GestionMapas />)
+
+    await user.click(screen.getByRole('button', { name: '2 columnas' }))
+    expect(screen.getByRole('button', { name: '2 columnas' })).toHaveAttribute('aria-pressed', 'true')
+    expect(localStorage.getItem('vigiiap:admin-mapas-cols')).toBe('2')
   })
 })

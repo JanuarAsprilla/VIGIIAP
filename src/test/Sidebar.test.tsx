@@ -19,15 +19,6 @@ vi.mock('framer-motion', () => {
   return { motion, AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</> }
 })
 
-vi.mock('@/components/NuevoAnalisisModal', () => ({
-  default: ({ onClose }: { onClose: () => void }) => (
-    <div>
-      <span>Modal Nuevo Análisis</span>
-      <button onClick={onClose}>Cerrar modal análisis</button>
-    </div>
-  ),
-}))
-
 type MockUser = { name: string; role: string; initials: string; isVisitante?: boolean }
 const authMock: { isAuthenticated: boolean; user: MockUser | null; logout: () => void } = {
   isAuthenticated: false,
@@ -35,6 +26,7 @@ const authMock: { isAuthenticated: boolean; user: MockUser | null; logout: () =>
   logout: vi.fn(),
 }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
+vi.mock('@/contexts/ThemeContext', () => ({ useTheme: () => ({ isDark: false, toggleTheme: vi.fn() }) }))
 
 function renderSidebar(mobileOpen = false, onClose = vi.fn()) {
   return { onClose, ...render(<MemoryRouter><Sidebar mobileOpen={mobileOpen} onClose={onClose} /></MemoryRouter>) }
@@ -47,10 +39,15 @@ beforeEach(() => {
 })
 
 describe('Sidebar — visitante sin sesión', () => {
-  test('los módulos restringidos aparecen bloqueados, sin enlace real', () => {
+  test('Geovisores es público — es un enlace real', () => {
     renderSidebar()
-    expect(screen.queryByRole('link', { name: /Geovisor/i })).not.toBeInTheDocument()
-    expect(screen.getByText('Geovisor')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Geovisores/i })).toHaveAttribute('href', '/geovisores')
+  })
+
+  test('Solicitudes no se muestra en absoluto — sigue exclusivo de cuenta verificada', () => {
+    renderSidebar()
+    expect(screen.queryByRole('link', { name: /Solicitudes/i })).not.toBeInTheDocument()
+    expect(screen.queryByText('Solicitudes')).not.toBeInTheDocument()
   })
 
   test('los módulos públicos sí son enlaces reales', () => {
@@ -66,23 +63,21 @@ describe('Sidebar — visitante sin sesión', () => {
 })
 
 describe('Sidebar — visitante autenticado (no verificado)', () => {
-  test('los módulos restringidos siguen bloqueados y se ofrece solicitar acceso', () => {
+  test('Solicitudes sigue oculto y se ofrece solicitar acceso', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Invitado', role: ROLES.VISITANTE, initials: 'V', isVisitante: true }
     renderSidebar()
-    expect(screen.queryByRole('link', { name: /Solicitudes/i })).not.toBeInTheDocument()
+    expect(screen.queryByText('Solicitudes')).not.toBeInTheDocument()
     expect(screen.getByText('Solicitar acceso')).toBeInTheDocument()
-    expect(screen.queryByText('Nuevo Análisis')).not.toBeInTheDocument()
   })
 })
 
 describe('Sidebar — usuario verificado', () => {
-  test('desbloquea los módulos restringidos y ofrece "Nuevo Análisis"', () => {
+  test('desbloquea los módulos restringidos', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Ana Restrepo', role: ROLES.INVESTIGADOR, initials: 'AR' }
     renderSidebar()
-    expect(screen.getByRole('link', { name: /Geovisor/i })).toHaveAttribute('href', '/geovisor')
-    expect(screen.getByText('Nuevo Análisis')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Geovisores/i })).toHaveAttribute('href', '/geovisores')
     expect(screen.queryByText('Panel Admin')).not.toBeInTheDocument()
   })
 
@@ -93,23 +88,11 @@ describe('Sidebar — usuario verificado', () => {
     expect(screen.getByText('Panel Admin')).toBeInTheDocument()
   })
 
-  test('"Nuevo Análisis" abre el modal correspondiente', async () => {
+  test('no muestra "Cerrar Sesión" — el avatar del TopBar ya lo ofrece en todos los breakpoints', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Ana Restrepo', role: ROLES.INVESTIGADOR, initials: 'AR' }
-    const user = userEvent.setup()
     renderSidebar()
-    await user.click(screen.getByText('Nuevo Análisis'))
-    expect(screen.getByText('Modal Nuevo Análisis')).toBeInTheDocument()
-  })
-
-  test('cerrar sesión llama a logout() y a onClose()', async () => {
-    authMock.isAuthenticated = true
-    authMock.user = { name: 'Ana Restrepo', role: ROLES.INVESTIGADOR, initials: 'AR' }
-    const user = userEvent.setup()
-    const { onClose } = renderSidebar()
-    await user.click(screen.getByText('Cerrar Sesión'))
-    expect(authMock.logout).toHaveBeenCalled()
-    expect(onClose).toHaveBeenCalled()
+    expect(screen.queryByText('Cerrar Sesión')).not.toBeInTheDocument()
   })
 })
 
@@ -117,7 +100,7 @@ describe('Sidebar — drawer móvil', () => {
   test('clic en el overlay llama a onClose', async () => {
     const user = userEvent.setup()
     const { onClose, container } = renderSidebar(true)
-    const overlay = container.querySelector('.fixed.inset-0.z-50.backdrop-blur-\\[3px\\]')
+    const overlay = container.querySelector('.fixed.inset-0.z-50.backdrop-blur-md')
     expect(overlay).not.toBeNull()
     await user.click(overlay as Element)
     expect(onClose).toHaveBeenCalled()

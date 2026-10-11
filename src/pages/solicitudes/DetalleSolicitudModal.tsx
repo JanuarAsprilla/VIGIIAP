@@ -53,11 +53,11 @@ export function DetalleSolicitudModal({ sol, onClose, onNueva }: DetalleSolicitu
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col"
+        className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col"
       >
         <div className="flex items-start justify-between px-6 py-5 border-b border-border shrink-0">
           <div>
-            <span className="text-[0.65rem] font-bold uppercase tracking-wider text-primary-700">
+            <span className="text-[0.65rem] font-bold uppercase tracking-wider" style={{ color: 'var(--hero-eyebrow-text)' }}>
               {sol.id} · {sol.fecha}
             </span>
             <h3 id="detalle-modal-title" className="text-base font-bold text-text mt-0.5 leading-tight">

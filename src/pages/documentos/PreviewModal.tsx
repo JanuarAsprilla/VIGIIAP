@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { FileText, FileSpreadsheet, Eye, Download, X } from 'lucide-react'
 import { typeStyles } from './documentos.constants'
 import { forceDownload, descargarUrl, type DocItem } from './documentos.utils'
+import { isTrustedUrl } from '@/lib/trustedUrl'
 
 interface PreviewModalProps {
   doc: DocItem
@@ -12,6 +13,9 @@ interface PreviewModalProps {
 
 export function PreviewModal({ doc, categoryTitle, onClose }: PreviewModalProps) {
   const s = (typeStyles as Record<string, typeof typeStyles.pdf>)[doc.type] || typeStyles.pdf
+  // Solo se renderiza como enlace/imagen si el origen está en la allowlist —
+  // evita que un valor malicioso guardado en el backend (ej. javascript:) se ejecute al hacer clic.
+  const trustedUrl = doc.url && isTrustedUrl(doc.url) ? doc.url : null
   const isImage  = doc.url && /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(doc.url)
   const isPdf    = doc.type === 'pdf'
   const isOffice = doc.type === 'docx' || doc.type === 'doc' || doc.type === 'xlsx' || doc.type === 'xls'
@@ -64,7 +68,7 @@ export function PreviewModal({ doc, categoryTitle, onClose }: PreviewModalProps)
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
+        className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2">
@@ -79,11 +83,15 @@ export function PreviewModal({ doc, categoryTitle, onClose }: PreviewModalProps)
           </button>
         </div>
 
+        {doc.resumen && (
+          <p className="px-6 pt-4 text-sm text-text-muted leading-relaxed">{doc.resumen}</p>
+        )}
+
         {doc.url ? (
           <div className="w-full">
-            {isImage ? (
+            {isImage && trustedUrl ? (
               <div className="p-4 flex justify-center bg-bg-alt">
-                <img src={doc.url} alt={doc.name} loading="eager"
+                <img src={trustedUrl} alt={doc.name} loading="eager"
                   className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-sm" />
               </div>
             ) : isPdf ? (
@@ -96,13 +104,16 @@ export function PreviewModal({ doc, categoryTitle, onClose }: PreviewModalProps)
                   <p className="text-xs text-text-muted">{categoryTitle}</p>
                 </div>
                 <div className="flex gap-3">
-                  <a href={doc.url} target="_blank" rel="noopener noreferrer"
+                  {/* El archivo vive en el bucket privado -- se abre vía el proxy de
+                      descarga del backend (verifica visibilidad + URL prefirmada),
+                      nunca con la URL cruda de almacenamiento. */}
+                  <a href={descargarUrl('documento', doc.id)} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
                     <Eye className="w-4 h-4" />
                     Visualizar PDF
                   </a>
                   <button onClick={() => forceDownload(descargarUrl('documento', doc.id), `${doc.name}.${doc.type}`)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-50 border border-primary-200 text-primary-800 rounded-lg text-sm font-semibold hover:bg-primary-100 transition-colors">
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800/10 border border-primary-800/20 text-primary-600 rounded-lg text-sm font-semibold hover:bg-primary-800/15 transition-colors">
                     <Download className="w-4 h-4" />
                     Descargar
                   </button>

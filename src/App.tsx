@@ -1,14 +1,18 @@
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { lazy, Suspense, useState, useEffect } from 'react'
+import { MotionConfig } from 'framer-motion'
 import { AuthProvider } from './contexts/AuthContext'
 import { SearchProvider } from './contexts/SearchContext'
 import { UIProvider } from './contexts/UIContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import MainLayout from './layouts/MainLayout'
+import ThemeSync from './components/ThemeSync'
 import AdminLayout from './layouts/AdminLayout'
-import RequireAuth, { RequireInvestigador, RequireVerified, RequireAdmin, RequireSuperAdmin } from './components/RequireAuth'
+import { RequireVerified, RequireAdmin, RequireSuperAdmin } from './components/RequireAuth'
 import ErrorBoundary from './components/ErrorBoundary'
 import Preloader from './components/Preloader'
+import MaintenancePage from './components/MaintenancePage'
+import AnalyticsTracker from './components/AnalyticsTracker'
 import {
   HomeSkeleton,
   MapasSkeleton,
@@ -23,12 +27,14 @@ import {
 const Home            = lazy(() => import('./pages/Home'))
 const Mapas           = lazy(() => import('./pages/Mapas'))
 const Documentos      = lazy(() => import('./pages/Documentos'))
-const Geovisor        = lazy(() => import('./pages/Geovisor'))
+const Geovisores        = lazy(() => import('./pages/Geovisores'))
+const GeovisorViewer     = lazy(() => import('./pages/GeovisorViewer'))
 const Herramientas    = lazy(() => import('./pages/Herramientas'))
 const Solicitudes     = lazy(() => import('./pages/Solicitudes'))
 const GuiaUsuario     = lazy(() => import('./pages/recursos/GuiaUsuario'))
 const FAQ             = lazy(() => import('./pages/recursos/FAQ'))
 const Terminos        = lazy(() => import('./pages/recursos/Terminos'))
+const PoliticaPrivacidad = lazy(() => import('./pages/recursos/PoliticaPrivacidad'))
 const Perfil          = lazy(() => import('./pages/Perfil'))
 const NotFound        = lazy(() => import('./pages/NotFound'))
 
@@ -39,6 +45,7 @@ const RecuperarPassword = lazy(() => import('./pages/auth/RecuperarPassword'))
 const VerificarEmail    = lazy(() => import('./pages/auth/VerificarEmail'))
 const ResetPassword           = lazy(() => import('./pages/auth/ResetPassword'))
 const CambiarPasswordExpirada = lazy(() => import('./pages/auth/CambiarPasswordExpirada'))
+const VerificarDosFactor      = lazy(() => import('./pages/auth/VerificarDosFactor'))
 
 // ── Admin panel ──
 const AdminDashboard   = lazy(() => import('./pages/admin/Dashboard'))
@@ -46,15 +53,20 @@ const AdminUsuarios    = lazy(() => import('./pages/admin/Usuarios'))
 const AdminSolicitudes = lazy(() => import('./pages/admin/GestionSolicitudes'))
 const AdminDocumentos  = lazy(() => import('./pages/admin/GestionDocumentos'))
 const AdminMapas       = lazy(() => import('./pages/admin/GestionMapas'))
+const AdminGeovisores  = lazy(() => import('./pages/admin/GestionGeovisores'))
+const AdminConexionesGeoserver = lazy(() => import('./pages/admin/GestionConexionesGeoserver'))
 const AdminConfig      = lazy(() => import('./pages/admin/Configuracion'))
 const AdminActividad   = lazy(() => import('./pages/admin/Actividad'))
+const AdminErrores     = lazy(() => import('./pages/admin/Errores'))
 const AdminCategorias  = lazy(() => import('./pages/admin/GestionCategorias'))
+const AdminHerramientas = lazy(() => import('./pages/admin/GestionHerramientas'))
 const AdminGestionAdmins = lazy(() => import('./pages/admin/GestionAdmins'))
+const AdminPapelera      = lazy(() => import('./pages/admin/Papelera'))
 
-// Fallback genérico para Geovisor (mapa de pantalla completa, sin skeleton de columnas)
-function GeovisorLoader() {
+// Fallback genérico para Geovisores (mapa de pantalla completa, sin skeleton de columnas)
+function GeovisoresLoader() {
   return (
-    <div className="flex-1 flex items-center justify-center bg-bg" role="status" aria-label="Cargando geovisor...">
+    <div className="flex-1 flex items-center justify-center bg-bg" role="status" aria-label="Cargando geovisores...">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-primary-300 border-t-primary-800 rounded-full animate-spin" aria-hidden="true" />
         <span className="text-sm text-text-muted">Inicializando mapa...</span>
@@ -97,11 +109,39 @@ function PageSpinner() {
 function AppRoutes() {
   const location = useLocation()
 
+  // Cualquier petición a una ruta de contenido público puede llegar a
+  // devolver { maintenance: true } si el super_admin activó modo
+  // mantenimiento (ver vigiiap:maintenance en src/lib/api.ts). Una vez
+  // detectado, se reemplaza toda la vista -- no tiene sentido dejar
+  // navegar por una plataforma que el propio backend está rechazando.
+  const [maintenanceMsg, setMaintenanceMsg] = useState<string | null>(null)
+  useEffect(() => {
+    function onMaintenance(e: Event) {
+      const detail = (e as CustomEvent<{ message: string }>).detail
+      setMaintenanceMsg(detail?.message || 'La plataforma está en mantenimiento. Vuelve a intentarlo más tarde.')
+    }
+    window.addEventListener('vigiiap:maintenance', onMaintenance)
+    return () => window.removeEventListener('vigiiap:maintenance', onMaintenance)
+  }, [])
+
+  if (maintenanceMsg) {
+    return <MaintenancePage mensaje={maintenanceMsg} />
+  }
+
   return (
+    // reducedMotion="user" hace que TODAS las animaciones declarativas de
+    // Framer Motion (initial/animate/whileHover/etc.) en toda la app
+    // respeten prefers-reduced-motion automáticamente, sin tener que cablear
+    // el hook useReducedMotion en cada componente uno por uno.
+    <MotionConfig reducedMotion="user">
     <ThemeProvider>
     <AuthProvider>
+    <ThemeSync />
     <UIProvider>
     <SearchProvider>
+      {/* Fuera del ErrorBoundary con key={location.key}: un error de render
+          en una ruta no debe interrumpir el registro de la navegación. */}
+      <AnalyticsTracker />
       {/* key={location.key} — resetea el ErrorBoundary en cada navegación,
           evitando que un error en una ruta deje la app pegada al navegar de vuelta */}
       <ErrorBoundary key={location.key}>
@@ -113,6 +153,7 @@ function AppRoutes() {
           <Route path="/verificar-email/:token"      element={<Suspense fallback={<PageSpinner />}><VerificarEmail /></Suspense>} />
           <Route path="/reset-password/:token"        element={<Suspense fallback={<PageSpinner />}><ResetPassword /></Suspense>} />
           <Route path="/cambiar-password-expirada"   element={<Suspense fallback={null}><CambiarPasswordExpirada /></Suspense>} />
+          <Route path="/verificar-2fa"                element={<Suspense fallback={null}><VerificarDosFactor /></Suspense>} />
 
           {/* ── Sitio público (MainLayout) — skeletons por ruta ── */}
           <Route element={<MainLayout />}>
@@ -128,16 +169,31 @@ function AppRoutes() {
             <Route path="/terminos" element={
               <Suspense fallback={<GenericPageSkeleton />}><Terminos /></Suspense>
             } />
+            <Route path="/politica-privacidad" element={
+              <Suspense fallback={<GenericPageSkeleton />}><PoliticaPrivacidad /></Suspense>
+            } />
 
-            {/* Requiere sesión (cualquier rol incluyendo Público y Visitante) */}
-            <Route element={<RequireAuth />}>
-              <Route path="/mapas" element={
-                <Suspense fallback={<MapasSkeleton />}><Mapas /></Suspense>
-              } />
-              <Route path="/documentos" element={
-                <Suspense fallback={<DocumentosSkeleton />}><Documentos /></Suspense>
-              } />
-            </Route>
+            {/* Mapas, Documentos, Geovisores y Herramientas son públicos — cualquiera
+                entra sin sesión. Lo que varía es el contenido: cada mapa/documento
+                trae su propio campo `visibilidad` (público / usuarios / acreditados)
+                y el backend ya filtra según haya o no sesión (ver
+                optionalAuthenticate + visibilidadPermitida en mapas.service.js y
+                documentos.service.js) — no hace falta bloquear la ruta completa. */}
+            <Route path="/mapas" element={
+              <Suspense fallback={<MapasSkeleton />}><Mapas /></Suspense>
+            } />
+            <Route path="/documentos" element={
+              <Suspense fallback={<DocumentosSkeleton />}><Documentos /></Suspense>
+            } />
+            <Route path="/geovisores" element={
+              <Suspense fallback={<GeovisoresLoader />}><Geovisores /></Suspense>
+            } />
+            <Route path="/geovisores/:slug" element={
+              <Suspense fallback={<GeovisoresLoader />}><GeovisorViewer /></Suspense>
+            } />
+            <Route path="/herramientas" element={
+              <Suspense fallback={<HerramientasSkeleton />}><Herramientas /></Suspense>
+            } />
 
             {/* Requiere usuario verificado — bloquea visitante y público */}
             <Route element={<RequireVerified />}>
@@ -146,18 +202,6 @@ function AppRoutes() {
               } />
               <Route path="/solicitudes" element={
                 <Suspense fallback={<SolicitudesSkeleton />}><Solicitudes /></Suspense>
-              } />
-            </Route>
-
-            {/* Bloquea Público y Visitante — en la práctica deja pasar a cualquier
-                otro rol verificado (investigador/tecnico/institucional/admin),
-                no solo Investigador/Admin. Ver nota en RequireAuth.tsx. */}
-            <Route element={<RequireInvestigador />}>
-              <Route path="/geovisor" element={
-                <Suspense fallback={<GeovisorLoader />}><Geovisor /></Suspense>
-              } />
-              <Route path="/herramientas" element={
-                <Suspense fallback={<HerramientasSkeleton />}><Herramientas /></Suspense>
               } />
             </Route>
           </Route>
@@ -170,13 +214,20 @@ function AppRoutes() {
               <Route path="/admin/solicitudes"   element={<Suspense fallback={<GenericPageSkeleton />}><AdminSolicitudes /></Suspense>} />
               <Route path="/admin/documentos"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminDocumentos /></Suspense>} />
               <Route path="/admin/mapas"         element={<Suspense fallback={<GenericPageSkeleton />}><AdminMapas /></Suspense>} />
+              <Route path="/admin/geovisores"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminGeovisores /></Suspense>} />
+              <Route path="/admin/conexiones-geoserver" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConexionesGeoserver /></Suspense>} />
               <Route path="/admin/configuracion" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConfig /></Suspense>} />
               <Route path="/admin/actividad"     element={<Suspense fallback={<GenericPageSkeleton />}><AdminActividad /></Suspense>} />
+              <Route path="/admin/errores"       element={<Suspense fallback={<GenericPageSkeleton />}><AdminErrores /></Suspense>} />
               <Route path="/admin/categorias"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminCategorias /></Suspense>} />
+              <Route path="/admin/herramientas"  element={<Suspense fallback={<GenericPageSkeleton />}><AdminHerramientas /></Suspense>} />
+              {/* "Reportes" era una pantalla aparte -- ahora es una pestaña de Actividad (ver pages/admin/Actividad.tsx) */}
+              <Route path="/admin/reportes"      element={<Navigate to="/admin/actividad?tab=reportes" replace />} />
 
               {/* ── Rutas exclusivas Super Admin ── */}
               <Route element={<RequireSuperAdmin />}>
                 <Route path="/admin/superadmin" element={<Suspense fallback={<GenericPageSkeleton />}><AdminGestionAdmins /></Suspense>} />
+                <Route path="/admin/papelera"   element={<Suspense fallback={<GenericPageSkeleton />}><AdminPapelera /></Suspense>} />
               </Route>
             </Route>
           </Route>
@@ -189,6 +240,7 @@ function AppRoutes() {
     </UIProvider>
     </AuthProvider>
     </ThemeProvider>
+    </MotionConfig>
   )
 }
 

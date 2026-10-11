@@ -34,6 +34,14 @@ export interface MapaRaw {
   visibilidad?: MapaVisibilidad
   creado_en: string
   autor?: string | null
+  // Metadatos técnicos opcionales (ISO 19115 / IGAC) -- ver mapas.schema.js.
+  epsg?: number | null
+  escala?: number | null
+  fuente?: string | null
+  bbox_norte?: number | null
+  bbox_sur?: number | null
+  bbox_este?: number | null
+  bbox_oeste?: number | null
 }
 
 export interface Mapa {
@@ -167,13 +175,184 @@ export interface Usuario {
   creado_en: string
 }
 
+// ─── Geovisores ───────────────────────────────────────────────────────────────
+// El backend responde `geovisores` en camelCase (mapeo hecho en filaAGeovisor,
+// VIGIIAP-backend/src/modules/geovisores/geovisores.service.js) pero
+// `conexiones_geoserver` se devuelve tal cual la columna SQL (snake_case) —
+// ver COLUMNAS_PUBLICAS en conexionesGeoserver.service.js.
+
+export interface CampoPopup {
+  campo: string
+  alias: string
+}
+
+export interface PresentacionGeovisor {
+  mostrarMetricas: boolean
+  mostrarImagenes: boolean
+  campoImagenUrl?: string
+  camposPopup: CampoPopup[]
+}
+
+export interface PresetArea {
+  nombre: string
+  geometria: {
+    type: 'Polygon' | 'MultiPolygon'
+    coordinates: unknown[]
+  }
+}
+
+export interface GeovisorRaw {
+  id: string
+  slug: string
+  titulo: string
+  subtitulo: string | null
+  descripcion: string | null
+  cita: string | null
+  categoria: string | null
+  conexionGeoserverId: string
+  workspacesGeoserver: string[]
+  /** IDs de capa ("workspace:layername") elegidas sueltas, sin importar su workspace/tema — vacío = usar workspacesGeoserver completos (legado). */
+  capasSeleccionadas: string[]
+  /** Subconjunto de capasSeleccionadas con "fichas por punto" habilitado -- ver useFichasPunto.ts. */
+  capasConFicha: string[]
+  /** true = además de capasSeleccionadas, el visor muestra las capas nuevas que se publiquen en GeoServer dentro de los mismos temas. */
+  incluirCapasNuevas: boolean
+  colorPorTema: Record<string, string>
+  centro: { lat: number; lng: number }
+  zoomInicial: number
+  basemapDefecto: string
+  areaMaxHa: number | null
+  presetsArea: PresetArea[]
+  visibilidad: MapaVisibilidad
+  presentacion: PresentacionGeovisor
+  thumbnailUrl: string | null
+  activo: boolean
+  orden: number
+  creadoEn: string
+}
+
+/** Payload de creación/edición — espejo de geovisores.schema.js (createGeovisorSchema). */
+export interface GeovisorInput {
+  titulo: string
+  subtitulo?: string
+  descripcion?: string
+  cita?: string
+  categoria?: string
+  conexionGeoserverId: string
+  workspacesGeoserver: string[]
+  capasSeleccionadas: string[]
+  capasConFicha: string[]
+  incluirCapasNuevas: boolean
+  colorPorTema: Record<string, string>
+  centroLat: number
+  centroLng: number
+  zoomInicial: number
+  basemapDefecto: string
+  areaMaxHa?: number
+  presetsArea: PresetArea[]
+  visibilidad: MapaVisibilidad
+  presentacion: PresentacionGeovisor
+  thumbnailUrl?: string
+}
+
+export type TipoConexionGeoserver = 'propio' | 'externo'
+
+export interface ConexionGeoserverRaw {
+  id: string
+  nombre: string
+  url: string
+  tipo: TipoConexionGeoserver
+  usuario_lectura: string | null
+  timeout_ms: number
+  activo: boolean
+  creado_en: string
+  actualizado_en: string
+}
+
+/** Payload de creación/edición — espejo de createConexionGeoserverSchema/updateConexionGeoserverSchema.
+ *  usuarioLectura/password son obligatorios solo cuando tipo='propio' (ver esquema del backend). */
+export interface ConexionGeoserverInput {
+  nombre: string
+  url: string
+  tipo?: TipoConexionGeoserver
+  usuarioLectura?: string
+  password?: string
+  timeoutMs?: number
+  activo?: boolean
+}
+
+export interface WorkspaceOption {
+  id: string
+  nombre: string
+  totalCapas: number
+  capas: Array<{ id: string; nombre: string; tipo: 'vectorial' | 'raster'; bbox?: BboxGeografico; nueva?: boolean }>
+}
+
+export interface BboxGeografico {
+  norte: number
+  sur: number
+  este: number
+  oeste: number
+}
+
+export interface CapaGeoserver {
+  id: string
+  nombre: string
+  tipo: 'vectorial' | 'raster'
+  bbox?: BboxGeografico
+  tema: string
+  /** Publicada en GeoServer hace menos de una semana (el backend la marca). */
+  nueva?: boolean
+}
+
+export interface TemaCapas {
+  id: string
+  nombre: string
+  capas: CapaGeoserver[]
+}
+
 // ─── Categorías ───────────────────────────────────────────────────────────────
+
+export type ModuloCategoria = 'documentos' | 'mapas' | 'geovisores'
 
 export interface Categoria {
   nombre: string
   descripcion?: string | null
   thumbnail_url?: string | null
   activo?: boolean
+  // A qué módulos pertenece la categoría -- declarado explícitamente al
+  // crearla (ver migración 048 en el backend), ya no se infiere del uso real.
+  // Ausente en respuestas antiguas que no vengan de GET /categorias, de ahí opcional.
+  modulos?: ModuloCategoria[]
+  // Conteo real por módulo, calculado en el servidor (ver categorias.service.js) --
+  // ausente en respuestas antiguas que no vengan de GET /categorias (ej. el propio
+  // POST/PATCH de creación/renombrado no lo devuelve), de ahí opcional.
+  conteo?: { docs: number; mapas: number; geovisores: number }
+}
+
+// ─── Herramientas ───────────────────────────────────────────────────────────────
+
+/** Contenido administrable de una herramienta de /herramientas (backend,
+ *  tabla `herramientas`). El componente real, ícono y color siguen siendo
+ *  código -- ver el registro estático en src/lib/herramientasRegistro.tsx,
+ *  que mapea `clave` a esos detalles de implementación. */
+/** 'publico' (cualquiera, incluido visitante anónimo) o 'usuarios' (exige
+ *  sesión con un rol que no sea visitante/publico) -- mismo campo/valores
+ *  que mapas/documentos/geovisores/categorias (sin el tercer valor
+ *  'acreditados' de esos módulos, específico de descargas por link directo
+ *  y sin sentido para una tarjeta de catálogo). */
+export type VisibilidadHerramienta = 'publico' | 'usuarios'
+
+export interface Herramienta {
+  clave: string
+  titulo: string
+  descripcion?: string | null
+  tag: string
+  activa: boolean
+  visibilidad: VisibilidadHerramienta
+  orden: number
+  creado_en?: string
+  actualizado_en?: string
 }
 
 // ─── Notificaciones ───────────────────────────────────────────────────────────
@@ -182,9 +361,33 @@ export interface Notificacion {
   id: string
   mensaje: string
   tipo?: string
-  leida?: boolean
+  leido_en?: string | null
   creado_en?: string
   link?: string
+}
+
+// ─── Tipos de notificación (catálogo) y preferencias por usuario ──────────────
+// Ver notificaciones.routes.js (backend) -- 'clave' de TipoNotificacion debe
+// coincidir con el `tipo` usado al crear una Notificacion.
+
+export type AplicaA = 'admin' | 'usuario' | 'ambos'
+
+export interface TipoNotificacion {
+  clave: string
+  nombre: string
+  icono: string
+  color: string
+  aplica_a: AplicaA
+  activo: boolean
+  orden: number
+}
+
+export interface NotificacionPref {
+  clave: string
+  nombre: string
+  icono: string
+  color: string
+  en_pantalla: boolean
 }
 
 // ─── Stats / Dashboard ────────────────────────────────────────────────────────
@@ -209,6 +412,10 @@ export interface CatalogueEntry {
   icon: React.ComponentType<{ className?: string }>
   to: string
   meta?: string
+  // Mapas/documentos no tienen ruta de detalle propia -- al seleccionarlos
+  // en el Command Palette, se navega a `to` y se precarga este valor en
+  // SearchContext para que la página de destino llegue ya filtrada al ítem.
+  presetQuery?: string
 }
 
 // ─── Web Vitals ───────────────────────────────────────────────────────────────
@@ -222,3 +429,120 @@ export interface WebVitalMetric {
   delta: number
   id: string
 }
+
+// ─── Fichas por punto (geovisores) ─────────────────────────────────────────────
+// Contenido curado (fotos/video/descripción) por feature de una capa vectorial,
+// identificado por un atributo estable de la propia capa -- no por el fid
+// interno de GeoServer, que se reasigna si el IIAP reimporta los datos. La
+// config vive a nivel de capa (conexión + capaId), compartida entre cualquier
+// geovisor que use esa misma capa, en vez de duplicarse por geovisor.
+
+export interface AtributoCapa {
+  nombre: string
+  tipo: string
+}
+
+export interface CapaFichaConfig {
+  id: string
+  conexionGeoserverId: string
+  capaId: string
+  campoIdentificador: string
+  campoEtiqueta: string | null
+  creadoEn: string
+  actualizadoEn: string
+}
+
+export type TipoMedioFicha = 'imagen' | 'video'
+/** 'listo' de inmediato para imagen (recompresión síncrona); 'procesando' para
+ *  un video recién subido (la transcodificación corre en segundo plano);
+ *  'error' si la transcodificación falla. `url`/`miniaturaUrl` son null
+ *  mientras no está 'listo'. */
+export type EstadoMedioFicha = 'listo' | 'procesando' | 'error'
+
+export interface MedioFicha {
+  id: string
+  tipo: TipoMedioFicha
+  estado: EstadoMedioFicha
+  url: string | null
+  miniaturaUrl: string | null
+  ancho: number | null
+  alto: number | null
+  duracionS: number | null
+  leyenda: string | null
+  creditos: string | null
+  orden: number
+}
+
+export interface FichaPunto {
+  id: string
+  titulo: string | null
+  descripcion: string
+  medios: MedioFicha[]
+}
+
+export type EstadoFeatureFicha = 'completa' | 'incompleta' | 'sin_ficha'
+
+export interface FeatureFichaEstado {
+  valor: string
+  etiqueta: string | null
+  /** [lng, lat], convención GeoJSON -- invertir a [lat, lng] para pasarlo a un Marker/MapContainer de Leaflet. */
+  centroide: [number, number]
+  nFeatures: number
+  estado: EstadoFeatureFicha
+  fichaId: string | null
+  nImagenes: number
+  nVideos: number
+  tieneDescripcion: boolean
+  actualizadoEn: string | null
+}
+
+export interface ResumenCompletitud {
+  totalFeatures: number
+  completas: number
+  incompletas: number
+  sinIdentificador: number
+  identificadoresDuplicados: number
+  huerfanas: number
+}
+
+export interface FeatureSinIdentificador {
+  fid: string
+  etiqueta: string | null
+}
+
+export interface FichaHuerfana {
+  valor: string
+  fichaId: string
+  nMedios: number
+}
+
+export interface FeaturesFichaResponse {
+  resumen: ResumenCompletitud
+  features: FeatureFichaEstado[]
+  sinIdentificador: FeatureSinIdentificador[]
+  huerfanas: FichaHuerfana[]
+}
+
+/** Resultado (sumado de todas las tandas) de importar títulos y descripciones de fichas en lote. */
+export interface ResultadoImportacionFichas {
+  creadas: number
+  actualizadas: number
+  /** Puntos que ya tenían descripción y no se tocaron (sin "sobrescribir"). */
+  omitidas: number
+  duplicadasEnArchivo: number
+}
+
+export interface CompletitudCapa {
+  capaId: string
+  nombre: string
+  resumen: ResumenCompletitud
+  bloqueantes: number
+}
+
+export interface CompletitudGeovisor {
+  publicable: boolean
+  capas: CompletitudCapa[]
+}
+
+/** GeoJSON.Feature enriquecido con la ficha curada de su punto, cuando la capa tiene el modo habilitado. */
+export type FeatureConFicha = GeoJSON.Feature & { ficha?: FichaPunto | null }

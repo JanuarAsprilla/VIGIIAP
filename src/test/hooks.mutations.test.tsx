@@ -29,15 +29,19 @@ import api from '@/lib/api'
 import {
   useCreateSolicitud, useUpdateEstadoSolicitud, useResponderSolicitud,
   useSolicitudArchivos, useUploadSolicitudArchivo, useDeleteSolicitudArchivo,
-  useDownloadSolicitudArchivo,
+  solicitudArchivoDescargaUrl,
 } from '@/hooks/useSolicitudes'
 import { useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa, useMapaBySlug } from '@/hooks/useMapas'
 import { useCreateDocumento, useUpdateDocumento, useDeleteDocumento, useDocumentoBySlug, useToggleActivoDocumento } from '@/hooks/useDocumentos'
 import {
   useCreateUsuario, useUpdateUsuarioRol, useToggleActivo,
-  useDeleteUsuario, useUpdatePerfil, useUpdatePassword,
+  useDeleteUsuario, useUpdatePerfil, useUpdatePassword, useUpdateAvatar,
 } from '@/hooks/useUsuarios'
-import { useCreateCategoria, useDeleteCategoria, useUploadCategoriaThumbnail } from '@/hooks/useCategorias'
+import { useCreateCategoria, useDeleteCategoria, useUploadCategoriaThumbnail, useUpdateModulosCategoria } from '@/hooks/useCategorias'
+import { useCreateGeovisor, useUpdateGeovisor, useToggleGeovisorActivo, useDeleteGeovisor } from '@/hooks/useGeovisores'
+import {
+  useCreateConexionGeoserver, useUpdateConexionGeoserver, useDeleteConexionGeoserver,
+} from '@/hooks/useConexionesGeoserver'
 
 function makeWrapper() {
   const qc = new QueryClient({
@@ -167,18 +171,11 @@ describe('useDeleteSolicitudArchivo', () => {
   })
 })
 
-describe('useDownloadSolicitudArchivo', () => {
-  beforeEach(() => { vi.clearAllMocks() })
-
-  test('calls GET /solicitudes/:id/archivos/:archivoId/download', async () => {
-    vi.mocked(api.get).mockResolvedValue({ url: 'https://example.com/file.pdf' })
-    const { result } = renderHook(() => useDownloadSolicitudArchivo(), { wrapper: makeWrapper() })
-
-    await act(async () => {
-      await result.current.mutateAsync({ solicitudId: '1', archivoId: '5' })
-    })
-
-    expect(api.get).toHaveBeenCalledWith('/solicitudes/1/archivos/5/download')
+describe('solicitudArchivoDescargaUrl', () => {
+  // El endpoint reenvía el archivo directamente (stream) -- ya no hay un
+  // mutationFn que pida primero una URL prefirmada, ver useSolicitudes.ts.
+  test('construye la URL del endpoint de streaming', () => {
+    expect(solicitudArchivoDescargaUrl('1', '5')).toBe('/api/v1/solicitudes/1/archivos/5/download')
   })
 })
 
@@ -200,13 +197,13 @@ describe('useCreateMapa', () => {
 describe('useUpdateMapa', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
-  test('calls PUT /mapas/:id', async () => {
-    vi.mocked(api.put).mockResolvedValue({ id: 5 })
+  test('calls PATCH /mapas/:id', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ id: 5 })
     const { result } = renderHook(() => useUpdateMapa(), { wrapper: makeWrapper() })
     const fd = new FormData()
 
     await act(async () => { await result.current.mutateAsync({ id: '5', formData: fd }) })
-    expect(api.put).toHaveBeenCalledWith('/mapas/5', fd, expect.any(Object))
+    expect(api.patch).toHaveBeenCalledWith('/mapas/5', fd, expect.any(Object))
   })
 })
 
@@ -325,6 +322,17 @@ describe('useDocumentoBySlug', () => {
 
 // ─── useUsuarios mutations ────────────────────────────────────────────────────
 
+// Regresión: promover/degradar/desactivar/borrar un usuario debe refrescar
+// también la caché de GestionAdmins.tsx ('administradores', 'super-stats'),
+// no solo la de Usuarios — si no, un usuario recién vuelto admin_sig solo
+// aparece en el panel de Administradores tras un refresh manual.
+function expectInvalidatesUsuariosYAdmins(spy: ReturnType<typeof vi.spyOn>) {
+  const invalidatedKeys = spy.mock.calls.map((c: unknown[]) => (c[0] as { queryKey: unknown[] }).queryKey)
+  expect(invalidatedKeys).toContainEqual(['usuarios'])
+  expect(invalidatedKeys).toContainEqual(['administradores'])
+  expect(invalidatedKeys).toContainEqual(['super-stats'])
+}
+
 describe('useCreateUsuario', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
@@ -336,6 +344,18 @@ describe('useCreateUsuario', () => {
       await result.current.mutateAsync({ nombre: 'Test', email: 'test@iiap.gov.co', rol: 'Público' })
     })
     expect(api.post).toHaveBeenCalledWith('/admin/usuarios', expect.any(Object))
+  })
+
+  test('invalidates usuarios y administradores — un usuario puede crearse ya como admin_sig', async () => {
+    vi.mocked(api.post).mockResolvedValue({ id: 10 })
+    const spy = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
+    const { result } = renderHook(() => useCreateUsuario(), { wrapper: makeWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync({ nombre: 'Test', email: 'test@iiap.gov.co', rol: 'Administrador SIG' })
+    })
+    expectInvalidatesUsuariosYAdmins(spy)
+    spy.mockRestore()
   })
 })
 
@@ -351,6 +371,18 @@ describe('useUpdateUsuarioRol', () => {
     })
     expect(api.patch).toHaveBeenCalledWith(expect.stringContaining('usuarios/1'), expect.any(Object))
   })
+
+  test('invalidates usuarios y administradores al cambiar el rol', async () => {
+    vi.mocked(api.patch).mockResolvedValue({})
+    const spy = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
+    const { result } = renderHook(() => useUpdateUsuarioRol(), { wrapper: makeWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync({ id: '1', rol: 'Administrador SIG' })
+    })
+    expectInvalidatesUsuariosYAdmins(spy)
+    spy.mockRestore()
+  })
 })
 
 describe('useToggleActivo', () => {
@@ -365,6 +397,18 @@ describe('useToggleActivo', () => {
     })
     expect(api.patch).toHaveBeenCalledWith(expect.stringContaining('usuarios/2'), expect.any(Object))
   })
+
+  test('invalidates usuarios y administradores al (des)activar', async () => {
+    vi.mocked(api.patch).mockResolvedValue({})
+    const spy = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
+    const { result } = renderHook(() => useToggleActivo(), { wrapper: makeWrapper() })
+
+    await act(async () => {
+      await result.current.mutateAsync({ id: '2', activo: false })
+    })
+    expectInvalidatesUsuariosYAdmins(spy)
+    spy.mockRestore()
+  })
 })
 
 describe('useDeleteUsuario', () => {
@@ -376,6 +420,16 @@ describe('useDeleteUsuario', () => {
 
     await act(async () => { await result.current.mutateAsync('5') })
     expect(api.delete).toHaveBeenCalledWith(expect.stringContaining('usuarios/5'))
+  })
+
+  test('invalidates usuarios y administradores al eliminar', async () => {
+    vi.mocked(api.delete).mockResolvedValue({})
+    const spy = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
+    const { result } = renderHook(() => useDeleteUsuario(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync('5') })
+    expectInvalidatesUsuariosYAdmins(spy)
+    spy.mockRestore()
   })
 })
 
@@ -410,17 +464,47 @@ describe('useUpdatePassword', () => {
   })
 })
 
+describe('useUpdateAvatar', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls PATCH /usuarios/me/avatar with the file as FormData', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ avatar_url: 'https://files.test.local/avatars/x.jpg' })
+    const { result } = renderHook(() => useUpdateAvatar(), { wrapper: makeWrapper() })
+    const file = new File(['img'], 'foto.jpg', { type: 'image/jpeg' })
+
+    await act(async () => {
+      await result.current.mutateAsync(file)
+    })
+
+    expect(api.patch).toHaveBeenCalledWith('/usuarios/me/avatar', expect.any(FormData))
+    const formData = vi.mocked(api.patch).mock.calls[0][1] as FormData
+    expect(formData.get('avatar')).toBe(file)
+  })
+})
+
 // ─── useCategorias mutations ──────────────────────────────────────────────────
 
 describe('useCreateCategoria', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
-  test('calls POST /categorias with nombre', async () => {
+  test('calls POST /categorias with nombre and modulos', async () => {
     vi.mocked(api.post).mockResolvedValue({ id: 1, nombre: 'Nueva' })
     const { result } = renderHook(() => useCreateCategoria(), { wrapper: makeWrapper() })
 
-    await act(async () => { await result.current.mutateAsync('Nueva categoría') })
-    expect(api.post).toHaveBeenCalledWith('/categorias', { nombre: 'Nueva categoría' })
+    await act(async () => { await result.current.mutateAsync({ nombre: 'Nueva categoría', modulos: ['documentos', 'mapas'] }) })
+    expect(api.post).toHaveBeenCalledWith('/categorias', { nombre: 'Nueva categoría', modulos: ['documentos', 'mapas'] })
+  })
+})
+
+describe('useUpdateModulosCategoria', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls PATCH /categorias/:nombre/modulos (URL-encoded)', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ nombre: 'Flora', modulos: ['mapas'] })
+    const { result } = renderHook(() => useUpdateModulosCategoria(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync({ nombre: 'Flora Marina', modulos: ['mapas'] }) })
+    expect(api.patch).toHaveBeenCalledWith('/categorias/Flora%20Marina/modulos', { modulos: ['mapas'] })
   })
 })
 
@@ -452,5 +536,111 @@ describe('useUploadCategoriaThumbnail', () => {
       expect.any(FormData),
       expect.any(Object)
     )
+  })
+})
+
+// ─── useGeovisores mutations ──────────────────────────────────────────────────
+const geovisorInput = {
+  titulo: 'Geología del Chocó', conexionGeoserverId: 'c1', workspacesGeoserver: [],
+  capasSeleccionadas: [],
+  capasConFicha: [], incluirCapasNuevas: false,
+  colorPorTema: {}, centroLat: 5.55, centroLng: -76.6, zoomInicial: 8,
+  basemapDefecto: 'calles', presetsArea: [], visibilidad: 'publico' as const,
+  presentacion: { mostrarMetricas: true, mostrarImagenes: false, camposPopup: [] },
+}
+
+describe('useCreateGeovisor', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls POST /geovisores con el payload', async () => {
+    vi.mocked(api.post).mockResolvedValue({ id: '1', ...geovisorInput })
+    const { result } = renderHook(() => useCreateGeovisor(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync(geovisorInput) })
+    expect(api.post).toHaveBeenCalledWith('/geovisores', geovisorInput)
+  })
+
+  test('expone isError cuando la API falla', async () => {
+    vi.mocked(api.post).mockRejectedValue(new Error('500'))
+    const { result } = renderHook(() => useCreateGeovisor(), { wrapper: makeWrapper() })
+
+    await act(async () => {
+      try { await result.current.mutateAsync(geovisorInput) } catch { /* expected */ }
+    })
+    await waitFor(() => expect(result.current.isError).toBe(true))
+  })
+})
+
+describe('useUpdateGeovisor', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls PATCH /geovisores/:id con el id y el payload separados', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ id: '1', ...geovisorInput })
+    const { result } = renderHook(() => useUpdateGeovisor(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync({ id: '1', data: { titulo: 'Nuevo título' } }) })
+    expect(api.patch).toHaveBeenCalledWith('/geovisores/1', { titulo: 'Nuevo título' })
+  })
+})
+
+describe('useToggleGeovisorActivo', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls PATCH /geovisores/:id/activo con el estado', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ id: '1', activo: false })
+    const { result } = renderHook(() => useToggleGeovisorActivo(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync({ id: '1', activo: false }) })
+    expect(api.patch).toHaveBeenCalledWith('/geovisores/1/activo', { activo: false })
+  })
+})
+
+describe('useDeleteGeovisor', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls DELETE /geovisores/:id', async () => {
+    vi.mocked(api.delete).mockResolvedValue(undefined)
+    const { result } = renderHook(() => useDeleteGeovisor(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync('1') })
+    expect(api.delete).toHaveBeenCalledWith('/geovisores/1')
+  })
+})
+
+// ─── useConexionesGeoserver mutations ─────────────────────────────────────────
+describe('useCreateConexionGeoserver', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls POST /admin/conexiones-geoserver con el payload', async () => {
+    vi.mocked(api.post).mockResolvedValue({ id: 'c1' })
+    const { result } = renderHook(() => useCreateConexionGeoserver(), { wrapper: makeWrapper() })
+
+    const payload = { nombre: 'GeoServer IIAP', url: 'https://geoserver.test/geoserver', usuarioLectura: 'lector', password: 'secreta', timeoutMs: 20000 }
+    await act(async () => { await result.current.mutateAsync(payload) })
+    expect(api.post).toHaveBeenCalledWith('/admin/conexiones-geoserver', payload)
+  })
+})
+
+describe('useUpdateConexionGeoserver', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls PATCH /admin/conexiones-geoserver/:id con el id y el payload separados', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ id: 'c1' })
+    const { result } = renderHook(() => useUpdateConexionGeoserver(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync({ id: 'c1', data: { activo: false } }) })
+    expect(api.patch).toHaveBeenCalledWith('/admin/conexiones-geoserver/c1', { activo: false })
+  })
+})
+
+describe('useDeleteConexionGeoserver', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls DELETE /admin/conexiones-geoserver/:id', async () => {
+    vi.mocked(api.delete).mockResolvedValue(undefined)
+    const { result } = renderHook(() => useDeleteConexionGeoserver(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync('c1') })
+    expect(api.delete).toHaveBeenCalledWith('/admin/conexiones-geoserver/c1')
   })
 })

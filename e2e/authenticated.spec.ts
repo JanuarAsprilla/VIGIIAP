@@ -14,13 +14,15 @@ const USER_EMAIL     = process.env.E2E_USER_EMAIL     || '';
 const USER_PASSWORD  = process.env.E2E_USER_PASSWORD  || '';
 
 // Helper: login programático
+// /login ya no es una página propia — reenvía a "/" y abre el panel de login
+// anclado del TopBar (ver src/pages/auth/Login.tsx). El login exitoso se
+// confirma esperando a que el panel se cierre, no por un cambio de URL.
 async function loginAs(page, email, password) {
   await page.goto('/login');
   await page.fill('input[type="email"], input[name="email"]', email);
   await page.fill('input[type="password"], input[name="password"]', password);
   await page.click('button[type="submit"]');
-  // Esperar redirección fuera de /login
-  await page.waitForURL(url => !url.pathname.includes('login'), { timeout: 8000 });
+  await expect(page.locator('input[type="email"], input[name="email"]')).toBeHidden({ timeout: 8000 });
 }
 
 // ─── Flujos de usuario autenticado ───────────────────────────────────────────
@@ -52,6 +54,16 @@ test.describe('Flujo usuario autenticado (investigador/publico)', () => {
     // Debe mostrar el email del usuario
     const content = await page.textContent('body');
     expect(content.toLowerCase()).toContain(USER_EMAIL.split('@')[0].toLowerCase());
+  });
+
+  // RequireAdmin (src/components/RequireAuth.tsx) redirige a "/" cuando hay
+  // sesión activa pero el rol no es admin -- distinto del caso sin sesión
+  // (que va a /login). Es la mitad que faltaba del par de tests de
+  // autorización: ya existía el caso "sin sesión", faltaba "con sesión pero
+  // sin el rol correcto".
+  test('un usuario autenticado sin rol admin es redirigido fuera de /admin', async ({ page }) => {
+    await page.goto('/admin');
+    await expect(page).toHaveURL('/');
   });
 });
 
@@ -114,8 +126,10 @@ test.describe('Panel de administración', () => {
   });
 
   test('panel admin no es accesible sin autenticación (redirección)', async ({ page: newPage }) => {
-    // Nueva página sin sesión
+    // Nueva página sin sesión — /admin redirige a "/" con el panel de login
+    // abierto (ya no existe una página /login propia).
     await newPage.goto('/admin');
-    await expect(newPage).toHaveURL(/login/);
+    await expect(newPage).toHaveURL('/');
+    await expect(newPage.locator('input[type="email"], input[name="email"]')).toBeVisible();
   });
 });

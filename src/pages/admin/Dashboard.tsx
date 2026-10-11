@@ -2,99 +2,225 @@ import { useState } from 'react'
 import type { SolicitudData } from '@/hooks/useSolicitudes'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useQuery } from '@tanstack/react-query'
+import { Line } from 'react-chartjs-2'
 import {
-  Users, ClipboardList, FileText, Eye,
-  TrendingUp, TrendingDown, CheckCircle, XCircle,
-  ArrowRight, Zap, AlertTriangle,
+  Users, ClipboardList, FileText, Map as MapIcon,
+  CheckCircle, XCircle, Eye, ServerCrash, ShieldCheck,
+  ArrowRight, Zap, AlertTriangle, ShieldQuestion, type LucideIcon,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { puedeVerModulo } from '@/lib/permisosModulo'
+import type { ModuloClave } from '@/lib/constants/modulos'
 import { fadeUpSm, staggerContainer, staggerItem3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
-import { useAdminStats } from '@/hooks/useStats'
-import { useSolicitudesAdmin, useUpdateEstadoSolicitud } from '@/hooks/useSolicitudes'
+import MetricPanel, { type Metric } from '@/components/ui/MetricPanel'
+import { LINE_CHART_OPTIONS } from '@/lib/reportesChartConfig'
+import {
+  useAdminStats, useDashboardTendencias,
+  type AdminStats, type TendenciaKPI, type DashboardTendencias,
+} from '@/hooks/useStats'
+import { useAnaliticaResumen } from '@/hooks/useAnalitica'
+import { useErrorLog } from '@/hooks/useErrorLog'
+import {
+  useSolicitudesAdmin, useUpdateEstadoSolicitud,
+  ESTADO_LABEL, ESTADO_COLOR,
+} from '@/hooks/useSolicitudes'
 import { useUsuariosList } from '@/hooks/useUsuarios'
-import api from '@/lib/api'
-import { formatDate } from '@/lib/dateUtils'
+import { useAuditLog, MODULO_STYLES } from '@/hooks/useAuditLog'
 import { ROLES } from '@/lib/constants/roles'
 
 const fadeUp = fadeUpSm
 
-const KPI_ICONS = [Users, ClipboardList, FileText, Eye]
-
-// ── KPI Cards — 3D tilt ──
-const KPI_GLOW = [
-  'rgba(26,86,50,0.22)',
-  'rgba(249,115,22,0.20)',
-  'rgba(247,172,66,0.22)',
-  'rgba(0,152,70,0.20)',
-  'rgba(56,189,248,0.18)',
-]
-
-interface DashboardStats {
-  documentos: number
-  solicitudesPendientes: number
-  [key: string]: unknown
+interface KpiDef {
+  label: string
+  value: number | undefined
+  /** KPI de tendencias.ts correspondiente a este valor (ninguno para snapshots sin flujo, como visitantes). */
+  tendencia: TendenciaKPI | undefined
+  /** Cómo nombrar la cifra de flujo semanal debajo del valor — ej. "nuevos", "publicados". */
+  flowLabel: string
+  /** Módulo del panel al que pertenece esta cifra — un admin_sig sin permiso de "ver" sobre él no debe verla. */
+  modulo: ModuloClave
+  icon: LucideIcon
 }
 
-function KPICards({ stats, isLoading }: { stats: DashboardStats | undefined; isLoading: boolean }) {
-  const kpis = [
-    { label: 'Usuarios Registrados',   value: (stats?.usuarios as number | undefined) ?? '—',            trendUp: true  },
-    { label: 'Solicitudes Pendientes', value: stats?.solicitudesPendientes ?? '—', trendUp: false },
-    { label: 'Documentos Activos',     value: stats?.documentos ?? '—',            trendUp: true  },
-    { label: 'Visitantes (30 días)',   value: (stats?.visitantesUltimos30d as number | undefined) ?? '—', trendUp: true  },
+function KPICards({
+  stats, isLoading, tendencias, tendenciasLoading, user,
+}: {
+  stats: AdminStats | undefined
+  isLoading: boolean
+  tendencias: DashboardTendencias | undefined
+  tendenciasLoading: boolean
+  user: ReturnType<typeof useAuth>['user']
+}) {
+  const todos: KpiDef[] = [
+    { label: 'Usuarios Registrados',   value: stats?.usuarios,              tendencia: tendencias?.usuarios,    flowLabel: 'nuevos',     modulo: 'usuarios',    icon: Users },
+    { label: 'Solicitudes Pendientes', value: stats?.solicitudesPendientes, tendencia: tendencias?.solicitudes, flowLabel: 'nuevas',     modulo: 'solicitudes', icon: ClipboardList },
+    { label: 'Documentos Activos',     value: stats?.documentos,            tendencia: tendencias?.documentos,  flowLabel: 'publicados', modulo: 'documentos',  icon: FileText },
+    { label: 'Mapas Publicados',       value: stats?.mapasPublicados,       tendencia: tendencias?.mapas,       flowLabel: 'publicados', modulo: 'mapas',       icon: MapIcon },
   ]
-  return (
-    <motion.div
-      variants={staggerContainer(0.07, 0.05)}
-      initial="initial"
-      animate="animate"
-      className="grid grid-cols-2 sm:grid-cols-4 gap-4"
-    >
-      {kpis.map((kpi, i) => {
-        const Icon = KPI_ICONS[i]
-        return (
-          <motion.div key={kpi.label} variants={staggerItem3D}>
-            <Card3D
-              glow={KPI_GLOW[i]}
-              intensity={4}
-              className="bg-white border border-border/70 rounded-xl p-5 relative overflow-hidden"
-              whileHover={{ y: -3 }}
-            >
-              {/* Subtle corner glow */}
-              <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full opacity-30 pointer-events-none"
-                style={{ background: `radial-gradient(circle, ${KPI_GLOW[i]} 0%, transparent 70%)` }} />
+  const kpis = todos.filter((kpi) => puedeVerModulo(user, kpi.modulo))
+  if (kpis.length === 0) return null
 
-              <div className="flex items-start justify-between mb-3 relative">
-                <div className="w-9 h-9 bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-primary-700" aria-hidden="true" />
-                </div>
-                <span className={`inline-flex items-center gap-1 text-[0.65rem] font-semibold ${kpi.trendUp ? 'text-green-600' : 'text-orange-500'}`}>
-                  {kpi.trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                </span>
-              </div>
-              <div className="tabular font-display text-3xl font-bold text-text relative">
-                {isLoading
-                  ? <span className="inline-block w-10 h-7 bg-bg-alt rounded animate-pulse" />
-                  : kpi.value}
-              </div>
-              <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">{kpi.label}</p>
-            </Card3D>
-          </motion.div>
-        )
-      })}
+  const metrics: Metric[] = kpis.map((kpi) => ({
+    label: kpi.label,
+    value: kpi.value ?? '—',
+    loading: isLoading,
+    icon: kpi.icon,
+    deltaPct: tendenciasLoading ? undefined : kpi.tendencia?.deltaPct,
+    sparkline: tendenciasLoading ? undefined : kpi.tendencia?.serie7,
+  }))
+
+  return (
+    <motion.div {...fadeUp(0.05)}>
+      <MetricPanel metrics={metrics} />
+    </motion.div>
+  )
+}
+
+// Últimos 7 días terminando hoy -- mismo criterio que serie7 en el backend
+// (getResumen de analitica.service.js), sin fechas explícitas en la
+// respuesta porque el cliente ya puede reconstruirlas a partir de "hoy".
+function etiquetasUltimos7Dias(): string[] {
+  const hoy = new Date()
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(hoy)
+    d.setDate(hoy.getDate() - (6 - i))
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })
+  })
+}
+
+// ── Tráfico y Uso — trae al Dashboard lo que ya calcula Analítica de Uso
+// (ver AnaliticaTab.tsx), como el resumen general que "hasta arriba" debe
+// reflejar toda la plataforma, no solo los módulos de gestión de contenido. ──
+function TraficoUso() {
+  const { data, isLoading, isError } = useAnaliticaResumen()
+
+  return (
+    <motion.div {...fadeUp(0.11)} className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5 lg:col-span-2">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-[var(--stats-bg)] border border-[var(--stats-border)] rounded-lg flex items-center justify-center">
+            <Eye className="w-3.5 h-3.5 text-[var(--stats-value)]" aria-hidden="true" />
+          </div>
+          <h3 className="section-title">Tráfico y Uso — Últimos 7 Días</h3>
+        </div>
+        <Link to="/admin/actividad?tab=analitica" className="text-xs font-semibold text-primary-800 hover:text-primary-600 no-underline flex items-center gap-1 shrink-0">
+          Ver detalle <ArrowRight className="w-3 h-3" />
+        </Link>
+      </div>
+      {isLoading && (
+        <div className="h-[200px] flex items-center justify-center">
+          <span className="inline-block w-32 h-6 bg-bg-alt rounded animate-pulse" />
+        </div>
+      )}
+      {isError && (
+        <p className="text-xs text-red-500 py-8 text-center">No se pudo cargar el tráfico de la plataforma.</p>
+      )}
+      {!isLoading && !isError && data && (
+        <div style={{ height: 200 }}>
+          <Line
+            data={{
+              labels: etiquetasUltimos7Dias(),
+              datasets: [
+                {
+                  label: 'Páginas vistas',
+                  data: data.paginasVistas.serie7,
+                  borderColor: '#009846',
+                  backgroundColor: '#00984622',
+                  pointRadius: 3,
+                  pointHoverRadius: 5,
+                  borderWidth: 2,
+                  tension: 0.3,
+                  fill: true,
+                },
+                {
+                  label: 'Visitantes únicos',
+                  data: data.visitantes.serie7,
+                  borderColor: '#F7AC42',
+                  backgroundColor: '#F7AC4222',
+                  pointRadius: 3,
+                  pointHoverRadius: 5,
+                  borderWidth: 2,
+                  tension: 0.3,
+                  fill: true,
+                },
+              ],
+            }}
+            options={LINE_CHART_OPTIONS}
+          />
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+// ── Salud del Sistema — reusa el registro de Errores, condensado a un
+// semáforo: nada que leer fila por fila desde el Dashboard, solo si hay algo
+// crítico que atender ahora mismo. ──
+function SaludSistema() {
+  const { data, isLoading, isError } = useErrorLog({ limit: 200 })
+  // Un error marcado "Resuelto" ya no cuenta para la salud del sistema -- de
+  // lo contrario este widget seguiría en rojo aunque el admin ya haya
+  // atendido todo, igual que le pasaba al resumen de Errores.tsx.
+  const errores = (data?.data ?? []).filter((e) => e.estado !== 'resuelto')
+  const criticos = errores.filter((e) => e.statusCode >= 500).length
+  // Ocurrencias solo de los errores CRÍTICOS -- mezclar aquí el volumen de
+  // 4xx/otros (ruido normal de una API en producción) haría parecer más
+  // grave o más leve la situación de lo que el titular de arriba ya dice.
+  const ocurrenciasCriticas = errores.filter((e) => e.statusCode >= 500).reduce((sum, e) => sum + e.ocurrencias, 0)
+  const ok = !isError && criticos === 0
+
+  return (
+    <motion.div {...fadeUp(0.14)} className="bg-[var(--card-bg)] border border-border/70 rounded-xl p-5 flex flex-col">
+      <div className="flex items-center gap-2 mb-4">
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${ok ? 'bg-primary-700/10' : 'bg-red/10'}`}>
+          {ok ? <ShieldCheck className="w-3.5 h-3.5 text-primary-700" aria-hidden="true" /> : <ServerCrash className="w-3.5 h-3.5 text-red-dark" aria-hidden="true" />}
+        </div>
+        <h3 className="section-title">Salud del Sistema</h3>
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center text-center py-2">
+        {isLoading ? (
+          <span className="inline-block w-24 h-6 bg-bg-alt rounded animate-pulse" />
+        ) : isError ? (
+          <p className="text-xs text-red-500">No se pudo verificar</p>
+        ) : ok ? (
+          <>
+            <p className="stat-figure" style={{ color: 'var(--color-primary-700)' }}>Todo en orden</p>
+            <p className="text-xs text-text-muted mt-1">Sin errores críticos activos</p>
+          </>
+        ) : (
+          <>
+            <p className="stat-figure" style={{ color: 'var(--color-red-dark)' }}>{criticos}</p>
+            <p className="text-xs text-text-muted mt-1">
+              tipo{criticos === 1 ? '' : 's'} de error crítico{criticos === 1 ? '' : 's'} · {ocurrenciasCriticas} ocurrencia{ocurrenciasCriticas === 1 ? '' : 's'}
+            </p>
+          </>
+        )}
+      </div>
+      <Link to="/admin/errores" className="text-xs font-semibold text-primary-800 hover:text-primary-600 no-underline flex items-center justify-center gap-1 pt-3 mt-2 border-t border-border/60">
+        Ver registro de errores <ArrowRight className="w-3 h-3" />
+      </Link>
     </motion.div>
   )
 }
 
 // ── Gráfico de Solicitudes por Estado ──
-function SolicitudesChart({ solicitudes }: { solicitudes: SolicitudData[] }) {
-  const estados = [
-    { label: 'Pendiente',   color: 'bg-gold-500',    textColor: 'text-gold-500'    },
-    { label: 'En Revisión', color: 'bg-primary-500', textColor: 'text-primary-500' },
-    { label: 'Aprobado',    color: 'bg-primary-700', textColor: 'text-primary-700' },
-    { label: 'Rechazado',   color: 'bg-red',         textColor: 'text-red-dark'    },
-  ]
+// Colores por clave semántica — misma paleta que StatusBadge (src/pages/solicitudes/StatusBadge.tsx)
+const ESTADO_BAR_STYLE: Record<string, { bar: string; text: string }> = {
+  orange: { bar: 'bg-gold-500',    text: 'text-gold-500'    },
+  blue:   { bar: 'bg-primary-500', text: 'text-primary-500' },
+  green:  { bar: 'bg-primary-700', text: 'text-primary-700' },
+  red:    { bar: 'bg-red',         text: 'text-red-dark'    },
+  teal:   { bar: 'bg-accent',      text: 'text-primary-800' },
+  yellow: { bar: 'bg-gold-400',    text: 'text-gold-400'    },
+}
+
+function SolicitudesChart({ solicitudes, isError, onRetry }: { solicitudes: SolicitudData[]; isError: boolean; onRetry: () => void }) {
+  // Estados derivados de ESTADO_LABEL (fuente de verdad) — así las barras siempre suman el total mostrado
+  const estados = Array.from(new Set(Object.values(ESTADO_LABEL))).map((label) => {
+    const colorKey = ESTADO_COLOR[label] ?? 'yellow'
+    return { label, ...(ESTADO_BAR_STYLE[colorKey] ?? ESTADO_BAR_STYLE.yellow) }
+  })
   const total = solicitudes.length
   const bars = estados.map((e) => ({
     ...e,
@@ -117,24 +243,37 @@ function SolicitudesChart({ solicitudes }: { solicitudes: SolicitudData[] }) {
   })
   const weeklyMax = Math.max(...weeklyData, 1)
 
+  if (isError) {
+    return (
+      <motion.div {...fadeUp(0.28)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5 text-center">
+        <h3 className="section-title mb-3">Solicitudes por Estado</h3>
+        <p className="text-xs text-red-500 mb-2">No se pudo cargar la información.</p>
+        <button onClick={onRetry} className="text-xs font-semibold text-primary-700 hover:text-primary-900 transition-colors">
+          Reintentar
+        </button>
+      </motion.div>
+    )
+  }
+
   return (
-    <motion.div {...fadeUp(0.28)} className="bg-white border border-border rounded-xl p-5">
-      <h3 className="text-sm font-bold text-text mb-4">Solicitudes por Estado</h3>
+    <motion.div {...fadeUp(0.28)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5">
+      <h3 className="section-title mb-4">Solicitudes por Estado</h3>
 
       {/* Bar chart */}
-      <div className="flex items-end gap-3 mb-4 h-24">
+      <div className="flex items-end gap-2 mb-4 h-24">
         {bars.map((b) => (
           <div key={b.label} className="flex-1 flex flex-col items-center gap-1">
-            <span className={`text-xs font-bold ${b.textColor}`}>{b.count}</span>
+            <span className={`text-xs font-bold ${b.text}`}>{b.count}</span>
             <div className="w-full flex items-end justify-center" style={{ height: '60px' }}>
               <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: `${(b.count / maxCount) * 60}px` }}
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: b.count / maxCount }}
                 transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className={`w-full rounded-t-lg ${b.color}`}
+                style={{ transformOrigin: 'bottom', height: '60px' }}
+                className={`w-full rounded-t-lg ${b.bar}`}
               />
             </div>
-            <span className="text-[0.55rem] font-semibold text-text-muted text-center leading-tight">{b.label}</span>
+            <span className="text-[0.52rem] font-semibold text-text-muted text-center leading-tight">{b.label}</span>
           </div>
         ))}
       </div>
@@ -148,9 +287,10 @@ function SolicitudesChart({ solicitudes }: { solicitudes: SolicitudData[] }) {
           {weeklyData.map((v, i) => (
             <div key={i} className="flex-1 flex items-end" style={{ height: '40px' }}>
               <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: `${(v / weeklyMax) * 40}px` }}
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: v / weeklyMax }}
                 transition={{ duration: 0.6, delay: 0.4 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+                style={{ transformOrigin: 'bottom', height: '40px' }}
                 className={`w-full rounded-sm ${i === weeklyData.length - 1 ? 'bg-primary-800' : 'bg-primary-200'}`}
               />
             </div>
@@ -168,19 +308,27 @@ function SolicitudesChart({ solicitudes }: { solicitudes: SolicitudData[] }) {
 }
 
 // ── Alertas — solicitudes sin atender ──
-function AlertasSolicitudes({ solicitudes }: { solicitudes: SolicitudData[] }) {
+function AlertasSolicitudes({ solicitudes, isError, onRetry }: { solicitudes: SolicitudData[]; isError: boolean; onRetry: () => void }) {
+  if (isError) {
+    return (
+      <motion.div {...fadeUp(0.15)} className="flex items-center justify-between gap-3 px-4 py-3 bg-red/10 border border-red/25 rounded-xl text-sm text-red-dark">
+        <span>No se pudieron cargar las solicitudes pendientes.</span>
+        <button onClick={onRetry} className="text-xs font-semibold underline shrink-0">Reintentar</button>
+      </motion.div>
+    )
+  }
   const pendientes = solicitudes.filter((s) => s.estado === 'Pendiente' || s.estado === 'En Revisión')
   if (pendientes.length === 0) return null
   return (
-    <motion.div {...fadeUp(0.15)} className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+    <motion.div {...fadeUp(0.15)} className="flex items-start gap-3 px-4 py-3 bg-gold-500/10 border border-gold-500/25 rounded-xl">
+      <AlertTriangle className="w-4 h-4 text-gold-500 shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-amber-800">
+        <p className="text-sm font-semibold text-gold-500">
           {pendientes.length} solicitud{pendientes.length > 1 ? 'es' : ''} pendiente{pendientes.length > 1 ? 's' : ''} de respuesta
         </p>
-        <p className="text-xs text-amber-700 mt-0.5">Revisa y asigna revisor en Gestión de Solicitudes</p>
+        <p className="text-xs text-gold-400 mt-0.5">Revisa y asigna revisor en Gestión de Solicitudes</p>
       </div>
-      <Link to="/admin/solicitudes" className="shrink-0 text-xs font-bold text-amber-800 hover:text-amber-900 no-underline flex items-center gap-1 whitespace-nowrap">
+      <Link to="/admin/solicitudes" className="shrink-0 text-xs font-bold text-gold-500 hover:text-gold-400 no-underline flex items-center gap-1 whitespace-nowrap">
         Ver <ArrowRight className="w-3 h-3" />
       </Link>
     </motion.div>
@@ -188,45 +336,65 @@ function AlertasSolicitudes({ solicitudes }: { solicitudes: SolicitudData[] }) {
 }
 
 // ── Distribución de roles ──
-// Cubre todos los roles que useUsuariosList puede devolver (ver ROLE_MAP en
-// hooks/useUsuarios.ts) — antes solo listaba 3 de 5, así que Técnico SIG y
-// Funcionario Institucional quedaban invisibles aunque tuvieran usuarios reales.
-const ROLE_CHART_ITEMS: { label: string; color: string }[] = [
-  { label: ROLES.ADMIN,         color: 'bg-primary-800' },
-  { label: ROLES.INVESTIGADOR,  color: 'bg-primary-500' },
-  { label: ROLES.TECNICO,       color: 'bg-gold-500'    },
-  { label: ROLES.INSTITUCIONAL, color: 'bg-primary-300' },
-  { label: ROLES.PUBLICO,       color: 'bg-primary-200' },
-]
+// Mismo subconjunto asignable que Usuarios.tsx (excluye Super Admin y Visitante,
+// que no aparecen como filas gestionables en esa página) — así el total siempre cuadra.
+const ROLES_CHART_ORDER = [ROLES.ADMIN, ROLES.INVESTIGADOR, ROLES.TECNICO, ROLES.INSTITUCIONAL, ROLES.PUBLICO]
+const ROLE_BAR_COLOR: Record<string, string> = {
+  [ROLES.ADMIN]:         'bg-primary-800',
+  [ROLES.INVESTIGADOR]:  'bg-primary-500',
+  [ROLES.TECNICO]:       'bg-gold-400',
+  [ROLES.INSTITUCIONAL]: 'bg-magenta',
+  [ROLES.PUBLICO]:       'bg-primary-200',
+}
 
-function RolesChart({ usuarios }: { usuarios: { rol: string }[] }) {
+function RolesChart({ usuarios, isError, onRetry }: { usuarios: { rol: string }[]; isError: boolean; onRetry: () => void }) {
   const counts = usuarios.reduce<Record<string, number>>((acc, u) => {
     acc[u.rol] = (acc[u.rol] || 0) + 1
     return acc
   }, {})
   const total = usuarios.length
-  const items = ROLE_CHART_ITEMS.map((r) => ({ ...r, count: counts[r.label] || 0 }))
+  const items = ROLES_CHART_ORDER.map((label) => ({
+    label,
+    count: counts[label] || 0,
+    color: ROLE_BAR_COLOR[label],
+  }))
+
+  if (isError) {
+    return (
+      <motion.div {...fadeUp(0.3)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5 text-center">
+        <h3 className="section-title mb-3">Distribución de Roles</h3>
+        <p className="text-xs text-red-500 mb-2">No se pudo cargar la información.</p>
+        <button onClick={onRetry} className="text-xs font-semibold text-primary-700 hover:text-primary-900 transition-colors">
+          Reintentar
+        </button>
+      </motion.div>
+    )
+  }
 
   return (
-    <motion.div {...fadeUp(0.3)} className="bg-white border border-border rounded-xl p-5">
-      <h3 className="text-sm font-bold text-text mb-4">Distribución de Roles</h3>
+    <motion.div {...fadeUp(0.3)} className="bg-[var(--card-bg)] border border-border rounded-xl p-5">
+      <h3 className="section-title mb-4">Distribución de Roles</h3>
       <div className="space-y-3">
-        {items.map((item) => (
-          <div key={item.label}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-text-muted">{item.label}</span>
-              <span className="text-xs font-bold text-text">{item.count}</span>
+        {items.map((item) => {
+          const pct = total > 0 ? item.count / total : 0
+          return (
+            <div key={item.label}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-text-muted">{item.label}</span>
+                <span className="text-xs font-bold text-text">{item.count}</span>
+              </div>
+              <div className="w-full h-2 bg-bg-alt rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: pct }}
+                  transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ transformOrigin: 'left', width: '100%' }}
+                  className={`h-full rounded-full ${item.color}`}
+                />
+              </div>
             </div>
-            <div className="w-full h-2 bg-bg-alt rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(item.count / total) * 100}%` }}
-                transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className={`h-full rounded-full ${item.color}`}
-              />
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
       <p className="text-xs text-text-muted mt-3 text-right">{total} usuarios registrados</p>
     </motion.div>
@@ -234,7 +402,7 @@ function RolesChart({ usuarios }: { usuarios: { rol: string }[] }) {
 }
 
 // ── Solicitudes pendientes ──
-function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }) {
+function SolicitudesPendientes({ solicitudes, isError, onRetry }: { solicitudes: SolicitudData[]; isError: boolean; onRetry: () => void }) {
   const pendientes   = solicitudes.filter((s) => s.estado === 'Pendiente' || s.estado === 'En Revisión')
   const updateEstado = useUpdateEstadoSolicitud()
   const [confirm, setConfirm] = useState<{ _id: string; accion: 'Aprobado' | 'Rechazado' } | null>(null)
@@ -245,24 +413,40 @@ function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }
   }
 
   return (
-    <motion.div {...fadeUp(0.2)} className="bg-white border border-border rounded-xl overflow-hidden">
+    <motion.div {...fadeUp(0.2)} className="bg-[var(--card-bg)] border border-border rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-        <h3 className="text-sm font-bold text-text">Solicitudes Pendientes</h3>
+        <h3 className="section-title">Solicitudes Pendientes</h3>
         <Link to="/admin/solicitudes" className="text-xs font-semibold text-primary-800 hover:text-primary-600 no-underline flex items-center gap-1">
           Ver todas <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
       <div className="divide-y divide-border">
-        {pendientes.length === 0 && (
+        {isError && (
+          <div className="px-5 py-6 text-center">
+            <p className="text-xs text-red-500 mb-2">No se pudieron cargar las solicitudes.</p>
+            <button onClick={onRetry} className="text-xs font-semibold text-primary-700 hover:text-primary-900 transition-colors">
+              Reintentar
+            </button>
+          </div>
+        )}
+        {!isError && pendientes.length === 0 && (
           <p className="px-5 py-6 text-sm text-text-muted text-center">Sin solicitudes pendientes</p>
         )}
-        {pendientes.map((sol) => {
+        {!isError && pendientes.map((sol) => {
           const isConfirming = confirm?._id === sol._id
           const isPending    = updateEstado.isPending && isConfirming
+          const dias        = sol.diasPendiente
+          const diasLabel   = dias <= 0 ? 'Hoy' : `Hace ${dias} día${dias === 1 ? '' : 's'}`
+          const diasUrgent  = dias >= 7
           return (
             <div key={sol.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-bg-alt/40 transition-colors">
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-primary-800">{sol.id}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-bold text-primary-800">{sol.id}</p>
+                  <span className={`text-[0.6rem] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap ${diasUrgent ? 'bg-red/10 text-red-dark' : 'bg-bg-alt text-text-muted'}`}>
+                    {diasLabel}
+                  </span>
+                </div>
                 <p className="text-sm font-semibold text-text truncate">{sol.tipo}</p>
                 <p className="text-xs text-text-muted">{sol.subtipo} · {sol.fecha}</p>
               </div>
@@ -291,14 +475,14 @@ function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }
                   <>
                     <button
                       onClick={() => setConfirm({ _id: sol._id, accion: 'Aprobado' })}
-                      className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+                      className="p-1.5 rounded-lg text-primary-600 hover:bg-primary-500/10 transition-colors"
                       title="Aprobar"
                     >
                       <CheckCircle className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setConfirm({ _id: sol._id, accion: 'Rechazado' })}
-                      className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                      className="p-1.5 rounded-lg text-red-dark hover:bg-red/10 transition-colors"
                       title="Rechazar"
                     >
                       <XCircle className="w-4 h-4" />
@@ -314,63 +498,48 @@ function SolicitudesPendientes({ solicitudes }: { solicitudes: SolicitudData[] }
   )
 }
 
-// ── Actividad reciente ──
-interface AuditLogRaw {
-  id: string
-  usuario_email?: string | null
-  descripcion?: string | null
-  accion?: string | null
-  modulo: string
-  creado_en: string
-}
-type AuditListResult = { data: AuditLogRaw[] }
-
-function ActividadReciente() {
-  const { data } = useQuery<AuditListResult, Error, AuditLogRaw[]>({
-    queryKey: ['audit', 'recent'],
-    queryFn: () => api.get('/admin/audit', { params: { limit: 7, page: 1 } }) as Promise<AuditListResult>,
-    select: (res) => res.data ?? [],
-    staleTime: 30_000,
-  })
-  const logs = data ?? []
-
-  const moduloBadge = (modulo: string) => {
-    const map = {
-      auth: 'bg-primary-500/12 text-primary-500',
-      admin: 'bg-primary-100 text-primary-800',
-      solicitudes: 'bg-gold-400/12 text-gold-400',
-      mapas: 'bg-primary-700/10 text-primary-700',
-      documentos: 'bg-gold-500/12 text-gold-500',
-    }
-    return (map as Record<string, string>)[modulo] ?? 'bg-gray-100 text-gray-600'
-  }
+// ── Actividad reciente — reusa src/hooks/useAuditLog.ts, mismo hook que Actividad.tsx ──
+function ActividadReciente({ enabled }: { enabled: boolean }) {
+  const { data, isLoading, isError, refetch } = useAuditLog({ limit: 7, page: 1 }, enabled)
+  const logs = data?.data ?? []
 
   return (
-    <motion.div {...fadeUp(0.25)} className="bg-white border border-border rounded-xl overflow-hidden">
+    <motion.div {...fadeUp(0.25)} className="bg-[var(--card-bg)] border border-border rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-        <h3 className="text-sm font-bold text-text">Actividad Reciente</h3>
+        <h3 className="section-title">Actividad Reciente</h3>
         <Link to="/admin/actividad" className="text-xs font-semibold text-primary-800 hover:text-primary-600 no-underline flex items-center gap-1">
           Ver todo <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
       <div className="divide-y divide-border max-h-64 overflow-y-auto">
-        {logs.length === 0 && (
+        {isLoading && (
+          <p className="px-5 py-6 text-xs text-text-muted text-center">Cargando…</p>
+        )}
+        {isError && (
+          <div className="px-5 py-6 text-center">
+            <p className="text-xs text-red-500 mb-2">No se pudo cargar la actividad reciente.</p>
+            <button onClick={() => refetch()} className="text-xs font-semibold text-primary-700 hover:text-primary-900 transition-colors">
+              Reintentar
+            </button>
+          </div>
+        )}
+        {!isLoading && !isError && logs.length === 0 && (
           <p className="px-5 py-6 text-xs text-text-muted text-center italic">Sin actividad registrada</p>
         )}
         {logs.map((log) => {
-          const initials = (log.usuario_email ?? '?').slice(0, 2).toUpperCase()
+          const initials = (log.email !== '—' ? log.email : '?').slice(0, 2).toUpperCase()
           return (
             <div key={log.id} className="flex items-start gap-3 px-5 py-3 hover:bg-bg-alt/40 transition-colors">
               <div className="w-7 h-7 bg-gradient-to-br from-primary-600 to-primary-900 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
                 <span className="text-white text-[0.6rem] font-bold">{initials}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-text truncate">{log.descripcion ?? log.accion}</p>
+                <p className="text-xs font-semibold text-text truncate">{log.descripcion || log.accionLabel}</p>
                 <p className="text-[0.65rem] text-text-muted mt-0.5">
-                  {log.usuario_email ?? '—'} · {formatDate(log.creado_en)}
+                  {log.email} · {log.fecha}
                 </p>
               </div>
-              <span className={`text-[0.55rem] font-bold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${moduloBadge(log.modulo)}`}>
+              <span className={`text-[0.55rem] font-bold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${MODULO_STYLES[log.modulo] ?? 'bg-bg-alt text-text-muted'}`}>
                 {log.modulo}
               </span>
             </div>
@@ -389,13 +558,15 @@ const QA_GLOW = [
   'rgba(249,115,22,0.32)',
 ]
 
-function QuickActions() {
-  const actions = [
-    { label: 'Nuevo Usuario',    to: '/admin/usuarios',    icon: Users,        color: 'from-[#D4A373] to-[#B8860B]'    },
-    { label: 'Ver Solicitudes',  to: '/admin/solicitudes', icon: ClipboardList,color: 'from-primary-500 to-primary-700' },
-    { label: 'Gestionar Docs',   to: '/admin/documentos',  icon: FileText,     color: 'from-magenta to-red-dark'        },
-    { label: 'Ver Actividad',    to: '/admin/actividad',   icon: Zap,          color: 'from-orange-400 to-orange-600'   },
+function QuickActions({ user }: { user: ReturnType<typeof useAuth>['user'] }) {
+  const todas = [
+    { label: 'Nuevo Usuario',    to: '/admin/usuarios',    icon: Users,        color: 'from-[#D4A373] to-[#B8860B]',     modulo: 'usuarios' as ModuloClave },
+    { label: 'Ver Solicitudes',  to: '/admin/solicitudes', icon: ClipboardList,color: 'from-primary-500 to-primary-700', modulo: 'solicitudes' as ModuloClave },
+    { label: 'Gestionar Docs',   to: '/admin/documentos',  icon: FileText,     color: 'from-magenta to-red-dark',        modulo: 'documentos' as ModuloClave },
+    { label: 'Ver Actividad',    to: '/admin/actividad',   icon: Zap,          color: 'from-orange-400 to-orange-600',   modulo: 'actividad' as ModuloClave },
   ]
+  const actions = todas.filter((a) => puedeVerModulo(user, a.modulo))
+  if (actions.length === 0) return null
   return (
     <motion.div
       variants={staggerContainer(0.07, 0.3)}
@@ -407,7 +578,7 @@ function QuickActions() {
         <motion.div key={a.label} variants={staggerItem3D}>
           <Link to={a.to} className="no-underline block">
             <Card3D
-              glow={QA_GLOW[i]}
+              glow={QA_GLOW[i % QA_GLOW.length]}
               intensity={6}
               className={`bg-gradient-to-br ${a.color} rounded-xl p-4 text-center cursor-pointer relative overflow-hidden`}
               whileHover={{ y: -4 }}
@@ -426,49 +597,118 @@ function QuickActions() {
   )
 }
 
+// ── Sin módulos asignados — aviso explícito, no una pantalla en blanco ──
+// Un admin_sig recién creado (o al que le quitaron todo el acceso) no debe
+// llegar a un Dashboard vacío y pensar que algo se rompió: el mensaje deja
+// claro que es su estado normal mientras no tenga módulos delegados.
+function SinModulosAsignados() {
+  return (
+    <motion.div
+      {...fadeUp(0.1)}
+      className="flex flex-col items-center text-center gap-3 px-6 py-14 bg-[var(--card-bg)] border border-border/70 rounded-2xl"
+    >
+      <div className="w-12 h-12 bg-gold-500/10 rounded-full flex items-center justify-center">
+        <ShieldQuestion className="w-6 h-6 text-gold-500" aria-hidden="true" />
+      </div>
+      <div className="max-w-md">
+        <p className="text-sm font-bold text-text">Todavía no tienes ningún módulo asignado</p>
+        <p className="text-sm text-text-muted mt-1">
+          Esto no es un error — tu cuenta de Administrador SIG está activa, pero un Super Administrador
+          aún no te ha delegado acceso a ninguna sección del panel. Pídele que te lo asigne desde
+          Gestión de Administradores.
+        </p>
+      </div>
+    </motion.div>
+  )
+}
+
 export default function Dashboard() {
   const { user } = useAuth()
-  const { data: stats, isLoading: loadingStats } = useAdminStats()
-  const { data: solData } = useSolicitudesAdmin({ limit: 100 })
-  const { data: usrData } = useUsuariosList({ limit: 100 })
+
+  // Un admin_sig delegado solo trae permisos para el subconjunto de módulos
+  // que le asignaron (ver GestionAdmins.tsx / admin_permisos_modulo en el
+  // backend) -- super_admin y roles no-admin no tienen restricción aquí.
+  const verUsuarios    = puedeVerModulo(user, 'usuarios')
+  const verSolicitudes = puedeVerModulo(user, 'solicitudes')
+  const verActividad   = puedeVerModulo(user, 'actividad')
+  const verErrores     = puedeVerModulo(user, 'errores')
+  const esDelegado     = user?.rol === 'admin_sig'
+  const modulosPropios = esDelegado ? (user?.modulos ?? []).filter((m) => m.puede_ver).length : null
+  const sinModulos     = esDelegado && modulosPropios === 0
+
+  const { data: stats, isLoading: loadingStats, isError: statsError, refetch: refetchStats } = useAdminStats()
+  const { data: tendencias, isLoading: loadingTendencias } = useDashboardTendencias()
+  const { data: solData, isError: solError, refetch: refetchSol } = useSolicitudesAdmin({ limit: 100 }, verSolicitudes)
+  const { data: usrData, isError: usrError, refetch: refetchUsr } = useUsuariosList({ limit: 100 }, verUsuarios)
   const solicitudes = solData?.data ?? []
   const usuarios    = usrData?.data ?? []
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header -- el título lleva todo el peso jerárquico de la página (sin
+          eyebrow encima: el saludo personal se movió a la descripción, ver
+          impeccable/craft-floor.md sobre eyebrows). */}
       <motion.div {...fadeUp(0)}>
-        <span className="text-[0.7rem] font-bold uppercase tracking-widest text-primary-700">
+        <h1 className="font-display font-bold text-text" style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.25rem)', letterSpacing: '-0.01em' }}>
           Panel de Control
-        </span>
-        <h1 className="font-display text-3xl font-bold text-text mt-1">
-          Bienvenido, {user?.name?.split(' ')[0]}
         </h1>
-        <p className="text-sm text-text-muted mt-1">
-          Resumen general del sistema VIGIA-IIAP · {new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}
+        <p className="text-sm text-text-muted mt-1.5">
+          Bienvenido, {user?.name?.split(' ')[0]} —{' '}
+          {esDelegado
+            ? `acceso delegado a ${modulosPropios} módulo${modulosPropios === 1 ? '' : 's'} del panel · ${new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}`
+            : `resumen general del sistema VIGIA-IIAP · ${new Date().toLocaleDateString('es-CO', { dateStyle: 'long' })}`}
         </p>
       </motion.div>
 
-      {/* KPIs */}
-      <KPICards stats={stats} isLoading={loadingStats} />
+      {sinModulos ? (
+        <SinModulosAsignados />
+      ) : (
+        <>
+          {/* KPIs */}
+          {statsError && (
+            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-red/10 border border-red/25 rounded-xl text-sm text-red-dark">
+              <span>No se pudieron cargar las estadísticas del panel.</span>
+              <button onClick={() => refetchStats()} className="text-xs font-semibold underline shrink-0">Reintentar</button>
+            </div>
+          )}
+          <KPICards
+            stats={stats}
+            isLoading={loadingStats}
+            tendencias={tendencias}
+            tendenciasLoading={loadingTendencias}
+            user={user}
+          />
 
-      {/* Alerta solicitudes */}
-      <AlertasSolicitudes solicitudes={solicitudes} />
+          {/* Tráfico de la plataforma + salud del sistema -- el resumen real
+              de "qué está pasando ahora", no solo conteos de contenido. */}
+          {(verActividad || verErrores) && (
+            <div className={`grid grid-cols-1 gap-4 ${verActividad && verErrores ? 'lg:grid-cols-3' : ''}`}>
+              {verActividad && <TraficoUso />}
+              {verErrores && <SaludSistema />}
+            </div>
+          )}
 
-      {/* Quick Actions */}
-      <QuickActions />
+          {/* Alerta solicitudes */}
+          {verSolicitudes && <AlertasSolicitudes solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />}
 
-      {/* Main grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-        <div className="space-y-6">
-          <SolicitudesPendientes solicitudes={solicitudes} />
-          <ActividadReciente />
-        </div>
-        <div className="space-y-6">
-          <RolesChart usuarios={usuarios} />
-          <SolicitudesChart solicitudes={solicitudes} />
-        </div>
-      </div>
+          {/* Quick Actions */}
+          <QuickActions user={user} />
+
+          {/* Main grid */}
+          {(verSolicitudes || verActividad || verUsuarios) && (
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+              <div className="space-y-6">
+                {verSolicitudes && <SolicitudesPendientes solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />}
+                {verActividad && <ActividadReciente enabled={verActividad} />}
+              </div>
+              <div className="space-y-6">
+                {verUsuarios && <RolesChart usuarios={usuarios} isError={usrError} onRetry={refetchUsr} />}
+                {verSolicitudes && <SolicitudesChart solicitudes={solicitudes} isError={solError} onRetry={refetchSol} />}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

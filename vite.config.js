@@ -22,7 +22,6 @@ export default defineConfig({
           if (id.includes('framer-motion') || id.includes('gsap')) return 'motion-vendor'
           if (id.includes('@tanstack/react-query') || id.includes('axios')) return 'query-vendor'
           if (id.includes('leaflet') || id.includes('react-leaflet')) return 'map-vendor'
-          if (id.includes('@sentry')) return 'sentry-vendor'
         },
       },
     },

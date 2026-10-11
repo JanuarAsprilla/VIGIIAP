@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import {
   UserCircle, ClipboardList, BookOpen, LogOut,
@@ -8,6 +7,9 @@ import {
 import { panelAnim } from './panelAnim'
 import { ROLES } from '@/lib/constants/roles'
 import type { AuthUser } from '@/contexts/AuthContext'
+import GlassPanel from '@/components/ui/GlassPanel'
+import AvatarBadge from '@/components/ui/AvatarBadge'
+import Avatar from '@/components/ui/Avatar'
 
 function RoleBadge({ user }: { user: AuthUser | null }) {
   const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE
@@ -21,8 +23,8 @@ function RoleBadge({ user }: { user: AuthUser | null }) {
     </span>
   )
   if (isSuperAdmin) return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-bold uppercase tracking-wider"
-      style={{ background: 'rgba(124,58,237,0.1)', color: '#6D28D9', border: '1px solid rgba(124,58,237,0.2)' }}>
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-bold uppercase tracking-wider text-white"
+      style={{ background: 'var(--brand-gradient)', boxShadow: '0 1px 4px rgba(0,152,70,0.25)' }}>
       <ShieldCheck className="w-2.5 h-2.5" />Super Admin
     </span>
   )
@@ -40,19 +42,41 @@ function RoleBadge({ user }: { user: AuthUser | null }) {
   )
 }
 
-function MenuItem({ to = '', icon: Icon, label, onClick = undefined, danger = false }: {
-  to?: string; icon: LucideIcon
-  label: string; onClick?: () => void; danger?: boolean
+// Fila plana estándar del menú (Mi Perfil, Mis Solicitudes, Guía de Usuario,
+// Panel Admin). "accent" solo cambia el color/peso del ícono y el texto —
+// misma altura y padding que el resto para que la lista mantenga un único
+// ritmo visual (antes Panel Admin era un pill de gradiente aparte, lo que
+// se leía como un botón CTA compitiendo con Cerrar Sesión).
+function MenuItem({ to = '', icon: Icon, label, onClick = undefined, accent = false }: {
+  to?: string; icon: LucideIcon; label: string; onClick?: () => void; accent?: boolean
 }) {
-  const base = `flex items-center gap-3 px-4 py-2.5 text-sm no-underline transition-colors w-full text-left ${danger ? 'text-orange-600 hover:bg-orange-50' : 'text-text hover:bg-bg-alt'}`
+  const base = `flex items-center gap-3 px-4 py-2.5 text-sm no-underline transition-colors w-full text-left hover:bg-bg-alt ${
+    accent ? 'font-semibold' : 'text-text'
+  }`
+  const style = accent ? { color: 'var(--color-primary-500)' } : undefined
+  const iconClassName = `w-4 h-4 ${accent ? '' : 'text-text-muted'}`
   if (to) return (
-    <li><Link to={to} onClick={onClick} className={base}>
-      <Icon className={`w-4 h-4 ${danger ? '' : 'text-text-muted'}`} aria-hidden="true" />{label}
+    <li><Link to={to} onClick={onClick} className={base} style={style}>
+      <Icon className={iconClassName} style={accent ? style : undefined} aria-hidden="true" />{label}
     </Link></li>
   )
   return (
-    <li><button onClick={onClick} className={base}>
-      <Icon className={`w-4 h-4 ${danger ? '' : 'text-text-muted'}`} aria-hidden="true" />{label}
+    <li><button onClick={onClick} className={base} style={style}>
+      <Icon className={iconClassName} style={accent ? style : undefined} aria-hidden="true" />{label}
+    </button></li>
+  )
+}
+
+// Fila con peso propio, reservada para acciones que interrumpen el flujo
+// normal de navegación (Cerrar Sesión) — visible en reposo, no solo al hover.
+function EmphasisItem({ icon: Icon, label, onClick }: {
+  icon: LucideIcon; label: string; onClick: () => void
+}) {
+  const className = 'flex items-center gap-3 px-4 py-2.5 text-sm font-bold no-underline transition-all w-full text-left rounded-xl mx-2 my-1 hover:opacity-90 active:scale-[0.98]'
+  const style = { background: 'rgba(239,68,68,0.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.18)' }
+  return (
+    <li><button onClick={onClick} className={className} style={style}>
+      <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />{label}
     </button></li>
   )
 }
@@ -63,15 +87,13 @@ export default function ProfileDropdown({ user, onClose, onLogout }: { user: Aut
   const isVerified   = !isUnverified
 
   return (
-    <motion.div
-      {...panelAnim}
-      className="absolute top-full right-0 mt-2 w-60 bg-white border border-border rounded-xl shadow-float overflow-hidden z-50"
-    >
+    <GlassPanel {...panelAnim} width="w-60">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2.5 mb-2">
-          <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-800 rounded-full flex items-center justify-center shrink-0">
-            <span className="text-white text-xs font-bold">{user?.initials}</span>
+          <div className="relative shrink-0">
+            <Avatar avatarUrl={user?.avatarUrl} initials={user?.initials} size="w-9 h-9" textSize="text-xs" />
+            <AvatarBadge variant="dot" ringColor="var(--glass-panel-bg)" label="Sesión activa" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-text truncate leading-tight">{user?.name}</p>
@@ -102,16 +124,16 @@ export default function ProfileDropdown({ user, onClose, onLogout }: { user: Aut
         {isVerified && (
           <ul className="py-1">
             <MenuItem to="/perfil"       icon={UserCircle}      label="Mi Perfil"       onClick={onClose} />
-            {isAdmin && <MenuItem to="/admin" icon={LayoutDashboard} label="Panel Admin" onClick={onClose} />}
+            {isAdmin && <MenuItem to="/admin" icon={LayoutDashboard} label="Panel Admin" onClick={onClose} accent />}
             <MenuItem to="/solicitudes"  icon={ClipboardList}   label="Mis Solicitudes"  onClick={onClose} />
             <MenuItem to="/guia-usuario" icon={BookOpen}        label="Guía de Usuario"  onClick={onClose} />
           </ul>
         )}
 
-        <div className="border-t border-border py-1">
-          <MenuItem icon={LogOut} label="Cerrar Sesión" onClick={onLogout} danger />
+        <div className="border-t border-border pt-1 pb-2">
+          <EmphasisItem icon={LogOut} label="Cerrar Sesión" onClick={onLogout} />
         </div>
       </nav>
-    </motion.div>
+    </GlassPanel>
   )
 }

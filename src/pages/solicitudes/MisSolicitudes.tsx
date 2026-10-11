@@ -18,7 +18,7 @@ export function MisSolicitudes({ onVerDetalle }: MisSolicitudesProps) {
       {...fadeUp(0.3)}
       glow="rgba(26,86,50,0.14)"
       intensity={3}
-      className="bg-white border border-border/70 rounded-xl overflow-hidden"
+      className="bg-[var(--card-bg)] border border-border/70 rounded-xl overflow-hidden"
       whileHover={{ y: -2 }}
       transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
     >
@@ -47,7 +47,7 @@ export function MisSolicitudes({ onVerDetalle }: MisSolicitudesProps) {
                 : 'bg-gold-500/12 text-gold-500'
               }`}>{s.estado}</span>
               <button onClick={() => onVerDetalle(s)}
-                className="p-1 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors">
+                className="p-1 rounded-lg text-text-muted hover:text-primary-600 hover:bg-primary-800/10 transition-colors">
                 <Eye className="w-3.5 h-3.5" />
               </button>
             </div>

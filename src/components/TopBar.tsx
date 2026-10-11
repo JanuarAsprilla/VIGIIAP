@@ -12,89 +12,190 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Bell, Settings, Menu, LogIn,
   ChevronDown, X, HelpCircle, Command, Sun, Moon,
+  type LucideIcon,
 } from 'lucide-react'
 import { useAuth }   from '@/contexts/AuthContext'
 import { ROLES }     from '@/lib/constants/roles'
 import { useTheme }  from '@/contexts/ThemeContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { useUI }     from '@/contexts/UIContext'
-import { useAdminNotificaciones } from '@/hooks/useNotificaciones'
+import { useNotificaciones, useMarcarNotificacionLeida, useMarcarTodasNotificacionesLeidas } from '@/hooks/useNotificaciones'
+import { useUpdatePerfil } from '@/hooks/useUsuarios'
 
 import SoportePanel        from './topbar/SoportePanel'
 import NotificacionesPanel from './topbar/NotificacionesPanel'
 import AjustesPanel        from './topbar/AjustesPanel'
 import ProfileDropdown     from './topbar/ProfileDropdown'
+import LoginPanel          from './topbar/LoginPanel'
+import WelcomePanel        from './topbar/WelcomePanel'
+import { markPendingLoginRedirect, consumePendingLoginRedirect } from './topbar/pendingLoginRedirect'
+import AvatarBadge         from './ui/AvatarBadge'
+import Avatar               from './ui/Avatar'
 
 // ── Constantes de configuración ──
 
-const STORAGE_KEY  = 'vigiiap_notif_read'
+// Clave de localStorage para no repetir el aviso de bienvenida en cada
+// recarga -- se marca la primera vez que se auto-abre para un visitante sin
+// sesión, y ya no vuelve a aparecer solo en este navegador.
+const WELCOME_SEEN_KEY = 'vigiiap:welcome-seen'
 
 const SEARCH_PLACEHOLDERS = {
   '/':            'Buscar módulos, documentos...',
   '/mapas':       'Buscar mapas, capas o territorios...',
   '/documentos':  'Buscar por nombre, tipo o fecha...',
-  '/geovisor':    'Buscar coordenadas, lugar o capa...',
+  '/geovisores':  'Buscar coordenadas, lugar o capa...',
   '/herramientas':'Buscar herramienta o análisis...',
   '/solicitudes': 'Buscar trámites o expedientes...',
 }
 
 const PAGE_LABELS = {
-  '/geovisor': 'Geovisor',
+  '/geovisores': 'Geovisores',
 }
 
-// ── Hook: estado de notificaciones leídas persistido en localStorage ──
+// ── Botón de ícono — soporte/notificaciones/ajustes compartían el mismo
+//    patrón de estado activo repetido 3 veces; centralizado aquí ──
+function TopBarIconButton({ active, icon: Icon, label, badge, onClick, ariaLabel }: {
+  active: boolean
+  icon: LucideIcon
+  label?: string
+  badge?: number
+  onClick: () => void
+  ariaLabel: string
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={ariaLabel}
+      aria-expanded={active}
+      aria-haspopup="true"
+      className={`relative flex items-center gap-1.5 rounded-lg text-sm font-medium transition-all ${label ? 'px-3 py-1.5' : 'p-2'}`}
+      style={{
+        color: active ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)',
+        background: active ? (label ? 'var(--topbar-icon-on-bg2)' : 'var(--topbar-icon-on-bg)') : 'transparent',
+      }}
+    >
+      <Icon className={label ? 'w-3.5 h-3.5' : 'w-[18px] h-[18px]'} aria-hidden="true" />
+      {label}
+      {!!badge && (
+        <AvatarBadge
+          variant="count"
+          count={badge}
+          ringColor="var(--color-bg)"
+          label={`${badge} sin leer`}
+        />
+      )}
+    </button>
+  )
+}
 
-function useReadNotifications() {
-  const [readIds, setReadIds] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      return stored ? JSON.parse(stored) : []
-    } catch {
-      return []
-    }
-  })
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(readIds))
-    } catch { /* localStorage no disponible — modo privado o sin permisos */ }
-  }, [readIds])
-
-  const markRead    = useCallback((id: string) => setReadIds((prev) => [...new Set([...prev, id])]), [])
-  const markAllRead = useCallback((ids: string[]) => setReadIds((prev) => [...new Set([...prev, ...ids])]), [])
-
-  return { readIds, markRead, markAllRead }
+// ── Campo de búsqueda — compartido entre la fila desktop y la fila mobile,
+//    antes duplicado casi al carácter ──
+function TopBarSearchInput({ value, onChange, placeholder, autoFocus, onClear, showPaletteHint, onOpenPalette, className = '' }: {
+  value: string
+  onChange: (v: string) => void
+  placeholder: string
+  autoFocus?: boolean
+  onClear: () => void
+  showPaletteHint?: boolean
+  onOpenPalette?: () => void
+  className?: string
+}) {
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-lg px-3 py-2 ${className}`}
+      style={{ background: 'var(--topbar-search-bg)', border: '1px solid var(--topbar-search-border)' }}
+    >
+      <Search className="w-[18px] h-[18px] shrink-0" style={{ color: 'var(--topbar-icon-off)' }} aria-hidden="true" />
+      <input
+        type="text"
+        autoFocus={autoFocus}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={placeholder}
+        className="topbar-search bg-transparent border-none outline-none text-sm w-full"
+        style={{ color: 'var(--topbar-text)' }}
+      />
+      {value ? (
+        <button onClick={onClear} aria-label="Limpiar búsqueda" className="text-text-muted hover:text-text transition-colors shrink-0">
+          <X className="w-3.5 h-3.5" aria-hidden="true" />
+        </button>
+      ) : showPaletteHint ? (
+        <button
+          onClick={onOpenPalette}
+          aria-label="Abrir búsqueda global (Cmd+K)"
+          title="Búsqueda global"
+          className="flex items-center gap-1 px-1.5 py-0.5 rounded-md transition-colors shrink-0"
+          style={{ background: 'var(--topbar-search-border)', color: 'var(--topbar-icon-off)' }}
+        >
+          <Command className="w-3 h-3" aria-hidden="true" />
+          <kbd className="text-[0.55rem] font-mono font-bold">K</kbd>
+        </button>
+      ) : null}
+    </div>
+  )
 }
 
 // ── Componente principal ──
 
-export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
+// onMenuToggle es opcional: en la app principal (MainLayout) la navegación en
+// teléfono ya vive completa en BottomTabs (tab "Más"), así que no hace falta
+// un segundo disparador de menú aquí — se elimina esa redundancia. AdminLayout
+// sí lo pasa: el panel admin no tiene una barra inferior propia.
+export default function TopBar({ onMenuToggle, onOpenAuthModal }: {
+  onMenuToggle?: () => void
+  // Abre RecuperarPasswordPanel/SolicitarAccesoPanel (definidos en MainLayout)
+  // desde dentro de LoginPanel sin navegar — ver LoginPanel.tsx.
+  onOpenAuthModal?: (target: 'recuperar' | 'solicitar') => void
+}) {
   const location  = useLocation()
   const navigate  = useNavigate()
-  const { isAuthenticated, user, logout, isAdmin } = useAuth()
+  const { isAuthenticated, initializing, user, logout } = useAuth()
   const { openPalette, notifications }     = useUI()
   const { query, setQuery }               = useSearch()
   const { isDark, toggleTheme }           = useTheme()
+  const updatePerfil = useUpdatePerfil()
+
+  // Alterna el tema local y, si hay sesión, persiste la preferencia en el
+  // servidor (usuarios.tema) — isDark todavía refleja el tema ANTES del
+  // toggle, así que el valor a guardar es el opuesto.
+  const handleToggleTheme = () => {
+    toggleTheme()
+    if (isAuthenticated) updatePerfil.mutate({ tema: isDark ? 'light' : 'dark' })
+  }
 
   const placeholder = (SEARCH_PLACEHOLDERS as Record<string, string>)[location.pathname] ?? (SEARCH_PLACEHOLDERS as Record<string, string>)['/']
   const activeLabel = (PAGE_LABELS as Record<string, string>)[location.pathname]
 
-  type PanelName = 'soporte' | 'notificaciones' | 'ajustes' | 'dropdown'
+  // 'welcome' y 'login' son paneles distintos (ver WelcomePanel.tsx y
+  // LoginPanel.tsx), no un paso interno de uno solo — WelcomePanel explica
+  // las dos formas de acceder; LoginPanel solo pide credenciales.
+  type PanelName = 'soporte' | 'notificaciones' | 'ajustes' | 'dropdown' | 'welcome' | 'login'
 
   const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [activePanel, setActivePanel]           = useState<PanelName | null>(null)
+  // Solo se usa cuando el panel de login se abre vía redirect desde una ruta
+  // protegida (RequireAuth guarda location.state.from) — /login reenvía ese
+  // "from" hasta aquí para volver al sitio original tras iniciar sesión.
+  const [loginFrom, setLoginFrom]               = useState<string | undefined>(undefined)
 
-  const panelRef    = useRef<HTMLDivElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-
-  const { readIds, markRead, markAllRead } = useReadNotifications()
+  const panelRef       = useRef<HTMLDivElement>(null)
+  const dropdownRef    = useRef<HTMLDivElement>(null)
+  const autoOpenedRef  = useRef(false)
+  // LoginPanel se renderiza en un portal a <body> (ver LoginPanel.tsx) — ni
+  // panelRef ni dropdownRef lo contienen en el DOM real una vez portado, así
+  // que necesita su propia referencia para el detector de "clic afuera".
+  const loginTriggerRef  = useRef<HTMLDivElement>(null)
+  const loginPanelBoxRef = useRef<HTMLDivElement>(null)
 
   const isUnverified = user?.isVisitante || user?.role === ROLES.PUBLICO || user?.role === ROLES.VISITANTE
 
-  const { data: adminNotifs } = useAdminNotificaciones(isAdmin && isAuthenticated)
+  const { data: notifs } = useNotificaciones(isAuthenticated && !isUnverified)
+  const marcarLeida      = useMarcarNotificacionLeida()
+  const marcarTodasLeidas = useMarcarTodasNotificacionesLeidas()
 
-  const notifItems = isAdmin ? (adminNotifs ?? []) : []
-  const unreadCount = notifItems.filter((n) => !readIds.includes(n.id)).length
+  const notifItems = notifs ?? []
+  const unreadCount = notifItems.filter((n) => !n.leido_en).length
   const hasUnread   = notifications && unreadCount > 0
 
   // Limpiar búsqueda y cerrar mobile search al navegar — reset intencional al cambiar de ruta
@@ -105,12 +206,51 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
     setActivePanel(null)
   }, [location.pathname, setQuery])
 
+  // /login (ver src/pages/auth/Login.tsx) ya no es una página propia — reenvía
+  // aquí con state.openLogin y state.from, para abrir el panel en vez de
+  // mostrar una pantalla aparte. Esto reutiliza los redirects existentes de
+  // RequireAuth/RequireAdmin/etc. (todos navegan a "/login" con state.from)
+  // sin tener que tocarlos uno por uno.
+  useEffect(() => {
+    const state = location.state as { openLogin?: boolean; from?: { pathname?: string } } | null
+    if (!state?.openLogin) return
+    markPendingLoginRedirect()
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- solo corre cuando llega el redirect, no en cada render
+    setActivePanel('login')
+    setLoginFrom(state.from?.pathname)
+    navigate(location.pathname + location.search, { replace: true, state: {} })
+  }, [location.state, location.pathname, location.search, navigate])
+
+  // WelcomePanel (ver ese archivo) es el punto de entrada: se abre solo, la
+  // primera vez que alguien sin sesión entra al sitio desde este navegador,
+  // sin esperar a que haga clic en "Ingresar" — explica las dos formas de
+  // acceder antes de pedir credenciales. autoOpenedRef evita que se reabra
+  // si la persona lo cierra manualmente mientras sigue sin sesión, dentro de
+  // este mismo montaje; WELCOME_SEEN_KEY evita que vuelva a aparecer en una
+  // recarga de página o una visita nueva una vez que ya se mostró una vez.
+  useEffect(() => {
+    if (isAuthenticated) { consumePendingLoginRedirect(); return }
+    if (initializing || autoOpenedRef.current) return
+    autoOpenedRef.current = true
+    const yaSeVio = (() => {
+      try { return localStorage.getItem(WELCOME_SEEN_KEY) === '1' } catch { return false }
+    })()
+    setActivePanel((prev) => {
+      if (prev) return prev // ya decidido en este mismo flush (ver efecto de arriba)
+      if (consumePendingLoginRedirect()) return 'login'
+      if (yaSeVio) return null
+      try { localStorage.setItem(WELCOME_SEEN_KEY, '1') } catch { /* localStorage no disponible */ }
+      return 'welcome'
+    })
+  }, [initializing, isAuthenticated])
+
   // Cerrar paneles al hacer clic fuera o presionar Escape
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {
       const outside =
         !panelRef.current?.contains(e.target as Node) &&
-        !dropdownRef.current?.contains(e.target as Node)
+        !dropdownRef.current?.contains(e.target as Node) &&
+        !loginPanelBoxRef.current?.contains(e.target as Node)
       if (outside) setActivePanel(null)
     }
     function onKeyDown(e: KeyboardEvent) {
@@ -134,6 +274,17 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
 
   const closePanel = useCallback(() => setActivePanel(null), [])
 
+  // AdminLayout monta TopBar sin onOpenAuthModal (solo llega ahí ya
+  // autenticado, así que LoginPanel nunca debería renderizarse) — se deja un
+  // fallback por navegación para no romper si igual llegara a pasar.
+  const openAuthModal = useCallback(
+    (target: 'recuperar' | 'solicitar') => {
+      if (onOpenAuthModal) { onOpenAuthModal(target); return }
+      navigate(target === 'recuperar' ? '/recuperar-password' : '/solicitar-acceso')
+    },
+    [onOpenAuthModal, navigate],
+  )
+
   const handleLogout = useCallback(() => {
     logout()
     setActivePanel(null)
@@ -145,73 +296,47 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
       className="sticky top-0 z-30"
       style={{
         background: 'var(--topbar-bg)',
-        backdropFilter: 'blur(18px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+        backdropFilter: 'blur(24px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(180%)',
         borderBottom: '1px solid var(--topbar-border)',
+        boxShadow: 'inset 0 1px 0 var(--glass-specular)',
       }}
     >
 
       {/* ── Fila principal ── */}
-      <div className="flex items-center justify-between h-14 px-4 lg:px-6">
+      <div className="flex items-center justify-between h-14 px-4 md:px-6">
 
         {/* Izquierda: branding + búsqueda desktop */}
         <div className="flex items-center gap-3 flex-1">
-          <button
-            onClick={onMenuToggle}
-            aria-label="Abrir menú de navegación"
-            className="lg:hidden p-2 -ml-2 rounded-lg transition-colors" style={{color:"var(--topbar-icon-off)"}}
-          >
-            <Menu className="w-5 h-5" aria-hidden="true" />
-          </button>
+          {onMenuToggle && (
+            <button
+              onClick={onMenuToggle}
+              aria-label="Abrir menú de navegación"
+              className="md:hidden p-2 -ml-2 rounded-lg transition-colors" style={{color:"var(--topbar-icon-off)"}}
+            >
+              <Menu className="w-5 h-5" aria-hidden="true" />
+            </button>
+          )}
 
-          <span className="lg:hidden text-sm font-bold tracking-wide" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
+          <span className="md:hidden text-sm font-bold tracking-wide" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
 
-          <div className="hidden lg:flex items-center gap-3 flex-1">
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: 'linear-gradient(135deg, #009846, #1A5632)', boxShadow: '0 0 10px rgba(0,152,70,0.25)' }}>
-                <span className="text-white font-black text-xs font-display">V</span>
-              </div>
-              <span className="text-sm font-bold tracking-wide" style={{color:"var(--topbar-text)"}}>VIGIA-IIAP</span>
-            </div>
-
+          {/* Sin branding propio en desktop — el Sidebar ya lo muestra siempre visible; repetirlo aquí era redundante */}
+          <div className="hidden md:flex items-center gap-3 flex-1">
             {/* Búsqueda contextual por página */}
-            <div className="flex items-center gap-2 rounded-lg px-3 py-2 flex-1 max-w-sm" style={{background:"var(--topbar-search-bg)",border:"1px solid var(--topbar-search-border)"}}>
-              <Search className="w-[18px] h-[18px] shrink-0" style={{color:"var(--topbar-icon-off)"}} aria-hidden="true" />
-              <input
-                type="text"
-                placeholder={placeholder}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                aria-label={placeholder}
-                className="topbar-search bg-transparent border-none outline-none text-sm w-full" style={{color:"var(--topbar-text)"}}
-              />
-              {query ? (
-                <button
-                  onClick={() => setQuery('')}
-                  aria-label="Limpiar búsqueda"
-                  className="text-text-muted hover:text-text transition-colors shrink-0"
-                >
-                  <X className="w-3.5 h-3.5" aria-hidden="true" />
-                </button>
-              ) : (
-                <button
-                  onClick={openPalette}
-                  aria-label="Abrir búsqueda global (Cmd+K)"
-                  title="Búsqueda global"
-                  className="flex items-center gap-1 px-1.5 py-0.5 rounded-md transition-colors shrink-0"
-                  style={{background:"var(--topbar-search-border)",color:"var(--topbar-icon-off)"}}
-                >
-                  <Command className="w-3 h-3" aria-hidden="true" />
-                  <kbd className="text-[0.55rem] font-mono font-bold">K</kbd>
-                </button>
-              )}
-            </div>
+            <TopBarSearchInput
+              className="flex-1 max-w-sm"
+              value={query}
+              onChange={setQuery}
+              placeholder={placeholder}
+              onClear={() => setQuery('')}
+              showPaletteHint
+              onOpenPalette={openPalette}
+            />
           </div>
         </div>
 
         {/* Derecha: acciones y perfil */}
-        <div className="flex items-center gap-1 lg:gap-2 ml-4" ref={panelRef}>
+        <div className="flex items-center gap-1 md:gap-2 ml-4" ref={panelRef}>
 
           {activeLabel && (
             <span className="hidden md:inline text-sm font-bold pb-0.5 mr-2" style={{color:"var(--topbar-text)",borderBottom:"2px solid var(--topbar-active-ul)"}}>
@@ -224,14 +349,14 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
             onClick={() => setShowMobileSearch((v) => !v)}
             aria-label="Buscar"
             aria-expanded={showMobileSearch}
-            className="lg:hidden p-2 rounded-lg transition-colors" style={{color: showMobileSearch ? "var(--topbar-icon-on)" : "var(--topbar-icon-off)"}}
+            className="md:hidden p-2 rounded-lg transition-colors" style={{color: showMobileSearch ? "var(--topbar-icon-on)" : "var(--topbar-icon-off)"}}
           >
             <Search className="w-5 h-5" aria-hidden="true" />
           </button>
 
           {/* ── Theme toggle — visible para todos ── */}
           <motion.button
-            onClick={toggleTheme}
+            onClick={handleToggleTheme}
             aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
             title={isDark ? 'Modo claro' : 'Modo oscuro'}
             whileTap={{ scale: 0.88 }}
@@ -275,15 +400,13 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
               {/* Soporte + Ayuda — solo desktop */}
               <div className="hidden md:flex items-center gap-1">
                 <div className="relative">
-                  <button
+                  <TopBarIconButton
+                    active={activePanel === 'soporte'}
+                    icon={HelpCircle}
+                    label="Soporte"
+                    ariaLabel="Soporte"
                     onClick={() => togglePanel('soporte')}
-                    aria-expanded={activePanel === 'soporte'}
-                    aria-haspopup="true"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all font-medium" style={{color: activePanel === 'soporte' ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)', background: activePanel === 'soporte' ? 'var(--topbar-icon-on-bg2)' : 'transparent'}}
-                  >
-                    <HelpCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                    Soporte
-                  </button>
+                  />
                   <AnimatePresence>
                     {activePanel === 'soporte' && (
                       <SoportePanel onClose={closePanel} />
@@ -302,47 +425,33 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
 
               {/* Notificaciones */}
               <div className="relative">
-                <button
+                <TopBarIconButton
+                  active={activePanel === 'notificaciones'}
+                  icon={Bell}
+                  badge={hasUnread ? unreadCount : undefined}
+                  ariaLabel={`Notificaciones${hasUnread ? `, ${unreadCount} sin leer` : ''}`}
                   onClick={() => togglePanel('notificaciones')}
-                  aria-label={`Notificaciones${hasUnread ? `, ${unreadCount} sin leer` : ''}`}
-                  aria-expanded={activePanel === 'notificaciones'}
-                  aria-haspopup="true"
-                  className="relative p-2 rounded-lg transition-colors" style={{color: activePanel === 'notificaciones' ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)', background: activePanel === 'notificaciones' ? 'var(--topbar-icon-on-bg)' : 'transparent'}}
-                >
-                  <Bell className="w-[18px] h-[18px]" aria-hidden="true" />
-                  {hasUnread && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 px-0.5 bg-orange-500 rounded-full text-[0.6rem] font-bold text-white flex items-center justify-center leading-none"
-                    >
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
+                />
                 <AnimatePresence>
                   {activePanel === 'notificaciones' && (
                     <NotificacionesPanel
                       onClose={closePanel}
                       items={notifItems}
-                      readIds={readIds}
-                      onMarkRead={markRead}
-                      onMarkAllRead={() => markAllRead(notifItems.map((n) => n.id))}
+                      onMarkRead={(id) => marcarLeida.mutate(id)}
+                      onMarkAllRead={() => marcarTodasLeidas.mutate()}
                     />
                   )}
                 </AnimatePresence>
               </div>
 
               {/* Ajustes — solo desktop */}
-              <div className="hidden lg:block relative">
-                <button
+              <div className="hidden md:block relative">
+                <TopBarIconButton
+                  active={activePanel === 'ajustes'}
+                  icon={Settings}
+                  ariaLabel="Ajustes rápidos"
                   onClick={() => togglePanel('ajustes')}
-                  aria-label="Ajustes rápidos"
-                  aria-expanded={activePanel === 'ajustes'}
-                  aria-haspopup="true"
-                  className="p-2 rounded-lg transition-colors" style={{color: activePanel === 'ajustes' ? 'var(--topbar-icon-on)' : 'var(--topbar-icon-off)', background: activePanel === 'ajustes' ? 'var(--topbar-icon-on-bg)' : 'transparent'}}
-                >
-                  <Settings className="w-[18px] h-[18px]" aria-hidden="true" />
-                </button>
+                />
                 <AnimatePresence>
                   {activePanel === 'ajustes' && (
                     <AjustesPanel onClose={closePanel} />
@@ -360,14 +469,14 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
                 aria-label="Menú de perfil"
                 aria-expanded={activePanel === 'dropdown'}
                 aria-haspopup="true"
-                className="flex items-center gap-2 pl-3 lg:pl-4" style={{borderLeft:"1px solid var(--topbar-sep)"}}
+                className="flex items-center gap-2 pl-3 md:pl-4" style={{borderLeft:"1px solid var(--topbar-sep)"}}
               >
                 <div className="text-right hidden sm:block">
                   <span className="block text-sm font-medium leading-tight" style={{color:"var(--topbar-text)"}}>{user?.name}</span>
-                  <span className="block text-[0.7rem] uppercase tracking-wider" style={{color:"var(--topbar-icon-on)"}}>{user?.role}</span>
                 </div>
-                <div className="w-9 h-9 bg-gradient-to-br from-primary-600 to-primary-800 rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-white text-sm font-bold">{user?.initials}</span>
+                <div className="relative shrink-0">
+                  <Avatar avatarUrl={user?.avatarUrl} initials={user?.initials} size="w-9 h-9" />
+                  <AvatarBadge variant="dot" ringColor="var(--color-bg)" label="Sesión activa" />
                 </div>
                 <ChevronDown
                   className={`w-4 h-4 hidden sm:block transition-transform ${activePanel === 'dropdown' ? 'rotate-180' : ''}`} style={{color:"var(--topbar-icon-off)"}}
@@ -385,19 +494,43 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
               </AnimatePresence>
             </div>
           ) : (
-            <Link
-              to="/login"
-              className="flex items-center gap-2 pl-3 lg:pl-4 no-underline"
-              style={{borderLeft:"1px solid var(--topbar-sep)"}}
-            >
-              <span
+            <div className="relative pl-3 md:pl-4" style={{borderLeft:"1px solid var(--topbar-sep)"}} ref={loginTriggerRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (activePanel === 'welcome' || activePanel === 'login') { setActivePanel(null); return }
+                  setLoginFrom(undefined)
+                  setActivePanel('welcome')
+                }}
+                aria-expanded={activePanel === 'welcome' || activePanel === 'login'}
+                aria-haspopup="dialog"
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.97]"
-                style={{ background: 'linear-gradient(135deg, #009846, #1A5632)', color: '#fff', boxShadow: '0 2px 10px rgba(0,152,70,0.25)' }}
+                style={{ background: 'var(--brand-gradient)', color: '#fff', boxShadow: '0 2px 10px rgba(0,152,70,0.25)' }}
               >
                 <LogIn className="w-4 h-4" aria-hidden="true" />
                 <span className="hidden sm:inline">Ingresar</span>
-              </span>
-            </Link>
+              </button>
+              <AnimatePresence>
+                {activePanel === 'welcome' && (
+                  <WelcomePanel
+                    onClose={closePanel}
+                    onIniciarSesion={() => setActivePanel('login')}
+                    onSolicitar={() => { openAuthModal('solicitar'); closePanel() }}
+                    boxRef={loginPanelBoxRef}
+                  />
+                )}
+                {activePanel === 'login' && (
+                  <LoginPanel
+                    onClose={closePanel}
+                    onBack={loginFrom ? undefined : () => setActivePanel('welcome')}
+                    from={loginFrom}
+                    anchorRef={loginTriggerRef}
+                    boxRef={loginPanelBoxRef}
+                    onNavigateAuthModal={openAuthModal}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
           )}
         </div>
       </div>
@@ -410,28 +543,16 @@ export default function TopBar({ onMenuToggle }: { onMenuToggle: () => void }) {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:hidden overflow-hidden" style={{borderTop:"1px solid var(--topbar-border)"}}
+            className="md:hidden overflow-hidden" style={{borderTop:"1px solid var(--topbar-border)"}}
           >
             <div className="px-4 py-2.5">
-              <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{background:"var(--topbar-search-bg)",border:"1px solid var(--topbar-search-border)"}}>
-                <Search className="w-4 h-4 text-text-muted shrink-0" aria-hidden="true" />
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder={placeholder}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  aria-label={placeholder}
-                  className="topbar-search bg-transparent border-none outline-none text-sm w-full" style={{color:"var(--topbar-text)"}}
-                />
-                <button
-                  onClick={() => { setQuery(''); setShowMobileSearch(false) }}
-                  aria-label="Cerrar búsqueda"
-                  className="text-text-muted hover:text-text transition-colors shrink-0"
-                >
-                  <X className="w-4 h-4" aria-hidden="true" />
-                </button>
-              </div>
+              <TopBarSearchInput
+                value={query}
+                onChange={setQuery}
+                placeholder={placeholder}
+                autoFocus
+                onClear={() => { setQuery(''); setShowMobileSearch(false) }}
+              />
             </div>
           </motion.div>
         )}

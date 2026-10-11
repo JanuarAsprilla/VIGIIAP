@@ -55,13 +55,21 @@ function normalizeMap(m: MapaRaw) {
     formats,
     badge:        primaryFmt === 'GEOVISOR' ? 'Geovisor' : primaryFmt,
     badgeColor:   'primary',
-    geovisorLink: m.geovisor_url ?? '/geovisor',
+    geovisorLink: m.geovisor_url ?? '/geovisores',
     department:   '',
     // ── campos para panel admin (GestionMapas.jsx) ──
     nombre:    m.titulo,
     tematica:  m.categoria,
-    escala:    '1:100.000',
     autor:     m.autor ?? '',
+    // Metadatos técnicos opcionales (ISO 19115 / IGAC) -- antes "escala" era
+    // un placeholder fijo ("1:100.000") sin relación con el dato real.
+    epsg:       m.epsg ?? null,
+    escala:     m.escala ?? null,
+    fuente:     m.fuente ?? null,
+    bboxNorte:  m.bbox_norte ?? null,
+    bboxSur:    m.bbox_sur ?? null,
+    bboxEste:   m.bbox_este ?? null,
+    bboxOeste:  m.bbox_oeste ?? null,
     fecha:     formatDate(m.creado_en),
     visible:   m.activo,
     formato:   m.geovisor_url && !m.archivo_pdf_url && !m.archivo_img_url
@@ -107,7 +115,7 @@ export function useMapaBySlug(slug: string | null | undefined) {
 // ─── Mutations ────────────────────────────────────────────────────────────────
 export function useCreateMapa() {
   const qc = useQueryClient()
-  return useMutation<void, Error, { formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
+  return useMutation<{ id: string; [key: string]: unknown }, Error, { formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ formData, onUploadProgress }) =>
       api.post('/mapas', formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
@@ -118,7 +126,7 @@ export function useUpdateMapa() {
   const qc = useQueryClient()
   return useMutation<void, Error, { id: string; formData: FormData; onUploadProgress?: (e: import('axios').AxiosProgressEvent) => void }>({
     mutationFn: ({ id, formData, onUploadProgress }) =>
-      api.put(`/mapas/${id}`, formData, { onUploadProgress }),
+      api.patch(`/mapas/${id}`, formData, { onUploadProgress }),
     onSuccess: () => qc.invalidateQueries({ queryKey: MAPAS_KEYS.all }),
   })
 }

@@ -18,7 +18,7 @@ export default function AdminLayout() {
 
       <AdminSidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
 
-      <div className="relative z-10 lg:ml-[220px] min-h-screen flex flex-col">
+      <div className="relative z-10 md:ml-[220px] min-h-screen flex flex-col">
         <TopBar onMenuToggle={() => setMobileMenuOpen(true)} />
 
         {/* Admin indicator bar */}

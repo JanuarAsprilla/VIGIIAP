@@ -42,7 +42,7 @@ import {
   useSolicitudArchivos,
   useUploadSolicitudArchivo,
   useDeleteSolicitudArchivo,
-  useDownloadSolicitudArchivo,
+  solicitudArchivoDescargaUrl,
   ESTADO_API,
   TRANSICIONES_VALIDAS,
   SOL_KEYS,
@@ -470,15 +470,10 @@ describe('useDeleteSolicitudArchivo', () => {
   })
 })
 
-describe('useDownloadSolicitudArchivo', () => {
-  beforeEach(() => { vi.clearAllMocks() })
-
-  test('calls GET /solicitudes/:solicitudId/archivos/:archivoId/download', async () => {
-    vi.mocked(api.get).mockResolvedValue({ url: 'https://cdn.example.com/doc.pdf' })
-    const { result } = renderHook(() => useDownloadSolicitudArchivo(), { wrapper: makeWrapper() })
-    await act(async () => {
-      await result.current.mutateAsync({ solicitudId: 'sol-1', archivoId: 'f-1' })
-    })
-    expect(api.get).toHaveBeenCalledWith('/solicitudes/sol-1/archivos/f-1/download')
+describe('solicitudArchivoDescargaUrl', () => {
+  // El endpoint reenvía el archivo directamente (stream) -- ya no hay un
+  // mutationFn que pida primero una URL prefirmada, ver useSolicitudes.ts.
+  test('construye la URL del endpoint de streaming', () => {
+    expect(solicitudArchivoDescargaUrl('sol-1', 'f-1')).toBe('/api/v1/solicitudes/sol-1/archivos/f-1/download')
   })
 })

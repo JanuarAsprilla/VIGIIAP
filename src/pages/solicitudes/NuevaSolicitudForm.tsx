@@ -128,7 +128,7 @@ export function NuevaSolicitudForm({ formRef }: NuevaSolicitudFormProps) {
   }
 
   return (
-    <motion.div ref={formRef} {...fadeUp(0.25)} className="bg-white border border-border rounded-xl p-6">
+    <motion.div ref={formRef} {...fadeUp(0.25)} className="bg-[var(--card-bg)] border border-border rounded-xl p-6">
       <AnimatePresence>
         {showSuccess && (
           <>
@@ -145,7 +145,7 @@ export function NuevaSolicitudForm({ formRef }: NuevaSolicitudFormProps) {
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
             >
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center pointer-events-auto">
+              <div className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center pointer-events-auto">
                 <motion.div
                   initial={{ scale: 0 }} animate={{ scale: 1 }}
                   transition={{ delay: 0.1, type: 'spring', stiffness: 260, damping: 20 }}
@@ -195,7 +195,7 @@ export function NuevaSolicitudForm({ formRef }: NuevaSolicitudFormProps) {
               aria-describedby={errors.nombre ? 'nsf-nombre-err' : undefined}
               aria-invalid={!!errors.nombre}
               className={`w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
-                isAuthenticated ? 'bg-bg-alt cursor-default' : 'bg-white focus:border-primary-800'
+                isAuthenticated ? 'bg-bg-alt cursor-default' : 'bg-[var(--card-bg)] focus:border-primary-800'
               } ${errors.nombre ? 'border-red-400' : 'border-border'}`}
             />
           </div>
@@ -213,7 +213,7 @@ export function NuevaSolicitudForm({ formRef }: NuevaSolicitudFormProps) {
               aria-describedby={errors.correo ? 'nsf-correo-err' : undefined}
               aria-invalid={!!errors.correo}
               className={`w-full pl-9 pr-3 py-2.5 border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
-                isAuthenticated ? 'bg-bg-alt cursor-default' : 'bg-white focus:border-primary-800'
+                isAuthenticated ? 'bg-bg-alt cursor-default' : 'bg-[var(--card-bg)] focus:border-primary-800'
               } ${errors.correo ? 'border-red-400' : 'border-border'}`}
             />
           </div>
@@ -227,7 +227,7 @@ export function NuevaSolicitudForm({ formRef }: NuevaSolicitudFormProps) {
           <select id="nsf-tipo" value={form.tipo} onChange={(e) => set('tipo', e.target.value)}
             aria-describedby={errors.tipo ? 'nsf-tipo-err' : undefined}
             aria-invalid={!!errors.tipo}
-            className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${errors.tipo ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+            className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${errors.tipo ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
           >
             {TRAMITE_TYPES.map((t) => (
               <option key={t.value} value={t.value}>{t.label}</option>
@@ -245,7 +245,7 @@ export function NuevaSolicitudForm({ formRef }: NuevaSolicitudFormProps) {
             maxLength={MAX_DESC}
             aria-describedby={errors.descripcion ? 'nsf-desc-err' : 'nsf-desc-hint'}
             aria-invalid={!!errors.descripcion}
-            className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition resize-none ${errors.descripcion ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+            className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition resize-none ${errors.descripcion ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
           />
           <div className="flex items-start justify-between mt-1">
             {errors.descripcion

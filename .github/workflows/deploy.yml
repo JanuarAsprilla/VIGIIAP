@@ -1,0 +1,108 @@
+name: Deploy
+
+# Se dispara solo cuando el workflow CI ya terminó (y pasó) sobre main —
+# nunca se construye ni despliega una imagen que no pasó typecheck/lint/
+# tests/build/E2E/audit/secrets-scan.
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Build y publicar imagen
+    # head_repository check: workflow_run se dispara para CUALQUIER ejecución
+    # del workflow CI, incluida la de un PR desde un fork — sin esta guarda,
+    # ese fork podría hacer que este job (que sí tiene secrets) se ejecute
+    # contra su propio código.
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          # CRÍTICO: sin esto, checkout usa el ref por defecto del contexto
+          # actual (la rama en el momento en que corre ESTE workflow), que
+          # puede NO ser el mismo commit exacto que el CI validó — anulando
+          # la garantía de "nunca desplegar algo que no paso CI".
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Configurar Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Login en GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build y push de la imagen
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/januarasprilla/vigiiap-frontend:latest
+            ghcr.io/januarasprilla/vigiiap-frontend:${{ github.event.workflow_run.head_sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Desplegar en el servidor
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH y recrear el contenedor con la imagen nueva
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: root
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd /root/vigiiap
+            # Se captura el image ID que corre AHORA (antes de pull) para poder
+            # revertir a él si el contenedor nuevo no levanta sano -- pull ya
+            # sobreescribe el tag :latest local, así que después ya no hay
+            # forma de recuperar cuál era "el anterior" sin haberlo guardado antes.
+            PREV_IMAGE=$(docker compose images -q frontend || true)
+
+            docker compose pull frontend
+            docker compose up -d frontend
+
+            # Healthcheck contra nginx DENTRO del propio contenedor (no contra
+            # el puerto publicado en el host, que puede variar según el compose
+            # del servidor) -- nginx:alpine trae wget de BusyBox, no curl.
+            # 127.0.0.1 explícito, no "localhost": BusyBox wget en Alpine
+            # resuelve "localhost" a ::1 (IPv6) antes que a 127.0.0.1, y
+            # nginx con "listen 80;" solo escucha IPv4 -- da "Connection
+            # refused" siempre aunque el servidor esté sano (visto en un
+            # deploy real: la reversión automática se disparó de más).
+            READY=0
+            for i in $(seq 1 10); do
+              sleep 2
+              if docker compose exec -T frontend wget -q --spider http://127.0.0.1/; then
+                READY=1
+                break
+              fi
+            done
+
+            if [ "$READY" = "1" ]; then
+              echo "Healthcheck OK -- despliegue confirmado"
+              docker image prune -f
+              exit 0
+            fi
+
+            echo "Healthcheck FALLÓ tras 10 intentos -- revirtiendo a la imagen anterior"
+            if [ -n "$PREV_IMAGE" ]; then
+              docker tag "$PREV_IMAGE" ghcr.io/januarasprilla/vigiiap-frontend:latest
+              docker compose up -d frontend
+            fi
+            exit 1

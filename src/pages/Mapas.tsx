@@ -1,18 +1,23 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Map, Filter, ChevronLeft, ChevronRight, X,
   FileText, Globe, Loader2, Eye, Download, Calendar,
 } from 'lucide-react'
-import { MAP_CATEGORIES, MAP_FORMATS, MAP_YEARS } from '@/lib/constants'
+import { MAP_FORMATS } from '@/lib/constants'
 import { useMapasList } from '@/hooks/useMapas'
+import { useColumnasGrid, CLASES_GRID_COLUMNAS } from '@/hooks/useColumnasGrid'
+import SelectorColumnas from '@/components/ui/SelectorColumnas'
 import type { MapaData } from '@/hooks/useMapas'
+import { useCategoriasList } from '@/hooks/useCategorias'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { isTrustedUrl } from '@/lib/trustedUrl'
+import { descargarUrl, forceDownload } from '@/pages/documentos/documentos.utils'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { cardEnter3D } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
+import Thumbnail from '@/components/ui/Thumbnail'
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 20 },
@@ -23,6 +28,9 @@ const fadeUp = (delay = 0) => ({
 // ── Preview Modal para mapas ──────────────────────────────────────────────────
 function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: string; onClose: () => void }) {
   const fileUrl = format === 'IMG' ? map.archivo_img_url : map.archivo_pdf_url
+  // Solo se renderiza como enlace/imagen si el origen está en la allowlist —
+  // evita que un valor malicioso guardado en el backend (ej. javascript:) se ejecute al hacer clic.
+  const trustedFileUrl = fileUrl && isTrustedUrl(fileUrl) ? fileUrl : null
   const isImage = format === 'IMG' || (fileUrl && /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(fileUrl))
 
   useEffect(() => {
@@ -39,7 +47,7 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] as const }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
+        className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div>
@@ -56,14 +64,14 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
 
         {fileUrl ? (
           <div className="w-full">
-            {isImage ? (
+            {isImage && trustedFileUrl ? (
               <div className="p-4 flex justify-center bg-bg-alt">
-                <img src={fileUrl} alt={map.title}
+                <img src={trustedFileUrl} alt={map.title}
                   width={1200} height={675}
                   loading="eager"
                   className="max-h-[60vh] max-w-full object-contain rounded-lg shadow-sm" />
               </div>
-            ) : (
+            ) : !isImage ? (
               <div className="p-8 flex flex-col items-center gap-4 text-center">
                 <div className="w-16 h-16 rounded-xl flex items-center justify-center bg-red-50">
                   <FileText className="w-8 h-8 text-red-500" />
@@ -73,31 +81,36 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
                   <p className="text-xs text-text-muted">{map.category} · {map.year}</p>
                 </div>
                 <div className="flex gap-3">
-                  <a href={fileUrl} target="_blank" rel="noopener noreferrer"
+                  {/* El PDF vive en el bucket privado -- se abre vía el proxy de
+                      descarga del backend (verifica visibilidad + URL prefirmada),
+                      nunca con la URL cruda de almacenamiento. */}
+                  <a href={descargarUrl('mapa', map.id, 'archivo_pdf')} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
                     <Eye className="w-4 h-4" />
                     Abrir PDF
                   </a>
-                  <a href={fileUrl} download
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-50 border border-primary-200 text-primary-800 rounded-lg text-sm font-semibold hover:bg-primary-100 transition-colors">
+                  <button type="button"
+                    onClick={() => forceDownload(descargarUrl('mapa', map.id, 'archivo_pdf'), `${sanitizeFilename(map.title)}.pdf`)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800/10 border border-primary-800/20 text-primary-600 rounded-lg text-sm font-semibold hover:bg-primary-800/15 transition-colors">
                     <Download className="w-4 h-4" />
                     Descargar
-                  </a>
+                  </button>
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         ) : (
           <div className="p-10 text-center text-text-muted text-sm">Archivo no disponible</div>
         )}
 
-        {fileUrl && isImage && (
+        {trustedFileUrl && isImage && (
           <div className="px-6 py-4 border-t border-border flex justify-end gap-3">
-            <a href={fileUrl} download
+            <button type="button"
+              onClick={() => forceDownload(trustedFileUrl, `${sanitizeFilename(map.title)}.${extFromUrl(map.archivo_img_url, 'jpg')}`)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors">
               <Download className="w-4 h-4" />
               Descargar imagen
-            </a>
+            </button>
           </div>
         )}
       </motion.div>
@@ -105,27 +118,14 @@ function MapPreviewModal({ map, format, onClose }: { map: MapaData; format: stri
   )
 }
 
-async function forceDownload(url: string): Promise<void> {
-  if (!url) return
-  if (!isTrustedUrl(url)) {
-    if (import.meta.env.DEV) console.error('[VIGIIAP] Descarga bloqueada — origen no permitido:', url)
-    return
-  }
-  const filename = url.split('?')[0].split('/').pop() || 'archivo'
-  try {
-    const res  = await fetch(url)
-    const blob = await res.blob()
-    const tmp  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href     = tmp
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(tmp)
-  } catch {
-    window.open(url, '_blank', 'noopener,noreferrer')
-  }
+// Nombre de archivo para descargas -- nunca el nombre interno de almacenamiento
+// (una key con hash/UUID), siempre el título real del mapa que ve el usuario.
+function sanitizeFilename(name: string): string {
+  return name.replace(/[/\\?%*:|"<>]/g, '-').trim() || 'mapa'
+}
+function extFromUrl(url: string | null | undefined, fallback: string): string {
+  const match = url?.split('?')[0].match(/\.([a-zA-Z0-9]+)$/)
+  return match ? match[1] : fallback
 }
 
 /* Paleta oficial IIAP — categorías de mapas */
@@ -140,10 +140,11 @@ const CATEGORY_COLORS = {
 
 interface MapCardProps { map: MapaData; index: number; onPreview?: (map: MapaData, format: string) => void }
 function MapCard({ map, index, onPreview }: MapCardProps) {
-  const colors = CATEGORY_COLORS[map.category as keyof typeof CATEGORY_COLORS] ?? { pill: 'bg-primary-100 text-primary-700', accent: '#1B4332' }
+  const colors = CATEGORY_COLORS[map.category as keyof typeof CATEGORY_COLORS] ?? { pill: 'bg-primary-800/10 text-primary-600', accent: '#1B4332' }
   const hasPdf     = map.formats.includes('PDF')
   const hasImg     = map.formats.includes('IMG')
   const hasGeovisor = map.formats.includes('GEOVISOR')
+  const geovisorHref = map.geovisorLink && isTrustedUrl(map.geovisorLink) ? map.geovisorLink : '/geovisores'
 
   // Chaos testing (clics de frustración): sin esta guarda, clics rápidos repetidos
   // durante un cold start de Render disparaban múltiples fetch() + descargas simultáneas.
@@ -151,114 +152,144 @@ function MapCard({ map, index, onPreview }: MapCardProps) {
   const handleDownload = async (campo: 'archivo_pdf' | 'archivo_img', field: 'pdf' | 'img') => {
     if (downloadingField) return
     setDownloadingField(field)
+    const ext = campo === 'archivo_pdf' ? 'pdf' : extFromUrl(map.archivo_img_url, 'jpg')
     try {
-      await forceDownload(`${import.meta.env.VITE_API_URL ?? '/api'}/descargar/mapa/${map.id}?campo=${campo}`)
+      await forceDownload(descargarUrl('mapa', map.id, campo), `${sanitizeFilename(map.title)}.${ext}`)
     } finally {
       setDownloadingField(null)
     }
   }
+
+  // Tarjeta de imagen completa (como el panel admin): la miniatura nunca se
+  // recorta -- object-contain, cualquiera que sea su proporción -- y las
+  // acciones quedan en un panel que aparece al pasar el mouse o al hacer
+  // clic (para touch), en vez de ocupar espacio fijo siempre visible.
+  const [expanded, setExpanded] = useState(false)
 
   return (
     <Card3D
       {...cardEnter3D(index)}
       glow={`${colors.accent}38`}
       intensity={5}
-      className="group bg-white border border-border/70 rounded-2xl overflow-hidden flex flex-col"
+      className="group/card relative h-64 bg-[var(--card-bg)] border border-border/70 rounded-2xl overflow-hidden cursor-pointer"
       whileHover={{ y: -4 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
+      aria-label={`${map.title}, ${map.category}. Clic para ver opciones.`}
+      onClick={() => setExpanded((v) => !v)}
+      onKeyDown={(e: ReactKeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded((v) => !v) } }}
     >
-
-      {/* Visual header */}
-      <div className="relative h-44 overflow-hidden bg-bg-alt shrink-0">
-        {map.thumbnail_url ? (
-          <img src={map.thumbnail_url} alt={map.title}
-            width={320} height={176}
-            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
-            loading="lazy" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center relative overflow-hidden"
-            style={{ background: `linear-gradient(135deg, ${colors.accent}14 0%, ${colors.accent}06 100%)` }}>
-            <div className="absolute inset-0 opacity-[0.06]"
-              style={{
-                backgroundImage: `radial-gradient(circle, ${colors.accent} 1px, transparent 1px)`,
-                backgroundSize: '18px 18px',
-              }} />
-            <div className="relative flex flex-col items-center gap-2">
-              <Map className="w-14 h-14" style={{ color: colors.accent, opacity: 0.22 }} />
-              <span className="text-[0.6rem] font-bold uppercase tracking-widest"
-                style={{ color: colors.accent, opacity: 0.35 }}>
-                {map.category}
-              </span>
-            </div>
+      {/* Miniatura de fondo -- completa, sin recortar */}
+      {map.thumbnail_url ? (
+        <Thumbnail src={map.thumbnail_url} alt="" objectFit="contain"
+          className="absolute inset-0 w-full h-full group-hover/card:scale-105 transition-transform duration-500" />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden"
+          style={{ background: `linear-gradient(135deg, ${colors.accent}14 0%, ${colors.accent}06 100%)` }}>
+          <div className="absolute inset-0 opacity-[0.06]"
+            style={{
+              backgroundImage: `radial-gradient(circle, ${colors.accent} 1px, transparent 1px)`,
+              backgroundSize: '18px 18px',
+            }} />
+          <div className="relative flex flex-col items-center gap-2">
+            <Map className="w-14 h-14" style={{ color: colors.accent, opacity: 0.22 }} />
+            <span className="text-[0.6rem] font-bold uppercase tracking-widest"
+              style={{ color: colors.accent, opacity: 0.35 }}>
+              {map.category}
+            </span>
           </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+        </div>
+      )}
 
-        {/* Year badge top-left */}
+      {/* Degradado permanente -- legibilidad del texto siempre visible */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/10 pointer-events-none" />
+
+      {/* Badges superiores */}
+      <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
         {map.year && (
-          <span className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 bg-black/50 backdrop-blur-sm text-white text-[0.65rem] font-bold rounded-lg">
+          <span className="flex items-center gap-1 px-2 py-1 bg-black/50 backdrop-blur-sm text-white text-[0.65rem] font-bold rounded-lg">
             <Calendar className="w-3 h-3" />
             {map.year}
           </span>
         )}
-
-        {/* Format badges top-right */}
-        <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
+        <div className="flex flex-col gap-1 items-end">
           {hasPdf && <span className="px-2 py-0.5 bg-red text-white text-[0.6rem] font-bold uppercase rounded">PDF</span>}
           {hasImg && <span className="px-2 py-0.5 bg-gold-400 text-primary-900 text-[0.6rem] font-bold uppercase rounded">IMG</span>}
           {hasGeovisor && <span className="px-2 py-0.5 bg-primary-800 text-white text-[0.6rem] font-bold uppercase rounded">Geovisor</span>}
         </div>
       </div>
 
-      {/* Body */}
-      <div className="p-5 flex flex-col flex-1">
-        <span className={`self-start text-[0.6rem] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 ${colors.pill}`}>
+      {/* Categoría + título -- siempre visibles */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-none">
+        <span className={`inline-block text-[0.6rem] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-1.5 ${colors.pill}`}>
           {map.category}
         </span>
-        <h3 className="text-sm font-bold text-text leading-snug mb-2 line-clamp-2 flex-1">{map.title}</h3>
+        <p className="text-sm font-bold text-white leading-snug line-clamp-2">{map.title}</p>
+      </div>
+
+      {/* Panel de acciones -- revelado al pasar el mouse o al hacer clic */}
+      <div
+        className={`absolute inset-0 bg-black/80 backdrop-blur-sm flex flex-col justify-end p-4 transition-opacity duration-250 ${
+          expanded ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none group-hover/card:opacity-100 group-hover/card:pointer-events-auto'
+        }`}
+      >
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setExpanded(false) }}
+          className="absolute top-3 right-3 p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+          aria-label="Cerrar opciones"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        <span className={`self-start text-[0.6rem] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-2 ${colors.pill}`}>
+          {map.category}
+        </span>
+        <p className="text-sm font-bold text-white leading-snug">{map.title}</p>
         {map.excerpt && (
-          <p className="text-xs text-text-muted leading-relaxed line-clamp-2 mb-4">{map.excerpt}</p>
+          <p className="text-xs text-white/70 leading-relaxed line-clamp-2 mt-1">{map.excerpt}</p>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 pt-3 border-t border-border/60 mt-auto">
+        <div className="flex flex-wrap items-center gap-2 mt-3">
           {hasPdf && (
-            <button onClick={() => handleDownload('archivo_pdf', 'pdf')}
+            <button onClick={(e) => { e.stopPropagation(); onPreview?.(map, 'PDF') }}
+              className="flex-1 min-w-[7rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-600 transition-colors">
+              <Eye className="w-3.5 h-3.5" />
+              Visualizar
+            </button>
+          )}
+          {hasPdf && (
+            <button onClick={(e) => { e.stopPropagation(); handleDownload('archivo_pdf', 'pdf') }}
               disabled={downloadingField !== null}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:pointer-events-none">
+              className="flex-1 min-w-[7rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-white bg-red-600/90 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:pointer-events-none">
               {downloadingField === 'pdf'
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 : <Download className="w-3.5 h-3.5" />}
               Descargar PDF
             </button>
           )}
-          {hasPdf && (
-            <button onClick={() => onPreview?.(map, 'PDF')}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors">
+          {hasImg && (
+            <button onClick={(e) => { e.stopPropagation(); onPreview?.(map, 'IMG') }}
+              className="flex-1 min-w-[7rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-600 transition-colors">
               <Eye className="w-3.5 h-3.5" />
               Visualizar
             </button>
           )}
           {hasImg && (
-            <button onClick={() => handleDownload('archivo_img', 'img')}
+            <button onClick={(e) => { e.stopPropagation(); handleDownload('archivo_img', 'img') }}
               disabled={downloadingField !== null}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-gold-400/40 hover:text-gold-400 hover:bg-gold-400/10 transition-colors disabled:opacity-50 disabled:pointer-events-none">
+              className="flex-1 min-w-[7rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-primary-900 bg-gold-400 rounded-lg hover:bg-gold-300 transition-colors disabled:opacity-50 disabled:pointer-events-none">
               {downloadingField === 'img'
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 : <Download className="w-3.5 h-3.5" />}
               Descargar
             </button>
           )}
-          {hasImg && (
-            <button onClick={() => onPreview?.(map, 'IMG')}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-text-muted border border-border rounded-lg hover:border-primary-300 hover:text-primary-800 hover:bg-primary-50 transition-colors">
-              <Eye className="w-3.5 h-3.5" />
-              Visualizar
-            </button>
-          )}
           {hasGeovisor && (
-            <a href={map.geovisorLink || '/geovisor'} target="_blank" rel="noopener noreferrer"
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-primary-800 border border-primary-200 rounded-lg bg-primary-50 hover:bg-primary-100 transition-colors no-underline">
+            <a href={geovisorHref} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+              className="flex-1 min-w-[7rem] inline-flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold text-white bg-white/10 rounded-lg hover:bg-white/20 transition-colors no-underline">
               <Globe className="w-3.5 h-3.5" />
               Geovisor
             </a>
@@ -274,7 +305,7 @@ function FilterSelect({ label, options, value, onChange }: { label: string; opti
     <div className="flex-1 min-w-[180px]">
       <label className="table-header block text-text-muted mb-1.5">{label}</label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-[0.9rem] text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition">
+        className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-[0.9rem] text-text focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition">
         {(options as { value: string; label: string }[]).map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
       </select>
     </div>
@@ -301,6 +332,8 @@ export default function Mapas() {
   const [previewFormat, setPreviewFormat] = useState<string | null>(null)
   const PER_PAGE = 6
 
+  const { columnas: cols, setColumnas: changeCols } = useColumnasGrid('vigiiap:mapas-cols')
+
   // ── Datos reales ─────────────────────────────────────────────────────────────
   const { data, isLoading, isError } = useMapasList({
     categoria: filters.category || undefined,
@@ -309,6 +342,26 @@ export default function Mapas() {
   })
   const allMaps = data?.data ?? []
 
+  // Categorías del filtro: las que de verdad existen para este módulo (igual
+  // que en el formulario de "Editar mapa"), no una lista fija que se
+  // desincroniza en cuanto alguien crea una categoría nueva en Gestión de
+  // Categorías -- antes ofrecía nombres que ningún mapa tenía asignado, y
+  // dejaba fuera los reales, así que elegir una no filtraba nada.
+  const { data: categoriasCompartidas = [] } = useCategoriasList()
+  const categoryOptions = [
+    { value: '', label: 'Todas las categorías' },
+    ...[...new Set([
+      ...allMaps.map((m) => m.category).filter(Boolean),
+      ...categoriasCompartidas.filter((c) => c.modulos?.includes('mapas')).map((c) => c.nombre),
+    ])].sort((a, b) => a.localeCompare(b)).map((nombre) => ({ value: nombre, label: nombre })),
+  ]
+
+  // Años del filtro: los que realmente tienen mapas publicados, no un rango fijo.
+  const yearOptions = [
+    { value: '', label: 'Todos los años' },
+    ...[...new Set(allMaps.map((m) => m.year).filter(Boolean))].sort((a, b) => Number(b) - Number(a)).map((y) => ({ value: y, label: y })),
+  ]
+
   // Filtrado local (búsqueda global + filtros que el backend aún no tiene)
   const filteredMaps = allMaps.filter((m) => {
     if (!matches([m.title, m.category, m.excerpt], query)) return false
@@ -316,20 +369,29 @@ export default function Mapas() {
     return true
   })
 
+  const [sortBy, setSortBy] = useState<'recientes' | 'az' | 'za'>('recientes')
+  const sortedMaps = [...filteredMaps].sort((a, b) => {
+    if (sortBy === 'az') return a.title.localeCompare(b.title)
+    if (sortBy === 'za') return b.title.localeCompare(a.title)
+    return new Date(b.creado_en ?? 0).getTime() - new Date(a.creado_en ?? 0).getTime()
+  })
+  const SORT_OPTIONS = [
+    { value: 'recientes' as const, label: 'Más recientes' },
+    { value: 'az'        as const, label: 'Nombre A-Z' },
+    { value: 'za'        as const, label: 'Nombre Z-A' },
+  ]
+
   const activeChips: { key: string; label: string }[] = []
-  if (filters.category) {
-    const cat = MAP_CATEGORIES.find((c) => c.value === filters.category)
-    if (cat) activeChips.push({ key: 'category', label: cat.label })
-  }
+  if (filters.category) activeChips.push({ key: 'category', label: filters.category })
   if (filters.year)   activeChips.push({ key: 'year', label: filters.year })
   if (filters.format) {
     const fmt = MAP_FORMATS.find((f) => f.value === filters.format)
     if (fmt) activeChips.push({ key: 'format', label: fmt.label })
   }
 
-  const totalPages = Math.max(1, Math.ceil(filteredMaps.length / PER_PAGE))
+  const totalPages = Math.max(1, Math.ceil(sortedMaps.length / PER_PAGE))
   const safePage   = Math.min(page, totalPages)
-  const pagedMaps  = filteredMaps.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
+  const pagedMaps  = sortedMaps.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
 
   const updateFilter = (key: string, value: string) => { setFilters((p) => ({ ...p, [key]: value })); setPage(1) }
   const removeChip   = (key: string) => { setFilters((p) => ({ ...p, [key]: '' }));    setPage(1) }
@@ -353,8 +415,8 @@ export default function Mapas() {
             Explore y descargue la cartografía oficial. Información científica curada para el análisis territorial.
           </p>
         </div>
-        <div className="flex items-center gap-3 bg-white border border-border rounded-xl px-5 py-4 shrink-0">
-          <div className="w-10 h-10 bg-primary-50 rounded-lg flex items-center justify-center">
+        <div className="flex items-center gap-3 bg-[var(--card-bg)] border border-border rounded-xl px-5 py-4 shrink-0">
+          <div className="w-10 h-10 bg-primary-800/10 rounded-lg flex items-center justify-center">
             <Map className="w-5 h-5 text-primary-800" />
           </div>
           <div>
@@ -367,15 +429,16 @@ export default function Mapas() {
       </motion.div>
 
       {/* Filters */}
-      <motion.div {...fadeUp(0.1)} className="bg-white border border-border rounded-xl p-6">
-        <div className="flex items-center gap-2 mb-4">
+      <motion.div {...fadeUp(0.1)} className="bg-[var(--card-bg)] border border-border rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-3">
           <Filter className="w-4 h-4 text-text-muted" />
           <span className="table-header text-text-muted">Filtros Avanzados</span>
         </div>
         <div className="flex flex-wrap gap-4">
-          <FilterSelect label="Categoría" options={MAP_CATEGORIES} value={filters.category} onChange={(v) => updateFilter('category', v)} />
+          <FilterSelect label="Categoría" options={categoryOptions} value={filters.category} onChange={(v) => updateFilter('category', v)} />
           <FilterSelect label="Formato" options={MAP_FORMATS} value={filters.format} onChange={(v) => updateFilter('format', v)} />
-          <FilterSelect label="Año de Publicación" options={MAP_YEARS} value={filters.year} onChange={(v) => updateFilter('year', v)} />
+          <FilterSelect label="Año de Publicación" options={yearOptions} value={filters.year} onChange={(v) => updateFilter('year', v)} />
+          <FilterSelect label="Ordenar por" options={SORT_OPTIONS} value={sortBy} onChange={(v) => setSortBy(v as typeof sortBy)} />
         </div>
         {activeChips.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-border">
@@ -405,10 +468,15 @@ export default function Mapas() {
           </div>
         </motion.div>
       ) : pagedMaps.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {pagedMaps.map((map, i) => (
-            <MapCard key={map.id} map={map} index={i} onPreview={handlePreview} />
-          ))}
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <SelectorColumnas columnas={cols} onChange={changeCols} />
+          </div>
+          <div className={`grid ${CLASES_GRID_COLUMNAS[cols]} gap-6`}>
+            {pagedMaps.map((map, i) => (
+              <MapCard key={map.id} map={map} index={i} onPreview={handlePreview} />
+            ))}
+          </div>
         </div>
       ) : (
         <motion.div {...fadeUp(0.1)} className="py-20 flex flex-col items-center gap-4">
@@ -430,7 +498,8 @@ export default function Mapas() {
           </div>
           {(query || Object.values({}).some(Boolean)) && (
             <button onClick={clearAll}
-              className="text-xs font-semibold text-primary-800 hover:text-primary-600 transition-colors">
+              className="text-xs font-semibold transition-colors"
+              style={{ color: 'var(--hero-eyebrow-text)' }}>
               Limpiar filtros
             </button>
           )}
@@ -442,17 +511,17 @@ export default function Mapas() {
         <motion.div {...fadeUp(0.3)} className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-2">
             <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1}
-              className="w-9 h-9 rounded-lg border border-border bg-white text-text-muted flex items-center justify-center disabled:opacity-40 hover:enabled:bg-primary-800 hover:enabled:border-primary-800 hover:enabled:text-white transition-colors">
+              className="w-9 h-9 rounded-lg border border-border bg-[var(--card-bg)] text-text-muted flex items-center justify-center disabled:opacity-40 hover:enabled:bg-primary-800 hover:enabled:border-primary-800 hover:enabled:text-white transition-colors">
               <ChevronLeft className="w-4 h-4" />
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
               <button key={n} onClick={() => setPage(n)}
-                className={`w-9 h-9 rounded-lg border text-sm font-medium flex items-center justify-center transition-colors ${n === safePage ? 'bg-primary-800 border-primary-800 text-white' : 'border-border bg-white text-text-light hover:bg-primary-800 hover:border-primary-800 hover:text-white'}`}>
+                className={`w-9 h-9 rounded-lg border text-sm font-medium flex items-center justify-center transition-colors ${n === safePage ? 'bg-primary-800 border-primary-800 text-white' : 'border-border bg-[var(--card-bg)] text-text-light hover:bg-primary-800 hover:border-primary-800 hover:text-white'}`}>
                 {n}
               </button>
             ))}
             <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
-              className="w-9 h-9 rounded-lg border border-border bg-white text-text-light flex items-center justify-center disabled:opacity-40 hover:enabled:bg-primary-800 hover:enabled:border-primary-800 hover:enabled:text-white transition-colors">
+              className="w-9 h-9 rounded-lg border border-border bg-[var(--card-bg)] text-text-light flex items-center justify-center disabled:opacity-40 hover:enabled:bg-primary-800 hover:enabled:border-primary-800 hover:enabled:text-white transition-colors">
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

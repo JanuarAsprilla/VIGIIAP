@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import GestionAdmins from '@/pages/admin/GestionAdmins'
+import { MODULOS_CATALOGO } from '@/lib/constants/modulos'
 
 vi.mock('framer-motion', () => {
   const cache = new Map<string, (p: Record<string, unknown>) => ReactNode>()
@@ -28,9 +29,12 @@ vi.mock('@/lib/api', () => ({
     get: vi.fn((url: string) =>
       url.includes('super/stats')
         ? Promise.resolve({ total_usuarios: 10, admins: 2, activos: 8, pendientes_verificacion: 1 })
-        : Promise.resolve({ usuarios: [] }),
+        : Promise.resolve({ data: [] }),
     ),
     post: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
+    put: vi.fn(),
   },
 }))
 import api from '@/lib/api'
@@ -120,7 +124,7 @@ describe('GestionAdmins — tabla de administradores', () => {
       url.includes('super/stats')
         ? Promise.resolve({ total_usuarios: 10, admins: 2, activos: 8, pendientes_verificacion: 1 })
         : Promise.resolve({
-            usuarios: [
+            data: [
               { id: 'a1', nombre: 'Ana Restrepo', email: 'ana@iiap.gov.co', institucion: 'IIAP', activo: true },
               { id: 'a2', nombre: 'Carlos Mena', email: 'carlos@iiap.gov.co', institucion: null, activo: false },
             ],
@@ -134,5 +138,136 @@ describe('GestionAdmins — tabla de administradores', () => {
     expect(screen.getByText('—')).toBeInTheDocument()
     expect(screen.getByText('Activo')).toBeInTheDocument()
     expect(screen.getByText('Inactivo')).toBeInTheDocument()
+  })
+})
+
+describe('GestionAdmins — permisos por módulo', () => {
+  const admin = {
+    id: 'a1', nombre: 'Ana Restrepo', email: 'ana@iiap.gov.co', institucion: 'IIAP', activo: true,
+    permisos: [{ modulo: 'mapas', puede_ver: true, puede_editar: false }],
+  }
+
+  beforeEach(() => {
+    vi.mocked(api.get).mockImplementation((url: string) =>
+      url.includes('super/stats')
+        ? Promise.resolve({ total_usuarios: 10, admins: 1, activos: 1, pendientes_verificacion: 0 })
+        : Promise.resolve({ data: [admin] }),
+    )
+  })
+
+  test('abrir "Editar módulos" muestra el catálogo con el estado actual de permisos', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Editar módulos de Ana Restrepo/i }))
+
+    expect(screen.getByText('Módulos habilitados')).toBeInTheDocument()
+    expect(screen.getByLabelText('Ver Mapas')).toBeChecked()
+    expect(screen.getByLabelText('Editar Mapas')).not.toBeChecked()
+    expect(screen.getByLabelText('Ver Usuarios')).not.toBeChecked()
+  })
+
+  test('marcar "Editar" en un módulo también marca "Ver" automáticamente', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Editar módulos de Ana Restrepo/i }))
+    await user.click(screen.getByLabelText('Editar Usuarios'))
+
+    expect(screen.getByLabelText('Ver Usuarios')).toBeChecked()
+    expect(screen.getByLabelText('Editar Usuarios')).toBeChecked()
+  })
+
+  test('guardar permisos llama a PUT con el payload completo del catálogo', async () => {
+    vi.mocked(api.put).mockResolvedValue({ data: [] })
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Editar módulos de Ana Restrepo/i }))
+    await user.click(screen.getByRole('button', { name: /Guardar permisos/i }))
+
+    expect(api.put).toHaveBeenCalledWith(
+      '/admin/administradores/a1/permisos',
+      { permisos: expect.arrayContaining([expect.objectContaining({ modulo: 'mapas', puede_ver: true, puede_editar: false })]) },
+    )
+  })
+
+  test('el contador de módulos habilitados refleja el estado inicial y se actualiza al togglear', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Editar módulos de Ana Restrepo/i }))
+
+    const total = MODULOS_CATALOGO.length
+    expect(screen.getByText(`1/${total} habilitados`)).toBeInTheDocument()
+    await user.click(screen.getByLabelText('Ver Usuarios'))
+    expect(screen.getByText(`2/${total} habilitados`)).toBeInTheDocument()
+  })
+
+  test('"Otorgar acceso a todo" marca Ver en todos los módulos', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Editar módulos de Ana Restrepo/i }))
+
+    await user.click(screen.getByRole('button', { name: 'Otorgar acceso a todo' }))
+
+    expect(screen.getByText(`${MODULOS_CATALOGO.length}/${MODULOS_CATALOGO.length} habilitados`)).toBeInTheDocument()
+    expect(screen.getByLabelText('Ver Usuarios')).toBeChecked()
+    expect(screen.getByLabelText('Ver Errores')).toBeChecked()
+  })
+
+  test('"Quitar todo el acceso" desmarca Ver y Editar en todos los módulos', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Editar módulos de Ana Restrepo/i }))
+    expect(screen.getByLabelText('Ver Mapas')).toBeChecked()
+
+    await user.click(screen.getByRole('button', { name: 'Quitar todo el acceso' }))
+
+    expect(screen.getByText(`0/${MODULOS_CATALOGO.length} habilitados`)).toBeInTheDocument()
+    expect(screen.getByLabelText('Ver Mapas')).not.toBeChecked()
+  })
+})
+
+describe('GestionAdmins — activar/desactivar y eliminar', () => {
+  const admin = { id: 'a1', nombre: 'Ana Restrepo', email: 'ana@iiap.gov.co', institucion: 'IIAP', activo: true }
+
+  beforeEach(() => {
+    vi.mocked(api.get).mockImplementation((url: string) =>
+      url.includes('super/stats')
+        ? Promise.resolve({ total_usuarios: 10, admins: 1, activos: 1, pendientes_verificacion: 0 })
+        : Promise.resolve({ data: [admin] }),
+    )
+  })
+
+  test('desactivar un admin llama a PATCH con activo=false', async () => {
+    vi.mocked(api.patch).mockResolvedValue({})
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Desactivar a Ana Restrepo/i }))
+
+    expect(api.patch).toHaveBeenCalledWith('/admin/usuarios/a1', { activo: false })
+  })
+
+  test('eliminar un admin pide confirmación y luego llama a DELETE', async () => {
+    vi.mocked(api.delete).mockResolvedValue({})
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Eliminar administrador Ana Restrepo/i }))
+    expect(api.delete).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: /^Eliminar$/i }))
+    expect(api.delete).toHaveBeenCalledWith('/admin/usuarios/a1')
+  })
+
+  // Regresión: desactivar/eliminar un admin desde aquí debe refrescar también
+  // la lista de Usuarios (que muestra admins desactivados), no solo esta
+  // pantalla — si no, el usuario degradado solo reaparece tras un refresh manual.
+  test('desactivar un admin invalida también la caché de usuarios', async () => {
+    vi.mocked(api.patch).mockResolvedValue({})
+    const spy = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Desactivar a Ana Restrepo/i }))
+
+    const invalidatedKeys = spy.mock.calls.map((c) => (c[0] as { queryKey: unknown[] }).queryKey)
+    expect(invalidatedKeys).toContainEqual(['usuarios'])
+    spy.mockRestore()
   })
 })

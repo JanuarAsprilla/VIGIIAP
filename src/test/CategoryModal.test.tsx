@@ -11,8 +11,8 @@ function makeCategory(): CategoryItem {
     icon: 'MapIcon',
     thumbnail: null,
     docs: [
-      { id: 'd1', name: 'Zonificación 2025', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/f1.pdf' },
-      { id: 'd2', name: 'Alturas del Chocó', type: 'xlsx', size: '2MB', updated: '02/01/2026', dateISO: '2026-01-02', url: '/f2.pdf' },
+      { id: 'd1', name: 'Zonificación 2025', type: 'pdf', size: '1MB', updated: '01/01/2026', dateISO: '2026-01-01', url: '/f1.pdf', resumen: '' },
+      { id: 'd2', name: 'Alturas del Chocó', type: 'xlsx', size: '2MB', updated: '02/01/2026', dateISO: '2026-01-02', url: '/f2.pdf', resumen: '' },
     ],
   }
 }

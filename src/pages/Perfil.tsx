@@ -1,27 +1,33 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import type { FormErrors } from '@/types/forms'
 import { validatePasswordStrength, validatePasswordMatch, passwordCriteria } from '@/lib/validators'
 import { motion, AnimatePresence } from 'framer-motion'
-import { EASE_OUT_EXPO } from '@/lib/animations'
-import Card3D from '@/components/ui/Card3D'
+import { fadeUpSm } from '@/lib/animations'
 import {
   User, Building2, Shield,
   Lock, Eye, EyeOff, CheckCircle, AlertCircle,
   Camera, LogOut, ChevronRight, Layers, Monitor, Sun,
-  Smartphone, Laptop, Trash2, RefreshCw,
+  Smartphone, Laptop, Trash2, RefreshCw, Loader2,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useUI, type NotifPrefs } from '@/contexts/UIContext'
-import { useNavigate, Link } from 'react-router-dom'
-import { useUpdatePassword, useUpdatePerfil } from '@/hooks/useUsuarios'
+import { useUI } from '@/contexts/UIContext'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useUpdatePassword, useUpdatePerfil, useUpdateAvatar } from '@/hooks/useUsuarios'
+import { useNotificacionPrefs, useUpdateNotificacionPref } from '@/hooks/useNotificacionPrefs'
+import { NOTIFICATION_ICONS, DEFAULT_NOTIFICATION_ICON, getNotificationColorClasses } from '@/lib/notificationIcons'
+import { MODULOS_CATALOGO, type PermisoModulo } from '@/lib/constants/modulos'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { asApiError } from '@/lib/apiError'
+import Avatar from '@/components/ui/Avatar'
+
+const fadeUp = fadeUpSm
 
 // ── Section wrapper ──
 interface SectionProps { title: string; description?: string; children: React.ReactNode }
 function Section({ title, description, children }: SectionProps) {
   return (
-    <div className="bg-white border border-border rounded-2xl overflow-hidden">
+    <div className="bg-[var(--card-bg)] border border-border rounded-2xl overflow-hidden">
       <div className="px-6 py-4 border-b border-border">
         <h3 className="font-semibold text-text">{title}</h3>
         {description && <p className="text-xs text-text-muted mt-0.5">{description}</p>}
@@ -86,7 +92,7 @@ interface PasswordInputProps {
   error?: string; onChange: (value: string) => void; onToggle: () => void
 }
 function PasswordInput({ id, placeholder, value, visible, error, onChange, onToggle }: PasswordInputProps) {
-  const cls = `w-full pl-10 pr-10 py-2.5 border rounded-xl text-sm text-text placeholder:text-text-muted bg-white focus:outline-none focus:ring-2 transition ${
+  const cls = `w-full pl-10 pr-10 py-2.5 border rounded-xl text-sm text-text placeholder:text-text-muted bg-[var(--card-bg)] focus:outline-none focus:ring-2 transition ${
     error ? 'border-red-400 focus:border-red-400 focus:ring-red-400/10'
           : 'border-border focus:border-primary-800 focus:ring-primary-800/10'
   }`
@@ -157,14 +163,14 @@ function CambiarPassword() {
       <AnimatePresence>
         {success && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="flex items-center gap-2.5 bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-3 text-sm">
+            className="flex items-center gap-2.5 bg-primary-500/10 border border-primary-500/25 text-primary-600 rounded-xl px-4 py-3 text-sm">
             <CheckCircle className="w-4 h-4 shrink-0" />
             Contraseña actualizada correctamente.
           </motion.div>
         )}
         {serverError && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+            className="flex items-center gap-2.5 bg-red/10 border border-red/25 text-red-dark rounded-xl px-4 py-3 text-sm">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {serverError}
           </motion.div>
@@ -217,18 +223,20 @@ function TwoFactor() {
   const [qr, setQr]                       = useState<string | null>(null)
   const [secret, setSecret]               = useState<string | null>(null)
   const [code, setCode]                   = useState('')
+  const [backupCodes, setBackupCodes]     = useState<string[]>([])
   const [error, setError]                 = useState<string | null>(null)
   const [loading, setLoading]             = useState(false)
   const [showDisableConfirm, setShowDisableConfirm] = useState(false)
-  const { user } = useAuth()
+  const [disableCode, setDisableCode]     = useState('')
+  const { user, refreshProfile } = useAuth()
   const has2fa = user?.twoFactorEnabled
 
   const startSetup = async () => {
     setError(null)
     setLoading(true)
     try {
-      const res = await api.post('/auth/2fa/setup') as { qrCodeUrl: string; secret: string }
-      setQr(res.qrCodeUrl)
+      const res = await api.post('/auth/2fa/setup') as { qrDataUrl: string; secret: string }
+      setQr(res.qrDataUrl)
       setSecret(res.secret)
       setStep('setup')
     } catch (e) { setError((e as Error).message) }
@@ -240,20 +248,37 @@ function TwoFactor() {
     setError(null)
     setLoading(true)
     try {
-      await api.post('/auth/2fa/enable', { token: code })
+      const res = await api.post('/auth/2fa/verify', { code }) as { backupCodes?: string[] }
+      setBackupCodes(res.backupCodes ?? [])
       setStep('done')
       setCode('')
-    } catch (e) { setError((e as Error).message) }
+      await refreshProfile()
+    } catch (e) {
+      setError((e as Error).message)
+      // El QR/secret pendiente de confirmar caduca a los 10 min (ver
+      // TOTP_SETUP_EXPIRED en el backend) — si quedó abierto en un equipo
+      // compartido más de eso, no debe seguir siendo válido para nadie que
+      // lo vea después. Vuelve a 'idle' para que la persona pida uno nuevo
+      // en vez de dejar un QR muerto en pantalla con solo el mensaje de error.
+      if (asApiError(e)?.code === 'TOTP_SETUP_EXPIRED') {
+        setStep('idle')
+        setQr(null)
+        setSecret(null)
+        setCode('')
+      }
+    }
     finally { setLoading(false) }
   }
 
   const disable = async () => {
-    setShowDisableConfirm(false)
     setError(null)
     setLoading(true)
     try {
-      await api.delete('/auth/2fa/disable')
+      await api.post('/auth/2fa/disable', { code: disableCode })
+      setShowDisableConfirm(false)
+      setDisableCode('')
       setStep('idle')
+      await refreshProfile()
     } catch (e) { setError((e as Error).message) }
     finally { setLoading(false) }
   }
@@ -262,22 +287,22 @@ function TwoFactor() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${has2fa || step === 'done' ? 'bg-green-50' : 'bg-surface'}`}>
-            <Smartphone className={`w-4 h-4 ${has2fa || step === 'done' ? 'text-green-600' : 'text-text-muted'}`} />
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${has2fa || step === 'done' ? 'bg-primary-500/12' : 'bg-surface'}`}>
+            <Smartphone className={`w-4 h-4 ${has2fa || step === 'done' ? 'text-primary-600' : 'text-text-muted'}`} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-text-primary">Autenticación en dos pasos</p>
+            <p className="text-sm font-semibold text-text">Autenticación en dos pasos</p>
             <p className="text-xs text-text-muted">{has2fa || step === 'done' ? 'Activa — su cuenta tiene protección adicional' : 'Inactiva — active para mayor seguridad'}</p>
           </div>
         </div>
         {(has2fa || step === 'done') ? (
           <button onClick={() => setShowDisableConfirm(true)} disabled={loading}
-            className="text-xs text-red-600 hover:text-red-700 font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
+            className="text-xs text-red-dark hover:text-red-dark font-medium px-3 py-1.5 rounded-lg hover:bg-red/10 transition-colors">
             Desactivar
           </button>
         ) : (
           <button onClick={startSetup} disabled={loading || step === 'setup'}
-            className="text-xs text-primary-800 font-medium px-3 py-1.5 rounded-lg hover:bg-primary-50 transition-colors">
+            className="text-xs text-primary-800 font-medium px-3 py-1.5 rounded-lg hover:bg-primary-500/10 transition-colors">
             {loading ? 'Cargando…' : 'Activar'}
           </button>
         )}
@@ -300,38 +325,66 @@ function TwoFactor() {
       )}
 
       {step === 'done' && (
-        <div className="flex items-center gap-2 text-green-700 bg-green-50 px-4 py-3 rounded-xl text-sm">
-          <CheckCircle className="w-4 h-4 flex-shrink-0" />
-          ¡2FA activado exitosamente! Su cuenta está protegida.
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-primary-600 bg-primary-500/10 px-4 py-3 rounded-xl text-sm">
+            <CheckCircle className="w-4 h-4 flex-shrink-0" />
+            ¡2FA activado exitosamente! Su cuenta está protegida.
+          </div>
+          {backupCodes.length > 0 && (
+            <div className="border border-gold-500/30 bg-gold-500/8 rounded-xl p-4 space-y-2">
+              <p className="text-xs font-bold text-gold-500 uppercase tracking-wider">
+                Guarda estos códigos de emergencia
+              </p>
+              <p className="text-xs text-text-muted">
+                Cada uno funciona una sola vez para entrar si pierdes el acceso a tu app de autenticación. No se volverán a mostrar.
+              </p>
+              <div className="grid grid-cols-2 gap-1.5 font-mono text-xs">
+                {backupCodes.map((c) => (
+                  <span key={c} className="px-2 py-1.5 bg-[var(--card-bg)] border border-border rounded-lg text-center tabular">{c}</span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
-      {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-xl">{error}</p>}
+      {error && <p className="text-sm text-red-dark bg-red/10 px-4 py-3 rounded-xl">{error}</p>}
 
       <AnimatePresence>
         {showDisableConfirm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center"
+              className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center"
             >
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 bg-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trash2 className="w-5 h-5 text-red-600" aria-hidden="true" />
               </div>
               <h3 className="text-base font-bold text-text mb-2">Desactivar 2FA</h3>
-              <p className="text-sm text-text-muted mb-6 leading-relaxed">
-                ¿Desea desactivar la autenticación en dos pasos? Su cuenta tendrá menor protección.
+              <p className="text-sm text-text-muted mb-4 leading-relaxed">
+                Su cuenta tendrá menor protección. Ingrese el código de 6 dígitos de su app de autenticación (o un código de emergencia) para confirmar.
               </p>
+              <input
+                value={disableCode}
+                onChange={(e) => setDisableCode(e.target.value)}
+                placeholder="Código de 6 dígitos"
+                maxLength={8}
+                autoFocus
+                className="w-full px-3 py-2.5 mb-4 text-sm text-center border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
+              />
+              {error && (
+                <p className="text-xs text-red-dark mb-4 -mt-2">{error}</p>
+              )}
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowDisableConfirm(false)}
+                  onClick={() => { setShowDisableConfirm(false); setDisableCode(''); setError(null) }}
                   className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={disable}
-                  disabled={loading}
-                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-60 transition-colors"
+                  disabled={loading || disableCode.length < 6}
+                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
                 >
                   {loading ? 'Desactivando…' : 'Desactivar'}
                 </button>
@@ -345,7 +398,7 @@ function TwoFactor() {
 }
 
 // ── Sesiones activas section ──
-interface SessionItem { id: string; ip: string; userAgent: string; createdAt: string; current?: boolean }
+interface SessionItem { id: string; ip: string; userAgent: string; creadoEn: string; esSesionActual?: boolean }
 function SesionesActivas() {
   const qc = useQueryClient()
   const { data, isLoading, refetch } = useQuery<SessionItem[]>({
@@ -373,7 +426,7 @@ function SesionesActivas() {
       <div className="flex items-center justify-between">
         <p className="text-xs text-text-muted">{sessions.length} sesión{sessions.length !== 1 ? 'es' : ''} activa{sessions.length !== 1 ? 's' : ''}</p>
         <div className="flex gap-2">
-          <button onClick={() => refetch()} className="text-xs text-text-muted hover:text-text-primary flex items-center gap-1">
+          <button onClick={() => refetch()} className="text-xs text-text-muted hover:text-text flex items-center gap-1">
             <RefreshCw className="w-3 h-3" /> Actualizar
           </button>
           {sessions.length > 1 && (
@@ -392,20 +445,21 @@ function SesionesActivas() {
       ) : (
         <div className="space-y-2">
           {sessions.map((s) => (
-            <div key={s.id} className={`flex items-center justify-between px-4 py-3 rounded-xl border ${s.current ? 'border-primary-200 bg-primary-50/40' : 'border-border bg-surface'}`}>
+            <div key={s.id} className={`flex items-center justify-between px-4 py-3 rounded-xl border ${s.esSesionActual ? 'border-primary-500/30 bg-primary-500/8' : 'border-border bg-surface'}`}>
               <div className="flex items-center gap-3">
                 <div className="text-text-muted">{deviceIcon(s.userAgent)}</div>
                 <div>
-                  <p className="text-xs font-medium text-text-primary truncate max-w-[180px]">
-                    {s.current ? 'Esta sesión' : (s.userAgent.split('(')[0].trim() || 'Dispositivo')}
+                  <p className="text-xs font-medium text-text truncate max-w-[180px]">
+                    {s.esSesionActual ? 'Esta sesión' : (s.userAgent.split('(')[0].trim() || 'Dispositivo')}
                   </p>
-                  <p className="text-[10px] text-text-muted">{s.ip} · {new Date(s.createdAt).toLocaleDateString('es-CO')}</p>
+                  <p className="text-[10px] text-text-muted">{s.ip} · {new Date(s.creadoEn).toLocaleDateString('es-CO')}</p>
                 </div>
               </div>
-              {!s.current && (
+              {!s.esSesionActual && (
                 <button onClick={() => revoke.mutate(s.id)} disabled={revoke.isPending}
-                  className="p-1.5 text-text-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                  <Trash2 className="w-3.5 h-3.5" />
+                  aria-label="Revocar sesión"
+                  className="p-1.5 text-text-muted hover:text-red-dark hover:bg-red/10 rounded-lg transition-colors">
+                  <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
               )}
             </div>
@@ -417,34 +471,44 @@ function SesionesActivas() {
 }
 
 // ── Notificaciones section ──
+// Preferencia real por tipo, persistida en el servidor (usuarios ya no
+// pierden esto al cambiar de navegador) -- reemplaza los 3 toggles fijos
+// que antes solo escribían en localStorage y que ningún backend/frontend
+// llegó a leer nunca (solicitudes/mapas/email eran decorativos).
 function Notificaciones() {
-  const { notifPrefs: prefs, setNotifPrefs: setPrefs } = useUI()
+  const { data: prefs, isLoading } = useNotificacionPrefs()
+  const updatePref = useUpdateNotificacionPref()
 
-  const toggle = (k: keyof NotifPrefs) => setPrefs({ ...prefs, [k]: !prefs[k] })
+  if (isLoading) {
+    return <p className="text-sm text-text-muted py-3">Cargando preferencias...</p>
+  }
 
-  const items: { key: keyof NotifPrefs; label: string; desc: string }[] = [
-    { key: 'solicitudes', label: 'Estado de solicitudes',    desc: 'Cambios en el estado de tus trámites' },
-    { key: 'mapas',      label: 'Actualizaciones de mapas',  desc: 'Nuevas capas o versiones de mapas' },
-    { key: 'email',      label: 'Resumen por correo',        desc: 'Recibir resumen semanal de actividad' },
-  ]
+  if (!prefs || prefs.length === 0) {
+    return <p className="text-sm text-text-muted py-3">No hay tipos de notificación disponibles.</p>
+  }
 
   return (
     <div className="space-y-0 divide-y divide-border">
-      {items.map(({ key, label, desc }) => (
-        <div key={key} className="flex items-center justify-between gap-4 py-3">
-          <div>
-            <p className="text-sm font-medium text-text">{label}</p>
-            <p className="text-xs text-text-muted">{desc}</p>
+      {prefs.map(({ clave, nombre, icono, color, en_pantalla }) => {
+        const Icon = (icono && NOTIFICATION_ICONS[icono]) || DEFAULT_NOTIFICATION_ICON
+        const { text } = getNotificationColorClasses(color)
+        return (
+          <div key={clave} className="flex items-center justify-between gap-4 py-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <Icon className={`w-4 h-4 shrink-0 ${text}`} aria-hidden="true" />
+              <p className="text-sm font-medium text-text truncate">{nombre}</p>
+            </div>
+            <button
+              onClick={() => updatePref.mutate({ clave, enPantalla: !en_pantalla })}
+              aria-pressed={en_pantalla}
+              aria-label={`Notificaciones de ${nombre}`}
+              className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${en_pantalla ? 'bg-primary-800' : 'bg-border'}`}
+            >
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${en_pantalla ? 'left-5' : 'left-1'}`} />
+            </button>
           </div>
-          <button
-            onClick={() => toggle(key)}
-            aria-pressed={prefs[key]}
-            className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${prefs[key] ? 'bg-primary-800' : 'bg-border'}`}
-          >
-            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${prefs[key] ? 'left-5' : 'left-1'}`} />
-          </button>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -472,7 +536,7 @@ function Apariencia() {
               onClick={() => setDensity(value as Parameters<typeof setDensity>[0])}
               className={`flex flex-col items-center gap-2 px-3 py-4 rounded-xl border-2 text-center transition-all ${
                 density === value
-                  ? 'bg-primary-50 border-primary-800 text-primary-800'
+                  ? 'bg-primary-500/10 border-primary-800 text-primary-800'
                   : 'border-border text-text-muted hover:border-primary-300 hover:text-text'
               }`}
             >
@@ -483,6 +547,121 @@ function Apariencia() {
           ))}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── Módulos delegados (solo admin_sig) ──
+// Antes de esto, un admin_sig delegado no tenía forma de ver en su propia
+// cuenta qué le delegaron -- solo lo descubría al toparse con un 403 al
+// intentar entrar a un módulo, o le tocaba preguntarle a Super Admin. Ahora
+// que el sidebar/Dashboard ya respetan user.modulos (ver AdminSidebar.tsx y
+// Dashboard.tsx), mostrarlo aquí también le da a la persona una vista clara
+// y propia de su alcance real, en vez de sentir que administra "lo que
+// pueda" a ciegas.
+const MODULO_PATH: Record<string, string> = {
+  usuarios: '/admin/usuarios',
+  solicitudes: '/admin/solicitudes',
+  documentos: '/admin/documentos',
+  mapas: '/admin/mapas',
+  geovisores: '/admin/geovisores',
+  conexiones_geoserver: '/admin/conexiones-geoserver',
+  categorias: '/admin/categorias',
+  configuracion: '/admin/configuracion',
+  actividad: '/admin/actividad',
+  errores: '/admin/errores',
+  reportes: '/admin/actividad?tab=reportes',
+}
+
+function MisModulos({ modulos }: { modulos: PermisoModulo[] }) {
+  const habilitados = modulos.filter((m) => m.puede_ver)
+  if (habilitados.length === 0) {
+    return (
+      <p className="text-sm text-text-muted bg-bg-alt/60 border border-border/50 rounded-xl px-4 py-3">
+        Aún no tienes ningún módulo delegado. Pídele a un Super Administrador que te asigne acceso desde Gestión de Admins.
+      </p>
+    )
+  }
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {habilitados.map((m) => {
+        const nombre = MODULOS_CATALOGO.find((c) => c.clave === m.modulo)?.nombre ?? m.modulo
+        return (
+          <Link
+            key={m.modulo}
+            to={MODULO_PATH[m.modulo] ?? '/admin'}
+            className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border hover:border-primary-800 hover:bg-primary-500/5 transition-colors no-underline group"
+          >
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-text group-hover:text-primary-800 transition-colors truncate">{nombre}</p>
+              <p className="text-xs text-text-muted">{m.puede_editar ? 'Ver y editar' : 'Solo consulta'}</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary-800 transition-colors shrink-0" />
+          </Link>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Avatar uploader ──
+function AvatarUploader({ avatarUrl, initials, onUploaded }: { avatarUrl: string | null; initials?: string; onUploaded: () => Promise<unknown> }) {
+  const updateAvatar = useUpdateAvatar()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const previewUrlRef = useRef<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => () => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
+  }, [])
+
+  const handleFile = async (file: File | null | undefined) => {
+    if (!file) return
+    setError(null)
+    if (!file.type.startsWith('image/')) { setError('Selecciona una imagen JPG, PNG o WebP'); return }
+    if (file.size > 5 * 1024 * 1024) { setError('La imagen no puede superar 5 MB'); return }
+
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
+    const url = URL.createObjectURL(file)
+    previewUrlRef.current = url
+    setPreview(url)
+
+    try {
+      await updateAvatar.mutateAsync(file)
+      await onUploaded()
+    } catch (err) {
+      setError((err as Error)?.message ?? 'No se pudo actualizar la foto de perfil')
+      setPreview(null)
+    }
+  }
+
+  const avatarSrc = preview || avatarUrl
+
+  return (
+    <div className="relative shrink-0">
+      <Avatar avatarUrl={avatarSrc} initials={initials} size="w-20 h-20" shape="squircle" textSize="text-2xl font-display" className="shadow-md" />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={updateAvatar.isPending}
+        className="absolute -bottom-1 -right-1 w-7 h-7 bg-[var(--card-bg)] border border-border rounded-full flex items-center justify-center hover:bg-bg-alt transition-colors shadow-sm disabled:opacity-60"
+        title="Cambiar foto"
+      >
+        {updateAvatar.isPending
+          ? <Loader2 className="w-3.5 h-3.5 text-text-muted animate-spin" />
+          : <Camera className="w-3.5 h-3.5 text-text-muted" />}
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = '' }}
+        className="sr-only"
+      />
+      {error && (
+        <p className="absolute top-full left-0 mt-1.5 w-40 text-[0.65rem] text-red-500 leading-snug">{error}</p>
+      )}
     </div>
   )
 }
@@ -535,7 +714,15 @@ export default function Perfil() {
   const { user, logout, refreshProfile } = useAuth()
   const { density } = useUI()
   const navigate = useNavigate()
+  const location = useLocation()
   const updatePerfil = useUpdatePerfil()
+
+  // Llega desde RequireAdmin cuando el super_admin activó "2FA obligatorio
+  // para administradores" en Configuración y esta cuenta aún no lo tiene
+  // activado -- se le bloqueó el panel admin hasta que lo active aquí.
+  const requiere2FA = Boolean(
+    (location.state as { requiere2FA?: boolean } | null)?.requiere2FA,
+  ) && !user?.twoFactorEnabled
 
   // Cuentas no verificadas (publico/visitante) no pueden editar perfil ni cambiar
   // contraseña — el backend responde 403. Se muestran los datos en solo lectura.
@@ -568,9 +755,9 @@ export default function Perfil() {
   }
 
   const roleColor = {
-    'Administrador SIG': 'bg-red-100 text-red-700',
-    'Investigador':      'bg-gold-100 text-gold-700',
-    'Público':           'bg-primary-100 text-primary-700',
+    'Administrador SIG': 'bg-primary-700/10 text-primary-700',
+    'Investigador':      'bg-gold-400/12 text-gold-400',
+    'Público':           'bg-bg-alt text-text-muted',
   }[user?.role ?? ''] ?? 'bg-bg-alt text-text-muted'
 
   return (
@@ -584,29 +771,29 @@ export default function Perfil() {
         </p>
       </div>
 
-      {/* Avatar card */}
-      <Card3D
-        initial={{ opacity: 0, y: 20, rotateX: 5, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
-        transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
-        glow="rgba(26,86,50,0.18)"
-        intensity={4}
-        className="bg-white border border-border/70 rounded-2xl p-6 flex items-center gap-5"
-        whileHover={{ y: -3 }}
-      >
-        {/* Avatar */}
-        <div className="relative shrink-0">
-          <div className="w-20 h-20 bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl flex items-center justify-center shadow-md">
-            <span className="text-white text-2xl font-bold font-display">{user?.initials}</span>
+      {/* Aviso: 2FA obligatorio pendiente de activar */}
+      {requiere2FA && (
+        <motion.div
+          {...fadeUp(0)}
+          className="flex items-start gap-3 bg-gold-500/10 border border-gold-500/30 text-gold-700 rounded-2xl px-5 py-4"
+        >
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
+          <div>
+            <p className="text-sm font-bold">Activa la autenticación en dos pasos para continuar</p>
+            <p className="text-xs mt-0.5 opacity-90">
+              El administrador del sistema exige 2FA para cuentas con acceso al panel de administración.
+              Actívala en la sección &quot;Autenticación en dos pasos&quot; más abajo para volver a entrar.
+            </p>
           </div>
-          <button
-            className="absolute -bottom-1 -right-1 w-7 h-7 bg-white border border-border rounded-full flex items-center justify-center hover:bg-bg-alt transition-colors shadow-sm"
-            title="Cambiar foto"
-          >
-            <Camera className="w-3.5 h-3.5 text-text-muted" />
-          </button>
-        </div>
+        </motion.div>
+      )}
+
+      {/* Avatar card */}
+      <motion.div
+        {...fadeUp(0.02)}
+        className="relative bg-[var(--card-bg)] border border-border/70 rounded-2xl p-6 flex items-center gap-5"
+      >
+        <AvatarUploader avatarUrl={user?.avatarUrl ?? null} initials={user?.initials} onUploaded={refreshProfile} />
 
         {/* Info */}
         <div className="flex-1 min-w-0">
@@ -622,14 +809,11 @@ export default function Perfil() {
           <span className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">Vista</span>
           <span className="text-xs font-semibold text-text capitalize">{density}</span>
         </div>
-      </Card3D>
+      </motion.div>
 
       {/* Información personal */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.08, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.08)}
         whileHover={{ y: -3 }}
       >
         <Section
@@ -658,7 +842,7 @@ export default function Perfil() {
             <FieldRow label="Correo electrónico">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-text font-medium">{user?.email}</span>
-                <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-primary-600 bg-primary-500/10 px-2 py-0.5 rounded-full">
                   <CheckCircle className="w-2.5 h-2.5" />
                   Verificado
                 </span>
@@ -696,12 +880,21 @@ export default function Perfil() {
         </Section>
       </motion.div>
 
+      {/* Módulos delegados — solo admin_sig */}
+      {user?.rol === 'admin_sig' && (
+        <motion.div {...fadeUp(0.11)} whileHover={{ y: -3 }}>
+          <Section
+            title="Tus módulos delegados"
+            description="Las secciones del panel de administración a las que tienes acceso"
+          >
+            <MisModulos modulos={user.modulos ?? []} />
+          </Section>
+        </motion.div>
+      )}
+
       {/* Seguridad */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.14, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.14)}
         whileHover={{ y: -3 }}
       >
         <Section
@@ -720,10 +913,7 @@ export default function Perfil() {
 
       {/* 2FA */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.17, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.17)}
         whileHover={{ y: -3 }}
       >
         <Section
@@ -736,10 +926,7 @@ export default function Perfil() {
 
       {/* Sesiones activas */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.19, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.19)}
         whileHover={{ y: -3 }}
       >
         <Section
@@ -752,10 +939,7 @@ export default function Perfil() {
 
       {/* Notificaciones */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.20, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.20)}
         whileHover={{ y: -3 }}
       >
         <Section
@@ -768,10 +952,7 @@ export default function Perfil() {
 
       {/* Apariencia */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.26, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.26)}
         whileHover={{ y: -3 }}
       >
         <Section
@@ -784,12 +965,9 @@ export default function Perfil() {
 
       {/* Acciones de cuenta */}
       <motion.div
-        initial={{ opacity: 0, y: 24, rotateX: 4, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
-        transition={{ delay: 0.32, duration: 0.5, ease: EASE_OUT_EXPO }}
-        style={{ transformPerspective: 900 }}
+        {...fadeUp(0.32)}
         whileHover={{ y: -3 }}
-        className="bg-white border border-border/70 rounded-2xl overflow-hidden"
+        className="bg-[var(--card-bg)] border border-border/70 rounded-2xl overflow-hidden"
       >
         <div className="px-6 py-4 border-b border-border">
           <h3 className="font-semibold text-text">Acciones de Cuenta</h3>
@@ -813,12 +991,30 @@ export default function Perfil() {
             <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary-800 transition-colors" />
           </Link>
 
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-between px-6 py-4 hover:bg-red-50 transition-colors group text-left"
+          <a
+            href={`mailto:info@iiap.org.co?subject=${encodeURIComponent('Solicitud sobre mis datos personales')}&body=${encodeURIComponent(`Solicito ejercer mi derecho de [acceso / rectificación / eliminación / oposición] sobre mis datos personales tratados por VIGIA-IIAP.\n\nCorreo registrado: ${user?.email ?? ''}`)}`}
+            className="flex items-center justify-between px-6 py-4 hover:bg-bg-alt transition-colors no-underline group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center">
+              <div className="w-9 h-9 bg-bg-alt rounded-xl flex items-center justify-center">
+                <Shield className="w-4 h-4 text-text-muted" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-text group-hover:text-primary-800 transition-colors">
+                  Privacidad y mis datos
+                </p>
+                <p className="text-xs text-text-muted">Solicita acceso, corrección o eliminación de tus datos (Ley 1581 de 2012)</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-primary-800 transition-colors" />
+          </a>
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-between px-6 py-4 hover:bg-red/10 transition-colors group text-left"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-red/10 rounded-xl flex items-center justify-center">
                 <LogOut className="w-4 h-4 text-orange-600" />
               </div>
               <div>

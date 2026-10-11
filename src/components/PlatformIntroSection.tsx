@@ -1,12 +1,15 @@
 // No hay shapefile del Chocó Biogeográfico en el proyecto — el contorno de
 // abajo se digitalizó a mano contra el mapa oficial IIAP/IGAC.
-import { useRef, useState, useMemo, useEffect } from 'react'
+import { useRef, useState, useMemo, useEffect, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
+import type { MotionValue } from 'framer-motion'
 import * as THREE from 'three'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { CinematicChocoScene } from './CinematicChocoScene'
 import MarqueeStrip from './MarqueeStrip'
+import ErrorBoundary from './ErrorBoundary'
 
 // ── Polígono oficial del Chocó Biogeográfico ──────────────────────────────────
 // Coordenadas UTM Zona 17N en kilómetros, trazadas del mapa oficial IIAP/IGAC.
@@ -352,7 +355,28 @@ function CartographicGrid({ isDark }: { isDark: boolean }) {
 }
 
 // ── Escena ────────────────────────────────────────────────────────────────────
-function Scene({ isDark, prefersReduced }: { isDark: boolean; prefersReduced: boolean }) {
+// Desktop: escena cinematográfica 3D (modelo real de Blender, cámara scrubbed por scroll).
+// Móvil / prefers-reduced-motion: nube de partículas procedural — liviana, ya
+// validada en dispositivos de gama baja, sin descarga de modelo pesado.
+function Scene({ isDark, prefersReduced, scrollYProgress, mountCinematic }: {
+  isDark: boolean
+  prefersReduced: boolean
+  scrollYProgress: MotionValue<number>
+  mountCinematic: boolean
+}) {
+  if (mountCinematic) {
+    return (
+      // fallback={null} -- si el .glb falla en cargar (red inestable, un
+      // deploy a medio completar truncando la descarga), este fondo
+      // decorativo simplemente no aparece; sin este boundary local, el error
+      // se propagaba hasta el ErrorBoundary global y tumbaba toda la home.
+      <ErrorBoundary fallback={null}>
+        <Suspense fallback={null}>
+          <CinematicChocoScene scrollYProgress={scrollYProgress} isDark={isDark} />
+        </Suspense>
+      </ErrorBoundary>
+    )
+  }
   return(
     <>
       <fog attach="fog" args={[isDark?'#060f09':'#EEF5F1', 5, 24]}/>
@@ -451,15 +475,27 @@ export default function PlatformIntroSection(){
   const containerRef = useRef<HTMLDivElement>(null)
   const [phase, setPhase] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
+  const [hasBeenVisible, setHasBeenVisible] = useState(false)
   const { isDark } = useTheme()
   const prefersReduced = useReducedMotion()
+  // Misma escena cinematográfica en todos los tamaños de pantalla — la
+  // plataforma es responsive y el 3D debe verse igual en móvil/tablet que en
+  // desktop. Solo se respeta prefers-reduced-motion (accesibilidad, no una
+  // señal de tamaño de dispositivo), cayendo a la nube de partículas.
+  const useCinematic = !prefersReduced
 
-  // Pausa el canvas cuando no es visible en el viewport.
+  // Pausa el canvas cuando no es visible en el viewport. El modelo 3D solo se
+  // monta (y descarga) la primera vez que la sección entra en viewport, y
+  // permanece montado después — evita recargarlo al hacer scroll hacia atrás
+  // y evita competir con el LCP inicial de la página.
   useEffect(()=>{
     const el = containerRef.current
     if (!el) return
     const io = new IntersectionObserver(
-      ([entry]) => setIsVisible(entry.isIntersecting),
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting)
+        if (entry.isIntersecting) setHasBeenVisible(true)
+      },
       { threshold: 0.1 }
     )
     io.observe(el)
@@ -500,7 +536,12 @@ export default function PlatformIntroSection(){
               gl={{antialias:true,alpha:true}}
               style={{background:'transparent'}}
             >
-              <Scene isDark={isDark} prefersReduced={prefersReduced}/>
+              <Scene
+                isDark={isDark}
+                prefersReduced={prefersReduced}
+                scrollYProgress={scrollYProgress}
+                mountCinematic={useCinematic && hasBeenVisible}
+              />
             </Canvas>
           </div>
 

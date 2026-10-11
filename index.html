@@ -2,11 +2,64 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
+
+    <!-- Recuperación automática de "página en blanco" — debe ir primero en
+         <head>, antes de cualquier otra etiqueta, porque Vite mueve el
+         <script type="module"> de entrada al final de <head> en el build de
+         producción (para el modulepreload) y empieza a descargarlo tan
+         pronto el parser lo encuentra. Si este listener se registrara más
+         tarde (p. ej. en <body>, donde vivía el script originalmente en el
+         código fuente) y la descarga fallara rápido (red inestable,
+         ERR_CONTENT_LENGTH_MISMATCH, chunk desactualizado tras un deploy),
+         el evento de error se perdería: el navegador nunca ejecuta nada y
+         React no llega a montar ni a mostrar un ErrorBoundary, dejando la
+         página en blanco hasta que el usuario recargue a mano. Recarga UNA
+         sola vez (marcado en sessionStorage) para no entrar en bucle si el
+         fallo persiste. `vite:preloadError` es el evento que Vite emite
+         específicamente para fallos de import() dinámico (React.lazy); el
+         listener en capture phase sobre window cubre además el fallo del
+         script de entrada mismo, que no dispara ese evento por no ser un
+         import() dinámico — se identifica por ser un <script type="module">,
+         ya que Vite no preserva atributos custom como `id` al reubicarlo.
+
+         Un tercer caso, antes sin cubrir: un error de EJECUCIÓN (no de
+         carga) durante el primer render de React -- AuthProvider,
+         ThemeProvider, etc. envuelven <Routes> desde AFUERA del
+         ErrorBoundary que vive dentro de AppRoutes, así que una excepción
+         ahí nunca llega a mostrar la UI de error, sube sin capturar hasta
+         window y deja #root vacío para siempre. Ese error dispara 'error'
+         con target === window (no un elemento de script), a diferencia de
+         un fallo de carga. window.__VIGIIAP_MOUNTED__ (fijado en main.tsx
+         justo después de renderizar) evita recargar por un error de
+         ejecución posterior, ya normal — con la app montada, ese camino
+         entero deja de aplicar y el ErrorBoundary real se encarga. -->
+    <script>
+      (function () {
+        var KEY = 'vigiiap:chunk-reload-attempted'
+        function reloadOnce() {
+          var already
+          try { already = sessionStorage.getItem(KEY) } catch (e) { already = null }
+          if (already) return
+          try { sessionStorage.setItem(KEY, '1') } catch (e) { /* modo privado — recarga igual, sin guardia */ }
+          window.location.reload()
+        }
+        window.addEventListener('vite:preloadError', reloadOnce)
+        window.addEventListener('error', function (event) {
+          var t = event.target
+          if (t && t.tagName === 'SCRIPT' && t.type === 'module') { reloadOnce(); return }
+          if ((t === window || !t) && !window.__VIGIIAP_MOUNTED__) reloadOnce()
+        }, true)
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VIGIA-IIAP — Visor Gestor de Información del Instituto de Investigaciones Ambientales del Pacífico</title>
     <meta name="description" content="Plataforma web para la gestión, visualización y distribución de información ambiental del Chocó Biogeográfico colombiano." />
+
+    <!-- Google Search Console — verificación de propiedad del dominio, requisito
+         de la verificación de marca OAuth de Google. -->
+    <meta name="google-site-verification" content="Ah7Q2d0qQouzIzGlxdT2gxrK0Ec5tK5NaiL49mW-m7w" />
 
     <!-- Open Graph -->
     <meta property="og:type"        content="website" />
@@ -28,7 +81,28 @@
     <!-- Fuentes cargadas via @fontsource (auto-hospedadas, sin CDN externo) -->
   </head>
   <body>
+    <!-- Contenido de respaldo sin JavaScript — VIGIA-IIAP es una SPA de React,
+         así que el HTML servido antes de hidratar no tiene texto en el body
+         (solo <div id="root">). Verificadores automatizados que leen el HTML
+         crudo sin ejecutar JavaScript (como el de verificación de marca OAuth
+         de Google) no veían ni el nombre ni el propósito de la app. Este
+         bloque nunca se muestra con JS activo — React lo reemplaza al montar
+         sobre #root — pero queda en el HTML servido para ese tipo de lector. -->
+    <noscript>
+      <main style="max-width: 640px; margin: 4rem auto; padding: 0 1.5rem; font-family: system-ui, sans-serif; color: #1a1a1a;">
+        <h1>VIGIA-IIAP — Visor y Gestor de Información Ambiental</h1>
+        <p>
+          VIGIA-IIAP es la plataforma digital del Instituto de Investigaciones Ambientales del
+          Pacífico "John von Neumann" (IIAP) para la gestión, visualización y distribución de
+          información ambiental del Chocó Biogeográfico colombiano: mapas temáticos, documentos
+          técnicos, herramientas SIG (geovisores) y trámites institucionales, todo en un solo
+          lugar, con acceso público para consulta y acceso institucional para investigadores y
+          entidades aliadas.
+        </p>
+        <p>Active JavaScript en su navegador para usar la plataforma completa.</p>
+      </main>
+    </noscript>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

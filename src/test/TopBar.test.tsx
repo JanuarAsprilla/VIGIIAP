@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import TopBar from '@/components/TopBar'
+import { __resetPendingLoginRedirectForTests } from '@/components/topbar/pendingLoginRedirect'
 
 vi.mock('framer-motion', () => {
   const cache = new Map<string, (p: Record<string, unknown>) => ReactNode>()
@@ -44,12 +45,26 @@ vi.mock('@/components/topbar/ProfileDropdown', () => ({
     <div><button onClick={onLogout}>Cerrar sesión</button></div>
   ),
 }))
+vi.mock('@/components/topbar/LoginPanel', () => ({
+  default: ({ onClose }: { onClose: () => void }) => (
+    <div role="dialog" aria-label="Iniciar sesión">Login Panel<button onClick={onClose}>Cerrar login</button></div>
+  ),
+}))
+vi.mock('@/components/topbar/WelcomePanel', () => ({
+  default: ({ onClose, onIniciarSesion }: { onClose: () => void; onIniciarSesion: () => void }) => (
+    <div role="dialog" aria-label="Bienvenido">
+      Welcome Panel
+      <button onClick={onClose}>Cerrar bienvenida</button>
+      <button onClick={onIniciarSesion}>Ir a iniciar sesión</button>
+    </div>
+  ),
+}))
 
 const authMock = {
   isAuthenticated: false,
+  initializing: false,
   user: null as { name: string; role: string; initials: string; isVisitante?: boolean } | null,
   logout: vi.fn(),
-  isAdmin: false,
 }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 const toggleThemeSpy = vi.fn()
@@ -60,8 +75,20 @@ vi.mock('@/contexts/SearchContext', () => ({ useSearch: () => ({ query: '', setQ
 const openPaletteSpy = vi.fn()
 const uiMock = { openPalette: openPaletteSpy, notifications: true }
 vi.mock('@/contexts/UIContext', () => ({ useUI: () => uiMock }))
-const { useAdminNotificacionesMock } = vi.hoisted(() => ({ useAdminNotificacionesMock: vi.fn() }))
-vi.mock('@/hooks/useNotificaciones', () => ({ useAdminNotificaciones: useAdminNotificacionesMock }))
+const { useNotificacionesMock, marcarLeidaMutate, marcarTodasLeidasMutate } = vi.hoisted(() => ({
+  useNotificacionesMock: vi.fn(),
+  marcarLeidaMutate: vi.fn(),
+  marcarTodasLeidasMutate: vi.fn(),
+}))
+vi.mock('@/hooks/useNotificaciones', () => ({
+  useNotificaciones: useNotificacionesMock,
+  useMarcarNotificacionLeida: () => ({ mutate: marcarLeidaMutate }),
+  useMarcarTodasNotificacionesLeidas: () => ({ mutate: marcarTodasLeidasMutate }),
+}))
+const { updatePerfilMutate } = vi.hoisted(() => ({ updatePerfilMutate: vi.fn() }))
+vi.mock('@/hooks/useUsuarios', () => ({
+  useUpdatePerfil: () => ({ mutate: updatePerfilMutate }),
+}))
 
 const navigateSpy = vi.fn()
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -69,28 +96,117 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return { ...actual, useNavigate: () => navigateSpy }
 })
 
-function renderTopBar() {
-  return render(<TopBar onMenuToggle={vi.fn()} />, { wrapper: MemoryRouter })
+function renderTopBar(initialEntries?: { pathname: string; state?: unknown }[]) {
+  return render(<TopBar onMenuToggle={vi.fn()} />, {
+    wrapper: ({ children }) => (
+      <MemoryRouter initialEntries={initialEntries ?? ['/']}>{children}</MemoryRouter>
+    ),
+  })
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
+  __resetPendingLoginRedirectForTests()
   authMock.isAuthenticated = false
+  authMock.initializing = false
   authMock.user = null
-  authMock.isAdmin = false
   uiMock.openPalette = openPaletteSpy
   uiMock.notifications = true
   themeMock.isDark = false
-  useAdminNotificacionesMock.mockReturnValue({ data: [] })
+  useNotificacionesMock.mockReturnValue({ data: [] })
 })
 
 describe('TopBar — usuario anónimo', () => {
-  test('muestra "Ingresar" y ningún panel de sesión', () => {
+  test('muestra "Ingresar" y ningún otro panel', () => {
     renderTopBar()
-    expect(screen.getByRole('link', { name: /Ingresar/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Ingresar/i })).toBeInTheDocument()
     expect(screen.queryByLabelText('Notificaciones')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Ajustes rápidos')).not.toBeInTheDocument()
+  })
+
+  test('clic en "Ingresar" reabre el panel de bienvenida tras cerrarlo', async () => {
+    const user = userEvent.setup()
+    renderTopBar()
+    // El panel ya se abrió solo (ver describe de abajo) — se cierra primero
+    // para probar que el botón "Ingresar" también lo abre por su cuenta.
+    await user.click(await screen.findByText('Cerrar bienvenida'))
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Ingresar/i }))
+    expect(await screen.findByRole('dialog', { name: /Bienvenido/i })).toBeInTheDocument()
+  })
+
+  test('location.state.openLogin (reenviado desde /login) abre LoginPanel directo, sin pasar por la bienvenida', async () => {
+    renderTopBar([{ pathname: '/', state: { openLogin: true, from: { pathname: '/mapas' } } }])
+    expect(await screen.findByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
+  })
+
+  // Regresión: en la app real, <ErrorBoundary key={location.key}> (ver
+  // App.tsx) remonta TopBar entero en CADA navigate(), incluido el propio
+  // navigate() con el que este mismo efecto limpia location.state después de
+  // leer openLogin — la instancia fresca que nace de ese remount ve
+  // location.state ya vacío. Se simula acá desmontando y volviendo a montar
+  // TopBar con el state ya limpio, tal como lo vería esa instancia fresca.
+  test('sobrevive al remount que dispara su propio navigate() de limpieza de location.state', async () => {
+    const { unmount } = renderTopBar([{ pathname: '/', state: { openLogin: true, from: { pathname: '/mapas' } } }])
+    await screen.findByRole('dialog', { name: /Iniciar sesión/i })
+    unmount()
+
+    renderTopBar([{ pathname: '/', state: {} }])
+    expect(await screen.findByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
+  })
+})
+
+describe('TopBar — panel de bienvenida se abre solo (reemplaza al antiguo WelcomeGate)', () => {
+  test('se abre solo, sin clic ni redirect, para quien no tiene sesión', async () => {
+    renderTopBar()
+    expect(await screen.findByRole('dialog', { name: /Bienvenido/i })).toBeInTheDocument()
+  })
+
+  test('no se abre solo si ya hay sesión iniciada', () => {
+    authMock.isAuthenticated = true
+    authMock.user = { name: 'Root', role: 'Investigador', initials: 'RT' }
+    renderTopBar()
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
+  })
+
+  test('no se abre solo mientras la sesión todavía se está verificando', () => {
+    authMock.initializing = true
+    renderTopBar()
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
+  })
+
+  test('si la persona lo cierra, no se vuelve a abrir solo en ese mismo montaje', async () => {
+    const user = userEvent.setup()
+    renderTopBar()
+    expect(await screen.findByRole('dialog', { name: /Bienvenido/i })).toBeInTheDocument()
+    await user.click(screen.getByText('Cerrar bienvenida'))
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
+  })
+
+  test('"Iniciar sesión" desde la bienvenida cambia a LoginPanel (paneles aparte, no un paso interno)', async () => {
+    const user = userEvent.setup()
+    renderTopBar()
+    expect(await screen.findByRole('dialog', { name: /Bienvenido/i })).toBeInTheDocument()
+    await user.click(screen.getByText('Ir a iniciar sesión'))
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: /Iniciar sesión/i })).toBeInTheDocument()
+  })
+
+  test('se marca como visto en localStorage la primera vez que se abre solo', async () => {
+    renderTopBar()
+    await screen.findByRole('dialog', { name: /Bienvenido/i })
+    expect(localStorage.getItem('vigiiap:welcome-seen')).toBe('1')
+  })
+
+  test('no se abre solo en un montaje nuevo (recarga de página) si ya se vio antes en este navegador', async () => {
+    localStorage.setItem('vigiiap:welcome-seen', '1')
+    renderTopBar()
+    expect(screen.getByRole('button', { name: /Ingresar/i })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: /Bienvenido/i })).not.toBeInTheDocument()
   })
 })
 
@@ -107,7 +223,7 @@ describe('TopBar — usuario no verificado (visitante/público)', () => {
 })
 
 describe('TopBar — usuario verificado', () => {
-  test('muestra Notificaciones y Ajustes, con el nombre y rol del usuario', () => {
+  test('muestra Notificaciones y Ajustes, con el nombre del usuario (el rol vive en el dropdown, no duplicado en el trigger)', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Ana Restrepo', role: 'Investigador', initials: 'AR' }
 
@@ -115,7 +231,6 @@ describe('TopBar — usuario verificado', () => {
     expect(screen.getByLabelText(/Notificaciones/i)).toBeInTheDocument()
     expect(screen.getByLabelText('Ajustes rápidos')).toBeInTheDocument()
     expect(screen.getByText('Ana Restrepo')).toBeInTheDocument()
-    expect(screen.getByText('Investigador')).toBeInTheDocument()
   })
 
   test('cerrar sesión desde el dropdown llama a logout() y navega a "/"', async () => {
@@ -172,6 +287,23 @@ describe('TopBar — tema visual', () => {
     renderTopBar()
     expect(screen.getByLabelText('Cambiar a modo claro')).toBeInTheDocument()
   })
+
+  test('sin sesión, el botón de tema no persiste preferencia en el servidor', async () => {
+    const user = userEvent.setup()
+    renderTopBar()
+    await user.click(screen.getByLabelText('Cambiar a modo oscuro'))
+    expect(updatePerfilMutate).not.toHaveBeenCalled()
+  })
+
+  test('con sesión, el botón de tema persiste el tema opuesto al actual', async () => {
+    authMock.isAuthenticated = true
+    authMock.user = { name: 'Ana Restrepo', role: 'Investigador', initials: 'AR' }
+    themeMock.isDark = false
+    const user = userEvent.setup()
+    renderTopBar()
+    await user.click(screen.getByLabelText('Cambiar a modo oscuro'))
+    expect(updatePerfilMutate).toHaveBeenCalledWith({ tema: 'dark' })
+  })
 })
 
 describe('TopBar — paneles de usuario verificado', () => {
@@ -219,22 +351,22 @@ describe('TopBar — paneles de usuario verificado', () => {
   })
 })
 
-describe('TopBar — notificaciones de administrador', () => {
-  test('un usuario no admin nunca ve el conteo de notificaciones, aunque haya datos', () => {
+describe('TopBar — notificaciones', () => {
+  // Ya no es exclusivo de admins -- cualquier cuenta real (no visitante/público
+  // sin verificar) recibe notificaciones, ver useNotificaciones.ts.
+  test('un usuario investigador (no admin) sí ve el conteo de notificaciones', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Ana Restrepo', role: 'Investigador', initials: 'AR' }
-    authMock.isAdmin = false
-    useAdminNotificacionesMock.mockReturnValue({ data: [{ id: 'n1' }] })
+    useNotificacionesMock.mockReturnValue({ data: [{ id: 'n1', leido_en: null }, { id: 'n2', leido_en: null }] })
 
     renderTopBar()
-    expect(screen.getByLabelText('Notificaciones')).toBeInTheDocument()
+    expect(screen.getByLabelText('Notificaciones, 2 sin leer')).toBeInTheDocument()
   })
 
   test('un admin con notificaciones no leídas ve el badge con el conteo', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Root', role: 'Administrador SIG', initials: 'RT' }
-    authMock.isAdmin = true
-    useAdminNotificacionesMock.mockReturnValue({ data: [{ id: 'n1' }, { id: 'n2' }] })
+    useNotificacionesMock.mockReturnValue({ data: [{ id: 'n1', leido_en: null }, { id: 'n2', leido_en: null }] })
 
     renderTopBar()
     expect(screen.getByLabelText('Notificaciones, 2 sin leer')).toBeInTheDocument()
@@ -243,50 +375,45 @@ describe('TopBar — notificaciones de administrador', () => {
   test('con notifications desactivadas en UIContext, no muestra el badge aunque haya no leídas', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Root', role: 'Administrador SIG', initials: 'RT' }
-    authMock.isAdmin = true
     uiMock.notifications = false
-    useAdminNotificacionesMock.mockReturnValue({ data: [{ id: 'n1' }] })
+    useNotificacionesMock.mockReturnValue({ data: [{ id: 'n1', leido_en: null }] })
 
     renderTopBar()
     expect(screen.getByLabelText('Notificaciones')).toBeInTheDocument()
   })
 
-  test('marcar una notificación como leída persiste en localStorage y baja el conteo', async () => {
+  test('marcar una notificación como leída llama a la mutación con su id', async () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Root', role: 'Administrador SIG', initials: 'RT' }
-    authMock.isAdmin = true
-    useAdminNotificacionesMock.mockReturnValue({ data: [{ id: 'n1' }, { id: 'n2' }] })
+    useNotificacionesMock.mockReturnValue({ data: [{ id: 'n1', leido_en: null }, { id: 'n2', leido_en: null }] })
 
     const user = userEvent.setup()
     renderTopBar()
     await user.click(screen.getByLabelText('Notificaciones, 2 sin leer'))
     await user.click(screen.getByText('Marcar primera leída'))
 
-    expect(screen.getByLabelText('Notificaciones, 1 sin leer')).toBeInTheDocument()
-    expect(JSON.parse(localStorage.getItem('vigiiap_notif_read') ?? '[]')).toContain('n1')
+    expect(marcarLeidaMutate).toHaveBeenCalledWith('n1')
   })
 
-  test('marcar todas como leídas deja el conteo en cero', async () => {
+  test('marcar todas como leídas llama a la mutación correspondiente', async () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Root', role: 'Administrador SIG', initials: 'RT' }
-    authMock.isAdmin = true
-    useAdminNotificacionesMock.mockReturnValue({ data: [{ id: 'n1' }, { id: 'n2' }] })
+    useNotificacionesMock.mockReturnValue({ data: [{ id: 'n1', leido_en: null }, { id: 'n2', leido_en: null }] })
 
     const user = userEvent.setup()
     renderTopBar()
     await user.click(screen.getByLabelText('Notificaciones, 2 sin leer'))
     await user.click(screen.getByText('Marcar todas leídas'))
 
-    expect(screen.getByLabelText('Notificaciones')).toBeInTheDocument()
-    expect(screen.queryByLabelText(/sin leer/)).not.toBeInTheDocument()
+    expect(marcarTodasLeidasMutate).toHaveBeenCalled()
   })
 
-  test('el estado de leídas persiste entre renders (localStorage)', () => {
-    localStorage.setItem('vigiiap_notif_read', JSON.stringify(['n1']))
+  test('una notificación ya leída no cuenta en el badge', () => {
     authMock.isAuthenticated = true
     authMock.user = { name: 'Root', role: 'Administrador SIG', initials: 'RT' }
-    authMock.isAdmin = true
-    useAdminNotificacionesMock.mockReturnValue({ data: [{ id: 'n1' }, { id: 'n2' }] })
+    useNotificacionesMock.mockReturnValue({
+      data: [{ id: 'n1', leido_en: new Date().toISOString() }, { id: 'n2', leido_en: null }],
+    })
 
     renderTopBar()
     expect(screen.getByLabelText('Notificaciones, 1 sin leer')).toBeInTheDocument()

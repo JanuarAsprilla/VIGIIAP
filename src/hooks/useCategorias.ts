@@ -1,16 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Categoria } from '@/types'
+import type { Categoria, ModuloCategoria } from '@/types'
 import api from '@/lib/api'
 
 const KEYS = {
   all:  ['categorias'],
-  list: () => ['categorias', 'list'],
+  list: (params: Record<string, unknown> = {}) => ['categorias', 'list', params],
 }
 
-export function useCategoriasList() {
+/**
+ * @param params  `{ admin: 'true' }` desde un admin_sig/super_admin autenticado
+ *   trae el conteo por módulo completo (activo o no, cualquier visibilidad) --
+ *   ver categorias.service.js. Sin esto, el conteo solo cuenta lo público/activo.
+ */
+export function useCategoriasList(params: Record<string, unknown> = {}) {
   return useQuery<Categoria[]>({
-    queryKey: KEYS.list(),
-    queryFn:  () => api.get('/categorias'),
+    queryKey: KEYS.list(params),
+    queryFn:  () => api.get('/categorias', { params }),
     select:   (res: Categoria[] | { data?: Categoria[] }) =>
       Array.isArray(res) ? res : (res.data ?? []),
     staleTime: 5 * 60 * 1000,
@@ -19,9 +24,22 @@ export function useCategoriasList() {
 
 export function useCreateCategoria() {
   const qc = useQueryClient()
-  return useMutation<{ nombre: string; [key: string]: unknown }, Error, string>({
-    mutationFn: (nombre) => api.post('/categorias', { nombre }),
+  return useMutation<{ nombre: string; [key: string]: unknown }, Error, { nombre: string; modulos: ModuloCategoria[] }>({
+    mutationFn: ({ nombre, modulos }) => api.post('/categorias', { nombre, modulos }),
     onSuccess:  () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  })
+}
+
+export function useUpdateModulosCategoria() {
+  const qc = useQueryClient()
+  return useMutation<{ nombre: string; [key: string]: unknown }, Error, { nombre: string; modulos: ModuloCategoria[] }>({
+    mutationFn: ({ nombre, modulos }) => api.patch(`/categorias/${encodeURIComponent(nombre)}/modulos`, { modulos }),
+    onSuccess:  () => {
+      qc.invalidateQueries({ queryKey: KEYS.all })
+      qc.invalidateQueries({ queryKey: ['documentos'] })
+      qc.invalidateQueries({ queryKey: ['mapas'] })
+      qc.invalidateQueries({ queryKey: ['geovisores'] })
+    },
   })
 }
 
@@ -40,6 +58,19 @@ export function useUploadCategoriaThumbnail() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.all })
       qc.invalidateQueries({ queryKey: ['documentos'] })
+    },
+  })
+}
+
+export function useRenameCategoria() {
+  const qc = useQueryClient()
+  return useMutation<{ nombre: string; [key: string]: unknown }, Error, { nombre: string; nuevoNombre: string }>({
+    mutationFn: ({ nombre, nuevoNombre }) => api.patch(`/categorias/${encodeURIComponent(nombre)}`, { nuevoNombre }),
+    onSuccess:  () => {
+      qc.invalidateQueries({ queryKey: KEYS.all })
+      qc.invalidateQueries({ queryKey: ['documentos'] })
+      qc.invalidateQueries({ queryKey: ['mapas'] })
+      qc.invalidateQueries({ queryKey: ['geovisores'] })
     },
   })
 }

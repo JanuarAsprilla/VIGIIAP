@@ -8,7 +8,9 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ArrowRight, Keyboard, X } from 'lucide-react'
 import { useUI }       from '@/contexts/UIContext'
+import { useSearch }   from '@/contexts/SearchContext'
 import { useCatalogue } from '@/hooks/useCatalogue'
+import { matches }     from '@/lib/search'
 
 // ─────────────────────────────────────────────
 // Highlight matched text
@@ -25,7 +27,7 @@ function Highlight({ text, query }: { text: string; query: string }): ReactNode 
     <>
       {parts.map((part: string, i: number) =>
         regex.test(part)
-          ? <mark key={i} className="bg-primary-100 text-primary-900 rounded-sm not-italic">{part}</mark>
+          ? <mark key={i} className="bg-primary-800/15 text-text rounded-sm not-italic">{part}</mark>
           : part
       )}
     </>
@@ -45,7 +47,7 @@ function ResultItem({ item, isActive, query, onSelect, id }: { item: CatalogueEn
       aria-selected={isActive}
       onClick={onSelect}
       className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
-        isActive ? 'bg-primary-50' : 'hover:bg-bg-alt'
+        isActive ? 'bg-primary-800/10' : 'hover:bg-bg-alt'
       }`}
     >
       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
@@ -93,6 +95,7 @@ const PANEL_ANIM = {
 export default function CommandPalette() {
   const { paletteOpen, closePalette } = useUI()
   const navigate                      = useNavigate()
+  const { setQuery: setPageQuery }    = useSearch()
 
   const [query,       setQuery]       = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
@@ -106,12 +109,14 @@ export default function CommandPalette() {
   const listboxId = `${baseId}-listbox`
   const itemId    = (i: number) => `${baseId}-item-${i}`
 
-  const catalogue = useCatalogue()
+  // Búsqueda global: mapas/documentos/geovisores reales, no solo módulos de
+  // navegación estáticos — con la misma tolerancia a errores de tipeo que ya
+  // usan las páginas individuales (ver lib/search.ts).
+  const catalogue = useCatalogue(paletteOpen)
 
   const results = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return catalogue
-    return catalogue.filter((item) => item.keywords.includes(q) || item.label.toLowerCase().includes(q))
+    if (!query.trim()) return catalogue
+    return catalogue.filter((item) => matches([item.label, item.keywords, item.meta], query))
   }, [query, catalogue])
 
   const groups = useMemo(() => {
@@ -145,10 +150,11 @@ export default function CommandPalette() {
   // itemId is a stable pure function (no closure), omitting it from deps is safe.
   }, [activeIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSelect = useCallback((to: string) => {
+  const handleSelect = useCallback((item: CatalogueEntry) => {
     closePalette()
-    navigate(to)
-  }, [closePalette, navigate])
+    if (item.presetQuery) setPageQuery(item.presetQuery)
+    navigate(item.to)
+  }, [closePalette, navigate, setPageQuery])
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     switch (e.key) {
@@ -162,7 +168,7 @@ export default function CommandPalette() {
         break
       case 'Enter':
         e.preventDefault()
-        if (flatResults[activeIndex]) handleSelect(flatResults[activeIndex].to)
+        if (flatResults[activeIndex]) handleSelect(flatResults[activeIndex])
         break
       case 'Escape':
         closePalette()
@@ -204,7 +210,7 @@ export default function CommandPalette() {
         <motion.div
           {...PANEL_ANIM}
           ref={panelRef}
-          className="w-full max-w-xl bg-white border border-border rounded-2xl shadow-float overflow-hidden flex flex-col"
+          className="w-full max-w-xl bg-[var(--card-bg)] border border-border rounded-2xl shadow-float overflow-hidden flex flex-col"
           style={{ maxHeight: '70vh' }}
         >
           {/* Search input */}
@@ -276,7 +282,7 @@ export default function CommandPalette() {
                               item={item}
                               isActive={flatIdx === activeIndex}
                               query={query}
-                              onSelect={() => handleSelect(item.to)}
+                              onSelect={() => handleSelect(item)}
                             />
                           )
                         })}
@@ -291,15 +297,15 @@ export default function CommandPalette() {
           {/* Footer hints */}
           <div className="flex items-center gap-4 px-4 py-2.5 border-t border-border bg-bg-alt shrink-0">
             <span className="flex items-center gap-1.5 text-[0.65rem] text-text-muted">
-              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-white border border-border rounded text-[0.6rem] font-mono">↑↓</kbd>
+              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-[var(--card-bg)] border border-border rounded text-[0.6rem] font-mono">↑↓</kbd>
               Navegar
             </span>
             <span className="flex items-center gap-1.5 text-[0.65rem] text-text-muted">
-              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-white border border-border rounded text-[0.6rem] font-mono">↵</kbd>
+              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-[var(--card-bg)] border border-border rounded text-[0.6rem] font-mono">↵</kbd>
               Abrir
             </span>
             <span className="flex items-center gap-1.5 text-[0.65rem] text-text-muted">
-              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-white border border-border rounded text-[0.6rem] font-mono">ESC</kbd>
+              <kbd className="inline-flex items-center px-1.5 py-0.5 bg-[var(--card-bg)] border border-border rounded text-[0.6rem] font-mono">ESC</kbd>
               Cerrar
             </span>
             <span className="ml-auto flex items-center gap-1 text-[0.65rem] text-text-muted">

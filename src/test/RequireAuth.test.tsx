@@ -53,6 +53,7 @@ function renderGuard(Guard: () => ReactElement) {
         <Route path="/login" element={<div>Pantalla de login</div>} />
         <Route path="/" element={<div>Home pública</div>} />
         <Route path="/solicitar-acceso" element={<div>Solicitar acceso</div>} />
+        <Route path="/perfil" element={<div>Página de perfil</div>} />
       </Routes>
     </MemoryRouter>,
   )
@@ -94,6 +95,24 @@ describe('RequireAdmin', () => {
 
   test('renders the admin panel when isAdmin is true', () => {
     mockAuth({ isAuthenticated: true, isAdmin: true, user: makeUser('admin_sig') })
+    renderGuard(RequireAdmin)
+    expect(screen.getByText('Contenido protegido')).toBeInTheDocument()
+  })
+
+  test('redirects to /perfil when require2FA is true and 2FA is not enabled yet', () => {
+    mockAuth({
+      isAuthenticated: true, isAdmin: true,
+      user: { ...makeUser('admin_sig'), require2FA: true, twoFactorEnabled: false },
+    })
+    renderGuard(RequireAdmin)
+    expect(screen.getByText('Página de perfil')).toBeInTheDocument()
+  })
+
+  test('allows through when require2FA is true but 2FA is already enabled', () => {
+    mockAuth({
+      isAuthenticated: true, isAdmin: true,
+      user: { ...makeUser('admin_sig'), require2FA: true, twoFactorEnabled: true },
+    })
     renderGuard(RequireAdmin)
     expect(screen.getByText('Contenido protegido')).toBeInTheDocument()
   })
@@ -141,7 +160,7 @@ describe('RequireVerified — gates /perfil y /solicitudes', () => {
   )
 })
 
-describe('RequireInvestigador — gates /geovisor y /herramientas', () => {
+describe('RequireInvestigador — gates /geovisores y /herramientas', () => {
   test('redirects to /login when there is no session', () => {
     mockAuth({ isAuthenticated: false })
     renderGuard(RequireInvestigador)
@@ -160,13 +179,10 @@ describe('RequireInvestigador — gates /geovisor y /herramientas', () => {
     expect(screen.getByText('Contenido protegido')).toBeInTheDocument()
   })
 
-  // El docstring del componente y el comentario en App.tsx dicen ambos
-  // "Requiere Investigador o Admin (bloquea Público y Visitante)" — pero el
+  // El docstring del componente dice "Requiere Investigador o Admin" pero el
   // código solo bloquea publico/visitante, así que tecnico/institucional
-  // también pasan hoy. Este test documenta el comportamiento REAL (no lo
-  // que dice el comentario) para que un cambio futuro sea intencional, no
-  // accidental. Ver nota en el PR: es una decisión de producto pendiente,
-  // no algo que este PR deba decidir unilateralmente.
+  // también pasan hoy. Este test documenta el comportamiento real para que
+  // un cambio futuro sea intencional, no accidental.
   test.each(['tecnico', 'institucional'] as const)(
     'el código actual también deja pasar a %s, aunque el comentario del guard dice "Investigador o Admin"',
     (rol) => {

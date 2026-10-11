@@ -1,11 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest'
-
-const captureExceptionSpy = vi.fn()
-vi.mock('@sentry/react', () => ({ captureException: captureExceptionSpy }))
-
-beforeEach(() => {
-  vi.clearAllMocks()
-})
+import { describe, test, expect } from 'vitest'
 
 describe('queryClient — política de reintentos', () => {
   test('no reintenta errores 4xx (fallas del cliente)', async () => {
@@ -36,15 +29,5 @@ describe('queryClient — política de reintentos', () => {
     expect(retryDelay(1)).toBe(2000)
     expect(retryDelay(2)).toBe(4000)
     expect(retryDelay(10)).toBe(15_000)
-  })
-})
-
-describe('queryClient — errores de mutaciones', () => {
-  test('reporta el error de una mutación fallida a Sentry', async () => {
-    const { default: queryClient } = await import('@/lib/queryClient')
-    const onError = queryClient.getDefaultOptions().mutations?.onError as (error: unknown) => void
-    const err = new Error('fallo de red')
-    onError(err)
-    expect(captureExceptionSpy).toHaveBeenCalledWith(err, { level: 'error', tags: { source: 'mutation' } })
   })
 })

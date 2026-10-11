@@ -14,21 +14,31 @@ export default function NotFound() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center p-6">
+    <div
+      className="relative min-h-screen flex items-center justify-center p-6 overflow-hidden"
+      style={{ background: 'var(--shell-bg)' }}
+    >
+      {/* Ruta 404 vive fuera de MainLayout — sin sidebar/topbar — así que
+          trae sus propios orbes ambientales para que el panel de vidrio
+          tenga algo de profundidad detrás sobre lo cual flotar. */}
+      <div className="orb-1 absolute -top-40 -left-32 w-[480px] h-[480px] rounded-full bg-primary-500/[0.07] blur-[90px] pointer-events-none" aria-hidden="true" />
+      <div className="orb-2 absolute -bottom-40 -right-32 w-[420px] h-[420px] rounded-full bg-gold-400/[0.06] blur-[90px] pointer-events-none" aria-hidden="true" />
+
       <motion.div
         initial={{ opacity: 0, y: 28, rotateX: 5, scale: 0.96 }}
         animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
         transition={{ duration: 0.55, ease: EASE_OUT_EXPO }}
         style={{ transformPerspective: 1000, transformOrigin: 'top center' }}
-        className="w-full max-w-lg text-center"
+        className="glass-panel relative z-10 w-full max-w-lg text-center px-8 py-12 sm:px-12 rounded-3xl"
       >
         {/* 404 visual */}
-        <div className="relative mb-8 select-none">
+        <div className="relative mb-8 select-none overflow-hidden">
           <motion.p
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="text-[8rem] font-display font-bold leading-none text-primary-800/10 tracking-tight"
+            className="mask-fade-bottom text-[9rem] sm:text-[11rem] font-display font-bold leading-none tracking-tight"
+            style={{ color: 'var(--stats-value)', opacity: 0.28 }}
           >
             404
           </motion.p>

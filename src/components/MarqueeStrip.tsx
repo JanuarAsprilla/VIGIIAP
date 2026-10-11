@@ -1,7 +1,7 @@
 const ITEMS = [
   'Biogeografía', 'Cartografía Ambiental', 'Datos Espaciales',
   'Chocó Colombiano', 'Investigación IIAP', 'Biodiversidad',
-  'Pacífico Colombiano', 'SIG & Geovisor', 'Gestión Territorial',
+  'Pacífico Colombiano', 'SIG & Geovisores', 'Gestión Territorial',
 ]
 
 export default function MarqueeStrip() {

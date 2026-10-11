@@ -73,11 +73,11 @@ export default function SolicitarHerramientaModal({ onClose }: { onClose: () => 
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+        className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
       >
         {step === 'success' ? (
           <div className="p-10 text-center">
-            <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5">
+            <div className="w-16 h-16 bg-primary-800/10 rounded-full flex items-center justify-center mx-auto mb-5">
               <CheckCircle className="w-8 h-8 text-primary-800" />
             </div>
             <h3 className="font-display text-xl font-bold text-text mb-2">Solicitud Enviada</h3>
@@ -127,7 +127,7 @@ export default function SolicitarHerramientaModal({ onClose }: { onClose: () => 
                   value={form.nombre}
                   onChange={(e) => set('nombre', e.target.value)}
                   placeholder="ej. Análisis de Fragmentación de Hábitat"
-                  className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
+                  className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
                     errors.nombre ? 'border-red-400' : 'border-border focus:border-primary-800'
                   }`}
                 />
@@ -142,7 +142,7 @@ export default function SolicitarHerramientaModal({ onClose }: { onClose: () => 
                   id="shm-tipo"
                   value={form.tipo}
                   onChange={(e) => set('tipo', e.target.value)}
-                  className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
+                  className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
                     errors.tipo ? 'border-red-400' : 'border-border focus:border-primary-800'
                   }`}
                 >
@@ -161,7 +161,7 @@ export default function SolicitarHerramientaModal({ onClose }: { onClose: () => 
                   value={form.descripcion}
                   onChange={(e) => set('descripcion', e.target.value)}
                   placeholder="¿Qué debería hacer esta herramienta? ¿Qué datos procesa?"
-                  className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
+                  className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
                     errors.descripcion ? 'border-red-400' : 'border-border focus:border-primary-800'
                   }`}
                 />
@@ -185,7 +185,7 @@ export default function SolicitarHerramientaModal({ onClose }: { onClose: () => 
                   value={form.justificacion}
                   onChange={(e) => set('justificacion', e.target.value)}
                   placeholder="¿Para qué proyecto o investigación la necesita?"
-                  className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm resize-none focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
+                  className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm resize-none focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
                 />
               </div>
 

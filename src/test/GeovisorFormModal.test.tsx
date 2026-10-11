@@ -1,0 +1,883 @@
+import { describe, test, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { createElement, type ReactNode } from 'react'
+import GeovisorFormModal from '@/components/admin/geovisores/GeovisorFormModal'
+import type { GeovisorRaw, WorkspaceOption } from '@/types'
+
+vi.mock('framer-motion', () => {
+  const cache = new Map<string, (p: Record<string, unknown>) => ReactNode>()
+  const motion = new Proxy({}, {
+    get: (_t, tag: string) => {
+      if (!cache.has(tag)) {
+        cache.set(tag, ({ children, ...p }: Record<string, unknown>) => createElement(tag, p, children as ReactNode))
+      }
+      return cache.get(tag)
+    },
+  })
+  return { motion, AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</> }
+})
+
+vi.mock('@/hooks/useConexionesGeoserver', () => ({
+  useConexionesGeoserverList: vi.fn(),
+  useWorkspacesDeConexion: vi.fn(),
+}))
+import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
+
+vi.mock('@/hooks/useGeovisores', () => ({
+  useCreateGeovisor: vi.fn(),
+  useUpdateGeovisor: vi.fn(),
+  useUploadGeovisorThumbnail: vi.fn(),
+}))
+import { useCreateGeovisor, useUpdateGeovisor, useUploadGeovisorThumbnail } from '@/hooks/useGeovisores'
+
+vi.mock('@/hooks/useCategorias', () => ({
+  useCategoriasList: vi.fn(() => ({ data: [] })),
+}))
+import { useCategoriasList } from '@/hooks/useCategorias'
+
+vi.mock('@/hooks/useFichasPunto', () => ({
+  useAtributosCapa: vi.fn(() => ({ data: [], isLoading: false })),
+  useConfigFichasCapa: vi.fn(() => ({ data: null, isLoading: false })),
+  useUpsertConfigFichasCapa: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+  useFeaturesFichas: vi.fn(() => ({ data: undefined })),
+  useEliminarConfigFichasCapa: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+  useCapasSinConfigFichas: vi.fn(() => [] as string[]),
+}))
+import { useCapasSinConfigFichas } from '@/hooks/useFichasPunto'
+
+// El mapa en vivo (react-leaflet real) se prueba aparte en GeovisorMapaConstructor.test.tsx --
+// acá se reemplaza por botones de prueba que disparan los mismos callbacks que dispararía el
+// mapa real (mover vista, agregar/eliminar preset), para probar el cableado del formulario sin
+// montar Leaflet.
+vi.mock('@/components/admin/geovisores/GeovisorMapaConstructor', () => ({
+  default: ({ conexionId, workspacesSeleccionados, presetsArea, onMoverMapa, onAgregarPreset, onEliminarPreset }: {
+    conexionId: string | null
+    workspacesSeleccionados: WorkspaceOption[]
+    presetsArea: { nombre: string }[]
+    onMoverMapa: (lat: number, lng: number, zoom: number) => void
+    onAgregarPreset: (preset: { nombre: string; geometria: { type: 'Polygon'; coordinates: number[][][] } }) => void
+    onEliminarPreset: (nombre: string) => void
+  }) => (
+    <div data-testid="mapa-constructor">
+      <span data-testid="mapa-conexion">{conexionId ?? 'sin-conexion'}</span>
+      <span data-testid="mapa-workspaces">{workspacesSeleccionados.map((w) => w.id).join(',')}</span>
+      <span data-testid="mapa-capas">{workspacesSeleccionados.flatMap((w) => w.capas.map((c) => c.id)).join(',')}</span>
+      <span data-testid="mapa-presets">{presetsArea.map((p) => p.nombre).join(',')}</span>
+      <button type="button" onClick={() => onMoverMapa(6, -77, 10)}>mover-mapa-test</button>
+      <button type="button" onClick={() => onAgregarPreset({ nombre: 'Zona norte', geometria: { type: 'Polygon', coordinates: [[[1, 2], [3, 4], [5, 6], [1, 2]]] } })}>agregar-preset-test</button>
+      <button type="button" onClick={() => onEliminarPreset('Zona norte')}>eliminar-preset-test</button>
+    </div>
+  ),
+}))
+
+const conexionesFixture = [{ id: 'c1', nombre: 'GeoServer IIAP' }]
+const workspacesFixture: WorkspaceOption[] = [
+  { id: 't_15_geologia', nombre: 'Geologia', totalCapas: 3, capas: [{ id: 't_15_geologia:fallas', nombre: 'Fallas', tipo: 'vectorial' }] },
+  { id: 't_20_hidrologia', nombre: 'Hidrologia', totalCapas: 5, capas: [{ id: 't_20_hidrologia:rios', nombre: 'Ríos', tipo: 'vectorial' }] },
+]
+
+function makeGeovisor(overrides: Partial<GeovisorRaw> = {}): GeovisorRaw {
+  return {
+    id: '1', slug: 'geologia-choco', titulo: 'Geología del Chocó', subtitulo: 'Unidades',
+    descripcion: 'Descripción', cita: 'Cita sugerida', categoria: 'Geología', conexionGeoserverId: 'c1',
+    workspacesGeoserver: ['t_15_geologia'], capasSeleccionadas: ['t_15_geologia:fallas'], capasConFicha: [], incluirCapasNuevas: false,
+    colorPorTema: { t_15_geologia: '#123456' },
+    centro: { lat: 5.55, lng: -76.6 }, zoomInicial: 9, basemapDefecto: 'satelite',
+    areaMaxHa: 5000, presetsArea: [{ nombre: 'Zona norte', geometria: { type: 'Polygon', coordinates: [[[1, 2], [3, 4], [5, 6], [1, 2]]] } }],
+    visibilidad: 'usuarios',
+    presentacion: { mostrarMetricas: true, mostrarImagenes: true, campoImagenUrl: 'foto_url', camposPopup: [{ campo: 'MGUCR_SIMBL', alias: 'Símbolo' }] },
+    thumbnailUrl: 'https://cdn.test/thumb.png', activo: true, orden: 0, creadoEn: '2026-01-01', ...overrides,
+  }
+}
+
+/** Lleva el asistente a un paso por su nombre en el indicador de pasos. */
+async function abrirSeccion(user: ReturnType<typeof userEvent.setup>, titulo: RegExp) {
+  const paso = /Mapa/i.test(titulo.source) ? /Mapa$/ : /Publicar$/
+  await user.click(within(screen.getByRole('navigation', { name: /Pasos/i })).getByRole('button', { name: paso }))
+}
+
+/** Avanza con «Siguiente» hasta el último paso y pulsa «Crear geovisor». */
+async function crearGeovisor(user: ReturnType<typeof userEvent.setup>) {
+  for (let i = 0; i < 5 && !screen.queryByRole('button', { name: /Crear geovisor/i }); i++) {
+    await user.click(screen.getByRole('button', { name: /Siguiente/i }))
+  }
+  await user.click(screen.getByRole('button', { name: /Crear geovisor/i }))
+}
+
+/** Abre el desplegable de un tema/workspace en el picker de capas (empiezan cerrados salvo al editar). */
+async function abrirTema(user: ReturnType<typeof userEvent.setup>, nombre: RegExp) {
+  await user.click(screen.getByRole('button', { name: nombre }))
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.mocked(useConexionesGeoserverList).mockReturnValue({
+    data: conexionesFixture,
+  } as unknown as ReturnType<typeof useConexionesGeoserverList>)
+  vi.mocked(useWorkspacesDeConexion).mockReturnValue({
+    data: workspacesFixture, isFetching: false,
+  } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
+  vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue({ id: '1' }), isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+  vi.mocked(useUpdateGeovisor).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue({ id: '1' }), isPending: false } as unknown as ReturnType<typeof useUpdateGeovisor>)
+  vi.mocked(useUploadGeovisorThumbnail).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUploadGeovisorThumbnail>)
+})
+
+describe('GeovisorFormModal — modo edición: prefill', () => {
+  test('precarga los campos del geovisor que se está editando', () => {
+    render(<GeovisorFormModal open editing={makeGeovisor()} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    expect(screen.getByLabelText(/^Título/i)).toHaveValue('Geología del Chocó')
+    expect(screen.getByLabelText(/^Categoría/i)).toHaveValue('Geología')
+    expect(screen.getByRole('checkbox', { name: /Fallas/i })).toBeChecked()
+    expect(screen.getByTestId('mapa-presets')).toHaveTextContent('Zona norte')
+    expect(screen.getByTestId('mapa-conexion')).toHaveTextContent('c1')
+    expect(screen.getByRole('button', { name: /Guardar cambios/i })).toBeInTheDocument()
+  })
+
+  test('geovisor legado (sin capasSeleccionadas, solo workspacesGeoserver) precarga todas las capas de ese workspace', async () => {
+    const legado = makeGeovisor({ capasSeleccionadas: [], workspacesGeoserver: ['t_15_geologia'] })
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={legado} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    expect(await screen.findByRole('checkbox', { name: /Fallas/i })).toBeChecked()
+    // Hidrologia no viene en el legado, así que su tema empieza colapsado —
+    // hay que abrirlo a mano para comprobar que Ríos no quedó marcada.
+    await abrirTema(user, /Hidrologia/i)
+    expect(screen.getByRole('checkbox', { name: /Ríos/i })).not.toBeChecked()
+  })
+
+  test('el título del modal dice "Editar geovisor" y el botón de envío "Guardar cambios"', () => {
+    render(<GeovisorFormModal open editing={makeGeovisor()} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.getByRole('heading', { name: 'Editar geovisor' })).toBeInTheDocument()
+  })
+
+  test('enviar en modo edición llama a updateGeovisor con el id y el payload', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useUpdateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useUpdateGeovisor>)
+    const onSaved = vi.fn()
+
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={makeGeovisor()} onClose={vi.fn()} onSaved={onSaved} />)
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      id: '1',
+      data: expect.objectContaining({ titulo: 'Geología del Chocó' }),
+    }))
+    expect(onSaved).toHaveBeenCalledWith('Geovisor "Geología del Chocó" actualizado')
+  })
+})
+
+describe('GeovisorFormModal — capas y color por tema', () => {
+  test('sin conexión elegida, el mapa recibe conexionId nulo y se muestra el aviso de vista previa', () => {
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.getByTestId('mapa-conexion')).toHaveTextContent('sin-conexion')
+    expect(screen.getByText(/Elige una conexión GeoServer para ver la vista previa en vivo/i)).toBeInTheDocument()
+  })
+
+  test('mientras se descubren las capas muestra el spinner', async () => {
+    vi.mocked(useWorkspacesDeConexion).mockReturnValue({ data: [], isFetching: true } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    expect(screen.getByText('Descubriendo capas…')).toBeInTheDocument()
+  })
+
+  test('conexión sin capas publicadas muestra el mensaje correspondiente', async () => {
+    vi.mocked(useWorkspacesDeConexion).mockReturnValue({ data: [], isFetching: false } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    expect(screen.getByText('Esta conexión no publica capas todavía.')).toBeInTheDocument()
+  })
+
+  test('marcar una capa agrega el selector de color de su tema y lo refleja en el mapa', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+
+    expect(document.querySelectorAll('input[type="color"]')).toHaveLength(1)
+    expect(screen.getByTestId('mapa-workspaces')).toHaveTextContent('t_15_geologia')
+  })
+
+  test('marcar dos capas de dos temas distintos agrega un selector de color por cada tema', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await abrirTema(user, /Hidrologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Ríos/i }))
+
+    expect(document.querySelectorAll('input[type="color"]')).toHaveLength(2)
+    expect(screen.getByTestId('mapa-workspaces')).toHaveTextContent('t_15_geologia,t_20_hidrologia')
+    expect(screen.getByText(/2 capas seleccionadas, de 2 temas distintos/i)).toBeInTheDocument()
+  })
+
+  test('desmarcar la única capa seleccionada de un tema quita su selector de color', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    const checkbox = screen.getByRole('checkbox', { name: /Fallas/i })
+    await user.click(checkbox)
+    await user.click(checkbox)
+
+    expect(document.querySelectorAll('input[type="color"]')).toHaveLength(0)
+    expect(screen.getByTestId('mapa-workspaces')).toHaveTextContent('')
+  })
+
+  test('marcar una sola capa de un tema con varias no envía las demás al mapa (regresión 429)', async () => {
+    vi.mocked(useWorkspacesDeConexion).mockReturnValue({
+      data: [{
+        id: 't_19_clima', nombre: 'Clima', totalCapas: 3,
+        capas: [
+          { id: 't_19_clima:precipitacion', nombre: 'Precipitación', tipo: 'raster' },
+          { id: 't_19_clima:temperatura', nombre: 'Temperatura', tipo: 'raster' },
+          { id: 't_19_clima:viento', nombre: 'Viento', tipo: 'raster' },
+        ],
+      }],
+      isFetching: false,
+    } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Clima/i)
+    await user.click(screen.getByRole('checkbox', { name: /Precipitación/i }))
+
+    // Regresión: el workspace pasado al mapa traía las 3 capas publicadas
+    // (todo el tema), no solo la marcada — eso disparaba un WMSTileLayer por
+    // cada una y saturaba GeoServer con peticiones de más (429).
+    expect(screen.getByTestId('mapa-workspaces')).toHaveTextContent('t_19_clima')
+    expect(screen.getByTestId('mapa-capas')).toHaveTextContent('t_19_clima:precipitacion')
+    expect(screen.getByTestId('mapa-capas')).not.toHaveTextContent('temperatura')
+    expect(screen.getByTestId('mapa-capas')).not.toHaveTextContent('viento')
+  })
+
+  test('el filtro de búsqueda esconde las capas que no coinciden', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await user.type(screen.getByPlaceholderText(/Buscar capa por nombre/i), 'río')
+
+    expect(screen.queryByRole('checkbox', { name: /Fallas/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: /Ríos/i })).toBeInTheDocument()
+  })
+
+  test('ya no ofrece la generación de reportes con IA — sin funcionalidad real detrás', () => {
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.queryByText(/generación de reportes con IA/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('GeovisorFormModal — mapa y área (constructor visual)', () => {
+  test('mover el mapa actualiza el centro/zoom mostrados', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await abrirSeccion(user, /Mapa y área/i)
+
+    await user.click(screen.getByRole('button', { name: 'mover-mapa-test' }))
+
+    expect(screen.getByText('6')).toBeInTheDocument()
+    expect(screen.getByText('-77')).toBeInTheDocument()
+    expect(screen.getByText('10')).toBeInTheDocument()
+  })
+
+  test('agregar un preset desde el mapa lo refleja en el resumen del panel izquierdo', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await abrirSeccion(user, /Mapa y área/i)
+
+    await user.click(screen.getByRole('button', { name: 'agregar-preset-test' }))
+
+    expect(screen.getByText(/1 preset de área: Zona norte/i)).toBeInTheDocument()
+  })
+
+  test('un preset agregado se incluye en el payload al enviar', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await user.click(screen.getByRole('button', { name: 'agregar-preset-test' }))
+    await crearGeovisor(user)
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      presetsArea: [{ nombre: 'Zona norte', geometria: { type: 'Polygon', coordinates: [[[1, 2], [3, 4], [5, 6], [1, 2]]] } }],
+    }))
+  })
+
+  test('eliminar un preset ya agregado lo quita del resumen y del mapa', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await abrirSeccion(user, /Mapa y área/i)
+    await user.click(screen.getByRole('button', { name: 'agregar-preset-test' }))
+    await user.click(screen.getByRole('button', { name: 'eliminar-preset-test' }))
+
+    expect(screen.getByTestId('mapa-presets')).toHaveTextContent('')
+    expect(screen.queryByText(/^\d+ preset/i)).not.toBeInTheDocument()
+  })
+
+  test('un área máxima inválida bloquea el envío', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await abrirSeccion(user, /Mapa y área/i)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    // "0" pasa la restricción HTML5 min=0 del input (que bloquearía el submit nativo
+    // antes de correr la validación JS con un valor negativo) pero sigue siendo
+    // inválido para la regla de negocio "> 0" -- ejercita el validate() real.
+    fireEvent.change(screen.getByLabelText(/Área máxima/i), { target: { value: '0' } })
+    await crearGeovisor(user)
+
+    expect(await screen.findByText('Debe ser un número positivo')).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+})
+
+describe('GeovisorFormModal — atributos del popup (camposPopup)', () => {
+  test('un atributo sin alias bloquea el envío con el mensaje correspondiente', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await abrirSeccion(user, /Visibilidad y presentación/i)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await user.click(screen.getByRole('button', { name: /^Agregar$/i }))
+    await user.type(screen.getByPlaceholderText('Atributo'), 'MGUCR_SIMBL')
+    await crearGeovisor(user)
+
+    expect(await screen.findByText('Completa el campo y su alias (o elimina la fila)')).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('quitar un atributo lo elimina del formulario', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await abrirSeccion(user, /Visibilidad y presentación/i)
+    await user.click(screen.getByRole('button', { name: /^Agregar$/i }))
+    expect(screen.getByPlaceholderText('Atributo')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Eliminar atributo 1/i }))
+    expect(screen.queryByPlaceholderText('Atributo')).not.toBeInTheDocument()
+  })
+})
+
+describe('GeovisorFormModal — visibilidad', () => {
+  test('elegir "Acreditados" cambia la visibilidad enviada', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await abrirSeccion(user, /Visibilidad y presentación/i)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await user.click(screen.getByRole('button', { name: /Acreditados/i }))
+    await crearGeovisor(user)
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ visibilidad: 'acreditados' }))
+  })
+
+  test('mostrar imágenes en el popup exige el atributo de la URL', async () => {
+    const mutateAsync = vi.fn()
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await abrirSeccion(user, /Visibilidad y presentación/i)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await user.click(screen.getByRole('switch', { name: 'Mostrar imágenes en el popup' }))
+    await crearGeovisor(user)
+
+    expect(await screen.findByText('Indica qué atributo trae la URL de la imagen')).toBeInTheDocument()
+    expect(mutateAsync).not.toHaveBeenCalled()
+  })
+})
+
+describe('GeovisorFormModal — cierre', () => {
+  test('el botón Cancelar llama a onClose', async () => {
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={onClose} onSaved={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: /Cancelar/i }))
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  test('open=false no renderiza el formulario', () => {
+    render(<GeovisorFormModal open={false} editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.queryByRole('heading', { name: 'Nuevo geovisor' })).not.toBeInTheDocument()
+  })
+
+  test('un error del servidor al crear se muestra sin cerrar el formulario', async () => {
+    const mutateAsync = vi.fn().mockRejectedValue(new Error('Ya existe un geovisor con ese título'))
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await crearGeovisor(user)
+
+    expect(await screen.findByText('Ya existe un geovisor con ese título')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Título/i)).toBeInTheDocument()
+  })
+})
+
+describe('GeovisorFormModal — todos los campos opcionales se envían', () => {
+  test('completar información general, mapa, color y presentación llega intacto al payload', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [{ nombre: 'Geología', modulos: ['geovisores'] }],
+    } as unknown as ReturnType<typeof useCategoriasList>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
+    await user.type(screen.getByLabelText(/^Subtítulo/i), 'Unidades litoestratigráficas')
+    await user.click(screen.getByLabelText(/^Categoría/i))
+    await user.click(screen.getByText('Geología'))
+    await user.type(screen.getByLabelText(/^Descripción/i), 'Descripción completa')
+    await user.type(screen.getByLabelText(/^Cita sugerida/i), 'IIAP (2026)')
+
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    fireEvent.change(document.querySelector('input[type="color"]')!, { target: { value: '#ff0000' } })
+
+    await abrirSeccion(user, /Mapa y área/i)
+    await user.click(screen.getByRole('button', { name: 'mover-mapa-test' }))
+    await user.selectOptions(screen.getByLabelText(/Mapa base por defecto/i), 'satelite')
+    await user.type(screen.getByLabelText(/Área máxima/i), '1000')
+
+    await abrirSeccion(user, /Visibilidad y presentación/i)
+    await user.click(screen.getByRole('switch', { name: 'Mostrar métricas' }))
+    await user.click(screen.getByRole('switch', { name: 'Mostrar imágenes en el popup' }))
+    await user.type(screen.getByLabelText(/Atributo con la URL de la imagen/i), 'foto_url')
+    await user.click(screen.getByRole('button', { name: /^Agregar$/i }))
+    await user.type(screen.getByPlaceholderText('Atributo'), 'MGUCR_SIMBL')
+    await user.type(screen.getByPlaceholderText('Nombre legible'), 'Símbolo')
+
+    await crearGeovisor(user)
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      titulo: 'Geología del Chocó', subtitulo: 'Unidades litoestratigráficas', categoria: 'Geología',
+      descripcion: 'Descripción completa', cita: 'IIAP (2026)',
+      centroLat: 6, centroLng: -77, zoomInicial: 10, basemapDefecto: 'satelite', areaMaxHa: 1000,
+      colorPorTema: { t_15_geologia: '#ff0000' },
+      presentacion: expect.objectContaining({
+        mostrarMetricas: false, mostrarImagenes: true, campoImagenUrl: 'foto_url',
+        camposPopup: [{ campo: 'MGUCR_SIMBL', alias: 'Símbolo' }],
+      }),
+    }))
+  })
+})
+
+describe('GeovisorFormModal — miniatura (ThumbnailDropzone)', () => {
+  test('al crear, si se eligió un archivo, sube la miniatura después con el id del geovisor recién creado', async () => {
+    const createMutateAsync = vi.fn().mockResolvedValue(makeGeovisor({ id: 'nuevo-id' }))
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync: createMutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const uploadMutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useUploadGeovisorThumbnail).mockReturnValue({ mutateAsync: uploadMutateAsync, isPending: false } as unknown as ReturnType<typeof useUploadGeovisorThumbnail>)
+
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
+    const file = new File(['x'], 'portada.png', { type: 'image/png' })
+    await user.upload(screen.getByLabelText('Portada del geovisor'), file)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+
+    await crearGeovisor(user)
+
+    expect(uploadMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ id: 'nuevo-id', file }))
+  })
+
+  test('sin archivo elegido, no llama a la subida de miniatura', async () => {
+    const uploadMutateAsync = vi.fn()
+    vi.mocked(useUploadGeovisorThumbnail).mockReturnValue({ mutateAsync: uploadMutateAsync, isPending: false } as unknown as ReturnType<typeof useUploadGeovisorThumbnail>)
+
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.type(screen.getByLabelText(/^Título/i), 'Geología del Chocó')
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await crearGeovisor(user)
+
+    expect(uploadMutateAsync).not.toHaveBeenCalled()
+  })
+
+  test('al editar, la miniatura existente se muestra como vista previa', () => {
+    render(<GeovisorFormModal open editing={makeGeovisor()} onClose={vi.fn()} onSaved={vi.fn()} />)
+    const img = screen.getByAltText('Miniatura') as HTMLImageElement
+    expect(img.src).toBe('https://cdn.test/thumb.png')
+  })
+
+  test('al editar con un archivo nuevo, sube la miniatura con el id devuelto por la actualización', async () => {
+    const uploadMutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useUploadGeovisorThumbnail).mockReturnValue({ mutateAsync: uploadMutateAsync, isPending: false } as unknown as ReturnType<typeof useUploadGeovisorThumbnail>)
+    vi.mocked(useUpdateGeovisor).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue(makeGeovisor({ id: 'editado-id' })), isPending: false,
+    } as unknown as ReturnType<typeof useUpdateGeovisor>)
+
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={makeGeovisor({ id: 'editado-id' })} onClose={vi.fn()} onSaved={vi.fn()} />)
+    // El input de archivo (oculto) está siempre presente en el DOM, aunque ya
+    // haya una miniatura existente mostrando su vista previa.
+    const file = new File(['x'], 'nueva.png', { type: 'image/png' })
+    await user.upload(screen.getByLabelText('Portada del geovisor'), file)
+
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
+
+    expect(uploadMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ id: 'editado-id', file }))
+  })
+
+  test('al editar, quitar la miniatura y guardar le pide al backend borrarla (file null), no solo la esconde localmente', async () => {
+    const uploadMutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useUploadGeovisorThumbnail).mockReturnValue({ mutateAsync: uploadMutateAsync, isPending: false } as unknown as ReturnType<typeof useUploadGeovisorThumbnail>)
+    vi.mocked(useUpdateGeovisor).mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue(makeGeovisor({ id: 'editado-id' })), isPending: false,
+    } as unknown as ReturnType<typeof useUpdateGeovisor>)
+
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={makeGeovisor({ id: 'editado-id' })} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.click(screen.getByText('Quitar'))
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
+
+    expect(uploadMutateAsync).toHaveBeenCalledWith(expect.objectContaining({ id: 'editado-id', file: null }))
+  })
+})
+
+// Regresión: antes se ofrecían TODAS las categorías del sistema, aunque
+// solo las usara Documentos o Mapas -- ahora solo se sugieren las asignadas
+// explícitamente al módulo "geovisores" (ver categorias.modulos, migración 048).
+describe('GeovisorFormModal — fichas por punto', () => {
+  const elegirTipoFichas = (user: ReturnType<typeof userEvent.setup>) =>
+    user.click(screen.getByRole('radio', { name: /fichas por punto/i }))
+
+  beforeEach(() => { vi.mocked(useCapasSinConfigFichas).mockReturnValue([]) })
+
+  test('no deja guardar si una capa con fichas aún no tiene su atributo identificador configurado', async () => {
+    vi.mocked(useCapasSinConfigFichas).mockReturnValue(['t_15_geologia:fallas'])
+    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Estaciones climáticas')
+    await elegirTipoFichas(user)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await crearGeovisor(user)
+
+    expect(mutateAsync).not.toHaveBeenCalled()
+    expect(screen.getAllByText(/atributo identificador/i, { selector: 'p' }).length).toBeGreaterThan(0)
+  })
+
+  test('con todas las capas configuradas, guarda con normalidad', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Estaciones climáticas')
+    await elegirTipoFichas(user)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await crearGeovisor(user)
+
+    expect(mutateAsync).toHaveBeenCalled()
+  })
+
+  test('el tipo estándar es el valor por defecto y no ofrece fichas en las capas', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+
+    expect(screen.getByRole('radio', { name: /estándar/i })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.queryByRole('button', { name: /con fichas/i })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Atributo identificador/i)).not.toBeInTheDocument()
+  })
+
+  test('en el tipo con fichas, marcar una capa vectorial la habilita y muestra su atributo identificador', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await elegirTipoFichas(user)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+
+    expect(screen.getByRole('button', { name: /con fichas/i })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText(/Atributo identificador/i)).toBeInTheDocument()
+  })
+
+  test('una capa raster no admite fichas aunque el tipo sea con fichas', async () => {
+    vi.mocked(useWorkspacesDeConexion).mockReturnValue({
+      data: [{
+        id: 't_19_clima', nombre: 'Clima', totalCapas: 1,
+        capas: [{ id: 't_19_clima:precipitacion', nombre: 'Precipitación', tipo: 'raster' }],
+      }],
+      isFetching: false,
+    } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await elegirTipoFichas(user)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Clima/i)
+    await user.click(screen.getByRole('checkbox', { name: /Precipitación/i }))
+
+    expect(screen.getByText('sin fichas')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /con fichas/i })).not.toBeInTheDocument()
+  })
+
+  test('se puede quitar las fichas de una capa concreta sin cambiar de tipo', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await elegirTipoFichas(user)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await user.click(screen.getByRole('button', { name: /con fichas/i }))
+
+    expect(screen.getByRole('button', { name: /sin fichas/i })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.queryByLabelText(/Atributo identificador/i)).not.toBeInTheDocument()
+  })
+
+  test('cambiar a tipo con fichas habilita las capas vectoriales ya marcadas', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await elegirTipoFichas(user)
+
+    expect(screen.getByLabelText(/Atributo identificador/i)).toBeInTheDocument()
+  })
+
+  test('capasConFicha llega en el payload con las vectoriales marcadas del tipo con fichas', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Estaciones climáticas')
+    await elegirTipoFichas(user)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await crearGeovisor(user)
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({
+      capasConFicha: ['t_15_geologia:fallas'],
+    }))
+  })
+
+  test('volver al tipo estándar envía capasConFicha vacío', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+    vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/^Título/i), 'Estaciones climáticas')
+    await elegirTipoFichas(user)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+    await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+    await user.click(screen.getByRole('radio', { name: /estándar/i }))
+    await crearGeovisor(user)
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ capasConFicha: [] }))
+  })
+
+  describe('capas nuevas automáticas', () => {
+    const NOMBRE_SWITCH = /Mostrar automáticamente las capas nuevas/i
+
+    test('no ofrece la opción mientras no haya capas elegidas', async () => {
+      const user = userEvent.setup()
+      render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+      await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+
+      expect(screen.queryByRole('switch', { name: NOMBRE_SWITCH })).not.toBeInTheDocument()
+    })
+
+    test('en un geovisor nuevo la opción aparece activada al elegir una capa', async () => {
+      const user = userEvent.setup()
+      render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+      await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+      await abrirTema(user, /Geologia/i)
+      await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+
+      expect(screen.getByRole('switch', { name: NOMBRE_SWITCH })).toHaveAttribute('aria-checked', 'true')
+    })
+
+    test('incluirCapasNuevas llega en el payload (true por defecto al crear)', async () => {
+      const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+      vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+      const user = userEvent.setup()
+      render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+      await user.type(screen.getByLabelText(/^Título/i), 'Geología')
+      await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+      await abrirTema(user, /Geologia/i)
+      await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+      await crearGeovisor(user)
+
+      expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ incluirCapasNuevas: true }))
+    })
+
+    test('apagar la opción envía incluirCapasNuevas en false', async () => {
+      const mutateAsync = vi.fn().mockResolvedValue(makeGeovisor())
+      vi.mocked(useCreateGeovisor).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateGeovisor>)
+      const user = userEvent.setup()
+      render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+      await user.type(screen.getByLabelText(/^Título/i), 'Geología')
+      await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+      await abrirTema(user, /Geologia/i)
+      await user.click(screen.getByRole('checkbox', { name: /Fallas/i }))
+      await user.click(screen.getByRole('switch', { name: NOMBRE_SWITCH }))
+      await crearGeovisor(user)
+
+      expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ incluirCapasNuevas: false }))
+    })
+
+    test('al editar un geovisor existente respeta lo guardado (no lo activa por su cuenta)', () => {
+      render(<GeovisorFormModal open editing={makeGeovisor({ capasSeleccionadas: ['t_15_geologia:fallas'], incluirCapasNuevas: false })} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+      expect(screen.getByRole('switch', { name: NOMBRE_SWITCH })).toHaveAttribute('aria-checked', 'false')
+    })
+  })
+
+  test('al editar un geovisor con capasConFicha ya guardado, precarga el tipo con fichas', () => {
+    render(<GeovisorFormModal open editing={makeGeovisor({ capasSeleccionadas: ['t_15_geologia:fallas'], capasConFicha: ['t_15_geologia:fallas'] })} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    expect(screen.getByRole('radio', { name: /fichas por punto/i })).toHaveAttribute('aria-checked', 'true')
+  })
+})
+
+describe('GeovisorFormModal — categoría por módulo', () => {
+  test('no sugiere una categoría usada solo por otro módulo (Documentos/Mapas)', async () => {
+    vi.mocked(useCategoriasList).mockReturnValue({
+      data: [
+        { nombre: 'Solo en Documentos', modulos: ['documentos'] },
+        { nombre: 'Hidrografía Regional', modulos: ['geovisores'] },
+      ],
+    } as unknown as ReturnType<typeof useCategoriasList>)
+
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.click(screen.getByLabelText('Categoría'))
+
+    expect(screen.getByText('Hidrografía Regional')).toBeInTheDocument()
+    expect(screen.queryByText('Solo en Documentos')).not.toBeInTheDocument()
+  })
+})
+
+describe('GeovisorFormModal — capas nuevas del servidor en el selector', () => {
+  const conNuevas: WorkspaceOption[] = [
+    {
+      id: 't_15_geologia', nombre: 'Geologia', totalCapas: 2,
+      capas: [
+        { id: 't_15_geologia:unidades', nombre: 'Unidades', tipo: 'vectorial' },
+        { id: 't_15_geologia:fallas', nombre: 'Fallas', tipo: 'vectorial', nueva: true },
+      ],
+    },
+    { id: 't_20_hidrologia', nombre: 'Hidrologia', totalCapas: 1, capas: [{ id: 't_20_hidrologia:rios', nombre: 'Ríos', tipo: 'vectorial' }] },
+  ]
+
+  test('avisa en el tema cuántas capas nuevas tiene y marca solo la capa nueva', async () => {
+    vi.mocked(useWorkspacesDeConexion).mockReturnValue({
+      data: conNuevas, isFetching: false,
+    } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+
+    expect(screen.getAllByText('1 nueva')).toHaveLength(1)
+    await abrirTema(user, /Geologia/i)
+    expect(screen.getAllByText('Nueva')).toHaveLength(1)
+  })
+
+  test('sin capas nuevas no muestra avisos', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.selectOptions(screen.getByLabelText(/^Conexión/i), 'c1')
+    await abrirTema(user, /Geologia/i)
+
+    expect(screen.queryByText('Nueva')).not.toBeInTheDocument()
+    expect(screen.queryByText(/\d+ nuevas?$/)).not.toBeInTheDocument()
+  })
+})
+
+describe('GeovisorFormModal — asistente por pasos', () => {
+  const nav = () => within(screen.getByRole('navigation', { name: /Pasos/i }))
+
+  test('empieza en el paso 1 de 4 y marca el paso actual', () => {
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    expect(screen.getByText(/Paso 1 de 4/)).toBeInTheDocument()
+    expect(nav().getByRole('button', { name: /Información/ })).toHaveAttribute('aria-current', 'step')
+  })
+
+  test('Siguiente avanza un paso y Atrás regresa', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: /Siguiente/i }))
+    expect(screen.getByText(/Paso 2 de 4/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Atrás/i }))
+    expect(screen.getByText(/Paso 1 de 4/)).toBeInTheDocument()
+  })
+
+  test('el paso Fichas solo existe en el tipo con fichas', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(nav().queryByRole('button', { name: /Fichas/ })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('radio', { name: /Con fichas por punto/i }))
+
+    expect(screen.getByText(/Paso 1 de 5/)).toBeInTheDocument()
+    expect(nav().getByRole('button', { name: /Fichas/ })).toBeInTheDocument()
+  })
+
+  test('crear con datos incompletos devuelve al primer paso con error', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await crearGeovisor(user)
+
+    expect(screen.getByText(/Paso 1 de 4/)).toBeInTheDocument()
+    expect(screen.getByText('Mínimo 3 caracteres')).toBeInTheDocument()
+  })
+
+  test('el último paso muestra el resumen antes de guardar', async () => {
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    await user.type(screen.getByLabelText(/^Título/i), 'Geología')
+    await abrirSeccion(user, /Visibilidad y presentación/i)
+
+    const resumen = within(screen.getByRole('region', { name: /Resumen del geovisor/i }))
+    expect(resumen.getByText('Geología')).toBeInTheDocument()
+    expect(resumen.getByText('No usa fichas')).toBeInTheDocument()
+  })
+})
+

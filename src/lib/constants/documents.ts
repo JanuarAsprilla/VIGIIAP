@@ -6,7 +6,7 @@ export const ADMIN_MOCK_DOCS = [
   { id: 4, nombre: 'Zonificación Ambiental 2023',     categoria: 'Cartografía',          tipo: 'PDF',     autor: 'Gestión Territorial',  fecha: '28 Feb 2026', tamano: '6.3 MB',  descargas: 215, url: null },
   { id: 5, nombre: 'Informe Biodiversidad Q4-2025',   categoria: 'Biodiversidad',        tipo: 'PDF',     autor: 'Equipo Biodiversidad', fecha: '20 Feb 2026', tamano: '3.8 MB',  descargas: 54,  url: null },
   { id: 6, nombre: 'Normativa Ambiental Chocó 2024',  categoria: 'Normativa',            tipo: 'PDF',     autor: 'Jurídica IIAP',        fecha: '15 Feb 2026', tamano: '2.1 MB',  descargas: 183, url: null },
-  { id: 7, nombre: 'Geovisor — Cuencas Hidrográficas',categoria: 'Hidrología',           tipo: 'Geovisor',autor: 'Geoportal Regional',   fecha: '10 Feb 2026', tamano: '—',       descargas: 312, url: '/geovisor' },
+  { id: 7, nombre: 'Geovisor — Cuencas Hidrográficas',categoria: 'Hidrología',           tipo: 'Geovisor',autor: 'Geoportal Regional',   fecha: '10 Feb 2026', tamano: '—',       descargas: 312, url: '/geovisores' },
   { id: 8, nombre: 'Imagen Satelital Atrato 2025',    categoria: 'Cartografía',          tipo: 'IMG',     autor: 'Teledetección IIAP',   fecha: '05 Feb 2026', tamano: '22.4 MB', descargas: 78,  url: null },
 ]
 

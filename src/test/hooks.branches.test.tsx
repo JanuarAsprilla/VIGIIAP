@@ -33,7 +33,7 @@ const mockAuth = { isAuthenticated: true }
 
 import api from '@/lib/api'
 import { useUsuariosList } from '@/hooks/useUsuarios'
-import { useAdminNotificaciones } from '@/hooks/useNotificaciones'
+import { useNotificaciones } from '@/hooks/useNotificaciones'
 import { useCategoriasList } from '@/hooks/useCategorias'
 import { useMapasList } from '@/hooks/useMapas'
 
@@ -128,27 +128,26 @@ describe('useUsuarios normalizeUser — null/unknown field branches', () => {
 
 // ─── useNotificaciones — select branches (line 8) ────────────────────────────
 
-describe('useAdminNotificaciones — select branches', () => {
+describe('useNotificaciones — select branches', () => {
   beforeEach(() => { vi.clearAllMocks() })
 
   test('res.data present → returns res.data', async () => {
     const items = [{ id: '1', mensaje: 'Nueva solicitud' }]
     vi.mocked(api.get).mockResolvedValue({ data: items })
-    const { result } = renderHook(() => useAdminNotificaciones(true), { wrapper: makeWrapper() })
+    const { result } = renderHook(() => useNotificaciones(true), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual(items)
   })
 
-  test('res.data null but res is array → returns res directly', async () => {
-    const items = [{ id: '2', mensaje: 'Otra' }]
-    vi.mocked(api.get).mockResolvedValue(items) // res IS the array, no .data wrapper
-    const { result } = renderHook(() => useAdminNotificaciones(true), { wrapper: makeWrapper() })
+  test('res.data missing → falls back to empty array', async () => {
+    vi.mocked(api.get).mockResolvedValue({})
+    const { result } = renderHook(() => useNotificaciones(true), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data).toEqual(items)
+    expect(result.current.data).toEqual([])
   })
 
   test('enabled=false → does not fetch', () => {
-    const { result } = renderHook(() => useAdminNotificaciones(false), { wrapper: makeWrapper() })
+    const { result } = renderHook(() => useNotificaciones(false), { wrapper: makeWrapper() })
     expect(result.current.fetchStatus).toBe('idle')
     expect(api.get).not.toHaveBeenCalled()
   })

@@ -343,7 +343,7 @@ describe('Usuarios (admin) — panel de detalle', () => {
     render(<Usuarios />)
     await user.click(screen.getByText('Ana Restrepo'))
 
-    expect(screen.getByText('Geovisor')).toBeInTheDocument()
+    expect(screen.getByText('Geovisores')).toBeInTheDocument()
     expect(screen.getByText('Panel de Administración')).toBeInTheDocument()
   })
 
@@ -394,6 +394,24 @@ describe('Usuarios (admin) — listado y filtros', () => {
     expect(screen.getByText('Pendiente')).toBeInTheDocument()
   })
 
+  test('un usuario con rolSolicitado muestra la insignia "Solicita: <rol>"', () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo', rolSolicitado: 'Investigador' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    render(<Usuarios />)
+    expect(screen.getByText('Solicita: Investigador')).toBeInTheDocument()
+  })
+
+  test('sin rolSolicitado, no muestra ninguna insignia de solicitud pendiente', () => {
+    vi.mocked(useUsuariosList).mockReturnValue({
+      data: { data: [makeUser({ id: 'u2', nombre: 'Ana Restrepo' })] },
+    } as unknown as ReturnType<typeof useUsuariosList>)
+
+    render(<Usuarios />)
+    expect(screen.queryByText(/Solicita:/)).not.toBeInTheDocument()
+  })
+
   test('el buscador actualiza el input controlado', async () => {
     const user = userEvent.setup()
     render(<Usuarios />)
@@ -442,7 +460,7 @@ describe('Usuarios (admin) — panel de detalle: ramas adicionales', () => {
     await user.click(screen.getByText('Ana Restrepo'))
 
     const badges = screen.getAllByText('Inactivo')
-    expect(badges.some((b) => b.className.includes('bg-red-100'))).toBe(true)
+    expect(badges.some((b) => b.className.includes('bg-red/10'))).toBe(true)
   })
 
   test('con motivo de acceso, lo muestra en el detalle', async () => {
@@ -541,7 +559,7 @@ describe('Usuarios (admin) — activar/desactivar: ramas adicionales', () => {
 
     render(<Usuarios />)
     const badges = screen.getAllByText('Inactivo').filter((b) => b.tagName === 'SPAN')
-    expect(badges.some((b) => b.className.includes('bg-red-100'))).toBe(true)
+    expect(badges.some((b) => b.className.includes('bg-red/10'))).toBe(true)
     expect(screen.queryByTitle('Clic para activar')).not.toBeInTheDocument()
   })
 })

@@ -1,0 +1,192 @@
+@import '../herramientaTema.css'; /* se inlinea aquí: el orden original -> común -> propio no depende del reparto en archivos del build */
+/* Tema del panel: solo lo propio de esta herramienta. Botones, campos, tarjetas, tablas y ventanas
+   vienen de ../herramientaTema.css (sistema común); los colores de datos de cada capa se conservan. */
+.pc-root {
+  --verde: var(--color-primary-600);
+  --verde-dark: var(--color-primary-700);
+  --verde-deep: var(--color-primary-800);
+  --verde-light: var(--color-primary-50);
+  --azul: #185FA5;
+  --gris-light: var(--color-bg-alt);
+  --bg: var(--color-bg);
+  --surface: var(--card-bg, var(--color-surface));
+  --border: var(--color-border);
+  --border2: var(--color-border);
+  --text: var(--color-text);
+  --text2: var(--color-text-light);
+  --text3: var(--color-text-muted);
+  --radius: var(--radius-md);
+  --radius-lg: var(--radius-xl);
+  --shadow: var(--shadow-soft);
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --pc-sticky-top: 4.5rem;
+
+  background: transparent;
+  min-height: 0;
+}
+
+/* Nota del panel: va justo bajo el título de la herramienta */
+.pc-root .nota-slot:empty,
+.pc-root .nota-slot:has(> #nota-panel-wrap:empty) { display: none; }
+.pc-root .nota-slot { margin-bottom: 1rem; }
+.pc-root .nota-panel { border-radius: var(--radius-2xl); }
+
+/* Barra de herramientas: selector de capa protagonista + carga de datos */
+.pc-root .top-bar {
+  position: relative;
+  z-index: 60;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  margin-bottom: 1rem;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.pc-root .capa-selector { position: relative; flex: 1 1 22rem; max-width: 34rem; }
+.pc-root .capa-toggle {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "etq chev" "act chev";
+  column-gap: 0.75rem;
+  align-items: center;
+  justify-content: stretch;
+  text-align: left;
+  min-height: 0;
+  padding: 0.65rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--ht-acento) 45%, var(--color-border));
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--ht-sombra);
+}
+.pc-root .capa-toggle-label {
+  grid-area: etq;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.pc-root .capa-toggle-actual {
+  grid-area: act;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+.pc-root .capa-toggle-actual .side-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.pc-root .capa-chevron {
+  grid-area: chev;
+  color: var(--color-primary-800);
+  transition: transform var(--duration-fast) var(--ease-out-expo);
+}
+.pc-root .capa-toggle[aria-expanded="true"] .capa-chevron { transform: rotate(180deg); }
+
+.pc-root .capa-selector .sidebar-nav {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  z-index: 70;
+  width: auto;
+  min-height: 0;
+  display: block;
+  padding: 0.375rem;
+  overflow: visible;
+  background: var(--surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-float);
+}
+.pc-root .capa-selector .sidebar-nav[hidden] { display: none; }
+.pc-root .capa-selector .sidebar-nav .side-item {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 0;
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+  background: transparent;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: normal;
+}
+.pc-root .capa-selector .sidebar-nav .side-item.active {
+  background: color-mix(in srgb, var(--ht-acento) 14%, var(--surface));
+  color: color-mix(in srgb, var(--ht-acento) 62%, var(--color-text));
+  font-weight: 600;
+}
+.pc-root .capa-selector .sidebar-nav .side-item:hover:not(.active) { background: var(--color-bg-alt); border: none; }
+.pc-root .pending-badge { border-color: var(--color-bg); }
+
+/* Sticky: los filtros quedan bajo la cabecera de la plataforma */
+.pc-root .controls-bar { top: var(--pc-sticky-top) !important; }
+.pc-root .layout-with-sidebar { display: block; margin: 0; }
+.pc-root .content-area { padding: 0; }
+.pc-root .main { padding: 0; }
+.pc-root .hero { background: var(--color-primary-800); }
+
+/* ── Diálogo "Actualizar capas de datos" ──────────────────────────────────── */
+.pc-root .modal-overlay { z-index: 1000; }
+.pc-root .modal-carga { max-width: 36rem; }
+.pc-root .modal-carga-header { padding: 1.25rem 1.5rem 1rem; border-bottom: 1px solid var(--color-border); }
+.pc-root .modal-carga-title { font-family: var(--font-display); font-size: 1.1875rem; font-weight: 600; }
+.pc-root .modal-carga-sub { font-size: 0.8125rem; color: var(--color-text-light); }
+.pc-root .modal-carga-close { width: 2rem; height: 2rem; min-height: 0; padding: 0; border-radius: 999px; box-shadow: none; font-size: 0.875rem; }
+.pc-root .modal-carga-body { padding: 0.5rem 0.75rem; }
+.pc-root .mc-section-label { padding: 0.75rem 0.75rem 0.25rem; letter-spacing: 0.08em; color: var(--color-text-muted); }
+.pc-root .mc-row { padding: 0.7rem 0.75rem; border-radius: var(--radius-xl); transition: background-color 120ms; }
+.pc-root .mc-row:hover { background: color-mix(in srgb, var(--ht-acento) 7%, var(--surface)); }
+.pc-root .mc-divider { display: none; }
+.pc-root .mc-state-bar { display: none; }
+.pc-root .mc-name { font-size: 0.875rem; }
+.pc-root .mc-chip { padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.6875rem; border: none; }
+.pc-root .mc-chip.req { background: color-mix(in srgb, var(--ht-acento) 14%, var(--surface)); color: color-mix(in srgb, var(--ht-acento) 62%, var(--color-text)); }
+.pc-root .mc-chip.opt { background: var(--color-bg-alt); color: var(--color-text-muted); }
+.pc-root .mc-action { padding: 0.28rem 0.7rem; border-radius: 999px; font-size: 0.75rem; }
+.pc-root .mc-action.ok { background: color-mix(in srgb, var(--ht-ok) 14%, var(--surface)); color: color-mix(in srgb, var(--ht-ok) 55%, var(--color-text)); }
+.pc-root .mc-action.pend { background: color-mix(in srgb, var(--ht-aviso) 20%, var(--surface)); color: color-mix(in srgb, #8a5a00 70%, var(--color-text)); }
+.pc-root .mc-action.loading { background: color-mix(in srgb, var(--azul) 14%, var(--surface)); color: color-mix(in srgb, var(--azul) 70%, var(--color-text)); }
+.pc-root .mc-ts { color: var(--color-text-muted); }
+.pc-root .mc-footer { padding: 0.875rem 1.5rem; background: transparent; border-top: 1px solid var(--color-border); }
+.pc-root .mc-leg-bar { width: 0.5rem; height: 0.5rem; border-radius: 50%; }
+.pc-root .mc-legend, .pc-root .mc-legend-cols { color: var(--color-text-muted); }
+
+/* Avisos */
+.pc-root .toast-area { z-index: 1001; }
+.pc-root .toast { border-radius: var(--radius-xl); box-shadow: var(--shadow-card); }
+
+/* Sin permiso de edición: no existe ninguna vía de carga en pantalla */
+.pc-solo-lectura .cargar-btn-wrap,
+.pc-solo-lectura .update-bar,
+.pc-solo-lectura .modal-overlay { display: none !important; }
+
+@media (max-width: 768px) {
+  .pc-root { --pc-sticky-top: 0px; }
+  .pc-root .capa-selector { max-width: none; }
+}
+
+/* Responsivo por ANCHO DEL CONTENEDOR (la herramienta vive junto al menú lateral de la plataforma,
+   así que el ancho de la ventana no dice cuánto espacio tiene). Va en .main, nunca en .pc-root. */
+.pc-root .main { container: pc / inline-size; }
+.pc-root :is(.card, .chart-card, .metric-card, .charts-row > *, .chart-duo > *) { min-width: 0; }
+
+@container pc (max-width: 62rem) {
+  .pc-root [style*="13fr 7fr"], .pc-root [style*="11fr 9fr"], .pc-root [style*="3fr 2fr"], .pc-root [style*="200px 1fr"] { grid-template-columns: 1fr !important; }
+  .pc-root [style*="repeat(5,1fr)"], .pc-root [style*="repeat(5, 1fr)"] { grid-template-columns: repeat(3, 1fr) !important; }
+}
+@container pc (max-width: 44rem) {
+  .pc-root [style*="repeat(4,1fr)"], .pc-root [style*="repeat(4, 1fr)"], .pc-root [style*="repeat(5,1fr)"], .pc-root [style*="repeat(5, 1fr)"] { grid-template-columns: 1fr 1fr !important; }
+  .pc-root .metrics-grid { grid-template-columns: 1fr 1fr; }
+  .pc-root .charts-row, .pc-root .chart-duo { grid-template-columns: 1fr !important; }
+  .pc-root .table-wrap, .pc-root #tableWrap, .pc-root #tableWrap2 { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+@container pc (max-width: 28rem) {
+  .pc-root [style*="repeat(4,1fr)"], .pc-root [style*="repeat(4, 1fr)"], .pc-root [style*="repeat(5,1fr)"], .pc-root [style*="repeat(5, 1fr)"] { grid-template-columns: 1fr !important; }
+  .pc-root .metrics-grid { grid-template-columns: 1fr; }
+}

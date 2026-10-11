@@ -2,18 +2,21 @@ import { useState, useRef, useCallback, useEffect, type FormEvent } from 'react'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Plus, Trash2, Upload, X, CheckCircle,
-  AlertCircle, Loader2, Tag, ImageOff, FolderOpen,
+  Plus, Trash2, Pencil, Upload, X, CheckCircle,
+  Loader2, Tag, ImageOff, FolderOpen,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, staggerContainer } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
+import Thumbnail from '@/components/ui/Thumbnail'
+import type { ModuloCategoria } from '@/types'
 import {
   useCategoriasList,
   useCreateCategoria,
   useUploadCategoriaThumbnail,
+  useRenameCategoria,
   useDeleteCategoria,
+  useUpdateModulosCategoria,
 } from '@/hooks/useCategorias'
-import { useDocumentosList } from '@/hooks/useDocumentos'
 
 const fadeUp = fadeUpSm
 
@@ -58,15 +61,15 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { 
   if (preview) {
     return (
       <div className="relative group rounded-xl overflow-hidden border border-border aspect-video w-full">
-        <img src={preview} alt="Portada" className="w-full h-full object-cover" loading="eager" />
+        <img src={preview} alt="Portada" className="w-full h-full object-cover" loading="lazy" />
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
           <button type="button" onClick={() => inputRef.current?.click()}
-            className="px-3 py-1.5 bg-white text-text text-xs font-semibold rounded-lg hover:bg-bg-alt transition-colors">
+            className="px-3 py-1.5 bg-[var(--card-bg)] text-text text-xs font-semibold rounded-lg hover:bg-bg-alt transition-colors">
             Cambiar imagen
           </button>
           {currentFile && (
             <button type="button" onClick={() => onFile(null)}
-              className="p-1.5 bg-white text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+              className="p-1.5 bg-[var(--card-bg)] text-red-500 rounded-lg hover:bg-red/10 transition-colors">
               <X className="w-4 h-4" />
             </button>
           )}
@@ -86,7 +89,7 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { 
       onClick={() => inputRef.current?.click()}
       className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl cursor-pointer transition-all
         ${compact ? 'py-5' : 'py-10'}
-        ${dragging ? 'border-primary-600 bg-primary-50' : 'border-border hover:border-primary-400 hover:bg-bg-alt/60'}`}
+        ${dragging ? 'border-primary-600 bg-primary-500/10' : 'border-border hover:border-primary-400 hover:bg-bg-alt/60'}`}
     >
       <Upload className={`w-6 h-6 ${dragging ? 'text-primary-600' : 'text-text-muted'}`} />
       <p className="text-xs text-text-muted text-center px-3">
@@ -101,44 +104,75 @@ function ImageDropzone({ onFile, currentFile, existingUrl, compact = false }: { 
 }
 
 // ── Tarjeta de categoría ──────────────────────────────────────────────────────
-function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbnail }: { cat: { nombre: string; descripcion?: string | null; thumbnail_url?: string | null; activo?: boolean }; docCount: number; onDelete: (target: { nombre: string }) => void; onThumbnailSaved: (nombre: string) => void; uploadThumbnail: ReturnType<typeof import('@/hooks/useCategorias').useUploadCategoriaThumbnail> }) {
-  const [file, setFile]         = useState<File | null>(null)
-  const [uploading, setUploading] = useState(false)
-  const [progress, setProgress]   = useState(0)
-  const [error, setError]         = useState<string | null>(null)
-  const [fileObjectUrl, setFileObjectUrl] = useState<string | null>(null)
+interface ConteoCategoria { docs: number; mapas: number; geovisores: number }
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- deriva la preview URL del File recibido
-    if (!file) { setFileObjectUrl(null); return }
-    const url = URL.createObjectURL(file)
-    setFileObjectUrl(url)
-    return () => URL.revokeObjectURL(url)
-  }, [file])
+// A qué módulos PERTENECE la categoría (declarado al crearla/editarla) --
+// misma fuente para el filtro de arriba, las tarjetas y los formularios de
+// crear/editar, así "Filtrar por módulo" siempre coincide con lo que dice
+// cada tarjeta (antes el filtro miraba el conteo de uso real, no la
+// asignación, así que una categoría recién creada sin uso todavía
+// "desaparecía" del filtro aunque sí estuviera asignada a ese módulo).
+const MODULOS_CATEGORIA: { key: ModuloCategoria; label: string }[] = [
+  { key: 'documentos', label: 'Documentos' },
+  { key: 'mapas', label: 'Mapas' },
+  { key: 'geovisores', label: 'Geovisores' },
+]
 
-  const handleUpload = async () => {
-    if (!file) return
-    setUploading(true); setError(null)
-    try {
-      await uploadThumbnail.mutateAsync({
-        nombre: cat.nombre,
-        file,
-        onUploadProgress: (ev) =>
-          setProgress(ev.total ? Math.round((ev.loaded / ev.total) * 100) : 50),
-      })
-      setFile(null)
-      onThumbnailSaved(cat.nombre)
-    } catch {
-      setError('No se pudo subir la imagen. Intenta de nuevo.')
-    } finally {
-      setUploading(false); setProgress(0)
-    }
+/** Checkboxes verticales -- más claro que pills clicables para un formulario. */
+function ModulosCheckboxList({ modulos, onToggle, disabled }: { modulos: ModuloCategoria[]; onToggle: (m: ModuloCategoria) => void; disabled?: boolean }) {
+  return (
+    <div className="space-y-2.5">
+      {MODULOS_CATEGORIA.map(({ key, label }) => (
+        <label key={key} className={`flex items-center gap-2.5 ${disabled ? 'opacity-50' : 'cursor-pointer'}`}>
+          <input
+            type="checkbox"
+            checked={modulos.includes(key)}
+            onChange={() => onToggle(key)}
+            disabled={disabled}
+            className="w-4 h-4 accent-primary-700"
+          />
+          <span className="text-sm text-text">{label}</span>
+        </label>
+      ))}
+    </div>
+  )
+}
+
+/** Badges de solo lectura en la tarjeta -- editar los módulos se hace desde "Editar categoría", no aquí. */
+function ModulosBadges({ modulos }: { modulos: ModuloCategoria[] }) {
+  if (modulos.length === 0) {
+    return <span className="text-[0.65rem] text-text-muted italic">Sin módulo asignado</span>
   }
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {MODULOS_CATEGORIA.filter(({ key }) => modulos.includes(key)).map(({ key, label }) => (
+        <span key={key} className="text-[0.65rem] font-semibold px-2.5 py-1 rounded-full bg-primary-500/12 text-primary-700 border border-primary-500/30">
+          {label}
+        </span>
+      ))}
+    </div>
+  )
+}
 
-  const currentPreview = fileObjectUrl ?? cat.thumbnail_url ?? null
+/** "3 docs · 2 mapas · 1 geovisor" -- omite los tipos en cero, salvo si todo está en cero. */
+function resumenConteo({ docs, mapas, geovisores }: ConteoCategoria): string {
+  const partes = [
+    docs       > 0 ? `${docs} doc${docs !== 1 ? 's' : ''}` : null,
+    mapas      > 0 ? `${mapas} mapa${mapas !== 1 ? 's' : ''}` : null,
+    geovisores > 0 ? `${geovisores} geovisor${geovisores !== 1 ? 'es' : ''}` : null,
+  ].filter(Boolean)
+  return partes.length > 0 ? partes.join(' · ') : '0 elementos'
+}
 
+function CategoriaCard({ cat, conteo, onEdit, onDelete }: {
+  cat: { nombre: string; descripcion?: string | null; thumbnail_url?: string | null; activo?: boolean; modulos?: ModuloCategoria[] }
+  conteo: ConteoCategoria
+  onEdit: (target: { nombre: string; modulos: ModuloCategoria[]; thumbnail_url: string | null }) => void
+  onDelete: (target: { nombre: string }) => void
+}) {
   return (
     <Card3D
+      disabled
       layout
       initial={{ opacity: 0, y: 16, rotateX: 5, scale: 0.97 }}
       animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
@@ -146,13 +180,13 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] as const }}
       glow="rgba(26,86,50,0.16)"
       intensity={5}
-      className="bg-white border border-border/70 rounded-2xl overflow-hidden flex flex-col"
+      className="bg-[var(--card-bg)] border border-border/70 rounded-2xl overflow-hidden flex flex-col"
       whileHover={{ y: -4 }}
     >
       {/* Imagen */}
       <div className="relative aspect-video bg-bg-alt">
-        {currentPreview ? (
-          <img src={currentPreview} alt={cat.nombre} className="w-full h-full object-cover" loading="lazy" />
+        {cat.thumbnail_url ? (
+          <Thumbnail src={cat.thumbnail_url} alt={cat.nombre} objectFit="cover" className="w-full h-full" />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-text-muted/40">
             <ImageOff className="w-8 h-8" />
@@ -160,9 +194,9 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
           </div>
         )}
 
-        {/* Badge doc count */}
+        {/* Badge de conteo -- desglosado por tipo, no solo documentos */}
         <span className="absolute top-2 right-2 bg-black/60 text-white text-[0.6rem] font-bold px-2 py-0.5 rounded-full">
-          {docCount} doc{docCount !== 1 ? 's' : ''}
+          {resumenConteo(conteo)}
         </span>
       </div>
 
@@ -170,54 +204,28 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
       <div className="p-4 flex flex-col gap-3 flex-1">
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-sm font-bold text-text leading-snug">{cat.nombre}</h3>
-          <button
-            onClick={() => onDelete(cat)}
-            className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
-            title="Eliminar categoría"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => onEdit({ nombre: cat.nombre, modulos: cat.modulos ?? [], thumbnail_url: cat.thumbnail_url ?? null })}
+              className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors"
+              title="Editar categoría"
+              aria-label={`Editar categoría ${cat.nombre}`}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => onDelete(cat)}
+              className="p-1.5 rounded-lg text-text-muted hover:text-red-dark hover:bg-red/10 transition-colors"
+              title="Eliminar categoría"
+              aria-label={`Eliminar categoría ${cat.nombre}`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
-        {/* Dropzone compacto */}
-        <ImageDropzone
-          onFile={setFile}
-          currentFile={file}
-          existingUrl={cat.thumbnail_url}
-          compact
-        />
-
-        {error && (
-          <p className="text-[0.65rem] text-red-500 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3 shrink-0" />{error}
-          </p>
-        )}
-
-        {file && (
-          <>
-            {uploading && (
-              <div className="space-y-1">
-                <div className="h-1.5 bg-bg-alt rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-primary-800 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
-                    transition={{ duration: 0.15 }}
-                  />
-                </div>
-                <p className="text-[0.6rem] text-text-muted text-right">{progress}%</p>
-              </div>
-            )}
-            <button
-              onClick={handleUpload}
-              disabled={uploading}
-              className="w-full flex items-center justify-center gap-2 py-2 bg-primary-800 text-white text-xs font-semibold rounded-xl hover:bg-primary-700 disabled:opacity-60 transition-colors"
-            >
-              {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-              {uploading ? 'Subiendo…' : 'Guardar imagen'}
-            </button>
-          </>
-        )}
+        {/* Módulos a los que pertenece -- solo lectura, se edita desde "Editar categoría" */}
+        <ModulosBadges modulos={cat.modulos ?? []} />
       </div>
     </Card3D>
   )
@@ -225,40 +233,98 @@ function CategoriaCard({ cat, docCount, onDelete, onThumbnailSaved, uploadThumbn
 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function GestionCategorias() {
-  const { data: categorias = [], isLoading } = useCategoriasList()
-  const { data: docsData }                   = useDocumentosList({ limit: 500, admin: 'true' })
-  const docs = docsData?.data ?? []
+  const { data: categorias = [], isLoading } = useCategoriasList({ admin: 'true' })
 
   const createCategoria   = useCreateCategoria()
   const uploadThumbnail   = useUploadCategoriaThumbnail()
+  const renameCategoria   = useRenameCategoria()
   const deleteCategoria   = useDeleteCategoria()
+  const updateModulos     = useUpdateModulosCategoria()
 
   const [showNew, setShowNew]         = useState(false)
   const [newName, setNewName]         = useState('')
+  const [newModulos, setNewModulos]   = useState<ModuloCategoria[]>(['documentos', 'mapas', 'geovisores'])
   const [newFile, setNewFile]         = useState<File | null>(null)
   const [newError, setNewError]       = useState<string | null>(null)
+  const [editTarget, setEditTarget]   = useState<{ nombre: string; modulos: ModuloCategoria[]; thumbnail_url: string | null } | null>(null)
+  const [editNombre, setEditNombre]   = useState('')
+  const [editModulos, setEditModulos] = useState<ModuloCategoria[]>([])
+  const [editFile, setEditFile]       = useState<File | null>(null)
+  const [editError, setEditError]     = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ nombre: string } | null>(null)
   const [toast, setToast]             = useState<string | null>(null)
+  const [filtroModulo, setFiltroModulo] = useState<ModuloCategoria | ''>('')
 
-  const docCountByCategoria = docs.reduce((acc, d) => {
-    const cat = d.categoria || d.tipo
-    if (cat) acc[cat] = (acc[cat] ?? 0) + 1
-    return acc
-  }, {} as Record<string, number>)
+  const CONTEO_VACIO: ConteoCategoria = { docs: 0, mapas: 0, geovisores: 0 }
+
+  // Filtro por módulo -- a qué módulo está ASIGNADA cada categoría (mismo
+  // campo que se edita en el formulario), no cuántos elementos ya tiene
+  // cargados -- así una categoría recién creada sin uso todavía sí aparece
+  // al filtrar por su módulo, en vez de "desaparecer" hasta que alguien la use.
+  const categoriasFiltradas = !filtroModulo
+    ? categorias
+    : categorias.filter((cat) => cat.modulos?.includes(filtroModulo))
 
   const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!newName.trim()) { setNewError('El nombre es obligatorio'); return }
+    if (newModulos.length === 0) { setNewError('Selecciona a qué módulo(s) pertenece'); return }
     setNewError(null)
     try {
-      const created = await createCategoria.mutateAsync(newName.trim())
+      const created = await createCategoria.mutateAsync({ nombre: newName.trim(), modulos: newModulos })
       if (newFile) {
         await uploadThumbnail.mutateAsync({ nombre: created.nombre, file: newFile })
       }
       setToast(`Categoría "${created.nombre}" creada`)
-      setShowNew(false); setNewName(''); setNewFile(null)
+      setShowNew(false); setNewName(''); setNewModulos(['documentos', 'mapas', 'geovisores']); setNewFile(null)
     } catch (err) {
       setNewError(getApiErrorMessage(err, 'No se pudo crear la categoría'))
+    }
+  }
+
+  const toggleNewModulo = (m: ModuloCategoria) => {
+    setNewModulos((prev) => (prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]))
+    setNewError(null)
+  }
+
+  const openEdit = (target: { nombre: string; modulos: ModuloCategoria[]; thumbnail_url: string | null }) => {
+    setEditTarget(target); setEditNombre(target.nombre); setEditModulos(target.modulos)
+    setEditFile(null); setEditError(null)
+  }
+
+  const toggleEditModulo = (m: ModuloCategoria) => {
+    setEditModulos((prev) => (prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]))
+    setEditError(null)
+  }
+
+  // Un solo formulario para nombre, módulos e imagen -- antes eran acciones
+  // sueltas en distintos lugares (renombrar en un modal aparte, módulos en
+  // pills sobre la tarjeta, imagen en un dropzone también sobre la tarjeta)
+  // sin ningún formulario real donde verlas y cambiarlas juntas. Si el
+  // nombre cambia, el rename va primero (cambia la clave primaria) y el
+  // resto de mutaciones usan el nombre nuevo.
+  const confirmEdit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!editTarget) return
+    const nuevoNombre = editNombre.trim()
+    if (!nuevoNombre) { setEditError('El nombre es obligatorio'); return }
+    if (editModulos.length === 0) { setEditError('Selecciona al menos un módulo'); return }
+    try {
+      if (nuevoNombre !== editTarget.nombre) {
+        await renameCategoria.mutateAsync({ nombre: editTarget.nombre, nuevoNombre })
+      }
+      const mismosModulos = editModulos.length === editTarget.modulos.length &&
+        editModulos.every((m) => editTarget.modulos.includes(m))
+      if (!mismosModulos) {
+        await updateModulos.mutateAsync({ nombre: nuevoNombre, modulos: editModulos })
+      }
+      if (editFile) {
+        await uploadThumbnail.mutateAsync({ nombre: nuevoNombre, file: editFile })
+      }
+      setToast(`Categoría "${nuevoNombre}" actualizada`)
+      setEditTarget(null)
+    } catch (err) {
+      setEditError(getApiErrorMessage(err, 'No se pudo actualizar la categoría'))
     }
   }
 
@@ -274,6 +340,7 @@ export default function GestionCategorias() {
   }
 
   const isSaving = createCategoria.isPending || uploadThumbnail.isPending
+  const isEditing = renameCategoria.isPending || updateModulos.isPending || uploadThumbnail.isPending
 
   return (
     <div className="space-y-6">
@@ -285,14 +352,18 @@ export default function GestionCategorias() {
       {/* Header */}
       <motion.div {...fadeUp(0)} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <span className="text-[0.7rem] font-bold uppercase tracking-widest text-primary-700">Administración</span>
+          <span className="text-[0.7rem] font-bold uppercase tracking-widest" style={{ color: 'var(--hero-eyebrow-text)' }}>Administración</span>
           <h1 className="font-display text-2xl font-bold text-text mt-0.5">Gestión de Categorías</h1>
           <p className="text-sm text-text-muted mt-1">
-            {isLoading ? 'Cargando…' : `${categorias.length} categorías registradas`}
+            {isLoading
+              ? 'Cargando…'
+              : filtroModulo
+                ? `${categoriasFiltradas.length} de ${categorias.length} categorías asignadas a ${MODULOS_CATEGORIA.find((m) => m.key === filtroModulo)?.label}`
+                : `${categorias.length} categorías registradas`}
           </p>
         </div>
         <button
-          onClick={() => { setShowNew(true); setNewName(''); setNewFile(null); setNewError(null) }}
+          onClick={() => { setShowNew(true); setNewName(''); setNewModulos(['documentos', 'mapas', 'geovisores']); setNewFile(null); setNewError(null) }}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors shrink-0"
         >
           <Plus className="w-4 h-4" /> Nueva categoría
@@ -300,18 +371,47 @@ export default function GestionCategorias() {
       </motion.div>
 
       {/* Explicación */}
-      <motion.div {...fadeUp(0.04)} className="flex items-start gap-3 p-4 bg-primary-50 border border-primary-200 rounded-xl">
-        <Tag className="w-4 h-4 text-primary-700 mt-0.5 shrink-0" />
-        <p className="text-xs text-primary-800">
-          Cada categoría agrupa documentos del mismo tema. La imagen de portada aparece como fondo de la tarjeta en el portal público de Documentos.
+      <motion.div {...fadeUp(0.04)} className="flex items-start gap-3 p-4 bg-primary-500/10 border border-primary-500/25 rounded-xl">
+        <Tag className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
+        <p className="text-xs text-primary-600">
+          Cada categoría agrupa documentos, mapas y geovisores del mismo tema. La imagen de portada aparece como fondo de la tarjeta en el portal público de Documentos.
           Las categorías sin imagen muestran un fondo con degradado de color.
         </p>
       </motion.div>
 
+      {/* Filtro por módulo -- ¿qué categorías están asignadas a cada módulo? */}
+      {!isLoading && categorias.length > 0 && (
+        <motion.div {...fadeUp(0.02)} className="flex flex-wrap items-center gap-2">
+          <span className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mr-1">Filtrar por módulo</span>
+          <button
+            onClick={() => setFiltroModulo('')}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+              !filtroModulo
+                ? 'bg-primary-800 text-white border-primary-800'
+                : 'bg-[var(--card-bg)] text-text-muted border-border hover:border-primary-800 hover:text-primary-800'
+            }`}
+          >
+            Todas
+          </button>
+          {MODULOS_CATEGORIA.map(({ key, label }) => (
+            <button key={key}
+              onClick={() => setFiltroModulo(filtroModulo === key ? '' : key)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                filtroModulo === key
+                  ? 'bg-primary-800 text-white border-primary-800'
+                  : 'bg-[var(--card-bg)] text-text-muted border-border hover:border-primary-800 hover:text-primary-800'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </motion.div>
+      )}
+
       {/* Estado vacío */}
       {!isLoading && categorias.length === 0 && (
-        <motion.div {...fadeUp(0.08)} className="flex flex-col items-center justify-center py-20 text-center bg-white border border-dashed border-border rounded-2xl">
-          <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mb-4">
+        <motion.div {...fadeUp(0.08)} className="flex flex-col items-center justify-center py-20 text-center bg-[var(--card-bg)] border border-dashed border-border rounded-2xl">
+          <div className="w-16 h-16 bg-primary-500/12 rounded-2xl flex items-center justify-center mb-4">
             <FolderOpen className="w-8 h-8 text-primary-400" />
           </div>
           <h3 className="text-base font-bold text-text mb-1">No hay categorías</h3>
@@ -325,22 +425,28 @@ export default function GestionCategorias() {
         </motion.div>
       )}
 
+      {/* Sin resultados para el módulo elegido -- distinto del estado "no hay categorías" */}
+      {!isLoading && categorias.length > 0 && categoriasFiltradas.length === 0 && (
+        <div className="py-12 text-center text-sm text-text-muted">
+          Ninguna categoría está asignada a {MODULOS_CATEGORIA.find((m) => m.key === filtroModulo)?.label} todavía.
+        </div>
+      )}
+
       {/* Grid de tarjetas */}
-      {categorias.length > 0 && (
+      {categoriasFiltradas.length > 0 && (
         <motion.div
           variants={staggerContainer(0.07, 0.08)}
           initial="initial" animate="animate"
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
         >
           <AnimatePresence mode="popLayout">
-            {categorias.map((cat) => (
+            {categoriasFiltradas.map((cat) => (
               <CategoriaCard
                 key={cat.nombre}
                 cat={cat}
-                docCount={docCountByCategoria[cat.nombre] ?? 0}
+                conteo={cat.conteo ?? CONTEO_VACIO}
+                onEdit={openEdit}
                 onDelete={setDeleteTarget}
-                onThumbnailSaved={(nombre) => setToast(`Imagen de "${nombre}" actualizada`)}
-                uploadThumbnail={uploadThumbnail}
               />
             ))}
           </AnimatePresence>
@@ -354,7 +460,7 @@ export default function GestionCategorias() {
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
             onClick={(e) => { if (e.target === e.currentTarget && !isSaving) setShowNew(false) }}
           >
-            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-md">
               <div className="flex items-center justify-between px-6 py-5 border-b border-border">
                 <div>
                   <h3 className="text-base font-bold text-text">Nueva categoría</h3>
@@ -378,9 +484,19 @@ export default function GestionCategorias() {
                     placeholder="Ej: Estudios Socioeconómicos"
                     autoFocus
                     onChange={(e) => { setNewName(e.target.value); setNewError(null) }}
-                    className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${newError ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                    className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${newError ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
                   />
                   {newError && <p className="text-xs text-red-500 mt-1">{newError}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    ¿En qué módulo(s) va a aparecer? <span className="text-orange-500" aria-hidden="true">*</span>
+                  </label>
+                  <p className="text-xs text-text-muted mb-2">
+                    Define en qué formularios (Documentos, Mapas, Geovisores) va a poder elegirse esta categoría.
+                  </p>
+                  <ModulosCheckboxList modulos={newModulos} onToggle={toggleNewModulo} />
                 </div>
 
                 <div>
@@ -407,13 +523,87 @@ export default function GestionCategorias() {
         )}
       </AnimatePresence>
 
+      {/* Modal editar categoría -- nombre y módulos juntos en el mismo formulario */}
+      <AnimatePresence>
+        {editTarget && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget && !isEditing) setEditTarget(null) }}
+          >
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-md">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-border">
+                <div>
+                  <h3 className="text-base font-bold text-text">Editar categoría</h3>
+                  <p className="text-xs text-text-muted mt-0.5">
+                    El nombre se actualiza en Mapas, Documentos y Geovisores que la usen.
+                  </p>
+                </div>
+                <button onClick={() => setEditTarget(null)} disabled={isEditing}
+                  className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors disabled:opacity-40">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={confirmEdit} className="p-6 space-y-4">
+                <div>
+                  <label htmlFor="gc-edit-nombre" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Nombre <span className="text-orange-500" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    id="gc-edit-nombre"
+                    type="text"
+                    value={editNombre}
+                    autoFocus
+                    onChange={(e) => { setEditNombre(e.target.value); setEditError(null) }}
+                    className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${editError ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    ¿En qué módulo(s) va a aparecer? <span className="text-orange-500" aria-hidden="true">*</span>
+                  </label>
+                  <ModulosCheckboxList modulos={editModulos} onToggle={toggleEditModulo} disabled={isEditing} />
+                </div>
+
+                <div>
+                  <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Imagen de portada <span className="font-normal normal-case tracking-normal text-text-muted">(opcional)</span>
+                  </label>
+                  <ImageDropzone
+                    onFile={setEditFile}
+                    currentFile={editFile}
+                    existingUrl={editTarget?.thumbnail_url ?? null}
+                    compact
+                  />
+                </div>
+
+                {editError && <p className="text-xs text-red-500">{editError}</p>}
+
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={() => setEditTarget(null)} disabled={isEditing}
+                    className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 hover:text-primary-800 disabled:opacity-40 transition-colors">
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={isEditing}
+                    className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 bg-primary-800 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors">
+                    {isEditing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pencil className="w-4 h-4" />}
+                    {isEditing ? 'Guardando…' : 'Guardar cambios'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Modal confirmar eliminación */}
       <AnimatePresence>
         {deleteTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-5 h-5 text-red-600" />
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+              <div className="w-12 h-12 bg-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-5 h-5 text-red-dark" />
               </div>
               <h3 className="text-base font-bold text-text mb-2">Eliminar categoría</h3>
               <p className="text-sm text-text-muted mb-1">

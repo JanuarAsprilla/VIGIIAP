@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 export default function ResumenActividad() {
   const { user }  = useAuth()
   const isAdmin   = user?.rol === 'admin_sig' || user?.rol === 'super_admin'
-  const { data: stats, isLoading } = useAdminStats()
+  const { data: stats, isLoading } = useAdminStats(isAdmin)
 
   const items = isAdmin && stats
     ? [
@@ -15,6 +15,13 @@ export default function ResumenActividad() {
         { value: stats.solicitudesPendientes, label: 'Solicitudes activas' },
       ]
     : null
+
+  // Público/visitante (sin sesión o rol público) no debe ver ni siquiera el
+  // mensaje "restringido" -- ese aviso solo tiene sentido para staff
+  // autenticado (investigador/técnico/institucional/admin) que sabe que el
+  // panel admin existe. Mostrárselo a un visitante anónimo solo revela la
+  // existencia de estadísticas internas sin ningún beneficio para él.
+  if (!user || user.isVisitante || user.rol === 'publico') return null
 
   return (
     <motion.div

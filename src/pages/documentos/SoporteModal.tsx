@@ -58,11 +58,11 @@ export function SoporteDocumentalModal({ onClose }: { onClose: () => void }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+        className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
       >
         {step === 'success' ? (
           <div className="p-10 text-center">
-            <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-5">
+            <div className="w-16 h-16 bg-primary-800/10 rounded-full flex items-center justify-center mx-auto mb-5">
               <CheckCircle className="w-8 h-8 text-primary-800" />
             </div>
             <h3 className="font-display text-xl font-bold text-text mb-2">Solicitud Enviada</h3>
@@ -118,7 +118,7 @@ export function SoporteDocumentalModal({ onClose }: { onClose: () => void }) {
                     onChange={(e) => set('nombre', e.target.value)}
                     placeholder="Su nombre completo" readOnly={isAuthenticated}
                     className={`w-full px-3 py-2.5 border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
-                      isAuthenticated ? 'bg-bg-alt cursor-default' : 'bg-white focus:border-primary-800'
+                      isAuthenticated ? 'bg-bg-alt cursor-default' : 'bg-[var(--card-bg)] focus:border-primary-800'
                     } ${errors.nombre ? 'border-red-400' : 'border-border'}`}
                   />
                   {errors.nombre && <p className="text-xs text-red-500 mt-1" role="alert">{errors.nombre}</p>}
@@ -131,7 +131,7 @@ export function SoporteDocumentalModal({ onClose }: { onClose: () => void }) {
                     onChange={(e) => set('correo', e.target.value)}
                     placeholder="su@correo.com" readOnly={isAuthenticated}
                     className={`w-full px-3 py-2.5 border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${
-                      isAuthenticated ? 'bg-bg-alt cursor-default' : 'bg-white focus:border-primary-800'
+                      isAuthenticated ? 'bg-bg-alt cursor-default' : 'bg-[var(--card-bg)] focus:border-primary-800'
                     } ${errors.correo ? 'border-red-400' : 'border-border'}`}
                   />
                   {errors.correo && <p className="text-xs text-red-500 mt-1" role="alert">{errors.correo}</p>}
@@ -143,7 +143,7 @@ export function SoporteDocumentalModal({ onClose }: { onClose: () => void }) {
                   Tipo de consulta <span className="text-orange-500" aria-hidden="true">*</span>
                 </label>
                 <select id="sm-tipo" value={form.tipo} onChange={(e) => set('tipo', e.target.value)}
-                  className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${errors.tipo ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                  className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${errors.tipo ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
                 >
                   {CONSULTA_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -159,7 +159,7 @@ export function SoporteDocumentalModal({ onClose }: { onClose: () => void }) {
                 <textarea id="sm-desc" rows={4} value={form.descripcion}
                   onChange={(e) => set('descripcion', e.target.value)}
                   placeholder="Describa con detalle el documento o formato que necesita..."
-                  className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition resize-none ${errors.descripcion ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
+                  className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition resize-none ${errors.descripcion ? 'border-red-400' : 'border-border focus:border-primary-800'}`}
                 />
                 <div className="flex items-center justify-between mt-1">
                   {errors.descripcion

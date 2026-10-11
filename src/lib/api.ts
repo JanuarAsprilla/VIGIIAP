@@ -1,12 +1,15 @@
 import axios from 'axios'
 
 // Auth via HttpOnly cookie — el navegador la adjunta automáticamente.
-// Backend implementa Set-Cookie: vigiiap_token=<jwt>; HttpOnly; Secure; SameSite=Strict.
-// Para logout: backend envía Set-Cookie: vigiiap_token=; Max-Age=0.
+// Backend implementa Set-Cookie: vigiiap_token=<jwt>; HttpOnly; Secure; SameSite=None
+// (frontend y backend en subdominios distintos). Para logout: Set-Cookie: vigiiap_token=; Max-Age=0.
+// SameSite=None expone a CSRF vía formularios cross-site — por eso toda petición
+// mutante autenticada por cookie exige el header X-CSRF-Token (ver más abajo).
 
 function clearLocalSession() {
   localStorage.removeItem('vigiiap_token')
   localStorage.removeItem('vigiiap_user')
+  clearCsrfToken()
 }
 
 // ─── Cliente base ─────────────────────────────────────────────────────────────
@@ -17,58 +20,135 @@ const api = axios.create({
   withCredentials: true,
 })
 
+// ─── Token CSRF (double-submit) ────────────────────────────────────────────────
+// El backend liga este token al valor actual de la cookie de sesión (HMAC), así
+// que cambia cada vez que el access token cambia (login, refresh). Se pide una
+// sola vez y se cachea; las peticiones concurrentes que lo necesiten esperan el
+// mismo fetch en lugar de disparar cada una su propio GET /auth/csrf-token.
+const SAFE_METHODS = new Set(['get', 'head', 'options'])
+let csrfToken: string | null = null
+let csrfPromise: Promise<string | null> | null = null
+
+// Endpoints donde un 401 significa "credencial o código incorrecto" — un
+// resultado de negocio esperado, no una sesión muerta. Si se tratan como el
+// resto, un admin con sesión activa que se equivoca tecleando el código TOTP
+// al activar 2FA en /perfil dispara un refresh silencioso (que SÍ funciona,
+// porque su sesión real sigue viva), lo que reintenta la misma petición con
+// el mismo código incorrecto, recibe un segundo 401 y esta vez SÍ cierra la
+// sesión — la persona queda expulsada sin ningún mensaje de error visible,
+// como si "no pasara nada" al introducir el código.
+const AUTH_ATTEMPT_ENDPOINTS = ['/auth/login', '/auth/2fa/verify', '/auth/2fa/disable', '/auth/2fa/confirm']
+
+function isAuthAttemptEndpoint(url?: string): boolean {
+  return !!url && AUTH_ATTEMPT_ENDPOINTS.some((path) => url.includes(path))
+}
+
+export function clearCsrfToken() {
+  csrfToken = null
+}
+
+async function fetchCsrfToken(): Promise<string | null> {
+  csrfPromise ??= axios
+    .get<{ csrfToken: string }>(`${api.defaults.baseURL}/auth/csrf-token`, { withCredentials: true })
+    .then((res) => { csrfToken = res.data.csrfToken; return csrfToken })
+    .catch(() => null)
+    .finally(() => { csrfPromise = null })
+  return csrfPromise
+}
+
 // ─── Request interceptor ──────────────────────────────────────────────────────
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type']
     config.timeout = 300_000  // 5 min — uploads grandes de mapas/documentos
   }
+
+  const method = config.method?.toLowerCase()
+  if (method && !SAFE_METHODS.has(method)) {
+    const token = csrfToken ?? (await fetchCsrfToken())
+    if (token) config.headers['X-CSRF-Token'] = token
+  }
+
   return config
 })
 
-// ─── Refresh silencioso de sesión ──────────────────────────────────────────────
-// El backend rota el access token (15 min) contra un refresh token de 30 días
-// (cookie HttpOnly vigiiap_refresh, ver auth.service.js). Sin esto, cualquier
-// usuario activo era deslogueado a la fuerza cada 15 minutos aunque su sesión
-// real siguiera vigente. Un solo refresh en vuelo se comparte entre todas las
-// peticiones 401 concurrentes: el backend rota/invalida el refresh token en
-// cada uso, así que dispararlo varias veces en paralelo haría que solo una
-// petición ganara y el resto fallara con "token ya usado".
-let refreshPromise: Promise<unknown> | null = null
-function refreshSession() {
-  refreshPromise ??= api.post('/auth/refresh').finally(() => { refreshPromise = null })
+// ─── Renovación silenciosa de sesión ───────────────────────────────────────────
+// El token de acceso expira en minutos (JWT_EXPIRES_IN, 15m por defecto si no
+// está configurado en el backend), así que antes de rendirse en un 401 se
+// intenta refrescar una sola vez contra POST /auth/refresh (cookie HttpOnly
+// propia, sin pedir credenciales de nuevo). Las peticiones que lleguen
+// mientras el refresh está en vuelo esperan ese mismo intento en lugar de
+// disparar cada una su propio POST /auth/refresh.
+let refreshPromise: Promise<boolean> | null = null
+
+async function attemptRefresh(): Promise<boolean> {
+  refreshPromise ??= axios
+    .post(`${api.defaults.baseURL}/auth/refresh`, {}, { withCredentials: true })
+    .then(() => {
+      // El access token cambió — el CSRF token cacheado (ligado al anterior
+      // vía HMAC) queda inválido; se pedirá uno nuevo en la próxima petición mutante.
+      clearCsrfToken()
+      return true
+    })
+    .catch(() => false)
+    .finally(() => { refreshPromise = null })
   return refreshPromise
 }
-
-const AUTH_ENDPOINTS_NO_RETRY = /\/auth\/(login|refresh|visitante|registro)(\?|$)/
 
 // ─── Response interceptor — normaliza errores ─────────────────────────────────
 api.interceptors.response.use(
   (res) => res.data,
   async (err) => {
-    const status  = err.response?.status
-    const original = err.config as (typeof err.config & { _retried?: boolean }) | undefined
+    const status       = err.response?.status
+    const originalReq  = err.config
+    const isRefreshCall = originalReq?.url?.includes('/auth/refresh')
 
-    if (status === 401 && original && !original._retried && !AUTH_ENDPOINTS_NO_RETRY.test(original.url ?? '')) {
-      original._retried = true
-      try {
-        await refreshSession()
-        return api(original)
-      } catch {
-        // El refresh también falló — sigue al manejo de 401 normal abajo.
+    if (status === 401 && !isAuthAttemptEndpoint(originalReq?.url)) {
+      // Único camino que NO cierra sesión: primer 401 de esta petición,
+      // con config disponible para reintentar, que no sea el propio
+      // /auth/refresh, y cuyo refresh efectivamente funcione.
+      const canRetry = originalReq && !originalReq._retried && !isRefreshCall
+      if (canRetry) {
+        originalReq._retried = true
+        const refreshed = await attemptRefresh()
+        if (refreshed) return api(originalReq)
+      }
+
+      // Todo lo demás — sin config, ya reintentado, es el propio refresh,
+      // o el refresh falló — es una sesión muerta de verdad. Cubre también
+      // el reintento posterior al refresh: si vuelve a dar 401 (refresh
+      // "exitoso" pero sesión igual inválida), esta rama también se ejecuta
+      // gracias a `_retried`, así que isAuthenticated nunca se queda
+      // inconsistente con lo que realmente acepta el servidor.
+      clearLocalSession()
+      window.dispatchEvent(new Event('vigiiap:logout'))
+    }
+
+    if (status === 403 && err.response?.data?.error === 'Token CSRF inválido o ausente') {
+      // Token cacheado obsoleto (ej. carrera con un refresh reciente) — se pide
+      // uno nuevo y se reintenta la petición original una sola vez.
+      const canRetry = originalReq && !originalReq._retried
+      if (canRetry) {
+        originalReq._retried = true
+        clearCsrfToken()
+        const token = await fetchCsrfToken()
+        if (token) return api(originalReq)
       }
     }
 
     const rawMsg  = err.response?.data?.error ?? err.message ?? 'Error inesperado'
     const message = typeof rawMsg === 'string' ? rawMsg : 'Error inesperado'
 
-    if (status === 401) {
-      clearLocalSession()
-      window.dispatchEvent(new Event('vigiiap:logout'))
-    }
-
     if (status === 429) {
       window.dispatchEvent(new CustomEvent('vigiiap:rate-limit', { detail: { message } }))
+    }
+
+    // El backend gatea rutas de contenido público con { maintenance: true }
+    // cuando el super_admin activa modoMantenimiento (ver maintenanceGate en
+    // src/middlewares/maintenanceMode.js). admin_sig/super_admin autenticados
+    // nunca reciben esta respuesta -- el gate los deja pasar server-side.
+    if (status === 503 && err.response?.data?.maintenance === true) {
+      window.dispatchEvent(new CustomEvent('vigiiap:maintenance', { detail: { message } }))
     }
 
     const error    = new Error(message) as Error & { status?: number; code?: string; fields?: unknown }

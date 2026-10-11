@@ -3,9 +3,6 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ErrorBoundary from '@/components/ErrorBoundary'
 
-const { captureExceptionSpy } = vi.hoisted(() => ({ captureExceptionSpy: vi.fn() }))
-vi.mock('@sentry/react', () => ({ captureException: captureExceptionSpy }))
-
 function Bomb({ throwError }: { throwError: boolean }) {
   if (throwError) throw new Error('boom')
   return <div>Contenido normal</div>
@@ -41,12 +38,12 @@ describe('ErrorBoundary', () => {
     expect(screen.queryByText('Contenido normal')).not.toBeInTheDocument()
   })
 
-  test('reporta el error a Sentry con el component stack', () => {
+  test('registra el error en consola con el component stack', () => {
     render(<ErrorBoundary><Bomb throwError /></ErrorBoundary>)
-    expect(captureExceptionSpy).toHaveBeenCalledTimes(1)
-    const [error, context] = captureExceptionSpy.mock.calls[0]
-    expect((error as Error).message).toBe('boom')
-    expect(context.contexts.react.componentStack).toEqual(expect.any(String))
+    expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorBoundary]', expect.any(Error), expect.any(String))
+    const call = consoleErrorSpy.mock.calls.find((c: unknown[]) => c[0] === '[ErrorBoundary]')
+    const error = call?.[1] as Error
+    expect(error.message).toBe('boom')
   })
 
   test('"Intentar de nuevo" limpia el estado de error y vuelve a renderizar a los hijos', async () => {
@@ -58,5 +55,20 @@ describe('ErrorBoundary', () => {
     externalThrowFlag.current = false
     await user.click(screen.getByRole('button', { name: /Intentar de nuevo/i }))
     expect(screen.getByText('Recuperado')).toBeInTheDocument()
+  })
+
+  // Regresión: un fondo decorativo (ej. el modelo 3D del hero) que falla al
+  // cargar no debe mostrar la pantalla de error de página completa -- con
+  // fallback={null} desaparece en silencio en vez de tumbar toda la sección.
+  test('con fallback={null}, un error no muestra la UI de error completa', () => {
+    render(<ErrorBoundary fallback={null}><Bomb throwError /></ErrorBoundary>)
+    expect(screen.queryByText('Ocurrió un error inesperado')).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  test('con un fallback custom, lo renderiza en vez de la UI por defecto', () => {
+    render(<ErrorBoundary fallback={<div>Fondo no disponible</div>}><Bomb throwError /></ErrorBoundary>)
+    expect(screen.getByText('Fondo no disponible')).toBeInTheDocument()
+    expect(screen.queryByText('Ocurrió un error inesperado')).not.toBeInTheDocument()
   })
 })

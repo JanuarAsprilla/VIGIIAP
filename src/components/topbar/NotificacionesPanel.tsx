@@ -1,14 +1,10 @@
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { BellOff, ExternalLink, User, FileText, ClipboardList } from 'lucide-react'
+import { BellOff, ExternalLink } from 'lucide-react'
 import { panelAnim } from './panelAnim'
-import type { Notificacion } from '@/types'
-
-const TYPE_META = {
-  usuario:   { Icon: User,          color: 'text-magenta',    bg: 'bg-magenta/10',    label: 'Usuario' },
-  solicitud: { Icon: ClipboardList, color: 'text-gold-500',   bg: 'bg-gold-500/10',   label: 'Solicitud' },
-  default:   { Icon: FileText,      color: 'text-text-muted', bg: 'bg-bg-alt',    label: 'General' },
-}
+import type { Notificacion, TipoNotificacion } from '@/types'
+import { useTiposNotificacionList } from '@/hooks/useTiposNotificacion'
+import { NOTIFICATION_ICONS, DEFAULT_NOTIFICATION_ICON, getNotificationColorClasses } from '@/lib/notificationIcons'
+import GlassPanel from '@/components/ui/GlassPanel'
 
 function timeAgo(iso: string | undefined) {
   if (!iso) return ''
@@ -22,8 +18,12 @@ function timeAgo(iso: string | undefined) {
   return `hace ${d} d`
 }
 
-function NotificationItem({ item, isRead, onSelect }: { item: Notificacion; isRead: boolean; onSelect: () => void }) {
-  const { Icon, color, bg, label } = (TYPE_META as Record<string, typeof TYPE_META.default>)[item.tipo ?? 'default'] ?? TYPE_META.default
+function NotificationItem({ item, tipos, onSelect }: { item: Notificacion; tipos: TipoNotificacion[]; onSelect: () => void }) {
+  const isRead = Boolean(item.leido_en)
+  const meta  = tipos.find((t) => t.clave === item.tipo)
+  const Icon  = (meta?.icono && NOTIFICATION_ICONS[meta.icono]) || DEFAULT_NOTIFICATION_ICON
+  const { text: color, bg } = getNotificationColorClasses(meta?.color)
+  const label = meta?.nombre ?? 'General'
 
   return (
     <Link
@@ -48,33 +48,31 @@ function NotificationItem({ item, isRead, onSelect }: { item: Notificacion; isRe
         <p className="text-xs text-text-muted mt-1">{timeAgo(item.creado_en)}</p>
       </div>
       {!isRead && (
-        <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0 mt-2" aria-hidden="true" />
+        <span className="w-2 h-2 rounded-full bg-gold-500 shrink-0 mt-2" aria-hidden="true" />
       )}
     </Link>
   )
 }
 
-export default function NotificacionesPanel({ onClose, items, readIds, onMarkAllRead, onMarkRead }: { onClose: () => void; items: Notificacion[]; readIds: string[]; onMarkAllRead: (ids: string[]) => void; onMarkRead: (id: string) => void }) {
-  const unreadCount = items.filter((n) => !readIds.includes(n.id)).length
+export default function NotificacionesPanel({ onClose, items, onMarkAllRead, onMarkRead }: { onClose: () => void; items: Notificacion[]; onMarkAllRead: () => void; onMarkRead: (id: string) => void }) {
+  const unreadCount = items.filter((n) => !n.leido_en).length
   const allRead     = unreadCount === 0
+  const { data: tipos } = useTiposNotificacionList()
 
   return (
-    <motion.div
-      {...panelAnim}
-      className="absolute top-full right-0 mt-2 w-80 bg-white border border-border rounded-xl shadow-float overflow-hidden z-50"
-    >
+    <GlassPanel {...panelAnim} width="w-80">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <p className="text-sm font-bold text-text">Notificaciones</p>
           {!allRead && (
-            <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-orange-500 text-white text-[0.6rem] font-bold rounded-full">
+            <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 bg-gold-500 text-white text-[0.6rem] font-bold rounded-full">
               {unreadCount}
             </span>
           )}
         </div>
         {!allRead && (
           <button
-            onClick={() => onMarkAllRead(items.map((i) => i.id))}
+            onClick={onMarkAllRead}
             className="text-xs text-primary-800 hover:text-primary-600 font-semibold transition-colors"
           >
             Marcar todas como leídas
@@ -84,8 +82,8 @@ export default function NotificacionesPanel({ onClose, items, readIds, onMarkAll
 
       {allRead ? (
         <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-          <div className="w-12 h-12 bg-primary-50 rounded-full flex items-center justify-center mb-3">
-            <BellOff className="w-5 h-5 text-primary-800" aria-hidden="true" />
+          <div className="w-12 h-12 bg-primary-500/10 rounded-full flex items-center justify-center mb-3">
+            <BellOff className="w-5 h-5 text-primary-500" aria-hidden="true" />
           </div>
           <p className="text-sm font-semibold text-text mb-1">Todo al día</p>
           <p className="text-xs text-text-muted">No tienes notificaciones pendientes.</p>
@@ -96,7 +94,7 @@ export default function NotificacionesPanel({ onClose, items, readIds, onMarkAll
             <li key={item.id} role="listitem">
               <NotificationItem
                 item={item}
-                isRead={readIds.includes(item.id)}
+                tipos={tipos ?? []}
                 onSelect={() => { onMarkRead(item.id); onClose() }}
               />
             </li>
@@ -114,6 +112,6 @@ export default function NotificacionesPanel({ onClose, items, readIds, onMarkAll
           <ExternalLink className="w-3.5 h-3.5" />
         </Link>
       </div>
-    </motion.div>
+    </GlassPanel>
   )
 }

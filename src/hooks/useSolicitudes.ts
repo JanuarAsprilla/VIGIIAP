@@ -13,14 +13,14 @@ const TIPO_LABEL: Record<string, string> = {
   'otro':              'Otro',
 }
 
-const ESTADO_LABEL: Record<string, string> = {
+export const ESTADO_LABEL: Record<string, string> = {
   pendiente:   'Pendiente',
   en_revision: 'En Revisión',
   aprobada:    'Aprobado',
   rechazada:   'Rechazado',
   resuelta:    'Resuelta',
 }
-const ESTADO_COLOR: Record<string, string> = {
+export const ESTADO_COLOR: Record<string, string> = {
   'Pendiente':   'orange',
   'En Revisión': 'blue',
   'Aprobado':    'green',
@@ -92,7 +92,7 @@ export const SOL_KEYS = {
 
 type SolicitudRawListResult = { data: SolicitudRaw[]; meta: ApiMeta }
 
-export function useSolicitudesAdmin(params: Record<string, unknown> = {}) {
+export function useSolicitudesAdmin(params: Record<string, unknown> = {}, enabled: boolean = true) {
   return useQuery<SolicitudRawListResult, Error, SolicitudListResult>({
     queryKey: SOL_KEYS.list(params),
     queryFn:  () => api.get('/solicitudes', { params }) as Promise<SolicitudRawListResult>,
@@ -100,6 +100,7 @@ export function useSolicitudesAdmin(params: Record<string, unknown> = {}) {
       data: res.data.map(normalizeSolicitud),
       meta: res.meta,
     }),
+    enabled,
   })
 }
 
@@ -195,9 +196,11 @@ export function useDeleteSolicitudArchivo() {
   })
 }
 
-export function useDownloadSolicitudArchivo() {
-  return useMutation<{ url: string }, Error, { solicitudId: string; archivoId: string }>({
-    mutationFn: ({ solicitudId, archivoId }) =>
-      api.get(`/solicitudes/${solicitudId}/archivos/${archivoId}/download`),
-  })
+// El endpoint reenvía el archivo directamente (stream) en vez de devolver una
+// URL prefirmada -- así el navegador nunca ve el host/IP real del
+// almacenamiento S3. Por eso es una URL para abrir/navegar, no una mutación
+// que trae un JSON con un link (ver streamPrivateFile en el backend).
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api/v1'
+export function solicitudArchivoDescargaUrl(solicitudId: string, archivoId: string): string {
+  return `${API_BASE}/solicitudes/${solicitudId}/archivos/${archivoId}/download`
 }

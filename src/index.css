@@ -48,10 +48,13 @@
   --color-border:     #E2E8F0;
   --color-text:       #1A1A2E;
   --color-text-light: #4A5568;
-  --color-text-muted: #718096;
+  /* #718096 original daba 3.26–4.01:1 sobre fondos claros (falla WCAG AA,
+     que exige 4.5:1) — verificado con axe-core en toda la plataforma.
+     #5A6675 da ~5.8:1 sobre blanco, con margen. */
+  --color-text-muted: #5A6675;
 
   /* ── Typography ────────────────────────────────────── */
-  --font-display: 'Playfair Display', Georgia, serif;
+  --font-display: 'Source Serif 4', Georgia, serif;
   --font-body:    'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* ── Shadows ───────────────────────────────────────── */
@@ -89,6 +92,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Cursor de puntero en botones — los <Link>/<a> ya lo traen del navegador,
+   pero <button> no lo garantiza en todos los navegadores. Sin esto, el
+   topbar (que es casi todo <button>) se sentía menos "clicable" que el
+   sidebar (que es casi todo <Link>). */
+button:not(:disabled), [role="button"]:not(:disabled) {
+  cursor: pointer;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--color-bg-alt); }
@@ -119,7 +130,10 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--color-primary-700);
+  /* --color-primary-700 es un color de marca fijo (no cambia entre temas) —
+     daba 2.13:1 en oscuro. --hero-eyebrow-text ya tiene valores correctos
+     para ambos temas (verde oscuro en claro, verde-lima en oscuro). */
+  color: var(--hero-eyebrow-text);
 }
 
 .page-header-title {
@@ -153,6 +167,45 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+/* Encabezado de sección dentro de un panel del admin (ej. "Tráfico y Uso",
+   "Distribución por Severidad") -- distinto de .card-title (que identifica
+   un ítem individual dentro de una lista, como el nombre de una categoría o
+   herramienta): esta clase existe para dar a una sección todo el peso
+   tipográfico que le corresponde frente al cuerpo del panel, en vez de
+   competir en tamaño con las mismas etiquetas de 12px del contenido. */
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: var(--color-text);
+}
+
+/* Cifra protagonista de un panel de métricas (KPI, StatTile, etc.) -- serif
+   + tabular-nums para que una columna de cifras alinee verticalmente como en
+   un reporte financiero, no como una tarjeta de producto SaaS. */
+.stat-figure {
+  font-family: var(--font-display);
+  font-size: clamp(1.875rem, 3.2vw, 2.5rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--color-text);
+}
+
+/* Etiqueta de dato bajo una cifra protagonista -- misma altura y peso que
+   .table-header, pero como rol semántico propio (no todo lo pequeño-y-
+   mayúscula del admin es un encabezado de tabla). */
+.data-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
 }
 
 .table-cell {
@@ -276,6 +329,76 @@ body {
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* =====================================================
+   Liquid Glass — material system (Apple-style)
+   shell = estructural (Sidebar/TopBar), más opaco/pesado
+   panel = flotante (dropdowns, pills), más ligero
+   El borde superior brillante simula el filo del vidrio
+   captando luz; nunca apilar dos glass claros entre sí.
+   ===================================================== */
+.glass-shell {
+  background: var(--glass-shell-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-shell-border);
+  box-shadow: var(--glass-shadow-heavy), inset 0 1px 0 var(--glass-specular);
+}
+
+.glass-panel {
+  background: var(--glass-panel-bg);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--glass-panel-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-specular);
+}
+
+/* Chip/pill de vidrio muy ligero — badges flotantes sobre imágenes oscuras */
+.glass-chip {
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* Variante oscura — mismo chip de vidrio, para flotar sobre fondos claros */
+.glass-chip-dark {
+  background: rgba(6, 15, 9, 0.45);
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Numeral gigante que se desvanece hacia abajo — técnica de máscara,
+   más sutil que una opacidad plana constante */
+.mask-fade-bottom {
+  -webkit-mask-image: linear-gradient(to bottom, black 20%, transparent 80%);
+  mask-image: linear-gradient(to bottom, black 20%, transparent 80%);
+}
+
+/* Materializar: el vidrio "aparece" como material real —
+   blur + escala juntos, no solo opacidad (Apple: "materialize, don't just fade") */
+@keyframes glass-materialize {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); filter: blur(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0);       filter: blur(0); }
+}
+.glass-materialize {
+  animation: glass-materialize var(--duration-enter, 320ms) var(--ease-out-expo, cubic-bezier(0.16,1,0.3,1)) both;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-shell, .glass-panel, .glass-chip, .glass-card, .glass-dark,
+  .nav-glass, .tabs-glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--card-bg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glass-materialize { animation: none; }
 }
 
 /* ── Noise texture overlay ── */
@@ -642,14 +765,48 @@ h1, h2, h3, .font-display {
    ===================================================== */
 
 :root {
+  /* ── Liquid Glass — material system ─────────────
+     glass-shell  = estructural, pesado (Sidebar/TopBar)
+     glass-panel  = flotante, ligero (dropdowns, pills)
+     Jerarquía de peso: shell más opaco que panel — nunca
+     apilar dos superficies de vidrio claro entre sí. ── */
+  --glass-shell-bg:        rgba(255,255,255,0.72);
+  --glass-shell-border:    rgba(255,255,255,0.55);
+  /* panel flota sobre shell — dos capas de vidrio claro apiladas se lavan entre
+     sí, así que panel necesita más opacidad propia que la que sugeriría su
+     apariencia aislada, para seguir leyéndose sólido encima del shell */
+  --glass-panel-bg:        rgba(255,255,255,0.94);
+  --glass-panel-border:    rgba(255,255,255,0.65);
+  --glass-specular:        rgba(255,255,255,0.85);
+  --glass-shadow:          0 8px 32px rgba(26,86,50,0.12);
+  --glass-shadow-heavy:    0 20px 48px rgba(26,86,50,0.16);
+
+  /* ── Gradiente de marca centralizado ── */
+  --brand-gradient: linear-gradient(135deg, #009846, #1A5632);
+
   /* ── Page shell ────────────────────────────────── */
   --shell-bg:              #F2F7F3;
 
+  /* ── Footer ───────────────────────────────────── */
+  /* Antes hardcodeado en FooterBar.tsx (background: '#1A2E22', text-white/…)
+     — nunca cambiaba con el tema. Mismos valores en claro para cero cambio
+     visual aquí; la versión oscura vive en el bloque .dark más abajo. */
+  --footer-bg:             #1A2E22;
+  --footer-text:           #ffffff;
+  --footer-text-muted:     rgba(255,255,255,0.70);
+  --footer-text-faint:     rgba(255,255,255,0.50);
+
   /* ── Sidebar / Navigation ─────────────────────── */
-  --nav-bg:                #F2F7F3;
+  /* Translúcido de verdad — antes era 100% opaco y el backdrop-filter no
+     tenía nada que difuminar. MainLayout pinta orbes ambientales fijos
+     detrás (z-0); con esta transparencia + blur, esos orbes se filtran
+     a través del sidebar, dando la sensación real de vidrio líquido. */
+  --nav-bg:                rgba(242,247,243,0.68);
   --nav-border:            rgba(26,86,50,0.12);
   --nav-text:              #1A2E22;
-  --nav-text-muted:        rgba(26,46,34,0.45);
+  /* 0.45 daba ~2.6:1 sobre el fondo del sidebar (falla WCAG AA) — 0.65 da ~4.7:1.
+     Mismo verde institucional, solo sube la opacidad del estado inactivo. */
+  --nav-text-muted:        rgba(26,46,34,0.65);
   --nav-text-locked:       rgba(26,46,34,0.22);
   --nav-active-pill:       rgba(26,86,50,0.10);
   --nav-active-border:     rgba(26,86,50,0.20);
@@ -682,7 +839,7 @@ h1, h2, h3, .font-display {
   --nav-overlay-bg:        rgba(0,0,0,0.50);
 
   /* ── TopBar ────────────────────────────────────── */
-  --topbar-bg:             rgba(255,255,255,0.94);
+  --topbar-bg:             rgba(255,255,255,0.72);
   --topbar-border:         rgba(26,86,50,0.10);
   --topbar-text:           #1A2E22;
   --topbar-text-muted:     rgba(26,46,34,0.45);
@@ -699,9 +856,11 @@ h1, h2, h3, .font-display {
   --topbar-ph-opacity:     0.35;
 
   /* ── BottomTabs ────────────────────────────────── */
-  --tabs-bg:               rgba(255,255,255,0.97);
+  --tabs-bg:               rgba(255,255,255,0.72);
   --tabs-border:           rgba(26,86,50,0.10);
-  --tabs-text:             rgba(26,46,34,0.36);
+  /* 0.36 daba ~2.1:1 sobre el fondo de la barra (falla WCAG AA) — 0.65 da ~4.7:1.
+     Mismo verde institucional, solo sube la opacidad del estado inactivo. */
+  --tabs-text:             rgba(26,46,34,0.65);
   --tabs-active-text:      #1A5632;
   --tabs-active-bg:        rgba(26,86,50,0.08);
   --tabs-locked-text:      rgba(26,46,34,0.18);
@@ -728,7 +887,9 @@ h1, h2, h3, .font-display {
   /* ── Marquee ───────────────────────────────────── */
   --marquee-bg:            rgba(242,247,243,0.96);
   --marquee-border:        rgba(26,86,50,0.12);
-  --marquee-text:          rgba(26,46,34,0.28);
+  /* 0.28 daba 1.74:1 (aria-hidden no exime del contraste — WCAG 1.4.3 es
+     sobre percepción visual, no lectores de pantalla). 0.70 da ~5.25:1. */
+  --marquee-text:          rgba(26,46,34,0.70);
   --marquee-dot:           rgba(26,86,50,0.38);
 
   /* ── Content cards ─────────────────────────────── */
@@ -761,6 +922,19 @@ h1, h2, h3, .font-display {
 
 /* ── DARK FOREST overrides ─────────────────────────── */
 .dark {
+  /* Controles nativos (checkbox, radio, scrollbar) sin esto renderizan
+     con el estilo claro del navegador sin importar el tema de la app. */
+  color-scheme: dark;
+
+  /* ── Liquid Glass — variante oscura ── */
+  --glass-shell-bg:        rgba(9,26,14,0.70);
+  --glass-shell-border:    rgba(0,152,70,0.16);
+  --glass-panel-bg:        rgba(10,26,16,0.95);
+  --glass-panel-border:    rgba(0,152,70,0.24);
+  --glass-specular:        rgba(255,255,255,0.10);
+  --glass-shadow:          0 8px 32px rgba(0,0,0,0.40);
+  --glass-shadow-heavy:    0 20px 48px rgba(0,0,0,0.55);
+
   /* Tailwind semantic token overrides */
   --color-bg:              #060f09;
   --color-bg-alt:          #091a0e;
@@ -768,14 +942,25 @@ h1, h2, h3, .font-display {
   --color-border:          rgba(0,152,70,0.12);
   --color-text:            rgba(255,255,255,0.85);
   --color-text-light:      rgba(255,255,255,0.65);
-  --color-text-muted:      rgba(255,255,255,0.40);
+  /* 0.40 daba ~3.7:1 sobre el fondo oscuro (falla WCAG AA) — 0.55 da ~5.7:1. */
+  --color-text-muted:      rgba(255,255,255,0.55);
 
   --shell-bg:              #060f09;
 
-  --nav-bg:                linear-gradient(180deg,#060f09 0%,#091a0e 55%,#0c1f14 100%);
+  /* Más profundo que --shell-bg para que el footer siga leyéndose como una
+     franja propia contra el fondo casi negro de la página, no como la misma
+     superficie repetida. */
+  --footer-bg:             #0d1f13;
+  --footer-text:           rgba(255,255,255,0.92);
+  --footer-text-muted:     rgba(255,255,255,0.62);
+  --footer-text-faint:     rgba(255,255,255,0.42);
+
+  --nav-bg:                linear-gradient(180deg,rgba(6,15,9,0.72) 0%,rgba(9,26,14,0.72) 55%,rgba(12,31,20,0.72) 100%);
   --nav-border:            rgba(0,152,70,0.14);
   --nav-text:              rgba(255,255,255,0.75);
-  --nav-text-muted:        rgba(255,255,255,0.38);
+  /* 0.38 daba ~3.5:1 sobre el fondo oscuro del sidebar (falla WCAG AA) —
+     0.55 da ~6.2:1, igual que --color-text-muted más arriba. */
+  --nav-text-muted:        rgba(255,255,255,0.55);
   --nav-text-locked:       rgba(255,255,255,0.22);
   --nav-active-pill:       rgba(0,152,70,0.28);
   --nav-active-border:     rgba(0,152,70,0.28);
@@ -805,7 +990,7 @@ h1, h2, h3, .font-display {
   --nav-dot-grid:          rgba(0,152,70,0.12);
   --nav-overlay-bg:        rgba(0,0,0,0.60);
 
-  --topbar-bg:             rgba(6,15,9,0.92);
+  --topbar-bg:             rgba(6,15,9,0.72);
   --topbar-border:         rgba(0,152,70,0.14);
   --topbar-text:           rgba(255,255,255,0.85);
   --topbar-text-muted:     rgba(255,255,255,0.45);
@@ -821,9 +1006,11 @@ h1, h2, h3, .font-display {
   --topbar-active-ul:      #4ade80;
   --topbar-ph-opacity:     0.30;
 
-  --tabs-bg:               rgba(6,15,9,0.94);
+  --tabs-bg:               rgba(6,15,9,0.72);
   --tabs-border:           rgba(0,152,70,0.14);
-  --tabs-text:             rgba(255,255,255,0.38);
+  /* 0.38 daba ~3.5:1 sobre el fondo oscuro de la barra (falla WCAG AA) —
+     0.55 da ~6.2:1, igual que --color-text-muted más arriba. */
+  --tabs-text:             rgba(255,255,255,0.55);
   --tabs-active-text:      #4ade80;
   --tabs-active-bg:        rgba(0,152,70,0.18);
   --tabs-locked-text:      rgba(255,255,255,0.18);
@@ -848,7 +1035,7 @@ h1, h2, h3, .font-display {
 
   --marquee-bg:            rgba(6,15,9,0.90);
   --marquee-border:        rgba(0,152,70,0.12);
-  --marquee-text:          rgba(255,255,255,0.28);
+  --marquee-text:          rgba(255,255,255,0.55);
   --marquee-dot:           rgba(74,222,128,0.55);
 
   /* ── Content cards ─────────────────────────────── */

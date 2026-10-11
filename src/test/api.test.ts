@@ -8,7 +8,8 @@
  * The module is re-imported fresh in each test so the module-scoped
  * `refreshPromise` singleton never leaks state between tests.
  */
-import { describe, test, expect, vi, beforeEach } from 'vitest'
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest'
+import axios from 'axios'
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 
 type FakeAdapter = (config: AxiosRequestConfig) => Promise<AxiosResponse>
@@ -33,9 +34,24 @@ async function loadApi() {
 
 describe('api.ts — response interceptor', () => {
   let dispatchSpy: ReturnType<typeof vi.spyOn>
+  const originalGlobalAdapter = axios.defaults.adapter
 
   beforeEach(() => {
     dispatchSpy = vi.spyOn(window, 'dispatchEvent')
+  })
+
+  afterEach(() => {
+    // Sin esto, vi.spyOn devuelve el mismo spy de window.dispatchEvent entre
+    // tests (nunca se restaura el original) y su historial de llamadas se
+    // acumula de principio a fin del archivo — un test que revisa "no se
+    // llamó con X" puede fallar por una llamada legítima de un test anterior.
+    dispatchSpy.mockRestore()
+    // attemptRefresh() en api.ts llama a axios.post() directo (no a la
+    // instancia `api`), para evitar reentrar el propio interceptor de
+    // respuesta durante un refresh — así que los tests que necesitan
+    // interceptar ese POST /auth/refresh pisan también el adapter global.
+    // Se restaura acá para no filtrar el fake adapter a otros archivos de test.
+    axios.defaults.adapter = originalGlobalAdapter
   })
 
   test('unwraps res.data on a successful response', async () => {
@@ -48,22 +64,26 @@ describe('api.ts — response interceptor', () => {
   test('on a 401 from a protected endpoint, silently refreshes and retries once', async () => {
     const api = await loadApi()
     const calls: string[] = []
-    api.defaults.adapter = (async (config: AxiosRequestConfig) => {
+    const fakeAdapter = (async (config: AxiosRequestConfig) => {
       calls.push(config.url ?? '')
-      if (config.url === '/auth/refresh') return ok(config, { token: 'new-access-token' })
+      if (config.url?.includes('/auth/refresh')) return ok(config, { token: 'new-access-token' })
       if (!(config as { _retried?: boolean })._retried) throw unauthorized(config)
       return ok(config, { secret: 42 })
     }) as FakeAdapter
+    api.defaults.adapter = fakeAdapter
+    // attemptRefresh() usa axios.post() directo, no la instancia `api` — hay
+    // que interceptar también el adapter global para que ese POST se resuelva.
+    axios.defaults.adapter = fakeAdapter
 
     await expect(api.get('/protegido')).resolves.toEqual({ secret: 42 })
-    expect(calls).toEqual(['/protegido', '/auth/refresh', '/protegido'])
+    expect(calls).toEqual(['/protegido', expect.stringContaining('/auth/refresh'), '/protegido'])
   })
 
   test('shares a single in-flight refresh across concurrent 401s (no duplicate /auth/refresh calls)', async () => {
     const api = await loadApi()
     let refreshCalls = 0
-    api.defaults.adapter = (async (config: AxiosRequestConfig) => {
-      if (config.url === '/auth/refresh') {
+    const fakeAdapter = (async (config: AxiosRequestConfig) => {
+      if (config.url?.includes('/auth/refresh')) {
         refreshCalls++
         await new Promise((r) => setTimeout(r, 5))
         return ok(config, { token: 'new' })
@@ -71,6 +91,8 @@ describe('api.ts — response interceptor', () => {
       if (!(config as { _retried?: boolean })._retried) throw unauthorized(config)
       return ok(config, { ok: true })
     }) as FakeAdapter
+    api.defaults.adapter = fakeAdapter
+    axios.defaults.adapter = fakeAdapter
 
     await Promise.all([api.get('/a'), api.get('/b'), api.get('/c')])
     expect(refreshCalls).toBe(1)
@@ -79,8 +101,14 @@ describe('api.ts — response interceptor', () => {
   test('logs out (dispatches vigiiap:logout, clears local session) when refresh also fails', async () => {
     const api = await loadApi()
     localStorage.setItem('vigiiap_token', 'stale')
-    api.defaults.adapter = ((config: AxiosRequestConfig) =>
+    const fakeAdapter = ((config: AxiosRequestConfig) =>
       Promise.reject(unauthorized(config, 'Refresh token no encontrado'))) as FakeAdapter
+    api.defaults.adapter = fakeAdapter
+    // attemptRefresh() usa axios.post() directo — sin esto, ese POST cae al
+    // adapter real (intento de red de verdad contra una URL relativa en
+    // jsdom) en vez del fake, dejando una promesa colgante que se resuelve
+    // en un tick posterior y contamina el dispatchSpy del siguiente test.
+    axios.defaults.adapter = fakeAdapter
 
     await expect(api.get('/protegido')).rejects.toMatchObject({ status: 401 })
     expect(localStorage.getItem('vigiiap_token')).toBeNull()
@@ -90,13 +118,39 @@ describe('api.ts — response interceptor', () => {
   test('does not attempt a silent refresh for a failed /auth/login itself', async () => {
     const api = await loadApi()
     let refreshCalls = 0
-    api.defaults.adapter = ((config: AxiosRequestConfig) => {
-      if (config.url === '/auth/refresh') refreshCalls++
+    const fakeAdapter = ((config: AxiosRequestConfig) => {
+      if (config.url?.includes('/auth/refresh')) refreshCalls++
       return Promise.reject(unauthorized(config, 'Credenciales incorrectas'))
     }) as FakeAdapter
+    api.defaults.adapter = fakeAdapter
+    axios.defaults.adapter = fakeAdapter
 
     await expect(api.post('/auth/login', {})).rejects.toThrow('Credenciales incorrectas')
     expect(refreshCalls).toBe(0)
+  })
+
+  // Regresión: un admin con sesión real activa que se equivoca tecleando el
+  // código TOTP en /perfil (POST /auth/2fa/verify) disparaba un refresh
+  // silencioso — que SÍ tenía éxito, porque su sesión de verdad seguía viva —
+  // y reintentaba la misma petición con el mismo código incorrecto. El
+  // segundo 401 sí cerraba la sesión, expulsando a la persona sin ningún
+  // error visible ("no pasa nada" al introducir el código). Ver AUTH_ATTEMPT_ENDPOINTS.
+  test('a wrong 2FA code does not retry-with-refresh nor force logout, even with a live session', async () => {
+    const api = await loadApi()
+    let refreshCalls = 0
+    const fakeAdapter = ((config: AxiosRequestConfig) => {
+      if (config.url?.includes('/auth/refresh')) {
+        refreshCalls++
+        return Promise.resolve(ok(config, { token: 'still-valid' }))
+      }
+      return Promise.reject(unauthorized(config, 'Código TOTP inválido'))
+    }) as FakeAdapter
+    api.defaults.adapter = fakeAdapter
+    axios.defaults.adapter = fakeAdapter
+
+    await expect(api.post('/auth/2fa/verify', { code: '000000' })).rejects.toThrow('Código TOTP inválido')
+    expect(refreshCalls).toBe(0)
+    expect(dispatchSpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'vigiiap:logout' }))
   })
 
   test('does not retry a request twice — a second 401 after refresh falls through to logout', async () => {
@@ -124,6 +178,34 @@ describe('api.ts — response interceptor', () => {
     expect(dispatchSpy).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'vigiiap:rate-limit', detail: { message: 'Demasiadas peticiones, intenta más tarde' } }),
     )
+  })
+
+  test('dispatches vigiiap:maintenance on a 503 with maintenance:true', async () => {
+    const api = await loadApi()
+    api.defaults.adapter = ((config: AxiosRequestConfig) => {
+      const err = new Error('503') as Error & { config: AxiosRequestConfig; response: unknown }
+      err.config   = config
+      err.response = { status: 503, data: { error: 'La plataforma está en mantenimiento.', maintenance: true } }
+      return Promise.reject(err)
+    }) as FakeAdapter
+
+    await expect(api.get('/mapas')).rejects.toThrow()
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'vigiiap:maintenance', detail: { message: 'La plataforma está en mantenimiento.' } }),
+    )
+  })
+
+  test('a plain 503 without maintenance:true does not dispatch vigiiap:maintenance', async () => {
+    const api = await loadApi()
+    api.defaults.adapter = ((config: AxiosRequestConfig) => {
+      const err = new Error('503') as Error & { config: AxiosRequestConfig; response: unknown }
+      err.config   = config
+      err.response = { status: 503, data: { error: 'Servicio no disponible' } }
+      return Promise.reject(err)
+    }) as FakeAdapter
+
+    await expect(api.get('/algo')).rejects.toThrow()
+    expect(dispatchSpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'vigiiap:maintenance' }))
   })
 
   test('normalizes a non-string error payload to a generic message', async () => {

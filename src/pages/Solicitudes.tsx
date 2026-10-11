@@ -49,7 +49,7 @@ export default function Solicitudes() {
         className="flex flex-col md:flex-row md:items-start md:justify-between gap-4"
       >
         <div>
-          <span className="inline-block text-[0.7rem] font-bold uppercase tracking-widest text-primary-700 mb-2">
+          <span className="inline-block text-[0.7rem] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--hero-eyebrow-text)' }}>
             Módulo Administrativo
           </span>
           <h1 className="font-display text-3xl md:text-4xl font-bold text-text leading-tight mb-3">
@@ -65,7 +65,7 @@ export default function Solicitudes() {
         <div className="flex gap-3 shrink-0">
           <button
             onClick={() => exportCSV(allFiltered)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-lg text-sm font-semibold text-text hover:border-primary-800 hover:text-primary-800 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm font-semibold text-text hover:border-primary-800 hover:text-primary-800 transition-colors"
           >
             <Download className="w-4 h-4" aria-hidden="true" />
             Exportar Reporte

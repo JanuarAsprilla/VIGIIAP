@@ -5,12 +5,32 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Users, ClipboardList,
   FileText, Map, Settings, Activity, X,
-  LogOut, Globe, Shield, Tag, ShieldCheck,
+  LogOut, Globe, Shield, Tag, ShieldCheck, Trash2, AlertTriangle,
+  MapPinned, Server, Wrench,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/lib/constants/roles'
+import { puedeVerModulo } from '@/lib/permisosModulo'
+import type { ModuloClave } from '@/lib/constants/modulos'
 
-const NAV_SECTIONS = [
+interface NavLinkDef {
+  label: string
+  path: string
+  icon: ComponentType<{ className?: string }>
+  end?: boolean
+  /** Un arreglo se trata como OR -- visible si el admin_sig tiene 'ver' en
+   *  al menos uno (ej. 'Actividad' agrupa las pantallas de los módulos
+   *  'actividad' y 'reportes' en pestañas, ver pages/admin/Actividad.tsx). */
+  modulo?: ModuloClave | ModuloClave[]
+}
+
+function puedeVerLink(user: Parameters<typeof puedeVerModulo>[0], modulo: NavLinkDef['modulo']): boolean {
+  if (!modulo) return true
+  const modulos = Array.isArray(modulo) ? modulo : [modulo]
+  return modulos.some((m) => puedeVerModulo(user, m))
+}
+
+const NAV_SECTIONS: { label: string; links: NavLinkDef[] }[] = [
   {
     label: 'Panel',
     links: [
@@ -20,18 +40,22 @@ const NAV_SECTIONS = [
   {
     label: 'Gestión',
     links: [
-      { label: 'Usuarios',     path: '/admin/usuarios',    icon: Users },
-      { label: 'Solicitudes',  path: '/admin/solicitudes', icon: ClipboardList },
-      { label: 'Documentos',   path: '/admin/documentos',  icon: FileText },
-      { label: 'Mapas',        path: '/admin/mapas',       icon: Map },
-      { label: 'Categorías',   path: '/admin/categorias',  icon: Tag },
+      { label: 'Usuarios',     path: '/admin/usuarios',    icon: Users,       modulo: 'usuarios' as ModuloClave },
+      { label: 'Solicitudes',  path: '/admin/solicitudes', icon: ClipboardList, modulo: 'solicitudes' as ModuloClave },
+      { label: 'Documentos',   path: '/admin/documentos',  icon: FileText,    modulo: 'documentos' as ModuloClave },
+      { label: 'Mapas',        path: '/admin/mapas',       icon: Map,         modulo: 'mapas' as ModuloClave },
+      { label: 'Geovisores',   path: '/admin/geovisores',  icon: MapPinned,   modulo: 'geovisores' as ModuloClave },
+      { label: 'Conexiones GeoServer', path: '/admin/conexiones-geoserver', icon: Server, modulo: 'conexiones_geoserver' as ModuloClave },
+      { label: 'Categorías',   path: '/admin/categorias',  icon: Tag,         modulo: 'categorias' as ModuloClave },
+      { label: 'Herramientas', path: '/admin/herramientas', icon: Wrench,     modulo: 'herramientas' as ModuloClave },
     ],
   },
   {
     label: 'Sistema',
     links: [
-      { label: 'Configuración', path: '/admin/configuracion', icon: Settings },
-      { label: 'Actividad',     path: '/admin/actividad',     icon: Activity },
+      { label: 'Configuración', path: '/admin/configuracion', icon: Settings,      modulo: 'configuracion' as ModuloClave },
+      { label: 'Actividad',     path: '/admin/actividad',     icon: Activity,      modulo: ['actividad', 'reportes'] as ModuloClave[] },
+      { label: 'Errores',       path: '/admin/errores',       icon: AlertTriangle, modulo: 'errores' as ModuloClave },
     ],
   },
 ]
@@ -44,7 +68,7 @@ const navItem = {
   animate: { opacity: 1, x: 0, transition: { ease: [0.22, 1, 0.36, 1] as const, duration: 0.35 } },
 }
 
-function AdminNavLink({ link }: { link: { label: string; path: string; icon: ComponentType<{ className?: string }>; end?: boolean; badge?: number | null } }) {
+function AdminNavLink({ link }: { link: NavLinkDef }) {
   return (
     <NavLink to={link.path} end={link.end} className="block no-underline">
       {({ isActive }) => (
@@ -130,7 +154,7 @@ function SidebarContent({ onClose, onLogout, user }: { onClose: () => void; onLo
 
           <button
             onClick={onClose}
-            className="lg:hidden p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"
+            className="md:hidden p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg-alt transition-colors"
             aria-label="Cerrar menú"
           >
             <X className="w-5 h-5" />
@@ -140,23 +164,27 @@ function SidebarContent({ onClose, onLogout, user }: { onClose: () => void; onLo
 
       {/* ── Navigation ── */}
       <nav className="flex-1 py-3 px-3 overflow-y-auto space-y-4">
-        {NAV_SECTIONS.map((section) => (
-          <div key={section.label}>
-            <p className="px-3 pb-1.5 text-[0.58rem] font-bold uppercase tracking-[0.14em] text-text-muted/60">
-              {section.label}
-            </p>
-            <motion.div
-              variants={navContainer}
-              initial="initial"
-              animate="animate"
-              className="space-y-0.5"
-            >
-              {section.links.map((link) => (
-                <AdminNavLink key={link.path} link={link} />
-              ))}
-            </motion.div>
-          </div>
-        ))}
+        {NAV_SECTIONS.map((section) => {
+          const linksVisibles = section.links.filter((link) => puedeVerLink(user, link.modulo))
+          if (linksVisibles.length === 0) return null
+          return (
+            <div key={section.label}>
+              <p className="px-3 pb-1.5 text-[0.58rem] font-bold uppercase tracking-[0.14em] text-text-muted/60">
+                {section.label}
+              </p>
+              <motion.div
+                variants={navContainer}
+                initial="initial"
+                animate="animate"
+                className="space-y-0.5"
+              >
+                {linksVisibles.map((link) => (
+                  <AdminNavLink key={link.path} link={link} />
+                ))}
+              </motion.div>
+            </div>
+          )
+        })}
 
         {/* ── Sección exclusiva Super Admin ── */}
         {user?.role === ROLES.SUPER_ADMIN && (
@@ -166,6 +194,7 @@ function SidebarContent({ onClose, onLogout, user }: { onClose: () => void; onLo
             </p>
             <motion.div variants={navContainer} initial="initial" animate="animate" className="space-y-0.5">
               <AdminNavLink link={{ label: 'Gestión de Admins', path: '/admin/superadmin', icon: ShieldCheck }} />
+              <AdminNavLink link={{ label: 'Papelera', path: '/admin/papelera', icon: Trash2 }} />
             </motion.div>
           </div>
         )}
@@ -177,31 +206,25 @@ function SidebarContent({ onClose, onLogout, user }: { onClose: () => void; onLo
         <Link
           to="/"
           onClick={onClose}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-light hover:text-primary-800 hover:bg-primary-50 transition-colors no-underline border border-border"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-light hover:text-primary-800 hover:bg-primary-500/10 transition-colors no-underline border border-border"
         >
           <Globe className="w-4 h-4 shrink-0" aria-hidden="true" />
           <span>Volver al Sitio</span>
         </Link>
 
-        {/* User info */}
-        {user && (
-          <div className="flex items-center gap-2.5 px-3 py-2">
-            <div className="w-7 h-7 bg-gradient-to-br from-primary-600 to-primary-900 rounded-lg flex items-center justify-center shrink-0">
-              <span className="text-white text-[0.65rem] font-bold">{user.initials}</span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-text truncate">{user.name}</p>
-              <p className="text-[0.6rem] text-text-muted truncate">{user.role}</p>
-            </div>
-          </div>
-        )}
+        {/* Nota: la tarjeta de usuario (avatar+nombre+rol) se retiró de aquí —
+            el TopBar ya la muestra a la derecha; mostrarla también aquí era
+            redundante y dejaba muy poco aire alrededor de Cerrar Sesión. */}
 
         {/* Logout */}
         <motion.button
           onClick={onLogout}
           whileHover={{ x: 3 }}
           transition={{ type: 'spring', stiffness: 400 }}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-text-muted hover:text-orange-500 hover:bg-orange-500/5 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+          style={{ color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.16)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.32)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.18)' }}
         >
           <LogOut className="w-4 h-4 shrink-0" aria-hidden="true" />
           <span>Cerrar Sesión</span>
@@ -220,12 +243,12 @@ export default function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: bool
 
   return (
     <>
-      {/* Desktop */}
-      <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 w-[220px] bg-white border-r border-border flex-col z-40">
+      {/* Tablet y desktop (md+): persistente */}
+      <aside className="hidden md:flex fixed top-0 left-0 bottom-0 w-[220px] bg-[var(--card-bg)] border-r border-border flex-col z-40">
         <SidebarContent {...props} />
       </aside>
 
-      {/* Mobile */}
+      {/* Teléfono (< md) */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -235,7 +258,7 @@ export default function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: bool
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] lg:hidden"
+              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] md:hidden"
               onClick={onClose}
             />
             <motion.aside
@@ -244,7 +267,7 @@ export default function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: bool
               animate={{ x: 0 }}
               exit={{ x: -260 }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="fixed top-0 left-0 bottom-0 w-[240px] bg-white z-50 flex flex-col shadow-float lg:hidden"
+              className="fixed top-0 left-0 bottom-0 w-[240px] bg-[var(--card-bg)] z-50 flex flex-col shadow-float md:hidden"
             >
               <SidebarContent {...props} />
             </motion.aside>

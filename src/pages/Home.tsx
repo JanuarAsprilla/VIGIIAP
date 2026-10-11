@@ -1,16 +1,24 @@
-import { useState, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense, type RefObject } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import {
   Map, FileText, Globe, Shield, Lock,
-  ArrowRight, ChevronDown, Users, Building2, Plus,
+  ArrowRight, ChevronDown, Users, Building2, ArrowUp,
 } from 'lucide-react'
 import { ALL_MODULES } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/lib/constants/roles'
+import { useTheme } from '@/contexts/ThemeContext'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
-import NuevoAnalisisModal from '@/components/NuevoAnalisisModal'
+import { usePlatformStats } from '@/hooks/usePlatformStats'
+import InstitutionalRevealSection from '@/components/InstitutionalRevealSection'
+import HeroBackdrop from '@/components/HeroBackdrop'
+import DeferUntilVisible from '@/components/ui/DeferUntilVisible'
+
+gsap.registerPlugin(ScrollTrigger)
 
 const PlatformIntroSection = lazy(() => import('@/components/PlatformIntroSection'))
 
@@ -48,7 +56,7 @@ function ModuleCard({ mod, index, isVisitante, isPublico }: { mod: ModuleItem; i
         <h3 className="text-[0.95rem] font-bold text-text mb-2 leading-snug">{mod.title}</h3>
         <p className="text-sm text-text-muted leading-relaxed mb-5 flex-1">{mod.description}</p>
         {blocked ? (
-          <Link to="/solicitar-acceso" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-700 no-underline hover:text-primary-900 transition-colors">
+          <Link to="/solicitar-acceso" className="inline-flex items-center gap-1.5 text-xs font-semibold no-underline transition-colors" style={{ color: 'var(--hero-eyebrow-text)' }}>
             <Lock className="w-3 h-3" />Solicitar acceso
           </Link>
         ) : (
@@ -62,126 +70,150 @@ function ModuleCard({ mod, index, isVisitante, isPublico }: { mod: ModuleItem; i
 }
 
 // ── Sección 1: Hero ─────────────────────────────────────────────────────────────
-const HERO_STATS = [
-  { value: '+1,248', label: 'Mapas' },
-  { value: '+3,400', label: 'Documentos' },
-  { value: '+320', label: 'Investigadores' },
-]
+const HERO_STAT_LABELS: Record<string, string> = { mapas: 'Mapas', documentos: 'Documentos' }
+
+function useHeroStats() {
+  return usePlatformStats().map((s) => ({ ...s, label: HERO_STAT_LABELS[s.key] }))
+}
+
+function formatStat(n: number | undefined) {
+  return typeof n === 'number' ? `+${n.toLocaleString('es-CO')}` : '—'
+}
+
+// Continúa, en la sección 2, el mismo lenguaje de scroll-parallax que
+// InstitutionalRevealSection ya usa en la sección 1 (capas a distinta
+// velocidad vía GSAP ScrollTrigger) — el título se desplaza mientras el
+// usuario entra a la sección, en vez de aparecer ya asentado. Mismo gating
+// que la sección 1: solo desktop, solo sin prefers-reduced-motion.
+function useHeroTitleParallax(sectionRef: RefObject<HTMLElement | null>, titleRef: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const section = sectionRef.current
+    const title = titleRef.current
+    if (!section || !title) return
+
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia()
+      mm.add(
+        { isDesktop: '(min-width: 1024px) and (prefers-reduced-motion: no-preference)' },
+        () => {
+          const tween = gsap.fromTo(
+            title,
+            { yPercent: 16 },
+            {
+              yPercent: 0,
+              ease: 'none',
+              scrollTrigger: { trigger: section, start: 'top bottom', end: 'top 25%', scrub: 0 },
+            },
+          )
+          return () => tween.scrollTrigger?.kill()
+        },
+      )
+      return () => mm.revert()
+    }, section)
+
+    return () => ctx.revert()
+  }, [sectionRef, titleRef])
+}
 
 function HeroSection() {
+  const heroStats = useHeroStats()
+  const sectionRef = useRef<HTMLElement>(null)
+  const titleWrapRef = useRef<HTMLDivElement>(null)
+  useHeroTitleParallax(sectionRef, titleWrapRef)
+
   return (
     <section
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
-      style={{ background: 'linear-gradient(160deg, #050e09 0%, #0a1f10 50%, #050e09 100%)' }}
+      ref={sectionRef}
+      className="relative min-h-[80vh] lg:min-h-[78vh] flex flex-col items-center justify-center overflow-hidden py-16"
     >
-      {/* ── Fondo atmosférico CSS ── */}
-      {/* Grid perspectiva suelo */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ perspective: '500px' }}>
-        <div className="absolute bottom-0 left-0 right-0 h-[40%]" style={{
-          transform: 'rotateX(60deg)',
-          transformOrigin: 'bottom center',
-          backgroundImage: 'linear-gradient(rgba(0,152,70,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(0,152,70,0.07) 1px,transparent 1px)',
-          backgroundSize: '60px 60px',
-          maskImage: 'linear-gradient(to top,rgba(0,0,0,0.4) 0%,transparent 100%)',
-        }} />
-      </div>
+      {/* Fondo propio eliminado — comparte HeroBackdrop con InstitutionalRevealSection
+          (ver el wrapper en Home()), así la escena de fondo no cambia entre las dos
+          primeras secciones: solo el texto se mueve. */}
 
-      {/* HUD corners */}
-      {(['top-5 left-5 border-t border-l','top-5 right-5 border-t border-r',
-         'bottom-5 left-5 border-b border-l','bottom-5 right-5 border-b border-r'] as const).map((cls) => (
-        <div key={cls} className={`absolute w-8 h-8 border-primary-700/30 pointer-events-none ${cls}`} />
-      ))}
-
-      {/* Scanline */}
-      <motion.div className="absolute inset-x-0 h-px pointer-events-none"
-        style={{ background: 'linear-gradient(90deg,transparent,rgba(116,198,157,0.3),transparent)' }}
-        animate={{ top: ['0%', '100%'] }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'linear' }} />
-
-      {/* Orbs ambientales */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle,rgba(0,152,70,0.12) 0%,transparent 70%)', filter: 'blur(40px)' }} />
-      <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle,rgba(26,86,50,0.10) 0%,transparent 70%)', filter: 'blur(50px)' }} />
-
-      {/* Dot grid */}
-      <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{ backgroundImage: 'radial-gradient(circle,rgba(116,198,157,0.8) 1px,transparent 1px)', backgroundSize: '32px 32px' }} />
-
-      {/* Overlay gradient bottom */}
+      {/* Overlay gradient bottom — funde con la sección siguiente (siempre var(--color-bg)) */}
       <div className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, transparent, #050e09)' }} />
+        style={{ background: 'linear-gradient(to bottom, transparent, var(--color-bg))' }} />
 
       {/* Content */}
       <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: -16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.6, ease: EASE }}
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-5 text-xs font-bold uppercase tracking-[0.25em]"
-          style={{ background: 'rgba(0,152,70,0.15)', border: '1px solid rgba(0,152,70,0.3)', color: '#74C69D' }}
+          style={{ background: 'var(--hero-eyebrow-bg)', border: '1px solid var(--hero-eyebrow-border)', color: 'var(--hero-eyebrow-text)' }}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#74C69D] animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--hero-eyebrow-dot)' }} />
           IIAP · Información Ambiental
         </motion.div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
-          className="font-display font-bold text-white mb-4 leading-[1.08]"
-          style={{ fontSize: 'clamp(1.8rem, 3.2vw, 3rem)' }}
-        >
-          El conocimiento ambiental
-          <span className="block" style={{ color: '#74C69D' }}>del Chocó Biogeográfico,</span>
-          custodiado y disponible.
-        </motion.h1>
+        {/* Wrapper propio para el parallax de scroll (GSAP, ver useHeroTitleParallax) —
+            separado del fade-up de framer-motion en el h1 para que ambos sistemas no
+            se disputen el mismo transform en el mismo nodo. */}
+        <div ref={titleWrapRef}>
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }}
+            transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
+            className="font-display font-bold mb-4 leading-[1.08]"
+            style={{ fontSize: 'clamp(1.8rem, 3.2vw, 3rem)', color: 'var(--hero-title-color)' }}
+          >
+            El conocimiento ambiental
+            <span className="block" style={{ color: 'var(--hero-title-accent)' }}>del Chocó Biogeográfico,</span>
+            custodiado y disponible.
+          </motion.h1>
+        </div>
 
         <motion.p
-          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-sm text-white/60 max-w-xl mx-auto mb-7 leading-relaxed"
+          className="text-sm max-w-xl mx-auto mb-7 leading-relaxed"
+          style={{ color: 'var(--hero-sub-color)' }}
         >
           VIGIA-IIAP es la plataforma digital del Instituto de Investigaciones Ambientales del Pacífico (IIAP) para la gestión de información ambiental del Chocó Biogeográfico.
           Mapas, documentos técnicos, herramientas SIG y trámites — todo en un solo lugar.
         </motion.p>
 
         <motion.div
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.5, delay: 0.3 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-3"
         >
           <Link
             to="/mapas"
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm no-underline transition-all hover:scale-[1.03]"
-            style={{ background: '#009846', color: '#fff' }}
+            style={{ background: 'var(--brand-gradient)', color: '#fff' }}
           >
             Explorar la plataforma
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             to="/solicitar-acceso"
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm no-underline border transition-all hover:bg-white/10"
-            style={{ border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.85)' }}
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-sm no-underline border transition-all"
+            style={{ background: 'var(--hero-cta-ghost-bg)', border: '1px solid var(--hero-cta-ghost-border)', color: 'var(--hero-cta-ghost-text)' }}
           >
             Solicitar acceso
           </Link>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-          className="mt-8 inline-flex items-center gap-6 px-6 py-3 rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-        >
-          {HERO_STATS.map((s, i) => (
-            <div key={s.label} className="flex items-center gap-4">
-              {i > 0 && <div className="w-px h-6 bg-white/10" />}
-              <div className="text-center">
-                <p className="text-white font-bold text-lg leading-none">{s.value}</p>
-                <p className="text-white/40 text-[0.6rem] uppercase tracking-wider mt-0.5">{s.label}</p>
+        {heroStats.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, margin: '-100px' }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="glass-panel mt-8 inline-flex items-center gap-6 px-6 py-3 rounded-2xl"
+            style={{ background: 'var(--stats-bg)', borderColor: 'var(--stats-border)' }}
+          >
+            {heroStats.map((s, i) => (
+              <div key={s.label} className="flex items-center gap-4">
+                {i > 0 && <div className="w-px h-6" style={{ background: 'var(--stats-divider)' }} />}
+                <div className="text-center">
+                  <p className="font-bold text-lg leading-none tabular" style={{ color: 'var(--stats-value)' }}>
+                    {s.loading ? '···' : formatStat(s.value)}
+                  </p>
+                  <p className="text-[0.6rem] uppercase tracking-wider mt-0.5" style={{ color: 'var(--hero-sub-color)', opacity: 0.7 }}>{s.label}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </motion.div>
+            ))}
+          </motion.div>
+        )}
       </div>
 
       {/* Scroll indicator */}
@@ -189,24 +221,28 @@ function HeroSection() {
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
         animate={{ y: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 2 }}
       >
-        <ChevronDown className="w-5 h-5 text-white/30" aria-hidden="true" />
+        <ChevronDown className="w-5 h-5" style={{ color: 'var(--hero-scroll-color)' }} aria-hidden="true" />
       </motion.div>
     </section>
   )
 }
 
 // ── Sección 2: Data Platform ────────────────────────────────────────────────────
-const DATA_PILLARS = [
-  {
-    icon: Map, number: '+1,248', unit: 'mapas temáticos',
+// Los dos primeros pilares (mapas/documentos) usan conteos reales de usePlatformStats.
+const DYNAMIC_PILLAR_META: Record<'mapas' | 'documentos', { icon: typeof Map; unit: string; desc: string; accent: string; bg: string }> = {
+  mapas: {
+    icon: Map, unit: 'mapas temáticos',
     desc: 'Cartografía de biodiversidad, hidrología, suelos, cobertura vegetal y zonificación del territorio.',
     accent: '#1A5632', bg: 'rgba(26,86,50,0.06)',
   },
-  {
-    icon: FileText, number: '+3,400', unit: 'documentos técnicos',
+  documentos: {
+    icon: FileText, unit: 'documentos técnicos',
     desc: 'Informes científicos, protocolos ambientales, estudios de impacto y publicaciones institucionales del IIAP.',
     accent: '#C45A1A', bg: 'rgba(247,172,66,0.06)',
   },
+}
+
+const STATIC_PILLARS = [
   {
     icon: Globe, number: 'Capas SIG', unit: 'interactivas',
     desc: 'Geovisor con capas temáticas superpuestas para análisis espacial sin instalación de software.',
@@ -219,7 +255,16 @@ const DATA_PILLARS = [
   },
 ]
 
+function useDataPillars() {
+  const dynamic = usePlatformStats().map((s) => ({
+    ...DYNAMIC_PILLAR_META[s.key],
+    number: s.loading ? '···' : formatStat(s.value),
+  }))
+  return [...dynamic, ...STATIC_PILLARS]
+}
+
 function DataPlatformSection() {
+  const pillars = useDataPillars()
   return (
     <section className="py-20 px-6" style={{ background: 'var(--color-bg)' }}>
       <div className="max-w-6xl mx-auto">
@@ -228,7 +273,7 @@ function DataPlatformSection() {
           viewport={{ once: true }} transition={{ duration: 0.5 }}
           className="mb-16 text-center"
         >
-          <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] text-primary-700 block mb-3">
+          <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] block mb-3" style={{ color: 'var(--hero-eyebrow-text)' }}>
             Repositorio digital
           </span>
           <h2 className="font-display text-4xl font-bold text-text">Lo que VIGIA-IIAP custodia</h2>
@@ -239,7 +284,7 @@ function DataPlatformSection() {
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {DATA_PILLARS.map((item, i) => (
+          {pillars.map((item, i) => (
             <motion.div
               key={item.unit}
               whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 32 }}
@@ -274,14 +319,17 @@ function parseGradient(gradient: string): [string, string] {
   return [from, to]
 }
 
-function ModuleVisual({ mod }: { mod: ModuleItem }) {
+function ModuleVisual({ mod, isDark }: { mod: ModuleItem; isDark: boolean }) {
   const [from, to] = parseGradient(mod.gradient)
   return (
     <div
       className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden"
       style={{
         background: `linear-gradient(135deg, ${from}18 0%, ${to}08 100%)`,
+        backdropFilter: 'blur(2px) saturate(140%)',
+        WebkitBackdropFilter: 'blur(2px) saturate(140%)',
         border: `1px solid ${mod.glow}`,
+        boxShadow: `0 24px 64px -12px ${mod.glow}, inset 0 1px 0 ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.5)'}`,
       }}
     >
       {/* Pattern */}
@@ -289,43 +337,41 @@ function ModuleVisual({ mod }: { mod: ModuleItem }) {
         className="absolute inset-0 opacity-[0.05]"
         style={{ backgroundImage: `radial-gradient(circle, ${mod.ctaColor} 1px, transparent 1px)`, backgroundSize: '24px 24px' }}
       />
-      {/* Centered icon */}
+      {/* Centered icon — halo de vidrio + insignia con filo especular */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${mod.gradient} flex items-center justify-center shadow-2xl`}>
+        <div
+          className="absolute w-40 h-40 rounded-full pointer-events-none"
+          style={{ background: `radial-gradient(circle, ${to}30 0%, transparent 70%)`, filter: 'blur(20px)' }}
+        />
+        <div
+          className={`relative w-24 h-24 rounded-3xl bg-gradient-to-br ${mod.gradient} flex items-center justify-center shadow-2xl`}
+          style={{ boxShadow: `0 16px 40px -8px ${mod.glow}, inset 0 1.5px 0 rgba(255,255,255,0.35)` }}
+        >
           <mod.icon className="w-12 h-12 text-white" />
         </div>
-      </div>
-      {/* Floating decorative pills */}
-      <div className="absolute top-4 left-4 right-4 flex gap-2">
-        {[mod.tag, 'IIAP', 'Chocó'].map((t) => (
-          <span
-            key={t}
-            className="px-2.5 py-1 rounded-full text-[0.6rem] font-bold uppercase tracking-wider"
-            style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(8px)' }}
-          >
-            {t}
-          </span>
-        ))}
       </div>
     </div>
   )
 }
 
 function ModuleShowcaseSection() {
+  const { isDark } = useTheme()
   return (
     <section style={{ background: 'var(--color-bg)' }}>
       <div className="max-w-6xl mx-auto px-6 pt-16 pb-10 text-center">
-        <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] text-primary-700 block mb-3">
+        <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] block mb-3" style={{ color: 'var(--hero-eyebrow-text)' }}>
           Módulos de la plataforma
         </span>
         <h2 className="font-display text-4xl font-bold text-text">Cinco herramientas. Un territorio.</h2>
       </div>
 
+      {/* Todas las filas alternan solo bg/bg-alt (dual-tema) — antes la fila
+          del Geovisor forzaba fondo negro fijo #050e09 sin importar el tema
+          del sitio; ahora respeta el mismo toggle que el resto de la página. */}
       {ALL_MODULES.map((mod, i) => {
         const isEven = i % 2 === 0
-        const isDark = i % 3 === 2
         const [, to] = parseGradient(mod.gradient)
-        const rowBg = isDark ? '#050e09' : i % 2 === 1 ? 'var(--color-bg-alt)' : 'var(--color-bg)'
+        const rowBg = i % 2 === 1 ? 'var(--color-bg-alt)' : 'var(--color-bg)'
         const ctaFrom = mod.gradient.includes('#1A5632') ? '#009846' : mod.ctaColor
         return (
           <div key={mod.id} style={{ background: rowBg }}>
@@ -336,17 +382,17 @@ function ModuleShowcaseSection() {
               className={`max-w-6xl mx-auto px-6 py-14 flex flex-col ${isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-16`}
             >
               <div className="w-full lg:w-1/2 shrink-0">
-                <ModuleVisual mod={mod} />
+                <ModuleVisual mod={mod} isDark={isDark} />
               </div>
 
               <div className="flex-1">
-                <span className={`text-[0.65rem] font-bold uppercase tracking-[0.25em] block mb-3 ${isDark ? 'text-primary-400' : 'text-primary-700'}`}>
+                <span className="text-[0.65rem] font-bold uppercase tracking-[0.25em] block mb-3" style={{ color: 'var(--hero-eyebrow-text)' }}>
                   {mod.tag}
                 </span>
-                <h3 className={`font-display text-3xl font-bold mb-4 leading-tight ${isDark ? 'text-white' : 'text-text'}`}>
+                <h3 className="font-display text-3xl font-bold mb-4 leading-tight text-text">
                   {mod.title}
                 </h3>
-                <p className={`text-sm leading-relaxed mb-8 ${isDark ? 'text-white/60' : 'text-text-muted'}`}>
+                <p className="text-sm leading-relaxed mb-8 text-text-muted">
                   {mod.description}
                 </p>
                 <Link
@@ -386,17 +432,20 @@ const PROFILES = [
 ]
 
 function ForWhomSection() {
+  // Antes usaba --color-bg-alt: una diferencia de solo ~3% de luminosidad
+  // frente a las secciones vecinas (ambas en --color-bg) se leía como un
+  // error de fondo, no como una franja intencional — se unifica con el resto.
   return (
-    <section className="py-20 px-6" style={{ background: '#050e09' }}>
+    <section className="py-20 px-6" style={{ background: 'var(--color-bg)' }}>
       <div className="max-w-6xl mx-auto">
         <motion.div
           whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 20 }} viewport={{ once: true }}
           transition={{ duration: 0.5 }} className="text-center mb-16"
         >
-          <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] block mb-3" style={{ color: '#74C69D' }}>
+          <span className="text-[0.7rem] font-bold uppercase tracking-[0.25em] block mb-3" style={{ color: 'var(--hero-eyebrow-text)' }}>
             Para todos
           </span>
-          <h2 className="font-display text-4xl font-bold text-white">¿Quién usa VIGIA-IIAP?</h2>
+          <h2 className="font-display text-4xl font-bold text-text">¿Quién usa VIGIA-IIAP?</h2>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -406,7 +455,7 @@ function ForWhomSection() {
               whileInView={{ opacity: 1, y: 0 }} initial={{ opacity: 0, y: 32 }} viewport={{ once: true, margin: '-40px' }}
               transition={{ duration: 0.55, delay: i * 0.1, ease: EASE }}
               className="rounded-2xl p-8 border relative overflow-hidden"
-              style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.07)' }}
+              style={{ background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
             >
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center mb-6"
@@ -414,8 +463,8 @@ function ForWhomSection() {
               >
                 <p.icon className="w-5 h-5" style={{ color: p.accent }} />
               </div>
-              <h3 className="font-display text-lg font-bold text-white mb-3">{p.title}</h3>
-              <p className="text-sm text-white/50 leading-relaxed">{p.desc}</p>
+              <h3 className="font-display text-lg font-bold text-text mb-3">{p.title}</h3>
+              <p className="text-sm text-text-muted leading-relaxed">{p.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -450,7 +499,7 @@ function InstitutionalCTASection({ onVisitante }: { onVisitante: () => void }) {
             <Link
               to="/solicitar-acceso"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl font-semibold text-sm no-underline transition-all hover:scale-[1.03]"
-              style={{ background: '#009846', color: '#fff' }}
+              style={{ background: '#1A5632', color: '#fff' }}
             >
               Crear cuenta gratuita <ArrowRight className="w-4 h-4" />
             </Link>
@@ -496,12 +545,43 @@ function SearchResults({ isVisitante, isPublico }: { isVisitante: boolean; isPub
   )
 }
 
+// ── Botón flotante "volver arriba" — reemplaza el antiguo FAB de Nuevo Análisis ──
+function ScrollTopFab() {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 600)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Volver arriba"
+          initial={{ opacity: 0, scale: 0.7, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.7, y: 12 }}
+          whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.93 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+          className="glass-panel fixed bottom-20 lg:bottom-6 right-6 z-30 flex items-center justify-center rounded-full"
+          style={{ width: '3.25rem', height: '3.25rem', color: 'var(--hero-title-color, var(--color-text))' }}
+        >
+          <ArrowUp className="w-5 h-5" aria-hidden="true" />
+        </motion.button>
+      )}
+    </AnimatePresence>
+  )
+}
+
 // ── Home ─────────────────────────────────────────────────────────────────────────
 export default function Home() {
   const { isAuthenticated, user, isVisitante, loginVisitante } = useAuth()
   const isPublico = user?.role === ROLES.PUBLICO
   const { query } = useSearch()
-  const [showModal, setShowModal] = useState(false)
 
   const isSearching = Boolean(query.trim())
 
@@ -513,9 +593,26 @@ export default function Home() {
         <SearchResults isVisitante={isVisitante} isPublico={isPublico} />
       ) : (
         <>
-          <HeroSection />
-          {/* PlatformIntroSection: scrollytelling del territorio Chocó */}
-          <Suspense fallback={null}><PlatformIntroSection /></Suspense>
+          {/* Un solo fondo (degradado + HeroBackdrop) detrás de ambas secciones —
+              repintar el degradado por separado en cada una creaba una costura
+              visible en el borde entre secciones, y cada una tenía su propia
+              versión de los orbes/patrón, así que la escena "cambiaba" al pasar
+              de una a otra. Una sola capa fija detrás de las dos hace que el
+              scroll se sienta continuo — solo el texto se mueve, no el fondo. */}
+          <div className="relative overflow-x-hidden" style={{ background: 'var(--hero-grad)' }}>
+            <HeroBackdrop />
+            {/* Antes de la sigla, qué significa VIGIA-IIAP */}
+            <InstitutionalRevealSection />
+            <HeroSection />
+          </div>
+          {/* PlatformIntroSection: scrollytelling del territorio Chocó --
+              carga el chunk de three.js (258kB gzip). DeferUntilVisible evita
+              descargarlo apenas monta Home si el usuario nunca llega a
+              hacer scroll hasta acá (placeholderHeight igual a los 300vh
+              reales de la sección, para no generar salto de layout). */}
+          <DeferUntilVisible placeholderHeight="300vh">
+            <Suspense fallback={null}><PlatformIntroSection /></Suspense>
+          </DeferUntilVisible>
           <DataPlatformSection />
           <ModuleShowcaseSection />
           <ForWhomSection />
@@ -523,23 +620,7 @@ export default function Home() {
         </>
       )}
 
-      {/* FAB nuevo análisis */}
-      {isAuthenticated && !user?.isVisitante && (
-        <motion.button
-          onClick={() => setShowModal(true)}
-          aria-label="Nuevo análisis"
-          whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.93 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-          className="fixed bottom-20 lg:bottom-6 right-6 z-30 flex items-center justify-center rounded-full text-white"
-          style={{ width: '3.25rem', height: '3.25rem', background: 'linear-gradient(135deg, #F7AC42, #F08143)', boxShadow: '0 8px 32px rgba(247,172,66,0.45)', color: '#284E39' }}
-        >
-          <Plus className="w-5 h-5" aria-hidden="true" />
-        </motion.button>
-      )}
-
-      <AnimatePresence>
-        {showModal && <NuevoAnalisisModal onClose={() => setShowModal(false)} />}
-      </AnimatePresence>
+      <ScrollTopFab />
     </>
   )
 }

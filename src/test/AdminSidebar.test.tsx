@@ -19,8 +19,15 @@ vi.mock('framer-motion', () => {
   return { motion, AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</> }
 })
 
+interface MockUser {
+  name: string
+  role: string
+  rol?: string
+  initials: string
+  modulos?: { modulo: string; puede_ver: boolean; puede_editar: boolean }[]
+}
 const authMock = {
-  user: { name: 'Ana Restrepo', role: ROLES.ADMIN, initials: 'AR' } as { name: string; role: string; initials: string } | null,
+  user: { name: 'Ana Restrepo', role: ROLES.ADMIN, initials: 'AR' } as MockUser | null,
   logout: vi.fn(),
 }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
@@ -90,11 +97,77 @@ describe('AdminSidebar — navegación', () => {
   })
 })
 
-describe('AdminSidebar — usuario y cierre de sesión', () => {
-  test('muestra el nombre y rol del usuario autenticado', () => {
+describe('AdminSidebar — permisos por módulo (admin_sig delegado)', () => {
+  test('un admin_sig con permisos restringidos solo ve los módulos habilitados', () => {
+    authMock.user = {
+      name: 'Delegado', role: ROLES.ADMIN, rol: 'admin_sig', initials: 'DL',
+      modulos: [
+        { modulo: 'solicitudes', puede_ver: true,  puede_editar: true },
+        { modulo: 'documentos',  puede_ver: false, puede_editar: false },
+      ],
+    }
     renderSidebar(false)
-    expect(screen.getByText('Ana Restrepo')).toBeInTheDocument()
-    expect(screen.getByText(ROLES.ADMIN)).toBeInTheDocument()
+
+    expect(screen.getByText('Dashboard')).toBeInTheDocument() // sin módulo asociado, siempre visible
+    expect(screen.getByText('Solicitudes')).toBeInTheDocument()
+    expect(screen.queryByText('Documentos')).not.toBeInTheDocument()
+    expect(screen.queryByText('Usuarios')).not.toBeInTheDocument() // sin fila en modulos = deniega por defecto
+  })
+
+  test('un admin_sig sin ningún módulo de Gestión habilitado oculta la sección completa', () => {
+    authMock.user = {
+      name: 'Delegado', role: ROLES.ADMIN, rol: 'admin_sig', initials: 'DL',
+      modulos: [{ modulo: 'actividad', puede_ver: true, puede_editar: false }],
+    }
+    renderSidebar(false)
+
+    expect(screen.queryByText('Usuarios')).not.toBeInTheDocument()
+    expect(screen.queryByText('Documentos')).not.toBeInTheDocument()
+    expect(screen.getByText('Actividad')).toBeInTheDocument()
+  })
+
+  test('super_admin ve todos los módulos aunque no traiga el campo modulos', () => {
+    authMock.user = { name: 'Root', role: ROLES.SUPER_ADMIN, rol: 'super_admin', initials: 'RT' }
+    renderSidebar(false)
+    expect(screen.getByText('Usuarios')).toBeInTheDocument()
+    expect(screen.getByText('Documentos')).toBeInTheDocument()
+  })
+
+  // "Actividad" agrupa las pestañas de los módulos 'actividad' y 'reportes'
+  // (ver pages/admin/Actividad.tsx) -- el enlace del sidebar debe verse con
+  // cualquiera de los dos, no solo cuando el admin_sig tiene ambos.
+  test('admin_sig con solo el módulo "reportes" (sin "actividad") sigue viendo el enlace Actividad', () => {
+    authMock.user = {
+      name: 'Delegado', role: ROLES.ADMIN, rol: 'admin_sig', initials: 'DL',
+      modulos: [{ modulo: 'reportes', puede_ver: true, puede_editar: false }],
+    }
+    renderSidebar(false)
+    expect(screen.getByText('Actividad')).toBeInTheDocument()
+  })
+
+  test('admin_sig con solo el módulo "actividad" (sin "reportes") sigue viendo el enlace Actividad', () => {
+    authMock.user = {
+      name: 'Delegado', role: ROLES.ADMIN, rol: 'admin_sig', initials: 'DL',
+      modulos: [{ modulo: 'actividad', puede_ver: true, puede_editar: false }],
+    }
+    renderSidebar(false)
+    expect(screen.getByText('Actividad')).toBeInTheDocument()
+  })
+
+  test('admin_sig sin "actividad" ni "reportes" no ve el enlace Actividad', () => {
+    authMock.user = {
+      name: 'Delegado', role: ROLES.ADMIN, rol: 'admin_sig', initials: 'DL',
+      modulos: [{ modulo: 'solicitudes', puede_ver: true, puede_editar: true }],
+    }
+    renderSidebar(false)
+    expect(screen.queryByText('Actividad')).not.toBeInTheDocument()
+  })
+})
+
+describe('AdminSidebar — usuario y cierre de sesión', () => {
+  test('no duplica el nombre/rol del usuario (ya visibles en el TopBar)', () => {
+    renderSidebar(false)
+    expect(screen.queryByText('Ana Restrepo')).not.toBeInTheDocument()
   })
 
   test('cerrar sesión llama a logout() y a onClose()', async () => {

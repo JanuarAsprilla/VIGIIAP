@@ -1,0 +1,42 @@
+/* Leaflet.draw trae un look genérico por defecto (vértices cuadrados grises, tooltip negro) que
+   desentona con el resto de la plataforma. El color del vértice lo pone el `icon` de cada handler
+   (verde para Área, ámbar para Medir -- ver HerramientasDibujo.tsx); esto solo cubre lo que
+   Leaflet.draw sigue dibujando con su propio CSS: el tooltip flotante y la línea guía. */
+
+.leaflet-draw-tooltip {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
+  border-radius: 0.5rem;
+  color: var(--text, #1f2937);
+  font: 600 0.7rem/1.3 -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 0.3rem 0.65rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+}
+.leaflet-draw-tooltip:before {
+  border-right-color: var(--border, rgba(0, 0, 0, 0.12));
+}
+.leaflet-draw-tooltip-subtext {
+  color: var(--text-muted, #6b7280);
+}
+
+.leaflet-error-draw-tooltip {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+.leaflet-error-draw-tooltip:before {
+  border-right-color: #fecaca;
+}
+
+.leaflet-draw-guide-dash {
+  background-color: #1b4332;
+}
+
+.geovisor-vertice-dibujo span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+}

@@ -5,6 +5,8 @@ import { createElement, type ReactNode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import VerificarEmail from '@/pages/auth/VerificarEmail'
 
+vi.mock('@/hooks/usePlatformStats', () => ({ usePlatformStats: () => [] }))
+
 function renderPage() {
   return render(<VerificarEmail />, { wrapper: MemoryRouter })
 }

@@ -27,11 +27,9 @@ export default function RequireAuth() {
   return <Outlet />
 }
 
-// Protege /geovisor y /herramientas. Bloquea Público y Visitante — pero, a
+// Protege /geovisores y /herramientas. Bloquea Público y Visitante — pero, a
 // pesar del nombre, deja pasar a cualquier rol verificado (investigador,
 // tecnico, institucional, admin_sig, super_admin), no solo Investigador/Admin.
-// Si el acceso a estas rutas debe ser más restrictivo falta decidir la regla
-// real; por ahora esto es lo que hace.
 export function RequireInvestigador() {
   const { isAuthenticated, initializing, user } = useAuth()
   const location = useLocation()
@@ -47,7 +45,7 @@ export function RequireInvestigador() {
 
 /** Protege rutas exclusivas para Administrador SIG (también permite super_admin). */
 export function RequireAdmin() {
-  const { isAuthenticated, initializing, isAdmin } = useAuth()
+  const { isAuthenticated, initializing, isAdmin, user } = useAuth()
   const location = useLocation()
   if (initializing) return <AuthSpinner />
   if (!isAuthenticated) {
@@ -55,6 +53,12 @@ export function RequireAdmin() {
   }
   if (!isAdmin) {
     return <Navigate to="/" replace />
+  }
+  // require2FA lo activa el super_admin en Configuración > Seguridad. Se
+  // redirige a /perfil (donde ya vive la UI de activación) en vez de
+  // bloquear el login -- ver diseño en PR de política de contraseñas/2FA.
+  if (user?.require2FA && !user?.twoFactorEnabled) {
+    return <Navigate to="/perfil" state={{ requiere2FA: true }} replace />
   }
   return <Outlet />
 }

@@ -33,7 +33,7 @@ export function SolicitudesTable({ rows, onVerDetalle, filtro, onFiltroChange, t
   const hasta = Math.min(page * PAGE_SIZE, rows.length + (page - 1) * PAGE_SIZE)
 
   return (
-    <motion.div {...fadeUp(0.2)} className="bg-white border border-border rounded-xl overflow-hidden">
+    <motion.div {...fadeUp(0.2)} className="bg-[var(--card-bg)] border border-border rounded-xl overflow-hidden">
       <div className="flex items-center justify-between px-6 py-4 border-b border-border">
         <h3 className="text-base font-bold text-text">Solicitudes Recientes</h3>
         <FiltroDropdown filtro={filtro} onChange={onFiltroChange} />
@@ -71,7 +71,7 @@ export function SolicitudesTable({ rows, onVerDetalle, filtro, onFiltroChange, t
                 <td className="px-4 py-4">
                   <button
                     onClick={() => onVerDetalle(sol)}
-                    className="w-8 h-8 rounded-lg border border-border bg-white flex items-center justify-center text-text-muted hover:bg-primary-800 hover:border-primary-800 hover:text-white transition-colors"
+                    className="w-8 h-8 rounded-lg border border-border bg-[var(--card-bg)] flex items-center justify-center text-text-muted hover:bg-primary-800 hover:border-primary-800 hover:text-white transition-colors"
                     title={`Ver detalle de ${sol.id}`}
                     aria-label={`Ver detalle de ${sol.id}`}
                   >
@@ -113,7 +113,7 @@ export function SolicitudesTable({ rows, onVerDetalle, filtro, onFiltroChange, t
         </span>
         <div className="flex items-center gap-1">
           <button onClick={onPrev} disabled={page === 1}
-            className="w-7 h-7 rounded-md border border-border bg-white text-text-muted flex items-center justify-center hover:bg-primary-800 hover:text-white hover:border-primary-800 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+            className="w-7 h-7 rounded-md border border-border bg-[var(--card-bg)] text-text-muted flex items-center justify-center hover:bg-primary-800 hover:text-white hover:border-primary-800 transition-colors disabled:opacity-40 disabled:pointer-events-none"
             aria-label="Página anterior">
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -121,7 +121,7 @@ export function SolicitudesTable({ rows, onVerDetalle, filtro, onFiltroChange, t
             {page}/{totalPages || 1}
           </span>
           <button onClick={onNext} disabled={page >= totalPages}
-            className="w-7 h-7 rounded-md border border-border bg-white text-text-muted flex items-center justify-center hover:bg-primary-800 hover:text-white hover:border-primary-800 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+            className="w-7 h-7 rounded-md border border-border bg-[var(--card-bg)] text-text-muted flex items-center justify-center hover:bg-primary-800 hover:text-white hover:border-primary-800 transition-colors disabled:opacity-40 disabled:pointer-events-none"
             aria-label="Página siguiente">
             <ChevronRight className="w-3.5 h-3.5" />
           </button>

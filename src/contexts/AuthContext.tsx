@@ -1,8 +1,8 @@
-import * as Sentry from '@sentry/react'
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
-import api from '@/lib/api'
+import api, { clearCsrfToken } from '@/lib/api'
 import queryClient from '@/lib/queryClient'
 import { ROLES } from '@/lib/constants/roles'
+import type { PermisoModulo } from '@/lib/constants/modulos'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,6 +17,24 @@ export interface AuthUser {
   initials: string
   institucion: string | null
   twoFactorEnabled?: boolean
+  // Solo presente para admin_sig/super_admin cuando el super_admin activó
+  // require2faAdmins en Configuración (ver getProfile en auth.service.js).
+  // true + twoFactorEnabled=false = el rol exige 2FA y el usuario aún no lo
+  // activó -- RequireAdmin lo redirige a /perfil hasta que lo complete.
+  require2FA?: boolean
+  avatarUrl: string | null
+  // false solo tras un primer login con Google/Microsoft sin institución (ver
+  // src/modules/oauth/ en el backend) — dispara la alerta de completar perfil.
+  // true por defecto: las cuentas registradas por formulario ya piden
+  // institución, y el shape de /auth/visitante no trae este campo.
+  perfilCompleto: boolean
+  // Preferencia de tema persistida en el servidor -- null = sin preferencia
+  // guardada (ver ThemeSync en App.tsx, que la aplica sobre ThemeContext).
+  tema: 'light' | 'dark' | null
+  // Solo presente para admin_sig (ver getProfile en auth.service.js) -- super_admin
+  // y roles no-admin no tienen restricción por módulo, así que este campo queda
+  // undefined para ellos y el panel no debe filtrar nada en base a él.
+  modulos?: PermisoModulo[]
 }
 
 interface RawAuthUser {
@@ -27,6 +45,11 @@ interface RawAuthUser {
   tipo?: string | null
   institucion?: string | null
   twoFactorEnabled?: boolean
+  require2FA?: boolean
+  avatar_url?: string | null
+  perfilCompleto?: boolean
+  tema?: 'light' | 'dark' | null
+  modulos?: PermisoModulo[]
   [key: string]: unknown
 }
 
@@ -40,9 +63,16 @@ export interface AuthContextValue {
   initializing: boolean
   login: (email: string, password: string) => Promise<AuthUser | { passwordExpired: true } | { requiresTwoFactor: true }>
   loginVisitante: (nombre?: string) => Promise<AuthUser>
+  confirmTwoFactor: (code: string) => Promise<AuthUser>
   logout: () => Promise<void>
   register: (data: Record<string, unknown>) => Promise<unknown>
   refreshProfile: () => Promise<AuthUser | undefined>
+  completarPerfil: (data: {
+    nombre?: string
+    institucion: string
+    perfilSolicitado?: 'investigador' | 'tecnico' | 'institucional'
+    motivo?: string
+  }) => Promise<AuthUser>
 }
 
 const ROLE_MAP: Record<string, string> = {
@@ -74,6 +104,11 @@ function normalizeUser(raw: RawAuthUser): AuthUser {
       .toUpperCase(),
     institucion:       raw.institucion ?? null,
     twoFactorEnabled:  raw.twoFactorEnabled ?? false,
+    require2FA:        raw.require2FA,
+    avatarUrl:         raw.avatar_url ?? null,
+    perfilCompleto:    raw.perfilCompleto ?? true,
+    tema:              raw.tema ?? null,
+    modulos:           raw.modulos,
   }
 }
 
@@ -98,9 +133,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Limpia cualquier residuo de sesiones anteriores y el estado en memoria.
     localStorage.removeItem('vigiiap_token')
     localStorage.removeItem('vigiiap_user')
+    // Sin esto, el token CSRF cacheado de la sesión que se está cerrando
+    // seguía vivo para la siguiente persona que inicie sesión en la misma
+    // pestaña (equipo compartido) -- el backend lo rechaza igual (atado al
+    // cookie de sesión vía HMAC), pero fuerza un round-trip extra confuso
+    // en el primer intento. clearLocalSession() en api.ts ya lo hacía en el
+    // logout forzado por 401; faltaba aquí, en el logout explícito.
+    clearCsrfToken()
     setUser(null)
     queryClient.clear()
-    Sentry.setUser(null)
   }, [])
 
   // ── Refrescar perfil desde la API ──
@@ -111,8 +152,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const normalized = normalizeUser(raw)
       persistUser(normalized)
       return normalized
-    } catch {
-      clearSession()
+    } catch (err) {
+      // Solo una sesión realmente inválida (401) debe cerrar sesión. Otros
+      // errores — 429 por rate limit, 5xx, red caída — son transitorios y
+      // no deben desloguear a alguien con una cookie de sesión todavía válida.
+      if ((err as { status?: number } | null)?.status === 401) {
+        clearSession()
+      }
+      throw err
     }
   }, [persistUser, clearSession])
 
@@ -124,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Patrón "fetch on mount" — setInitializing solo se dispara una vez que
     // la promesa resuelve (éxito o error), no sincrónicamente en el efecto.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    refreshProfile().finally(() => setInitializing(false))
+    refreshProfile().catch(() => {}).finally(() => setInitializing(false))
   }, [refreshProfile])
 
   // Escucha el evento de logout forzado por el interceptor de axios (401)
@@ -153,38 +200,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { requiresTwoFactor: true as const }
       }
 
-      const { token, user: raw } = res as { token: string; user: Record<string, unknown> }
-      // Token no se escribe en localStorage; lo gestiona la cookie HttpOnly.
-      void token
-      const normalized = normalizeUser(raw as RawAuthUser)
-      persistUser(normalized)
-      Sentry.setUser({ id: normalized.id, role: normalized.rol })
-      return normalized
+      // Token no se escribe en localStorage; cookie HttpOnly. El login devuelve
+      // un usuario mínimo (id, nombre, email, rol) — sin avatarUrl, institucion
+      // ni twoFactorEnabled. Se pide el perfil completo de inmediato, mismo
+      // patrón que confirmTwoFactor(), para que la UI no muestre esos campos
+      // "perdidos" hasta el próximo reload de página.
+      const full = await refreshProfile()
+      if (!full) throw new Error('No se pudo cargar el perfil tras iniciar sesión')
+      return full
     } finally {
       setLoading(false)
     }
-  }, [persistUser])
+  }, [refreshProfile])
 
   // ── Login visitante (acceso rápido sin credenciales) ──
   const loginVisitante = useCallback(async (nombre = '') => {
     setLoading(true)
     try {
-      const { token, user: raw } = (await api.post('/auth/visitante', { nombre: nombre || undefined })) as { token: string; user: Record<string, unknown> }
       // Token no se escribe en localStorage; gestionado por cookie HttpOnly.
-      void token
-      const normalized = normalizeUser(raw as RawAuthUser)
-      persistUser(normalized)
-      Sentry.setUser({ id: normalized.id, role: normalized.rol })
-      return normalized
+      // Mismo patrón que login(): se pide el perfil vía /auth/me tras el POST
+      // en vez de confiar en el `user` parcial de la respuesta.
+      await api.post('/auth/visitante', { nombre: nombre || undefined })
+      const full = await refreshProfile()
+      if (!full) throw new Error('No se pudo cargar el perfil tras iniciar sesión')
+      return full
     } finally {
       setLoading(false)
     }
-  }, [persistUser])
+  }, [refreshProfile])
+
+  // ── Confirmar segundo factor (2FA) — completa el login tras requiresTwoFactor ──
+  const confirmTwoFactor = useCallback(async (code: string) => {
+    setLoading(true)
+    try {
+      // El backend valida el código contra la cookie temporal vigiiap_2fa_temp
+      // y, si es válido, emite las cookies de sesión reales.
+      await api.post('/auth/2fa/confirm', { code })
+      const full = await refreshProfile()
+      if (!full) throw new Error('No se pudo cargar el perfil tras verificar el código')
+      return full
+    } finally {
+      setLoading(false)
+    }
+  }, [refreshProfile])
 
   // ── Registro ──
   const register = useCallback(async (data: Record<string, unknown>) => {
     return api.post('/auth/registro', data)
   }, [])
+
+  // ── Completar perfil (institución, y opcionalmente pedir un rol elevado) tras un primer login OAuth ──
+  const completarPerfil = useCallback(async (data: {
+    nombre?: string
+    institucion: string
+    perfilSolicitado?: 'investigador' | 'tecnico' | 'institucional'
+    motivo?: string
+  }) => {
+    await api.patch('/auth/completar-perfil', data)
+    const full = await refreshProfile()
+    if (!full) throw new Error('No se pudo actualizar el perfil')
+    return full
+  }, [refreshProfile])
 
   // ── Logout ──
   // Invalida la cookie HttpOnly en el servidor antes de limpiar el estado local.
@@ -209,9 +285,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       initializing,
       login,
       loginVisitante,
+      confirmTwoFactor,
       logout,
       register,
       refreshProfile,
+      completarPerfil,
     }}>
       {children}
     </AuthContext.Provider>

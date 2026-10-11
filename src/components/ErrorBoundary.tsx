@@ -1,9 +1,14 @@
-import * as Sentry from '@sentry/react'
 import React, { Component } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
 interface ErrorBoundaryProps {
   children?: React.ReactNode
+  // Para envolver contenido decorativo/no esencial (ej. un modelo 3D que
+  // puede fallar a cargar por una red inestable o un deploy a medio
+  // completar) -- un fallo ahí no debe mostrar la pantalla de error de
+  // página completa, solo desaparecer en silencio. undefined = fallback
+  // por defecto (pantalla de error completa, comportamiento original).
+  fallback?: React.ReactNode
 }
 
 interface ErrorBoundaryState {
@@ -26,14 +31,10 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    if (import.meta.env.DEV) {
-      console.error('[ErrorBoundary]', error, info.componentStack)
-    }
-    Sentry.captureException(error, {
-      contexts: {
-        react: { componentStack: info.componentStack },
-      },
-    })
+    // Sin servicio externo de monitoreo: se deja al menos en la consola del
+    // navegador, ya que un crash de render nunca llega al backend (no hay
+    // request HTTP que el error-tracking propio pueda capturar).
+    console.error('[ErrorBoundary]', error, info.componentStack)
   }
 
   handleReset = () => {
@@ -42,6 +43,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
 
   render() {
     if (!this.state.hasError) return this.props.children
+    if (this.props.fallback !== undefined) return this.props.fallback
 
     return (
       <div role="alert" className="min-h-[50vh] flex items-center justify-center p-8">

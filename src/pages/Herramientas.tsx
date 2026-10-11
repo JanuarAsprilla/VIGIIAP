@@ -1,38 +1,56 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { PlusCircle, SearchX } from 'lucide-react'
+import { AlertCircle, ArrowLeft, PlusCircle, SearchX } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { fadeUp, staggerContainer, staggerItem3D } from '@/lib/animations'
 import { useToast, ToastContainer } from '@/components/Toast'
+import { useHerramientasCatalogo, type HerramientaCatalogo } from '@/hooks/useHerramientasCatalogo'
+import { useColumnasGrid, CLASES_GRID_COLUMNAS } from '@/hooks/useColumnasGrid'
+import SelectorColumnas from '@/components/ui/SelectorColumnas'
 
-import CalculadoraAreas       from '@/components/herramientas/CalculadoraAreas'
-import GeneradorBuffers        from '@/components/herramientas/GeneradorBuffers'
-import ConversorCoordenadas    from '@/components/herramientas/ConversorCoordenadas'
-import AnalizadorSuperposicion from '@/components/herramientas/AnalizadorSuperposicion'
-import Geoformularios          from '@/components/herramientas/Geoformularios'
-import AplicacionesMoviles     from '@/components/herramientas/AplicacionesMoviles'
-import TablerosControl         from '@/components/herramientas/TablerosControl'
+import HerramientaLauncherCard  from '@/components/herramientas/HerramientaLauncherCard'
 import ResumenActividad        from '@/components/herramientas/ResumenActividad'
 import SolicitarHerramientaModal from '@/components/herramientas/SolicitarHerramientaModal'
 
-// Registro de herramientas — añadir aquí cuando el backend provea nuevas
-const TOOLS_META = [
-  { id: 'calculadora',    tag: 'Geometría',        title: 'Calculadora de Áreas y Perímetros', Component: CalculadoraAreas       },
-  { id: 'buffers',        tag: 'Procesamiento',     title: 'Generador de Buffers',               Component: GeneradorBuffers        },
-  { id: 'conversor',      tag: 'Geodésico',         title: 'Conversor de Coordenadas',           Component: ConversorCoordenadas    },
-  { id: 'superposicion',  tag: 'Análisis Espacial', title: 'Analizador de Superposición',        Component: AnalizadorSuperposicion },
-  { id: 'geoformularios', tag: 'Captura en Campo',  title: 'Geoformularios',                     Component: Geoformularios          },
-  { id: 'apps-moviles',   tag: 'Movilidad',         title: 'Aplicaciones Móviles',               Component: AplicacionesMoviles     },
-  { id: 'tableros',       tag: 'Reportes',          title: 'Tableros de Control',                Component: TablerosControl         },
-]
+function GridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-pulse" role="status" aria-label="Cargando herramientas">
+      {[0, 1, 2].map((i) => <div key={i} className="h-28 bg-bg-alt rounded-xl" />)}
+    </div>
+  )
+}
 
 export default function Herramientas() {
   const { query }                    = useSearch()
   const [showSolicitar, setShowSolicitar] = useState(false)
+  const [herramientaAbiertaId, setHerramientaAbiertaId] = useState<string | null>(null)
+  const { columnas, setColumnas } = useColumnasGrid('vigiiap:herramientas-cols')
   const { toasts, toast, dismiss }   = useToast()
+  const { items: herramientas, isLoading, isError } = useHerramientasCatalogo()
 
-  const filteredTools = TOOLS_META.filter((t) => matches([t.title, t.tag], query))
+  const filteredTools = herramientas.filter((t) => matches([t.titulo, t.tag], query))
+  // Distinto de "sin resultados de búsqueda" (query no vacío): esto es el
+  // catálogo real vacío o inalcanzable, no algo que el usuario tecleó mal.
+  const sinCatalogo = !isLoading && herramientas.length === 0
+  const herramientaAbierta = herramientas.find((t) => t.clave === herramientaAbiertaId)
+
+  if (herramientaAbierta) {
+    return (
+      <div className="space-y-6">
+        <button
+          onClick={() => setHerramientaAbiertaId(null)}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-text-muted hover:text-primary-800 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+          Volver a Herramientas
+        </button>
+        <h1 className="page-header-title">{herramientaAbierta.titulo}</h1>
+        {React.createElement(herramientaAbierta.Component, { onToast: toast })}
+        <ToastContainer toasts={toasts} dismiss={dismiss} />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -50,7 +68,7 @@ export default function Herramientas() {
         </div>
         <button
           onClick={() => setShowSolicitar(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-border rounded-xl text-sm font-semibold text-text hover:border-primary-800 hover:text-primary-800 transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm font-semibold text-text hover:border-primary-800 hover:text-primary-800 transition-colors shrink-0"
         >
           <PlusCircle className="w-4 h-4" />
           Solicitar herramienta
@@ -58,18 +76,41 @@ export default function Herramientas() {
       </motion.div>
 
       {/* Tools grid */}
-      {filteredTools.length > 0 ? (
-        <motion.div
-          variants={staggerContainer(0.07, 0.08)}
-          initial="initial" animate="animate"
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-        >
-          {filteredTools.map(({ id, Component }) => (
-            <motion.div key={id} variants={staggerItem3D}>
-              {React.createElement(Component as React.ComponentType<{ onToast?: typeof toast }>, { onToast: toast })}
-            </motion.div>
-          ))}
+      {isLoading ? (
+        <GridSkeleton />
+      ) : sinCatalogo ? (
+        <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
+          <AlertCircle className="w-10 h-10 mx-auto mb-3 opacity-30" aria-hidden="true" />
+          <p className="text-sm">
+            {isError
+              ? 'No se pudo cargar el catálogo de herramientas. Intenta de nuevo en unos minutos.'
+              : 'No hay herramientas disponibles todavía.'}
+          </p>
         </motion.div>
+      ) : filteredTools.length > 0 ? (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <SelectorColumnas columnas={columnas} onChange={setColumnas} />
+          </div>
+          <motion.div
+            variants={staggerContainer(0.07, 0.08)}
+            initial="initial" animate="animate"
+            className={`grid ${CLASES_GRID_COLUMNAS[columnas]} gap-6`}
+          >
+            {filteredTools.map((tool: HerramientaCatalogo) => (
+              <motion.div key={tool.clave} variants={staggerItem3D}>
+                <HerramientaLauncherCard
+                  tag={tool.tag}
+                  title={tool.titulo}
+                  description={tool.descripcion ?? ''}
+                  icon={tool.icon}
+                  color={tool.color}
+                  onAbrir={() => setHerramientaAbiertaId(tool.clave)}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
       ) : (
         <motion.div {...fadeUp(0.1)} className="py-16 text-center text-text-muted">
           <SearchX className="w-10 h-10 mx-auto mb-3 opacity-30" aria-hidden="true" />

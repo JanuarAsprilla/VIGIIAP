@@ -28,9 +28,19 @@ vi.mock('@/components/ui/Card3D', () => ({
     <div className={className}>{children}</div>,
 }))
 
+const { NOTIF_PREFS } = vi.hoisted(() => ({
+  NOTIF_PREFS: [
+    { clave: 'nueva_solicitud', nombre: 'Nueva solicitud', icono: 'ClipboardList', color: 'gold', en_pantalla: true },
+  ],
+}))
+
 vi.mock('@/lib/api', () => ({
   default: {
-    get: vi.fn((url: string) => (url === '/auth/sessions' ? Promise.resolve([]) : Promise.resolve({}))),
+    get: vi.fn((url: string) => {
+      if (url === '/auth/sessions') return Promise.resolve([])
+      if (url === '/notificaciones/prefs') return Promise.resolve({ data: NOTIF_PREFS })
+      return Promise.resolve({})
+    }),
     post: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn(),
@@ -47,8 +57,9 @@ vi.mock('react-router-dom', async (importOriginal) => {
 vi.mock('@/hooks/useUsuarios', () => ({
   useUpdatePerfil: vi.fn(),
   useUpdatePassword: vi.fn(),
+  useUpdateAvatar: vi.fn(),
 }))
-import { useUpdatePerfil, useUpdatePassword } from '@/hooks/useUsuarios'
+import { useUpdatePerfil, useUpdatePassword, useUpdateAvatar } from '@/hooks/useUsuarios'
 
 const authMock = {
   user: { id: 'u1', name: 'Ana Restrepo', email: 'ana@iiap.gov.co', rol: 'investigador', role: 'Investigador', institucion: 'IIAP' },
@@ -57,12 +68,12 @@ const authMock = {
 }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 
-function renderPerfil() {
+function renderPerfil(initialEntries: Parameters<typeof MemoryRouter>[0]['initialEntries'] = ['/perfil']) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   return render(
     <QueryClientProvider client={qc}>
       <UIProvider>
-        <MemoryRouter><Perfil /></MemoryRouter>
+        <MemoryRouter initialEntries={initialEntries}><Perfil /></MemoryRouter>
       </UIProvider>
     </QueryClientProvider>,
   )
@@ -77,6 +88,9 @@ beforeEach(() => {
   vi.mocked(useUpdatePassword).mockReturnValue({
     mutateAsync: vi.fn(), isPending: false,
   } as unknown as ReturnType<typeof useUpdatePassword>)
+  vi.mocked(useUpdateAvatar).mockReturnValue({
+    mutateAsync: vi.fn(), isPending: false,
+  } as unknown as ReturnType<typeof useUpdateAvatar>)
 })
 
 describe('Perfil — edición inline del nombre', () => {
@@ -238,7 +252,7 @@ describe('Perfil — cerrar sesión', () => {
 describe('Perfil — autenticación en dos pasos', () => {
   test('activar 2FA solicita el QR y permite verificar el código', async () => {
     vi.mocked(api.post).mockImplementation((url: string) => {
-      if (url === '/auth/2fa/setup') return Promise.resolve({ qrCodeUrl: 'data:image/png;base64,abc', secret: 'SECRET123' })
+      if (url === '/auth/2fa/setup') return Promise.resolve({ qrDataUrl: 'data:image/png;base64,abc', secret: 'SECRET123' })
       return Promise.resolve({})
     })
 
@@ -253,7 +267,7 @@ describe('Perfil — autenticación en dos pasos', () => {
     await user.click(screen.getByRole('button', { name: 'Verificar' }))
 
     expect(await screen.findByText(/2FA activado exitosamente/)).toBeInTheDocument()
-    expect(api.post).toHaveBeenCalledWith('/auth/2fa/enable', { token: '123456' })
+    expect(api.post).toHaveBeenCalledWith('/auth/2fa/verify', { code: '123456' })
   })
 
   test('si falla activar el 2FA, muestra el mensaje de error', async () => {
@@ -266,22 +280,47 @@ describe('Perfil — autenticación en dos pasos', () => {
     expect(await screen.findByText('No se pudo generar el código')).toBeInTheDocument()
   })
 
-  test('con 2FA activo, desactivar pide confirmación antes de llamar al endpoint', async () => {
+  test('si el QR caducó (más de 10 min sin confirmar), vuelve al botón "Activar" con el mensaje de error', async () => {
+    vi.mocked(api.post).mockImplementation((url: string) => {
+      if (url === '/auth/2fa/setup') return Promise.resolve({ qrDataUrl: 'data:image/png;base64,abc', secret: 'SECRET123' })
+      const expired = Object.assign(new Error('El código QR expiró (más de 10 minutos). Genera uno nuevo.'), { code: 'TOTP_SETUP_EXPIRED' })
+      return Promise.reject(expired)
+    })
+
+    const user = userEvent.setup()
+    renderPerfil()
+    await user.click(screen.getByRole('button', { name: 'Activar' }))
+    expect(await screen.findByAltText('QR 2FA')).toBeInTheDocument()
+
+    await user.type(screen.getByPlaceholderText('Código de 6 dígitos'), '123456')
+    await user.click(screen.getByRole('button', { name: 'Verificar' }))
+
+    expect(await screen.findByText(/El código QR expiró/)).toBeInTheDocument()
+    // El QR muerto desaparece — no debe quedar visible ni utilizable, hay que pedir uno nuevo
+    expect(screen.queryByAltText('QR 2FA')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Activar' })).toBeInTheDocument()
+  })
+
+  test('con 2FA activo, desactivar pide un código de confirmación antes de llamar al endpoint', async () => {
     authMock.user = { ...authMock.user, twoFactorEnabled: true } as typeof authMock.user & { twoFactorEnabled: boolean }
-    vi.mocked(api.delete).mockResolvedValue({})
+    vi.mocked(api.post).mockResolvedValue({})
 
     const user = userEvent.setup()
     renderPerfil()
     await user.click(screen.getByRole('button', { name: 'Desactivar' }))
-    expect(screen.getByText('¿Desea desactivar la autenticación en dos pasos? Su cuenta tendrá menor protección.')).toBeInTheDocument()
+    expect(screen.getByText('Desactivar 2FA')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Código de 6 dígitos')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Cancelar' }))
-    expect(api.delete).not.toHaveBeenCalled()
+    expect(api.post).not.toHaveBeenCalledWith('/auth/2fa/disable', expect.anything())
 
     await user.click(screen.getByRole('button', { name: 'Desactivar' }))
     const confirmButtons = screen.getAllByRole('button', { name: 'Desactivar' })
+    expect(confirmButtons[confirmButtons.length - 1]).toBeDisabled()
+
+    await user.type(screen.getByPlaceholderText('Código de 6 dígitos'), '123456')
     await user.click(confirmButtons[confirmButtons.length - 1])
-    expect(api.delete).toHaveBeenCalledWith('/auth/2fa/disable')
+    expect(api.post).toHaveBeenCalledWith('/auth/2fa/disable', { code: '123456' })
   })
 })
 
@@ -298,8 +337,8 @@ describe('Perfil — sesiones activas', () => {
     vi.mocked(api.get).mockImplementation((url: string) =>
       url === '/auth/sessions'
         ? Promise.resolve([
-            { id: 's1', ip: '10.0.0.1', userAgent: 'Mozilla/5.0 (iPhone)', createdAt: '2026-01-01T00:00:00Z', current: true },
-            { id: 's2', ip: '10.0.0.2', userAgent: 'Mozilla/5.0 (Windows)', createdAt: '2026-01-02T00:00:00Z', current: false },
+            { id: 's1', ip: '10.0.0.1', userAgent: 'Mozilla/5.0 (iPhone)', creadoEn: '2026-01-01T00:00:00Z', esSesionActual: true },
+            { id: 's2', ip: '10.0.0.2', userAgent: 'Mozilla/5.0 (Windows)', creadoEn: '2026-01-02T00:00:00Z', esSesionActual: false },
           ])
         : Promise.resolve({}))
     vi.mocked(api.delete).mockResolvedValue({})
@@ -309,8 +348,7 @@ describe('Perfil — sesiones activas', () => {
     expect(await screen.findByText('Esta sesión')).toBeInTheDocument()
     expect(screen.getByText(/^2 sesi.{1,3}nes activas$/)).toBeInTheDocument()
 
-    const revokeButtons = screen.getAllByRole('button').filter((b) => b.querySelector('.lucide-trash2'))
-    await user.click(revokeButtons[0])
+    await user.click(screen.getByRole('button', { name: 'Revocar sesión' }))
     expect(api.delete).toHaveBeenCalledWith('/auth/sessions/s2')
   })
 
@@ -318,8 +356,8 @@ describe('Perfil — sesiones activas', () => {
     vi.mocked(api.get).mockImplementation((url: string) =>
       url === '/auth/sessions'
         ? Promise.resolve([
-            { id: 's1', ip: '10.0.0.1', userAgent: 'Mozilla/5.0', createdAt: '2026-01-01T00:00:00Z', current: true },
-            { id: 's2', ip: '10.0.0.2', userAgent: 'Mozilla/5.0', createdAt: '2026-01-02T00:00:00Z', current: false },
+            { id: 's1', ip: '10.0.0.1', userAgent: 'Mozilla/5.0', creadoEn: '2026-01-01T00:00:00Z', esSesionActual: true },
+            { id: 's2', ip: '10.0.0.2', userAgent: 'Mozilla/5.0', creadoEn: '2026-01-02T00:00:00Z', esSesionActual: false },
           ])
         : Promise.resolve({}))
     vi.mocked(api.delete).mockResolvedValue({})
@@ -332,14 +370,27 @@ describe('Perfil — sesiones activas', () => {
 })
 
 describe('Perfil — notificaciones y apariencia', () => {
-  test('activar/desactivar una preferencia de notificación cambia su estado', async () => {
+  test('activar/desactivar una preferencia de notificación llama al backend con el valor opuesto', async () => {
+    // Un test anterior ('sesiones activas') deja su propio mockImplementation
+    // en api.get -- vi.clearAllMocks() en beforeEach no lo deshace (solo
+    // limpia llamadas registradas, no implementaciones), así que hay que
+    // volver a fijar la respuesta esperada explícitamente aquí también.
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/auth/sessions') return Promise.resolve([])
+      if (url === '/notificaciones/prefs') return Promise.resolve({ data: NOTIF_PREFS })
+      return Promise.resolve({})
+    })
+
     const user = userEvent.setup()
     renderPerfil()
-    const toggle = screen.getByText('Estado de solicitudes').closest('div')!.parentElement!.querySelector('button[aria-pressed]') as HTMLElement
-    const before = toggle.getAttribute('aria-pressed')
+    const label = await screen.findByText('Nueva solicitud')
+    const toggle = label.closest('div')!.parentElement!.querySelector('button[aria-pressed]') as HTMLElement
+    expect(toggle.getAttribute('aria-pressed')).toBe('true')
 
     await user.click(toggle)
-    expect(toggle.getAttribute('aria-pressed')).not.toBe(before)
+    await waitFor(() =>
+      expect(api.patch).toHaveBeenCalledWith('/notificaciones/prefs/nueva_solicitud', { enPantalla: false })
+    )
   })
 
   test('elegir una densidad distinta la marca como activa', async () => {
@@ -348,5 +399,78 @@ describe('Perfil — notificaciones y apariencia', () => {
     const comodo = screen.getByRole('button', { name: /Cómodo/i })
     await user.click(comodo)
     expect(comodo.className).toContain('bg-primary-50')
+  })
+})
+
+describe('Perfil — módulos delegados (admin_sig)', () => {
+  test('un investigador (no admin_sig) no ve la sección de módulos delegados', async () => {
+    renderPerfil()
+    await screen.findByText('Información Personal')
+    expect(screen.queryByText('Tus módulos delegados')).not.toBeInTheDocument()
+  })
+
+  test('un admin_sig con módulos habilitados los ve como enlaces al panel correspondiente', async () => {
+    authMock.user = {
+      ...authMock.user, rol: 'admin_sig', role: 'Administrador SIG',
+      modulos: [
+        { modulo: 'solicitudes', puede_ver: true, puede_editar: true },
+        { modulo: 'documentos', puede_ver: true, puede_editar: false },
+        { modulo: 'usuarios', puede_ver: false, puede_editar: false },
+      ],
+    } as typeof authMock.user & { modulos: { modulo: string; puede_ver: boolean; puede_editar: boolean }[] }
+
+    renderPerfil()
+
+    expect(await screen.findByText('Tus módulos delegados')).toBeInTheDocument()
+    const solicitudesLink = screen.getByText('Solicitudes').closest('a')!
+    expect(solicitudesLink).toHaveAttribute('href', '/admin/solicitudes')
+    expect(screen.getByText('Ver y editar')).toBeInTheDocument()
+
+    const documentosLink = screen.getByText('Documentos').closest('a')!
+    expect(documentosLink).toHaveAttribute('href', '/admin/documentos')
+    expect(screen.getByText('Solo consulta')).toBeInTheDocument()
+
+    // usuarios tiene puede_ver:false -- no debe listarse
+    expect(screen.queryByText('Usuarios')).not.toBeInTheDocument()
+  })
+
+  test('un admin_sig sin ningún módulo delegado ve el mensaje explícito en vez de una lista vacía', async () => {
+    authMock.user = {
+      ...authMock.user, rol: 'admin_sig', role: 'Administrador SIG', modulos: [],
+    } as typeof authMock.user & { modulos: { modulo: string; puede_ver: boolean; puede_editar: boolean }[] }
+
+    renderPerfil()
+
+    expect(await screen.findByText(/Aún no tienes ningún módulo delegado/)).toBeInTheDocument()
+  })
+})
+
+describe('Perfil — aviso de 2FA obligatorio pendiente (redirigido desde RequireAdmin)', () => {
+  test('muestra el aviso cuando llega con requiere2FA=true y aún no tiene 2FA activo', async () => {
+    authMock.user = {
+      ...authMock.user, rol: 'admin_sig', role: 'Administrador SIG', twoFactorEnabled: false,
+    } as typeof authMock.user & { twoFactorEnabled: boolean }
+
+    renderPerfil([{ pathname: '/perfil', state: { requiere2FA: true } }])
+
+    expect(await screen.findByText('Activa la autenticación en dos pasos para continuar')).toBeInTheDocument()
+  })
+
+  test('no muestra el aviso si ya tiene 2FA activo, aunque llegue con el state', async () => {
+    authMock.user = {
+      ...authMock.user, rol: 'admin_sig', role: 'Administrador SIG', twoFactorEnabled: true,
+    } as typeof authMock.user & { twoFactorEnabled: boolean }
+
+    renderPerfil([{ pathname: '/perfil', state: { requiere2FA: true } }])
+
+    await waitFor(() => expect(screen.getAllByText('Ana Restrepo').length).toBeGreaterThan(0))
+    expect(screen.queryByText('Activa la autenticación en dos pasos para continuar')).not.toBeInTheDocument()
+  })
+
+  test('no muestra el aviso en una visita normal sin ese state', async () => {
+    renderPerfil()
+
+    await waitFor(() => expect(screen.getAllByText('Ana Restrepo').length).toBeGreaterThan(0))
+    expect(screen.queryByText('Activa la autenticación en dos pasos para continuar')).not.toBeInTheDocument()
   })
 })

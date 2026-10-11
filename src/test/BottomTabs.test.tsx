@@ -8,8 +8,9 @@ type MockUser = { role: string; isVisitante?: boolean } | null
 const authMock: { isAuthenticated: boolean; user: MockUser } = { isAuthenticated: false, user: null }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 
-function renderTabs() {
-  return render(<MemoryRouter><BottomTabs /></MemoryRouter>)
+function renderTabs(props: { onMore?: () => void; moreOpen?: boolean } = {}) {
+  const { onMore = vi.fn(), moreOpen = false } = props
+  return render(<MemoryRouter><BottomTabs onMore={onMore} moreOpen={moreOpen} /></MemoryRouter>)
 }
 
 beforeEach(() => {
@@ -25,38 +26,65 @@ describe('BottomTabs — Inicio siempre accesible', () => {
 })
 
 describe('BottomTabs — sin sesión', () => {
-  test('los módulos protegidos aparecen bloqueados', () => {
+  test('Mapas, Documentos y Herramientas son enlaces reales — son públicos', () => {
     renderTabs()
-    expect(screen.queryByRole('link', { name: /Mapas/i })).not.toBeInTheDocument()
-    expect(screen.getByText('Mapas').closest('[aria-disabled="true"]')).not.toBeNull()
+    expect(screen.getByRole('link', { name: /Mapas/i })).toHaveAttribute('href', '/mapas')
+    expect(screen.getByRole('link', { name: /Documentos/i })).toHaveAttribute('href', '/documentos')
+    expect(screen.getByRole('link', { name: /Herramientas/i })).toHaveAttribute('href', '/herramientas')
+  })
+
+  test('Solicitudes no se muestra en absoluto — no aparece como tab bloqueado, se oculta', () => {
+    renderTabs()
+    expect(screen.queryByRole('link', { name: /Solicitudes/i })).not.toBeInTheDocument()
+    expect(screen.queryByText('Solicitudes')).not.toBeInTheDocument()
   })
 })
 
 describe('BottomTabs — rol Público', () => {
-  test('los módulos protegidos permanecen bloqueados', () => {
+  test('Documentos es un enlace real; Solicitudes sigue oculto', () => {
     authMock.isAuthenticated = true
     authMock.user = { role: ROLES.PUBLICO }
     renderTabs()
-    expect(screen.queryByRole('link', { name: /Documentos/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Documentos/i })).toHaveAttribute('href', '/documentos')
+    expect(screen.queryByText('Solicitudes')).not.toBeInTheDocument()
   })
 })
 
 describe('BottomTabs — rol Visitante', () => {
-  test('los módulos protegidos deberían permanecer bloqueados, igual que en Sidebar/TopBar', () => {
+  test('Herramientas es un enlace real; Solicitudes sigue oculto', () => {
     authMock.isAuthenticated = true
     authMock.user = { role: ROLES.VISITANTE, isVisitante: true }
     renderTabs()
-    expect(screen.queryByRole('link', { name: /Herramientas/i })).not.toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /Solicitudes/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Herramientas/i })).toHaveAttribute('href', '/herramientas')
+    expect(screen.queryByText('Solicitudes')).not.toBeInTheDocument()
   })
 })
 
 describe('BottomTabs — usuario verificado', () => {
-  test('los módulos protegidos se desbloquean como enlaces reales', () => {
+  test('todos los módulos, incluido Solicitudes, son enlaces reales', () => {
     authMock.isAuthenticated = true
     authMock.user = { role: ROLES.INVESTIGADOR }
     renderTabs()
     expect(screen.getByRole('link', { name: /Mapas/i })).toHaveAttribute('href', '/mapas')
     expect(screen.getByRole('link', { name: /Solicitudes/i })).toHaveAttribute('href', '/solicitudes')
+  })
+})
+
+describe('BottomTabs — botón Más', () => {
+  test('invoca onMore al hacer clic', () => {
+    const onMore = vi.fn()
+    renderTabs({ onMore })
+    screen.getByRole('button', { name: /Más opciones/i }).click()
+    expect(onMore).toHaveBeenCalledTimes(1)
+  })
+
+  test('refleja el estado abierto vía aria-expanded', () => {
+    renderTabs({ moreOpen: true })
+    expect(screen.getByRole('button', { name: /Más opciones/i })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  test('refleja el estado cerrado vía aria-expanded', () => {
+    renderTabs({ moreOpen: false })
+    expect(screen.getByRole('button', { name: /Más opciones/i })).toHaveAttribute('aria-expanded', 'false')
   })
 })

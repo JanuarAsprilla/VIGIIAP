@@ -8,23 +8,16 @@ import {
   Plus, Search, X, Edit2, Trash2,
   FileText, File, FileSpreadsheet, Send, Upload, CheckCircle,
   AlertCircle, Globe, Users, ShieldCheck,
-  Loader2, FolderOpen, ChevronDown, Tag,
+  Loader2, FolderOpen,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
+import CategoryCombobox from '@/components/admin/CategoryCombobox'
 import { useDocumentosList, useCreateDocumento, useUpdateDocumento, useDeleteDocumento } from '@/hooks/useDocumentos'
 import { useCategoriasList } from '@/hooks/useCategorias'
 
 const fadeUp = fadeUpSm
 
-// Lista base de categorías — actúa como sugerencia inicial.
-// Las nuevas categorías creadas desde el formulario se reflejan automáticamente
-// en esta lista y en las tarjetas del módulo público de Documentos.
-const BASE_CATEGORIES = [
-  'Cartografía', 'Estudios Ambientales', 'Normativa', 'Informes Técnicos',
-  'Biodiversidad', 'Hidrología', 'Protocolos Ambientales',
-  'Bibliografía Técnica', 'Análisis de Tendencias', 'Formatos y Plantillas',
-]
 const TIPOS = ['PDF', 'Word', 'Excel']
 
 const ACCEPT: Record<string, string> = {
@@ -51,7 +44,7 @@ const VISIBILIDAD = [
 
 const EMPTY_FORM = {
   nombre: '', categoria: '', tipo: TIPOS[0],
-  autor: '', anio: '', visibilidad: 'publico',
+  autor: '', anio: '', visibilidad: 'publico', resumen: '',
 }
 
 function typeToTipo(type: string | null | undefined) {
@@ -69,106 +62,6 @@ const TipoIcon = ({ tipo }: { tipo: string }) => {
   if (t === 'docx' || t === 'doc' || t === 'word')  return <FileText className="w-4 h-4 text-gold-400" />
   if (t === 'xlsx' || t === 'xls' || t === 'excel') return <FileSpreadsheet className="w-4 h-4 text-primary-700" />
   return <File className="w-4 h-4 text-primary-600" />
-}
-
-// ── useClickOutside ──────────────────────────────────────────────────────────
-function useClickOutside(ref: React.RefObject<HTMLElement | null>, handler: () => void) {
-  useEffect(() => {
-    const listener = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) handler() }
-    document.addEventListener('mousedown', listener)
-    return () => document.removeEventListener('mousedown', listener)
-  }, [ref, handler])
-}
-
-// ── CategoryCombobox ─────────────────────────────────────────────────────────
-// Permite seleccionar una categoría existente o escribir/crear una nueva al vuelo.
-function CategoryCombobox({ value, onChange, allCategories }: { value: string; onChange: (v: string) => void; allCategories: string[] }) {
-  const [input, setInput] = useState(value || '')
-  const [open, setOpen]   = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  useClickOutside(ref, () => setOpen(false))
-
-  // Sincronizar si el valor externo cambia (ej: al abrir el modal de edición)
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- resync intencional de input controlado
-  useEffect(() => { setInput(value || '') }, [value])
-
-  const filtered = allCategories.filter((c) =>
-    !input.trim() || c.toLowerCase().includes(input.toLowerCase())
-  )
-  const isNew = input.trim() !== '' &&
-    !allCategories.some((c) => c.toLowerCase() === input.trim().toLowerCase())
-
-  const select = (cat: string) => { onChange(cat); setInput(cat); setOpen(false) }
-
-  return (
-    <div className="relative" ref={ref}>
-      <div className="relative">
-        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted pointer-events-none" />
-        <input
-          type="text"
-          value={input}
-          placeholder="Selecciona o escribe una categoría nueva…"
-          onChange={(e) => { setInput(e.target.value); onChange(e.target.value); setOpen(true) }}
-          onFocus={() => setOpen(true)}
-          className="w-full pl-8 pr-8 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition"
-        />
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={() => setOpen((v) => !v)}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted"
-        >
-          <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
-        </button>
-      </div>
-
-      <AnimatePresence>
-        {open && (filtered.length > 0 || isNew) && (
-          <motion.div
-            initial={{ opacity: 0, y: 4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
-            className="absolute z-30 top-full mt-1 w-full bg-white border border-border rounded-xl shadow-xl overflow-hidden"
-            style={{ maxHeight: '14rem', overflowY: 'auto' }}
-          >
-            {filtered.length > 0 && (
-              <div className="px-3 pt-2.5 pb-1">
-                <span className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted">
-                  Categorías existentes
-                </span>
-              </div>
-            )}
-            {filtered.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => select(cat)}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${
-                  value === cat
-                    ? 'bg-primary-50 text-primary-800 font-semibold'
-                    : 'text-text hover:bg-bg-alt'
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-primary-400 shrink-0" />
-                {cat}
-              </button>
-            ))}
-            {isNew && (
-              <button
-                type="button"
-                onClick={() => select(input.trim())}
-                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-primary-800 hover:bg-primary-50 border-t border-border transition-colors flex items-center gap-2"
-              >
-                <Plus className="w-3.5 h-3.5 shrink-0" />
-                Crear categoría: <em className="not-italic font-bold">&ldquo;{input.trim()}&rdquo;</em>
-              </button>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
 }
 
 function formatBytes(bytes: number | null | undefined) {
@@ -231,7 +124,7 @@ function VisibilidadSelector({ value, onChange }: { value: string; onChange: (v:
         {VISIBILIDAD.map(({ value: v, label, icon: Icon, color }) => (
           <button key={v} type="button" onClick={() => onChange(v)}
             className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 text-xs font-semibold transition-all text-center ${
-              value === v ? color : 'bg-white text-text-muted border-border hover:border-primary-300'
+              value === v ? color : 'bg-[var(--card-bg)] text-text-muted border-border hover:border-primary-300'
             }`}
           >
             <Icon className="w-4 h-4" />
@@ -273,7 +166,7 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }: { tipo: s
       </label>
       {currentFile ? (
         <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
+          className="flex items-center gap-3 px-4 py-3 bg-primary-500/10 border border-primary-500/25 rounded-xl">
           <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-text truncate">{currentFile.name}</p>
@@ -291,10 +184,10 @@ function FileDropzone({ tipo, onFile, currentFile, editing, onError }: { tipo: s
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
           className={`relative flex flex-col items-center justify-center gap-2 px-4 py-10 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
-            dragging ? 'border-primary-600 bg-primary-50 scale-[1.01]' : 'border-border hover:border-primary-400 hover:bg-bg-alt/60'
+            dragging ? 'border-primary-600 bg-primary-500/10 scale-[1.01]' : 'border-border hover:border-primary-400 hover:bg-bg-alt/60'
           }`}
         >
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${dragging ? 'bg-primary-100' : 'bg-bg-alt'}`}>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${dragging ? 'bg-primary-500/12' : 'bg-bg-alt'}`}>
             <Upload className={`w-6 h-6 transition-colors ${dragging ? 'text-primary-700' : 'text-text-muted'}`} />
           </div>
           <div className="text-center">
@@ -325,7 +218,7 @@ export default function GestionDocumentos() {
     ...(filtroCategoria && { tipo: filtroCategoria }),
   })
   const docs = data?.data ?? []
-  const { data: categorias = [] } = useCategoriasList()
+  const { data: categorias = [] } = useCategoriasList({ admin: 'true' })
   const createDocumento = useCreateDocumento()
   const updateDocumento = useUpdateDocumento()
   const deleteDocumento = useDeleteDocumento()
@@ -365,6 +258,7 @@ export default function GestionDocumentos() {
       autor:       d.autores ?? '',
       anio:        d.anio != null ? String(d.anio) : '',
       visibilidad: d.visibilidad ?? 'publico',
+      resumen:     d.resumen ?? '',
     })
     setFormErrors({}); setUploadedFile(null); setUploadError(null)
     setSubmitError(null); setUploadProgress(null); setShowModal(true)
@@ -373,7 +267,7 @@ export default function GestionDocumentos() {
   const validate = () => {
     const e: FormErrors = {}
     if (!form.nombre.trim()) e.nombre = 'El nombre del documento es obligatorio'
-    if (!form.categoria.trim()) e.categoria = 'Selecciona o escribe una categoría'
+    if (!form.categoria.trim()) e.categoria = 'Selecciona una categoría'
     if (!editing && !uploadedFile)
       e.archivo = 'Debes seleccionar el archivo del documento para continuar'
     return e
@@ -391,6 +285,7 @@ export default function GestionDocumentos() {
     payload.append('visibilidad', form.visibilidad)
     if (form.autor.trim()) payload.append('autores', form.autor)
     if (form.anio) payload.append('anio', form.anio)
+    if (form.resumen.trim()) payload.append('resumen', form.resumen)
     if (uploadedFile) payload.append('archivo', uploadedFile)
 
     const onUploadProgress = uploadedFile
@@ -416,16 +311,23 @@ export default function GestionDocumentos() {
 
   const confirmDelete = async () => {
     if (!deleteTarget) return
-    await deleteDocumento.mutateAsync(deleteTarget.id)
-    setToast(`Documento "${deleteTarget.nombre}" eliminado`)
-    setDeleteTarget(null)
+    try {
+      await deleteDocumento.mutateAsync(deleteTarget.id)
+      setToast(`Documento "${deleteTarget.nombre}" eliminado`)
+      setDeleteTarget(null)
+    } catch (err) {
+      setToast(getApiErrorMessage(err, 'No se pudo eliminar el documento. Intenta de nuevo.'))
+    }
   }
 
-  // Todas las categorías: base + las que ya existen en documentos cargados + las de la tabla categorias
+  // Todas las categorías: las que ya existen en documentos cargados (por si
+  // una quedó huérfana tras borrarse de la tabla categorias, que el documento
+  // ya guardado no pierda su valor) + las asignadas explícitamente al módulo
+  // "documentos" (ver categorias.modulos, migración 048) -- una categoría
+  // asignada solo a Mapas o Geovisores no debe ofrecerse acá.
   const allCategories = [...new Set([
-    ...BASE_CATEGORIES,
     ...docs.map((d) => d.categoria).filter(Boolean),
-    ...categorias.map((c) => c.nombre),
+    ...categorias.filter((c) => c.modulos?.includes('documentos')).map((c) => c.nombre),
   ])].sort((a, b) => a.localeCompare(b))
 
 
@@ -444,7 +346,7 @@ export default function GestionDocumentos() {
       {/* Header */}
       <motion.div {...fadeUp(0)} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <span className="text-[0.7rem] font-bold uppercase tracking-widest text-primary-700">Administración</span>
+          <span className="text-[0.7rem] font-bold uppercase tracking-widest" style={{ color: 'var(--hero-eyebrow-text)' }}>Administración</span>
           <h1 className="font-display text-2xl font-bold text-text mt-0.5">Gestión de Documentos</h1>
           <p className="text-sm text-text-muted mt-1">
             {isLoading ? 'Cargando…' : `${docs.length} documentos registrados`}
@@ -465,7 +367,7 @@ export default function GestionDocumentos() {
               className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
                 filtroCategoria === c.label
                   ? 'bg-primary-800 text-white border-primary-800'
-                  : 'bg-white text-text-muted border-border hover:border-primary-800 hover:text-primary-800'
+                  : 'bg-[var(--card-bg)] text-text-muted border-border hover:border-primary-800 hover:text-primary-800'
               }`}>
               {c.label} <span className="ml-1 opacity-70">{c.count}</span>
             </button>
@@ -479,10 +381,10 @@ export default function GestionDocumentos() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
           <input type="text" aria-label="Buscar documentos por nombre o autor" placeholder="Buscar documento por nombre o autor…"
             value={search} onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition" />
+            className="w-full pl-9 pr-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition" />
         </div>
         <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}
-          className="px-3 py-2.5 bg-white border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition">
+          className="px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition">
           <option value="">Todos los tipos</option>
           {TIPOS.map((t) => <option key={t}>{t}</option>)}
         </select>
@@ -490,7 +392,7 @@ export default function GestionDocumentos() {
 
       {/* Error state */}
       {isError && (
-        <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-red-50 border border-red-200 rounded-2xl">
+        <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-red/10 border border-red/25 rounded-2xl">
           <AlertCircle className="w-10 h-10 text-red-400 mb-3" />
           <h3 className="text-base font-bold text-red-700 mb-1">Error al cargar los documentos</h3>
           <p className="text-sm text-red-500 mb-5">No se pudo conectar con el servidor. Verifica tu conexión e intenta de nuevo.</p>
@@ -502,8 +404,8 @@ export default function GestionDocumentos() {
 
       {/* Empty state */}
       {!isLoading && !isError && docs.length === 0 && (
-        <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-white border border-dashed border-border rounded-2xl">
-          <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mb-4">
+        <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-[var(--card-bg)] border border-dashed border-border rounded-2xl">
+          <div className="w-16 h-16 bg-primary-500/12 rounded-2xl flex items-center justify-center mb-4">
             <FolderOpen className="w-8 h-8 text-primary-400" />
           </div>
           <h3 className="text-base font-bold text-text mb-1">Aún no hay documentos registrados</h3>
@@ -515,16 +417,17 @@ export default function GestionDocumentos() {
         </motion.div>
       )}
 
-      {/* Table */}
+      {/* Table — sin tilt 3D: es una superficie de datos que se opera, no se admira */}
       {docs.length > 0 && (
         <Card3D
+            disabled
             initial={{ opacity: 0, y: 20, rotateX: 4, scale: 0.97 }}
             animate={{ opacity: 1, y: 0,  rotateX: 0, scale: 1    }}
             transition={{ delay: 0.16, duration: 0.5, ease: EASE_OUT_EXPO }}
             style={{ transformPerspective: 900 }}
             glow="rgba(26,86,50,0.12)"
             intensity={3}
-            className="bg-white border border-border/70 rounded-xl overflow-hidden"
+            className="bg-[var(--card-bg)] border border-border/70 rounded-xl overflow-hidden"
             whileHover={{ y: -2 }}
           >
           <div className="overflow-x-auto">
@@ -552,7 +455,7 @@ export default function GestionDocumentos() {
                         </div>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-xs px-2 py-0.5 bg-primary-50 text-primary-800 rounded-full font-medium whitespace-nowrap">{d.categoria}</span>
+                        <span className="text-xs px-2 py-0.5 bg-primary-500/12 text-primary-700 rounded-full font-medium whitespace-nowrap">{d.categoria}</span>
                       </td>
                       <td className="px-5 py-3.5">
                         <span className={`inline-flex items-center gap-1 text-[0.65rem] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${vis.pill}`}>
@@ -565,12 +468,12 @@ export default function GestionDocumentos() {
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-1">
                           <button onClick={() => openEdit(d)}
-                            className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-50 transition-colors"
+                            className="p-1.5 rounded-lg text-text-muted hover:text-primary-800 hover:bg-primary-500/10 transition-colors"
                             title="Editar documento">
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button onClick={() => setDeleteTarget(d)}
-                            className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
+                            className="p-1.5 rounded-lg text-text-muted hover:text-red-dark hover:bg-red/10 transition-colors"
                             title="Eliminar documento">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -599,10 +502,10 @@ export default function GestionDocumentos() {
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
             onClick={(e) => { if (e.target === e.currentTarget && !isSubmitting) setShowModal(false) }}>
-            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
 
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-border sticky top-0 bg-white z-10">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-border sticky top-0 bg-[var(--card-bg)] z-10">
                 <div>
                   <h3 className="text-base font-bold text-text">
                     {editing ? 'Editar documento' : 'Ingresar nuevo documento'}
@@ -631,7 +534,7 @@ export default function GestionDocumentos() {
                         className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition-all ${
                           form.tipo === t
                             ? 'bg-primary-800 text-white border-primary-800 shadow-sm'
-                            : 'bg-white text-text-muted border-border hover:border-primary-400'
+                            : 'bg-[var(--card-bg)] text-text-muted border-border hover:border-primary-400'
                         }`}>
                         {t === 'PDF'   && <FileText className="w-4 h-4" />}
                         {t === 'Word'  && <FileText className="w-4 h-4" />}
@@ -651,7 +554,7 @@ export default function GestionDocumentos() {
                   </div>
                 )}
                 {formErrors.archivo && (
-                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs">
+                  <div className="flex items-center gap-2 p-3 bg-red/10 border border-red/25 rounded-xl text-red-dark text-xs">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />{formErrors.archivo}
                   </div>
                 )}
@@ -664,7 +567,7 @@ export default function GestionDocumentos() {
                   <input id="gd-nombre" type="text" value={form.nombre}
                     placeholder="Ej: Informe de biodiversidad cuenca del Baudó — 2024"
                     onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
-                    className={`w-full px-3 py-2.5 bg-white border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.nombre ? 'border-red-400' : 'border-border focus:border-primary-800'}`} />
+                    className={`w-full px-3 py-2.5 bg-[var(--card-bg)] border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-800/10 transition ${formErrors.nombre ? 'border-red-400' : 'border-border focus:border-primary-800'}`} />
                   {formErrors.nombre && <p className="text-xs text-red-500 mt-1">{formErrors.nombre}</p>}
                 </div>
 
@@ -676,26 +579,31 @@ export default function GestionDocumentos() {
                   <input id="gd-autor" type="text" value={form.autor}
                     placeholder="Nombre del autor o institución responsable"
                     onChange={(e) => setForm((f) => ({ ...f, autor: e.target.value }))}
-                    className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition" />
+                    className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 transition" />
+                </div>
+
+                {/* Resumen */}
+                <div>
+                  <label htmlFor="gd-resumen" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
+                    Resumen <span className="text-text-muted font-normal normal-case tracking-normal">(opcional)</span>
+                  </label>
+                  <textarea id="gd-resumen" rows={2} value={form.resumen}
+                    placeholder="Breve descripción del contenido y alcance del documento…"
+                    onChange={(e) => setForm((f) => ({ ...f, resumen: e.target.value }))}
+                    className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition resize-none" />
                 </div>
 
                 {/* Categoría + portada + Año */}
                 <div className="space-y-4">
                   <div>
                     <label className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">
-                      Categoría temática <span className="text-orange-500">*</span>
+                      Categoría <span className="text-orange-500">*</span>
                     </label>
                     <CategoryCombobox
                       value={form.categoria}
                       onChange={(cat) => setForm((f) => ({ ...f, categoria: cat }))}
-                      allCategories={allCategories}
+                      options={allCategories}
                     />
-                    {form.categoria && !BASE_CATEGORIES.includes(form.categoria) && (
-                      <p className="text-[0.65rem] text-primary-700 mt-1 flex items-center gap-1">
-                        <Tag className="w-3 h-3" />
-                        Nueva categoría — se creará automáticamente al guardar
-                      </p>
-                    )}
                     {formErrors.categoria && (
                       <p className="text-xs text-red-500 mt-1">{formErrors.categoria}</p>
                     )}
@@ -707,7 +615,7 @@ export default function GestionDocumentos() {
                     <input id="gd-anio" type="number" min="1900" max="2100" value={form.anio}
                       placeholder={String(new Date().getFullYear())}
                       onChange={(e) => setForm((f) => ({ ...f, anio: e.target.value }))}
-                      className="w-full px-3 py-2.5 bg-white border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition" />
+                      className="w-full px-3 py-2.5 bg-[var(--card-bg)] border border-border rounded-lg text-sm focus:outline-none focus:border-primary-800 focus:ring-2 focus:ring-primary-800/10 transition" />
                   </div>
                 </div>
 
@@ -719,7 +627,7 @@ export default function GestionDocumentos() {
 
                 {/* Error */}
                 {submitError && (
-                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                  <div className="flex items-start gap-2 p-3 bg-red/10 border border-red/25 rounded-xl text-red-dark text-sm">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />{submitError}
                   </div>
                 )}
@@ -746,9 +654,9 @@ export default function GestionDocumentos() {
       <AnimatePresence>
         {deleteTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-            <motion.div {...panelAnim} className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-5 h-5 text-red-600" />
+            <motion.div {...panelAnim} className="bg-[var(--card-bg)] rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+              <div className="w-12 h-12 bg-red/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-5 h-5 text-red-dark" />
               </div>
               <h3 className="text-base font-bold text-text mb-2">Eliminar documento</h3>
               <p className="text-sm text-text-muted mb-6">
@@ -756,10 +664,10 @@ export default function GestionDocumentos() {
                 <span className="text-xs">Esta acción no se puede deshacer.</span>
               </p>
               <div className="flex gap-3">
-                <button onClick={() => setDeleteTarget(null)}
-                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors">Cancelar</button>
-                <button onClick={confirmDelete}
-                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">Sí, eliminar</button>
+                <button onClick={() => setDeleteTarget(null)} disabled={deleteDocumento.isPending}
+                  className="flex-1 py-2.5 border border-border rounded-lg text-sm font-semibold text-text-muted hover:border-primary-800 transition-colors disabled:opacity-50">Cancelar</button>
+                <button onClick={confirmDelete} disabled={deleteDocumento.isPending}
+                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50">{deleteDocumento.isPending ? 'Eliminando…' : 'Sí, eliminar'}</button>
               </div>
             </motion.div>
           </div>
