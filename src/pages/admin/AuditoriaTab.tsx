@@ -8,7 +8,7 @@ import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import { useAuditLog, useAuditResumen, MODULO_STYLES, ACCION_LABEL, type AuditLogData } from '@/hooks/useAuditLog'
 import { exportarActividadExcel } from '@/lib/exportarActividadExcel'
-import { SEVERIDAD_META, SEVERIDADES_ORDEN, resumenOrigen } from '@/lib/constants/auditoria'
+import { RESULTADO_META, RESULTADOS_ORDEN, SEVERIDAD_META, SEVERIDADES_ORDEN, resumenOrigen } from '@/lib/constants/auditoria'
 import ResumenAuditoria from '@/components/admin/actividad/ResumenAuditoria'
 import DetalleEventoDrawer from '@/components/admin/actividad/DetalleEventoDrawer'
 
@@ -23,7 +23,7 @@ const DEBOUNCE_MS = 350
 // este selector era imposible aunque el backend sí los tuviera.
 const MODULOS_OPCIONES = [
   'auth', 'usuarios', 'admin', 'solicitudes', 'mapas', 'documentos',
-  'categorias', 'geovisores', 'notificaciones', 'sistema',
+  'categorias', 'geovisores', 'notificaciones', 'sistema', 'seguridad', 'descargas',
 ]
 
 // El backend ya soportaba filtrar por accion= exacta (getAuditLog en
@@ -63,6 +63,7 @@ export default function AuditoriaTab() {
   const [filtroModulo, setFiltroModulo] = useState('')
   const [filtroAccion, setFiltroAccion] = useState('')
   const [filtroSeveridad, setFiltroSeveridad] = useState('')
+  const [filtroResultado, setFiltroResultado] = useState('')
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
   const [page, setPage] = useState(1)
@@ -88,6 +89,7 @@ export default function AuditoriaTab() {
     modulo: filtroModulo || undefined,
     accion: filtroAccion || undefined,
     severidad: filtroSeveridad || undefined,
+    resultado: filtroResultado || undefined,
     usuario: usuario || undefined,
     ip: ip || undefined,
     q:      search || undefined,
@@ -102,17 +104,18 @@ export default function AuditoriaTab() {
   const total      = data?.meta?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
-  const hayFiltros = !!(searchInput || usuarioInput || ipInput || filtroModulo || filtroAccion || filtroSeveridad || fechaDesde || fechaHasta)
+  const hayFiltros = !!(searchInput || usuarioInput || ipInput || filtroModulo || filtroAccion || filtroSeveridad || filtroResultado || fechaDesde || fechaHasta)
 
   const limpiarFiltros = () => {
     setSearchInput(''); setUsuarioInput(''); setIpInput('')
-    setFiltroModulo(''); setFiltroAccion(''); setFiltroSeveridad('')
+    setFiltroModulo(''); setFiltroAccion(''); setFiltroSeveridad(''); setFiltroResultado('')
     setFechaDesde(''); setFechaHasta(''); setPage(1)
   }
 
-  const filtrarDesdeResumen = ({ accion, severidad }: { accion?: string; severidad?: string }) => {
+  const filtrarDesdeResumen = ({ accion, severidad, resultado }: { accion?: string; severidad?: string; resultado?: string }) => {
     setFiltroAccion(accion ?? '')
     setFiltroSeveridad(severidad ?? '')
+    setFiltroResultado(resultado ?? '')
     setPage(1)
   }
 
@@ -124,6 +127,10 @@ export default function AuditoriaTab() {
         filtroModulo: filtroModulo || undefined,
         filtroAccion: filtroAccion || undefined,
         busqueda: search || undefined,
+        severidad: filtroSeveridad || undefined,
+        resultado: filtroResultado || undefined,
+        usuario: usuario || undefined,
+        ip: ip || undefined,
         desde: fechaDesde || undefined,
         hasta: fechaHasta || undefined,
       })
@@ -173,6 +180,11 @@ export default function AuditoriaTab() {
             onChange={(e) => { setFiltroSeveridad(e.target.value); setPage(1) }} className={selectCls}>
             <option value="">Todas las gravedades</option>
             {SEVERIDADES_ORDEN.map((s) => <option key={s} value={s}>{SEVERIDAD_META[s].label}</option>)}
+          </select>
+          <select aria-label="Resultado" value={filtroResultado}
+            onChange={(e) => { setFiltroResultado(e.target.value); setPage(1) }} className={selectCls}>
+            <option value="">Todos los resultados</option>
+            {RESULTADOS_ORDEN.map((r) => <option key={r} value={r}>{RESULTADO_META[r].label}</option>)}
           </select>
           <select aria-label="Módulo" value={filtroModulo}
             onChange={(e) => { setFiltroModulo(e.target.value); setPage(1) }} className={selectCls}>
@@ -284,6 +296,11 @@ export default function AuditoriaTab() {
                       <span className={`whitespace-nowrap text-[0.6rem] font-bold uppercase px-2 py-0.5 rounded-full ${log.badge}`}>
                         {log.accionLabel}
                       </span>
+                      {log.resultado !== 'exito' && (
+                        <span className={`ml-1.5 whitespace-nowrap text-[0.6rem] font-bold px-1.5 py-0.5 rounded-full ${RESULTADO_META[log.resultado].chip}`}>
+                          {RESULTADO_META[log.resultado].label}
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-3.5">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${MODULO_STYLES[log.modulo] ?? 'bg-bg-alt text-text-muted'}`}>
