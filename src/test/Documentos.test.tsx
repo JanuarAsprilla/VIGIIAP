@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import Documentos from '@/pages/Documentos'
@@ -75,11 +75,16 @@ vi.mock('@/pages/documentos/documentos.utils', async (importOriginal) => {
 vi.mock('@/hooks/useDocumentos', () => ({ useDocumentosList: vi.fn() }))
 import { useDocumentosList } from '@/hooks/useDocumentos'
 
+// La página ya no tiene su propio <input> de búsqueda (duplicaba el del
+// TopBar -- ver regresión en Documentos.tsx); los tests que antes tipeaban en
+// ese input ahora controlan `query` directamente a través de este mock.
+const searchStore = vi.hoisted(() => ({ setQuery: null as ((q: string) => void) | null }))
 vi.mock('@/contexts/SearchContext', async () => {
   const React = await import('react')
   return {
     useSearch: () => {
       const [query, setQuery] = React.useState('')
+      searchStore.setQuery = setQuery
       return { query, setQuery, debouncedQuery: query }
     },
   }
@@ -302,15 +307,14 @@ describe('Documentos — búsqueda por texto', () => {
       isLoading: false, isError: false,
     } as unknown as ReturnType<typeof useDocumentosList>)
 
-    const user = userEvent.setup()
     render(<Documentos />)
-    await user.type(screen.getByPlaceholderText(/Buscar por nombre/i), 'reporte')
+    act(() => { searchStore.setQuery!('reporte') })
 
     expect(screen.getByRole('button', { name: /Informes/i })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Protocolos/i })).not.toBeInTheDocument()
   })
 
-  test('el botón de limpiar búsqueda restablece el listado completo', async () => {
+  test('el botón "Limpiar filtros" del estado vacío restablece el listado completo', async () => {
     vi.mocked(useDocumentosList).mockReturnValue({
       data: {
         data: [
@@ -322,14 +326,13 @@ describe('Documentos — búsqueda por texto', () => {
     } as unknown as ReturnType<typeof useDocumentosList>)
 
     const user = userEvent.setup()
-    const { container } = render(<Documentos />)
-    const input = screen.getByPlaceholderText(/Buscar por nombre/i)
-    await user.type(input, 'reporte')
+    render(<Documentos />)
+    act(() => { searchStore.setQuery!('no-coincide-con-nada') })
     expect(screen.queryByRole('button', { name: /Protocolos/i })).not.toBeInTheDocument()
 
-    const clearBtn = container.querySelector('.lucide-x')!.closest('button')!
-    await user.click(clearBtn)
+    await user.click(screen.getByRole('button', { name: /Limpiar filtros/i }))
 
     expect(screen.getByRole('button', { name: /Protocolos/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Informes/i })).toBeInTheDocument()
   })
 })
