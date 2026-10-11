@@ -1,5 +1,24 @@
 export type Severidad = 'critica' | 'advertencia' | 'info'
 
+export type Resultado = 'exito' | 'fallo' | 'denegado'
+
+export const RESULTADOS_ORDEN: readonly Resultado[] = ['exito', 'fallo', 'denegado']
+
+export const RESULTADO_META: Record<Resultado, { label: string; chip: string }> = {
+  exito:    { label: 'Éxito',    chip: 'bg-primary-500/12 text-primary-500' },
+  fallo:    { label: 'Fallo',    chip: 'bg-gold-500/12 text-gold-500' },
+  denegado: { label: 'Denegado', chip: 'bg-red/10 text-red-dark' },
+}
+
+/** Cambios de un evento: por campo, el valor anterior y el nuevo (los secretos llegan ya ocultos). */
+export type CambiosEvento = Record<string, { antes: string | number | boolean | null; despues: string | number | boolean | null }>
+
+export function formatearValorCambio(valor: string | number | boolean | null): string {
+  if (valor === null || valor === '') return '—'
+  if (typeof valor === 'boolean') return valor ? 'Sí' : 'No'
+  return String(valor)
+}
+
 export const SEVERIDADES_ORDEN: readonly Severidad[] = ['critica', 'advertencia', 'info']
 
 /** Presentación de cada gravedad; el color nunca es la única señal (siempre va con texto). */

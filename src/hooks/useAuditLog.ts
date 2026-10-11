@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { ApiMeta } from '@/types'
 import api from '@/lib/api'
 import { formatDate } from '@/lib/dateUtils'
-import { humanizarAccion, type Severidad } from '@/lib/constants/auditoria'
+import { humanizarAccion, type Severidad, type Resultado, type CambiosEvento } from '@/lib/constants/auditoria'
 
 // Un color por módulo, sin reutilizar el mismo tono dos veces en esta lista —
 // admin y mapas compartían literalmente el mismo hex (bug real, no solo un
@@ -22,6 +22,8 @@ export const MODULO_STYLES: Record<string, string> = {
   geovisores:     'bg-blue-600/10 text-blue-700',
   notificaciones: 'bg-amber-600/10 text-amber-700',
   sistema:        'bg-bg-alt text-text-muted',
+  seguridad:      'bg-red/10 text-red-dark',
+  descargas:      'bg-indigo-600/10 text-indigo-700',
 }
 
 export const ACCION_LABEL: Record<string, { label: string; badge: string }> = {
@@ -103,6 +105,8 @@ export const ACCION_LABEL: Record<string, { label: string; badge: string }> = {
   export_solicitudes:              { label: 'Exportar solicitudes',      badge: 'bg-gold-500/12 text-gold-500' },
   export_descargas:                { label: 'Exportar descargas',        badge: 'bg-gold-500/12 text-gold-500' },
   export_audit:                    { label: 'Exportar auditoría',        badge: 'bg-gold-500/12 text-gold-500' },
+  acceso_denegado:                 { label: 'Acceso denegado',           badge: 'bg-gold-500/12 text-gold-500' },
+  descarga_restringida:            { label: 'Descarga restringida',      badge: 'bg-indigo-600/10 text-indigo-700' },
 }
 
 export interface AuditLogRaw {
@@ -119,6 +123,10 @@ export interface AuditLogRaw {
   navegador?: string | null
   sistema?: string | null
   userAgent?: string | null
+  resultado?: Resultado
+  request_id?: string | null
+  entidad_tipo?: string | null
+  cambios?: CambiosEvento | null
 }
 
 function normalizeLog(l: AuditLogRaw) {
@@ -140,6 +148,10 @@ function normalizeLog(l: AuditLogRaw) {
     navegador:   l.navegador ?? null,
     sistema:     l.sistema ?? null,
     userAgent:   l.userAgent ?? null,
+    resultado:   l.resultado ?? ('exito' as Resultado),
+    requestId:   l.request_id ?? null,
+    entidadTipo: l.entidad_tipo ?? null,
+    cambios:     l.cambios ?? null,
   }
 }
 
@@ -154,6 +166,7 @@ export interface AuditResumen {
   criticos24h: number
   ipsDistintas24h: number
   usuariosActivos24h: number
+  accesosDenegados24h: number
 }
 
 export function useAuditResumen(enabled: boolean = true) {

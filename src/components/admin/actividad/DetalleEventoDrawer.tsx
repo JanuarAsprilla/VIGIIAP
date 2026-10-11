@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { X, Copy, Check } from 'lucide-react'
 import type { AuditLogData } from '@/hooks/useAuditLog'
-import { DISPOSITIVO_LABEL, SEVERIDAD_META, resumenOrigen } from '@/lib/constants/auditoria'
+import { DISPOSITIVO_LABEL, RESULTADO_META, SEVERIDAD_META, formatearValorCambio, resumenOrigen } from '@/lib/constants/auditoria'
 
 function Dato({ etiqueta, children }: { etiqueta: string; children: ReactNode }) {
   return (
@@ -31,6 +31,7 @@ export default function DetalleEventoDrawer({ evento, onCerrar }: {
   if (!evento) return null
 
   const gravedad = SEVERIDAD_META[evento.severidad]
+  const cambios = Object.entries(evento.cambios ?? {})
   const origen = resumenOrigen(evento.navegador, evento.sistema)
   const fechaExacta = new Date(evento.creado_en).toLocaleString('es-CO', { dateStyle: 'full', timeStyle: 'medium' })
 
@@ -66,6 +67,11 @@ export default function DetalleEventoDrawer({ evento, onCerrar }: {
 
         <dl className="flex-1 overflow-y-auto px-6 py-2">
           <Dato etiqueta="Qué pasó">{evento.descripcion || '—'}</Dato>
+          <Dato etiqueta="Resultado">
+            <span className={`inline-flex text-[0.65rem] font-bold px-2 py-0.5 rounded-full ${RESULTADO_META[evento.resultado].chip}`}>
+              {RESULTADO_META[evento.resultado].label}
+            </span>
+          </Dato>
           <Dato etiqueta="Módulo">{evento.modulo}</Dato>
           <Dato etiqueta="Usuario">{evento.email}</Dato>
           <Dato etiqueta="IP">
@@ -86,7 +92,34 @@ export default function DetalleEventoDrawer({ evento, onCerrar }: {
               : 'Sin datos del navegador'}
           </Dato>
           <Dato etiqueta="Fecha">{fechaExacta}</Dato>
-          {evento.entidadId && <Dato etiqueta="Recurso"><span className="font-mono text-xs">{evento.entidadId}</span></Dato>}
+          {cambios.length > 0 && (
+            <Dato etiqueta="Cambios">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-left text-text-muted">
+                    <th scope="col" className="font-semibold pb-1 pr-2">Campo</th>
+                    <th scope="col" className="font-semibold pb-1 pr-2">Antes</th>
+                    <th scope="col" className="font-semibold pb-1">Después</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cambios.map(([campo, { antes, despues }]) => (
+                    <tr key={campo} className="align-top border-t border-border/60">
+                      <th scope="row" className="font-mono font-normal py-1 pr-2 text-text-muted">{campo}</th>
+                      <td className="py-1 pr-2 break-words">{formatearValorCambio(antes)}</td>
+                      <td className="py-1 font-semibold break-words">{formatearValorCambio(despues)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Dato>
+          )}
+          {evento.entidadId && (
+            <Dato etiqueta="Recurso">
+              <span className="font-mono text-xs">{evento.entidadTipo ? `${evento.entidadTipo} · ` : ''}{evento.entidadId}</span>
+            </Dato>
+          )}
+          {evento.requestId && <Dato etiqueta="ID de petición"><span className="font-mono text-xs">{evento.requestId}</span></Dato>}
           <Dato etiqueta="ID del evento"><span className="font-mono text-xs">{evento.id}</span></Dato>
           {evento.userAgent && (
             <Dato etiqueta="User-Agent"><span className="font-mono text-[0.65rem] text-text-muted break-all">{evento.userAgent}</span></Dato>
