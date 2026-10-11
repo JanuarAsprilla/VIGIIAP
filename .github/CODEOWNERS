@@ -1,0 +1,7 @@
+# Propietario por defecto
+*                  @JanuarAsprilla
+
+# CI, despliegue y contenedor requieren revisión explícita
+/.github/          @JanuarAsprilla
+/Dockerfile        @JanuarAsprilla
+/nginx.conf        @JanuarAsprilla
