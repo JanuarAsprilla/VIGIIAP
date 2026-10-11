@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { puedeVerModulo } from '@/lib/permisosModulo'
 import type { ModuloClave } from '@/lib/constants/modulos'
 import AuditoriaTab from './AuditoriaTab'
+import IntegridadAuditoria from '@/components/admin/actividad/IntegridadAuditoria'
 import ReportesTab from './ReportesTab'
 import AnaliticaTab from './AnaliticaTab'
 
@@ -112,7 +113,12 @@ export default function Actividad() {
             )}
           </motion.div>
 
-          {pestana === 'auditoria' && <AuditoriaTab />}
+          {pestana === 'auditoria' && (
+            <>
+              {user?.rol === 'super_admin' && <IntegridadAuditoria />}
+              <AuditoriaTab />
+            </>
+          )}
           {pestana === 'reportes' && <ReportesTab />}
           {pestana === 'analitica' && <AnaliticaTab desde={fechaDesde} hasta={fechaHasta} />}
         </>
