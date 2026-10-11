@@ -6,6 +6,28 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.11.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.10.0...v1.11.0) (2026-10-11)
+
+
+### Features
+
+* **actividad:** botón para verificar la integridad del registro de auditoría ([#297](https://github.com/JanuarAsprilla/VIGIIAP/issues/297)) ([37c95d4](https://github.com/JanuarAsprilla/VIGIIAP/commit/37c95d4d7c09fdc7447e9fe2b45550062e5ac6b9))
+* **actividad:** fase 1 — registro de auditoría legible, con resumen, filtros y detalle ([#289](https://github.com/JanuarAsprilla/VIGIIAP/issues/289)) ([7bee1e3](https://github.com/JanuarAsprilla/VIGIIAP/commit/7bee1e34d9e38e14eaada73cd9394dc3b2098256))
+* **actividad:** fase 2 — resultado, request id, accesos denegados y cambios antes/después ([#292](https://github.com/JanuarAsprilla/VIGIIAP/issues/292)) ([2313b7a](https://github.com/JanuarAsprilla/VIGIIAP/commit/2313b7a81a3d407ffbf0e781701069585a61bd43))
+* **actividad:** ubicación de las visitas y aviso de privacidad actualizado ([#296](https://github.com/JanuarAsprilla/VIGIIAP/issues/296)) ([36f29f0](https://github.com/JanuarAsprilla/VIGIIAP/commit/36f29f03f669dfd711b9ae8f849e76959de5f533))
+* capas nuevas de GeoServer automáticas en el visor ([#272](https://github.com/JanuarAsprilla/VIGIIAP/issues/272)) ([7c11a34](https://github.com/JanuarAsprilla/VIGIIAP/commit/7c11a34cd95cfab22786def5f0b2d66b579c9264))
+* el selector de capas del constructor marca las capas nuevas; fix uuid ([#275](https://github.com/JanuarAsprilla/VIGIIAP/issues/275)) ([cfd103c](https://github.com/JanuarAsprilla/VIGIIAP/commit/cfd103c0aec71dc6554004408d19627b1e04e5c4))
+* formulario de geovisores como asistente por pasos ([#277](https://github.com/JanuarAsprilla/VIGIIAP/issues/277)) ([8def1d1](https://github.com/JanuarAsprilla/VIGIIAP/commit/8def1d1f42a5f4eac736a51e14435ee23c39854c))
+
+
+### Bug Fixes
+
+* cierra hallazgos de auditoría de seguridad (frontend) + mensajes de verificación OAuth ([8fa0bb3](https://github.com/JanuarAsprilla/VIGIIAP/commit/8fa0bb3c47859b6f072cf51934cd9e170364cea8))
+* **ci:** release-please publica desde main aunque develop sea la rama por defecto ([#287](https://github.com/JanuarAsprilla/VIGIIAP/issues/287)) ([f2a3708](https://github.com/JanuarAsprilla/VIGIIAP/commit/f2a37080523c455acf2a760cb16e9e76e74dd8da))
+* corrige 5 hallazgos de la revisión de diseño de la plataforma ([#280](https://github.com/JanuarAsprilla/VIGIIAP/issues/280)) ([8f8b674](https://github.com/JanuarAsprilla/VIGIIAP/commit/8f8b674a9d2938191898e2da673e596d696bfd91))
+* la perilla del interruptor de permisos ya no se sale de la pastilla ([#276](https://github.com/JanuarAsprilla/VIGIIAP/issues/276)) ([79b8db5](https://github.com/JanuarAsprilla/VIGIIAP/commit/79b8db5b9fa8493dcc6317ca80db38757fba3c76))
+* npm audit fix (source-map-js, severidad alta) ([#273](https://github.com/JanuarAsprilla/VIGIIAP/issues/273)) ([6680be5](https://github.com/JanuarAsprilla/VIGIIAP/commit/6680be5cc34e53a78b5c5e96b31b9a9994420955))
+
 ## [1.10.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.9.0...v1.10.0) (2026-10-01)
 
 
