@@ -126,6 +126,21 @@ describe('Actividad — pestañas (super_admin ve las 3)', () => {
   })
 })
 
+describe('Actividad — comprobación de integridad (solo super_admin)', () => {
+  test('el super_admin ve el botón de verificar la integridad en Auditoría', async () => {
+    renderPage()
+    await screen.findByText('Sin eventos registrados')
+    expect(screen.getByRole('button', { name: 'Verificar integridad' })).toBeInTheDocument()
+  })
+
+  test('un admin_sig no lo ve', async () => {
+    authMock.user = { rol: 'admin_sig', modulos: [{ modulo: 'actividad', puede_ver: true, puede_editar: false }] }
+    renderPage()
+    await screen.findByText('Sin eventos registrados')
+    expect(screen.queryByRole('button', { name: 'Verificar integridad' })).not.toBeInTheDocument()
+  })
+})
+
 describe('Actividad — pestañas filtradas por permisos (admin_sig delegado)', () => {
   test('admin_sig con solo el módulo "reportes" ve únicamente esa pestaña', async () => {
     authMock.user = {
