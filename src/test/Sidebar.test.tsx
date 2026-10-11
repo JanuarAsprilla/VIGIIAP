@@ -55,9 +55,9 @@ describe('Sidebar — visitante sin sesión', () => {
     expect(screen.getByRole('link', { name: /Mapas/i })).toHaveAttribute('href', '/mapas')
   })
 
-  test('muestra "Iniciar sesión" y no muestra "Cerrar Sesión"', () => {
+  test('muestra "Ingresar" y no muestra "Cerrar Sesión"', () => {
     renderSidebar()
-    expect(screen.getByText('Iniciar sesión')).toBeInTheDocument()
+    expect(screen.getByText('Ingresar')).toBeInTheDocument()
     expect(screen.queryByText('Cerrar Sesión')).not.toBeInTheDocument()
   })
 })

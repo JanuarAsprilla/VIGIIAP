@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import PaginationBar from '@/components/ui/PaginationBar'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FileText, Search, SlidersHorizontal, X, Loader2, Check } from 'lucide-react'
+import { FileText, SlidersHorizontal, Loader2, Check } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
 import { matches } from '@/lib/search'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { useDocumentosList } from '@/hooks/useDocumentos'
-import { CATEGORY_META, fadeUp } from './documentos/documentos.constants'
+import { getCategoryIcon, fadeUp } from './documentos/documentos.constants'
 import { forceDownload, useClickOutside, descargarUrl, type CategoryItem, type DocItem } from './documentos/documentos.utils'
 import { CategoryCard } from './documentos/CategoryCard'
 import { CategoryModal } from './documentos/CategoryModal'
@@ -48,11 +48,10 @@ export default function Documentos() {
     allDocs.forEach((d) => {
       const catName = d.categoria || 'General'
       if (!map[catName]) {
-        const meta = (CATEGORY_META as Record<string, { icon: string }>)[catName] ?? CATEGORY_META.default
         map[catName] = {
           id:        catName.toLowerCase().replace(/\s+/g, '-'),
           title:     catName,
-          icon:      meta.icon,
+          icon:      getCategoryIcon(catName),
           thumbnail: d.categoria_thumbnail_url ?? null,
           docs:      [],
         }
@@ -102,23 +101,12 @@ export default function Documentos() {
         </p>
       </motion.div>
 
-      <motion.div {...fadeUp(0.1)} className="flex items-center gap-3">
-        <div className="flex items-center gap-2 bg-[var(--card-bg)] border border-border rounded-lg px-4 py-2.5 flex-1">
-          <Search className="w-4 h-4 text-text-muted shrink-0" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, categoría o tipo..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="bg-transparent border-none outline-none text-sm text-text w-full placeholder:text-text-muted"
-          />
-          {query && (
-            <button onClick={() => setQuery('')} className="text-text-muted hover:text-text transition-colors">
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
+      {/* REGRESIÓN (revisión de diseño): este buscador local duplicaba el del
+          TopBar -- ambos leen/escriben el mismo query de SearchContext, así
+          que eran dos cajas de texto idénticas en pantalla para un solo
+          estado. Mapas.tsx (la otra página de listado) ya depende solo del
+          buscador global; aquí se alinea al mismo patrón. */}
+      <motion.div {...fadeUp(0.1)} className="flex items-center justify-end gap-3">
         <div className="relative shrink-0" ref={filterRef}>
           <button
             onClick={() => setShowFilter((v) => !v)}

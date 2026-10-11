@@ -33,10 +33,15 @@ const MAX_SIZE_BYTES: Record<string, number> = {
   IMG: 25 * 1024 * 1024,
 }
 
+// REGRESIÓN (revisión de diseño): el pill de visibilidad usaba un fondo al
+// 10-12% de opacidad sobre el overlay oscuro de la tarjeta (bg-black/80) --
+// quedaba como texto suelto, casi invisible. Ahora usa fondo sólido + texto
+// blanco/oscuro con contraste real, igual que los demás badges de la misma
+// tarjeta (formato, temática) y los de MapCard en Mapas.tsx.
 const VISIBILIDAD = [
-  { value: 'publico',     label: 'Público',      desc: 'Visible para todos',             Icon: Globe,       border: 'border-primary-600', bg: 'bg-primary-600/8',  text: 'text-primary-700', pill: 'bg-primary-700/10 text-primary-700' },
-  { value: 'usuarios',    label: 'Usuarios',     desc: 'Solo usuarios registrados',      Icon: Users,       border: 'border-gold-400',    bg: 'bg-gold-400/10',    text: 'text-gold-400',    pill: 'bg-gold-400/12 text-gold-400' },
-  { value: 'acreditados', label: 'Acreditados',  desc: 'Investigadores y admins',        Icon: ShieldCheck, border: 'border-magenta',     bg: 'bg-magenta/10',     text: 'text-magenta',     pill: 'bg-magenta/12 text-magenta' },
+  { value: 'publico',     label: 'Público',      desc: 'Visible para todos',             Icon: Globe,       border: 'border-primary-600', bg: 'bg-primary-600/8',  text: 'text-primary-700', pill: 'bg-primary-700 text-white' },
+  { value: 'usuarios',    label: 'Usuarios',     desc: 'Solo usuarios registrados',      Icon: Users,       border: 'border-gold-400',    bg: 'bg-gold-400/10',    text: 'text-gold-400',    pill: 'bg-gold-400 text-primary-900' },
+  { value: 'acreditados', label: 'Acreditados',  desc: 'Investigadores y admins',        Icon: ShieldCheck, border: 'border-magenta',     bg: 'bg-magenta/10',     text: 'text-magenta',     pill: 'bg-magenta text-white' },
 ]
 const visMap = Object.fromEntries(VISIBILIDAD.map((v) => [v.value, v]))
 
