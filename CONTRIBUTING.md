@@ -1,166 +1,62 @@
-# Guía de Contribución — VIGIIAP
+# Guía de contribución — VIGIIAP
 
-Este documento define los estándares de trabajo del equipo. Seguirlos garantiza un historial de Git limpio, revisiones eficientes y un proceso de release predecible.
+Este documento resume cómo trabajamos. Aplica a los dos repositorios de la plataforma:
+[VIGIIAP](https://github.com/JanuarAsprilla/VIGIIAP) (frontend) y
+[VIGIIAP-backend](https://github.com/JanuarAsprilla/VIGIIAP-backend) (API).
 
----
+## Flujo de trabajo
 
-## Modelo de ramas
+Trabajamos sobre una sola rama permanente, `main`, siempre desplegable y protegida.
 
-Usamos una variante de **GitFlow** adaptada al equipo:
+1. Crea una rama corta desde `main` con un nombre descriptivo:
+   `feat/…`, `fix/…`, `chore/…`, `docs/…`, `perf/…`, `test/…`.
+2. Haz commits pequeños y atómicos.
+3. Abre un Pull Request hacia `main`. El título sigue la convención de commits.
+4. Espera a que el CI pase completo y fusiona con **Squash and merge**.
+   Las ramas fusionadas se borran solas.
 
-```
-main
- └── develop
-      ├── feat/VIG-001-nombre-descriptivo
-      ├── fix/VIG-002-nombre-del-bug
-      ├── hotfix/VIG-003-nombre-critico
-      ├── release/v1.2.0
-      └── chore/nombre-tarea
-```
-
-### Ramas permanentes
-
-| Rama | Propósito | Push directo |
-|---|---|---|
-| `main` | Código en producción. Solo recibe merges desde `release/*` o `hotfix/*` | **Prohibido** |
-| `develop` | Integración continua. Base para todas las features | **Prohibido** |
-
-### Ramas temporales
-
-| Prefijo | Cuándo usarlo | Ejemplo |
-|---|---|---|
-| `feat/` | Nueva funcionalidad | `feat/VIG-014-modulo-reportes` |
-| `fix/` | Corrección de bug en desarrollo | `fix/VIG-021-error-filtro-mapas` |
-| `hotfix/` | Corrección urgente directamente sobre `main` | `hotfix/VIG-033-crash-login` |
-| `release/` | Preparación de una versión para producción | `release/v1.1.0` |
-| `chore/` | Tareas de mantenimiento (CI, dependencias, config) | `chore/actualizar-dependencias` |
-| `docs/` | Solo documentación | `docs/guia-api-backend` |
-
-> **Convención de nombres:** `prefijo/VIG-NNN-descripcion-en-minusculas-con-guiones`
-> El número `VIG-NNN` corresponde al Issue de GitHub asociado.
-
----
-
-## Ciclo de vida de una tarea
-
-```
-1. Crear Issue en GitHub  →  asignar label + milestone
-2. git checkout develop && git pull origin develop
-3. git checkout -b feat/VIG-NNN-descripcion
-4. Desarrollar + commits atómicos
-5. git push origin feat/VIG-NNN-descripcion
-6. Abrir Pull Request → develop
-7. CI pasa ✅ → merge con squash
-8. Borrar rama remota
-```
-
----
+`main` no admite pushes directos ni force-push.
 
 ## Commits convencionales
 
 Seguimos [Conventional Commits](https://www.conventionalcommits.org):
 
 ```
-<tipo>(<alcance>): <descripción en imperativo>
-
-[cuerpo opcional]
-
-[pie opcional]
+<tipo>(<alcance opcional>): <descripción en imperativo>
 ```
-
-### Tipos permitidos
 
 | Tipo | Cuándo |
 |---|---|
 | `feat` | Nueva funcionalidad |
-| `fix` | Corrección de bug |
-| `refactor` | Mejora de código sin cambio funcional |
-| `chore` | Tareas de mantenimiento (build, CI, deps) |
-| `docs` | Solo documentación |
-| `style` | Cambios de formato (sin lógica) |
-| `test` | Agregar o corregir tests |
+| `fix` | Corrección de un error |
+| `refactor` | Cambio interno sin efecto funcional |
 | `perf` | Mejora de rendimiento |
+| `test` | Pruebas |
+| `docs` | Solo documentación |
+| `chore` / `ci` | Mantenimiento, dependencias, CI |
 
-### Ejemplos
+Ejemplos: `feat(geovisores): asistente por pasos`, `fix(auth): renovar sesión con cookie caducada`.
 
-```bash
-feat(mapas): agregar filtro por año en catálogo de mapas
-fix(auth): corregir redirección tras login con state.from
-refactor(sidebar): extraer NuevoAnalisisModal a componente independiente
-chore(ci): agregar step de lint en GitHub Actions
-docs(contributing): agregar convención de nombres de ramas
-```
+## Versiones
 
----
+Las versiones y el `CHANGELOG.md` los genera **release-please** a partir de los commits.
+No edites la versión ni el changelog a mano: al fusionar a `main`, release-please abre
+(o actualiza) un PR «release». Fusionarlo publica la versión.
 
-## Pull Requests
+## Antes de abrir un Pull Request
 
-### Reglas
+- [ ] El proyecto compila y pasa lint, tipos y pruebas en local (`npm run lint`, `npm test`).
+- [ ] Hay pruebas para el comportamiento nuevo o corregido; la cobertura no baja.
+- [ ] No quedan `console.log`, código comentado ni credenciales.
+- [ ] Si cambia la configuración, se actualizó `.env.example` y el README.
+- [ ] El PR resuelve **una sola cosa**; si toca muchos archivos sin relación, divídelo.
 
-- Todo PR debe ir hacia `develop` (nunca directo a `main`)
-- El título del PR sigue la misma convención que los commits
-- El CI debe pasar antes de mergear
-- Usar **Squash and merge** para mantener historial limpio en `develop`
+**Backend:** las migraciones de `db/migrations/` son consecutivas, idempotentes y nunca se
+editan una vez fusionadas.
+**Frontend:** textos de interfaz en español, componentes accesibles (etiquetas en botones de
+icono, foco visible, contraste AA) y probados en móvil.
 
-### Tamaño ideal de un PR
+## Seguridad
 
-Un PR debe resolver **una sola cosa**. Si estás tocando más de 10 archivos sin relación entre sí, considera dividirlo.
-
----
-
-## Estrategia de releases
-
-Cuando `develop` acumula suficientes features para una versión:
-
-```bash
-# 1. Crear rama de release desde develop
-git checkout develop
-git checkout -b release/v1.1.0
-
-# 2. Ajustar versión en package.json, actualizar CHANGELOG
-# 3. Abrir PR: release/v1.1.0 → main
-# 4. Tras el merge a main, crear tag
-git tag -a v1.1.0 -m "Release v1.1.0"
-git push origin v1.1.0
-
-# 5. Merge de vuelta a develop (para incluir ajustes del release)
-git checkout develop
-git merge release/v1.1.0
-```
-
-### Versionado semántico
-
-`vMAYOR.MENOR.PARCHE`
-
-| Cambio | Incrementa |
-|---|---|
-| Breaking change, rediseño mayor | MAYOR |
-| Nueva funcionalidad compatible | MENOR |
-| Bug fix, ajuste menor | PARCHE |
-
----
-
-## Hotfixes (bugs críticos en producción)
-
-```bash
-# Partir desde main (no desde develop)
-git checkout main
-git checkout -b hotfix/VIG-NNN-descripcion
-
-# Fix + commit + push
-# PR → main  (CI debe pasar)
-# Tras merge: también mergear a develop
-git checkout develop
-git merge hotfix/VIG-NNN-descripcion
-```
-
----
-
-## Checklist antes de abrir un PR
-
-- [ ] El build pasa localmente (`npm run build`)
-- [ ] No hay `console.log` de debug en el código
-- [ ] Los datos del dominio están en `constants.ts`, no hardcodeados en componentes
-- [ ] Los nuevos componentes tienen `aria-label` si son botones de icono
-- [ ] Se actualizó `README.md` si cambió la arquitectura o el stack
-- [ ] Se agregó una línea a `CHANGELOG.md` bajo `[Unreleased]` si el cambio es notable (fix, feature, breaking change)
+Nunca subas secretos. Para reportar una vulnerabilidad sigue [SECURITY.md](SECURITY.md);
+no abras un issue público.
