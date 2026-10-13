@@ -11,7 +11,7 @@ import AdminLayout from './layouts/AdminLayout'
 import { RequireVerified, RequireAdmin, RequireSuperAdmin } from './components/RequireAuth'
 import ErrorBoundary from './components/ErrorBoundary'
 import Preloader from './components/Preloader'
-import MaintenancePage from './components/MaintenancePage'
+import MantenimientoGate from './components/MantenimientoGate'
 import AnalyticsTracker from './components/AnalyticsTracker'
 import {
   HomeSkeleton,
@@ -109,25 +109,6 @@ function PageSpinner() {
 function AppRoutes() {
   const location = useLocation()
 
-  // Cualquier petición a una ruta de contenido público puede llegar a
-  // devolver { maintenance: true } si el super_admin activó modo
-  // mantenimiento (ver vigiiap:maintenance en src/lib/api.ts). Una vez
-  // detectado, se reemplaza toda la vista -- no tiene sentido dejar
-  // navegar por una plataforma que el propio backend está rechazando.
-  const [maintenanceMsg, setMaintenanceMsg] = useState<string | null>(null)
-  useEffect(() => {
-    function onMaintenance(e: Event) {
-      const detail = (e as CustomEvent<{ message: string }>).detail
-      setMaintenanceMsg(detail?.message || 'La plataforma está en mantenimiento. Vuelve a intentarlo más tarde.')
-    }
-    window.addEventListener('vigiiap:maintenance', onMaintenance)
-    return () => window.removeEventListener('vigiiap:maintenance', onMaintenance)
-  }, [])
-
-  if (maintenanceMsg) {
-    return <MaintenancePage mensaje={maintenanceMsg} />
-  }
-
   return (
     // reducedMotion="user" hace que TODAS las animaciones declarativas de
     // Framer Motion (initial/animate/whileHover/etc.) en toda la app
@@ -141,6 +122,7 @@ function AppRoutes() {
     <SearchProvider>
       {/* Fuera del ErrorBoundary con key={location.key}: un error de render
           en una ruta no debe interrumpir el registro de la navegación. */}
+      <MantenimientoGate>
       <AnalyticsTracker />
       {/* key={location.key} — resetea el ErrorBoundary en cada navegación,
           evitando que un error en una ruta deje la app pegada al navegar de vuelta */}
@@ -152,8 +134,8 @@ function AppRoutes() {
           <Route path="/recuperar-password"          element={<Suspense fallback={<PageSpinner />}><RecuperarPassword /></Suspense>} />
           <Route path="/verificar-email/:token"      element={<Suspense fallback={<PageSpinner />}><VerificarEmail /></Suspense>} />
           <Route path="/reset-password/:token"        element={<Suspense fallback={<PageSpinner />}><ResetPassword /></Suspense>} />
-          <Route path="/cambiar-password-expirada"   element={<Suspense fallback={null}><CambiarPasswordExpirada /></Suspense>} />
-          <Route path="/verificar-2fa"                element={<Suspense fallback={null}><VerificarDosFactor /></Suspense>} />
+          <Route path="/cambiar-password-expirada"   element={<Suspense fallback={<PageSpinner />}><CambiarPasswordExpirada /></Suspense>} />
+          <Route path="/verificar-2fa"                element={<Suspense fallback={<PageSpinner />}><VerificarDosFactor /></Suspense>} />
 
           {/* ── Sitio público (MainLayout) — skeletons por ruta ── */}
           <Route element={<MainLayout />}>
@@ -236,6 +218,7 @@ function AppRoutes() {
           <Route path="*" element={<Suspense fallback={<PageSpinner />}><NotFound /></Suspense>} />
         </Routes>
       </ErrorBoundary>
+      </MantenimientoGate>
     </SearchProvider>
     </UIProvider>
     </AuthProvider>

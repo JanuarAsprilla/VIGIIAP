@@ -18,6 +18,7 @@ import Thumbnail from '@/components/ui/Thumbnail'
 import { useMapasList, useCreateMapa, useUpdateMapa, useToggleMapaActivo, useDeleteMapa } from '@/hooks/useMapas'
 import { useCategoriasList } from '@/hooks/useCategorias'
 import { isTrustedUrl } from '@/lib/trustedUrl'
+import { SkeletonLista } from '@/components/ui/Skeleton'
 
 const fadeUp = fadeUpSm
 
@@ -668,6 +669,8 @@ export default function GestionMapas() {
       )}
 
       {/* Empty state */}
+      {isLoading && <SkeletonLista filas={5} />}
+
       {!isLoading && !isError && mapas.length === 0 && (
         <motion.div {...fadeUp(0.14)} className="flex flex-col items-center justify-center py-20 text-center bg-[var(--card-bg)] border border-dashed border-border rounded-2xl">
           <div className="w-16 h-16 bg-primary-500/12 rounded-2xl flex items-center justify-center mb-4">

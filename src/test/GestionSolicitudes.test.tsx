@@ -328,3 +328,14 @@ describe('GestionSolicitudes — exportar CSV', () => {
     vi.unstubAllGlobals()
   })
 })
+
+describe('GestionSolicitudes — carga', () => {
+  test('mientras carga muestra filas de esqueleto y no el mensaje «Sin resultados»', () => {
+    vi.mocked(useSolicitudesAdmin).mockReturnValue({ data: undefined, isLoading: true } as unknown as ReturnType<typeof useSolicitudesAdmin>)
+    render(<GestionSolicitudes />)
+
+    expect(screen.getByText('Cargando…')).toBeInTheDocument()
+    expect(document.querySelectorAll('tbody tr[aria-hidden="true"]').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Sin resultados')).not.toBeInTheDocument()
+  })
+})

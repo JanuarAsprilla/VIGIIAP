@@ -618,3 +618,21 @@ describe('Usuarios (admin) — cambio de rol: ramas adicionales', () => {
     expect(screen.getByRole('button', { name: /Guardando…/i })).toBeDisabled()
   })
 })
+
+describe('Usuarios (admin) — carga', () => {
+  test('mientras carga muestra filas de esqueleto y no el mensaje «Sin resultados»', () => {
+    vi.mocked(useUsuariosList).mockReturnValue({ data: undefined, isLoading: true } as unknown as ReturnType<typeof useUsuariosList>)
+    render(<Usuarios />)
+
+    expect(screen.getByText('Cargando…')).toBeInTheDocument()
+    expect(document.querySelectorAll('tbody tr[aria-hidden="true"]').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Sin resultados')).not.toBeInTheDocument()
+  })
+
+  test('sin resultados (ya cargado) sí muestra el mensaje vacío y no el esqueleto', () => {
+    render(<Usuarios />)
+
+    expect(screen.getByText('Sin resultados')).toBeInTheDocument()
+    expect(document.querySelectorAll('tbody tr[aria-hidden="true"]')).toHaveLength(0)
+  })
+})
