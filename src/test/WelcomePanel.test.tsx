@@ -86,22 +86,61 @@ describe('WelcomePanel — bienvenida antes de pedir credenciales', () => {
     expect(onIniciarSesion).toHaveBeenCalled()
   })
 
-  test('clic en "Continuar como visitante" entra directo, sin pasar por LoginPanel', async () => {
+  test('"Continuar como visitante" pide un nombre opcional antes de entrar', async () => {
+    const user = userEvent.setup()
+    renderWelcomePanel()
+
+    await user.click(screen.getByRole('button', { name: /Continuar como visitante/ }))
+
+    expect(screen.getByLabelText(/¿Cómo te llamas\?/)).toBeInTheDocument()
+    expect(loginVisitanteMock).not.toHaveBeenCalled()
+  })
+
+  test('entra con el nombre escrito (sin espacios sobrantes), sin pasar por LoginPanel', async () => {
     loginVisitanteMock.mockResolvedValue(undefined)
     const user = userEvent.setup()
     const { onClose } = renderWelcomePanel()
     await user.click(screen.getByRole('button', { name: /Continuar como visitante/ }))
-    expect(loginVisitanteMock).toHaveBeenCalled()
+
+    await user.type(screen.getByLabelText(/¿Cómo te llamas\?/), '  Ana Pérez ')
+    await user.click(screen.getByRole('button', { name: 'Entrar como visitante' }))
+
+    expect(loginVisitanteMock).toHaveBeenCalledWith('Ana Pérez')
     expect(onClose).toHaveBeenCalled()
   })
 
-  test('si "Continuar como visitante" falla, muestra el error y no cierra el panel', async () => {
+  test('se puede entrar sin nombre', async () => {
+    loginVisitanteMock.mockResolvedValue(undefined)
+    const user = userEvent.setup()
+    const { onClose } = renderWelcomePanel()
+    await user.click(screen.getByRole('button', { name: /Continuar como visitante/ }))
+
+    await user.click(screen.getByRole('button', { name: 'Entrar sin nombre' }))
+
+    expect(loginVisitanteMock).toHaveBeenCalledWith('')
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  test('Enter en el campo del nombre también entra', async () => {
+    loginVisitanteMock.mockResolvedValue(undefined)
+    const user = userEvent.setup()
+    renderWelcomePanel()
+    await user.click(screen.getByRole('button', { name: /Continuar como visitante/ }))
+
+    await user.type(screen.getByLabelText(/¿Cómo te llamas\?/), 'Ana{Enter}')
+
+    expect(loginVisitanteMock).toHaveBeenCalledWith('Ana')
+  })
+
+  test('si entrar como visitante falla, muestra el error, no cierra el panel y deja reintentar', async () => {
     loginVisitanteMock.mockRejectedValue(new Error('Servidor no disponible'))
     const user = userEvent.setup()
     const { onClose } = renderWelcomePanel()
     await user.click(screen.getByRole('button', { name: /Continuar como visitante/ }))
+    await user.click(screen.getByRole('button', { name: 'Entrar sin nombre' }))
     expect(await screen.findByText('Servidor no disponible')).toBeInTheDocument()
     expect(onClose).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Entrar sin nombre' })).toBeEnabled()
   })
 
   test('clic en "Solicitar acceso" llama a onSolicitar', async () => {

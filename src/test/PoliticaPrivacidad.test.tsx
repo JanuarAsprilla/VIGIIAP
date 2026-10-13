@@ -58,6 +58,17 @@ describe('PoliticaPrivacidad — página dedicada (URL separada de /terminos, re
     expect(await screen.findByText(/En cumplimiento de la Ley 1581 de 2012/)).toBeInTheDocument()
   })
 
+  test('el texto de respaldo declara que la analítica guarda la IP y cuándo se elimina', async () => {
+    vi.mocked(api.get).mockResolvedValue({})
+
+    renderPage()
+
+    const parrafo = await screen.findByText(/Analítica de uso:/)
+    expect(parrafo).toHaveTextContent('dirección IP y la ubicación aproximada')
+    expect(parrafo).toHaveTextContent('se elimina automáticamente a los 90 días')
+    expect(parrafo).not.toHaveTextContent('completamente anónima')
+  })
+
   test('explica el tratamiento de datos obtenidos al iniciar sesión con Google o Microsoft', async () => {
     vi.mocked(api.get).mockResolvedValue({})
 

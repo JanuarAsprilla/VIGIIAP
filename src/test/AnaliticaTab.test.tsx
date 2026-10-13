@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { createElement, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import AnaliticaTab from '@/pages/admin/AnaliticaTab'
@@ -114,6 +114,79 @@ describe('AnaliticaTab — con datos reales en cada sección', () => {
     expect(JSON.parse(chart.getAttribute('data-datasets')!)).toEqual(['Páginas vistas', 'Visitantes únicos'])
     const labels = JSON.parse(chart.getAttribute('data-labels')!)
     expect(labels).toHaveLength(7)
+  })
+})
+
+describe('AnaliticaTab — ubicación de las visitas', () => {
+  const sesion = {
+    id: 's1', primera_visita_en: '2026-01-10T15:00:00Z', ip: '181.49.10.10', pais: 'CO', departamento: 'Chocó',
+    ciudad: 'Quibdó', dispositivo: 'movil', navegador: 'Chrome', sistema_operativo: 'Android',
+  }
+
+  function conUbicaciones(extra: Record<string, unknown> = {}) {
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === '/analitica/ubicaciones') {
+        return Promise.resolve({
+          paises: [{ pais: 'CO', sesiones: 8 }, { pais: 'US', sesiones: 2 }],
+          departamentos: [{ departamento: 'Chocó', sesiones: 6 }, { departamento: 'Antioquia', sesiones: 2 }],
+          sinUbicacion: 3,
+          ...extra,
+        })
+      }
+      if (url === '/analitica/sesiones-recientes') return Promise.resolve([sesion, { ...sesion, id: 's2', ip: null, pais: null, departamento: null, ciudad: null }])
+      if (url === '/analitica/entrada-salida') return Promise.resolve({ entradas: [], salidas: [] })
+      if (url === '/analitica/resumen') {
+        return Promise.resolve({
+          paginasVistas: { serie7: [1], semanaActual: 1, semanaAnterior: 1, deltaPct: 0 },
+          visitantes: { serie7: [1], semanaActual: 1, semanaAnterior: 1, deltaPct: 0 },
+          tasaRebotePct: 0, duracionPromedioSeg: 0,
+        })
+      }
+      return Promise.resolve([])
+    })
+  }
+
+  test('muestra las visitas por departamento y por país, con el aviso de que es aproximada', async () => {
+    conUbicaciones()
+    renderTab()
+
+    expect(await screen.findByText('6 (75%)')).toBeInTheDocument()
+    expect(screen.getByText('Chocó', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.getByText('Antioquia')).toBeInTheDocument()
+    expect(screen.getByText('Colombia')).toBeInTheDocument()
+    expect(screen.getByText('Estados Unidos')).toBeInTheDocument()
+    expect(screen.getByText('3 sesiones sin ubicación determinada.')).toBeInTheDocument()
+    expect(screen.getByText(/no el lugar exacto de la persona/)).toBeInTheDocument()
+  })
+
+  test('lista las sesiones recientes con la IP y marca como eliminada la que ya se purgó', async () => {
+    conUbicaciones()
+    renderTab()
+
+    const tabla = await screen.findByRole('table', { name: /Últimas sesiones de visitantes/ })
+    expect(within(tabla).getByText('181.49.10.10')).toBeInTheDocument()
+    expect(within(tabla).getByText('Quibdó, Chocó, Colombia')).toBeInTheDocument()
+    expect(within(tabla).getAllByText('Móvil · Chrome')).toHaveLength(2)
+    expect(within(tabla).getByText('Eliminada')).toBeInTheDocument()
+    expect(within(tabla).getByText('Sin ubicación')).toBeInTheDocument()
+  })
+
+  test('sin visitas desde Colombia lo dice en vez de dejar la columna vacía', async () => {
+    conUbicaciones({ paises: [{ pais: 'US', sesiones: 2 }], departamentos: [], sinUbicacion: 0 })
+    renderTab()
+
+    expect(await screen.findByText('Sin visitas desde Colombia en el período.')).toBeInTheDocument()
+  })
+
+  test('un fallo al cargar las ubicaciones no rompe el resto de la pestaña', async () => {
+    conUbicaciones()
+    const base = vi.mocked(api.get).getMockImplementation()!
+    vi.mocked(api.get).mockImplementation((url: string) =>
+      url === '/analitica/ubicaciones' ? Promise.reject(new Error('fail')) : base(url))
+    renderTab()
+
+    expect(await screen.findByText('No se pudo cargar')).toBeInTheDocument()
+    expect(screen.getByText('Dispositivos')).toBeInTheDocument()
   })
 })
 
