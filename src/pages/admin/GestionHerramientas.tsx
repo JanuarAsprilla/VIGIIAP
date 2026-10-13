@@ -13,6 +13,7 @@ import {
 } from '@/hooks/useHerramientas'
 import { REGISTRO_HERRAMIENTAS } from '@/lib/herramientasRegistro'
 import type { Herramienta, VisibilidadHerramienta } from '@/types'
+import { SkeletonLista } from '@/components/ui/Skeleton'
 
 const VISIBILIDAD_META: Record<VisibilidadHerramienta, { label: string; icon: typeof Globe }> = {
   publico:  { label: 'Público',  icon: Globe },
@@ -303,6 +304,8 @@ export default function GestionHerramientas() {
           solo activar/ocultar, visibilidad y el orden tienen efecto visible ahí.
         </p>
       </motion.div>
+
+      {isLoading && <SkeletonLista filas={5} />}
 
       {!isLoading && ordenadas.length === 0 && (
         <motion.div {...fadeUp(0.08)} className="flex flex-col items-center justify-center py-20 text-center bg-[var(--card-bg)] border border-dashed border-border rounded-2xl">

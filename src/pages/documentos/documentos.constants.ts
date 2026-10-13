@@ -33,6 +33,42 @@ export const CATEGORY_COLORS = {
   default:                  { from: '#1A5632', to: '#009846' },
 }
 
+// REGRESIÓN (revisión de diseño): CATEGORY_META/CATEGORY_COLORS solo cubren
+// los 10 nombres fijos de siempre, pero `categoria` es texto libre editable
+// por el admin (ver GestionCategorias.tsx) -- cualquier nombre nuevo caía
+// siempre en el mismo ícono/color "default", sin aviso, perdiendo distinción
+// visual justo para las categorías que de verdad varían en producción. Igual
+// que Geovisores.tsx#colorDeCategoria (mismo problema ahí: categorías sin
+// enum fijo), se deriva un color/ícono estables a partir del propio nombre
+// cuando no hay una entrada exacta, en vez de un "default" plano.
+const FALLBACK_ICONS = ['BookOpen', 'MapIcon', 'Leaf', 'Scale', 'ClipboardList', 'Waves', 'TrendingUp', 'FileSpreadsheet']
+const FALLBACK_COLORS: { from: string; to: string }[] = [
+  { from: '#1A5632', to: '#009846' },
+  { from: '#C12A2B', to: '#E51A4B' },
+  { from: '#284E39', to: '#218842' },
+  { from: '#F08143', to: '#F7AC42' },
+  { from: '#E95B8C', to: '#F18A87' },
+  { from: '#B0CB1F', to: '#FFF383' },
+]
+
+function hashCategoryName(name: string): number {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0
+  return hash
+}
+
+export function getCategoryIcon(name: string): string {
+  const exact = (CATEGORY_META as Record<string, { icon: string }>)[name]
+  if (exact) return exact.icon
+  return FALLBACK_ICONS[hashCategoryName(name) % FALLBACK_ICONS.length]
+}
+
+export function getCategoryColors(name: string): { from: string; to: string } {
+  const exact = (CATEGORY_COLORS as Record<string, { from: string; to: string }>)[name]
+  if (exact) return exact
+  return FALLBACK_COLORS[hashCategoryName(name) % FALLBACK_COLORS.length]
+}
+
 export { fadeUp } from '@/lib/animations'
 
 export const categoryIcons = {

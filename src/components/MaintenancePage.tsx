@@ -5,17 +5,14 @@ import { EASE_OUT_EXPO } from '@/lib/animations'
 
 interface MaintenancePageProps {
   mensaje: string
+  /** Solo si hay una sesión abierta que no es de administrador: permite salir de ella. */
+  onCerrarSesion?: () => void
 }
 
-// Se muestra en pantalla completa cuando el backend responde
-// { maintenance: true } a cualquier petición — ver maintenanceGate en
-// src/middlewares/maintenanceMode.js. admin_sig/super_admin ya autenticados
-// nunca reciben esa respuesta (el gate los deja pasar server-side), así que
-// esta pantalla solo la ve un visitante sin sesión de administrador. El
-// enlace de abajo usa <a> normal (recarga completa) a propósito: navegar con
-// react-router no dispara ninguna petición nueva que reevalúe el estado de
-// mantenimiento, así que el overlay nunca se quitaría solo.
-export default function MaintenancePage({ mensaje }: MaintenancePageProps) {
+// Pantalla completa que reemplaza a toda la aplicación mientras el modo mantenimiento está activo
+// (ver MantenimientoGate). Los administradores con sesión nunca la ven. El enlace de acceso usa
+// <a> normal (recarga completa) a propósito, para reevaluar el estado desde cero.
+export default function MaintenancePage({ mensaje, onCerrarSesion }: MaintenancePageProps) {
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-6 overflow-hidden"
@@ -64,6 +61,12 @@ export default function MaintenancePage({ mensaje }: MaintenancePageProps) {
             <LogIn className="w-4 h-4" />
             Iniciar sesión como administrador
           </a>
+          {onCerrarSesion && (
+            <button type="button" onClick={onCerrarSesion}
+              className="block mx-auto mt-3 text-xs font-semibold text-text-muted hover:text-text transition-colors">
+              Cerrar mi sesión
+            </button>
+          )}
         </motion.div>
 
         <motion.p

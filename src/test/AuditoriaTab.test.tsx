@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -51,10 +51,208 @@ describe('AuditoriaTab — normalización de acciones', () => {
     expect(await screen.findByText('Eliminar usuario')).toBeInTheDocument()
   })
 
-  test('una acción desconocida cae al texto crudo, sin romper el render', async () => {
+  test('una acción desconocida se humaniza en vez de mostrarse en bruto, sin romper el render', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [makeLog({ accion: 'accion_nueva_sin_mapear' })], meta: { total: 1 } })
     renderPage()
-    expect(await screen.findByText('accion_nueva_sin_mapear')).toBeInTheDocument()
+    expect(await screen.findByText('Accion nueva sin mapear')).toBeInTheDocument()
+  })
+
+  test('las acciones de geovisores y fichas ya tienen etiqueta (antes salían como UPDATE_GEOVISOR)', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [makeLog({ id: 'a', accion: 'update_geovisor' }), makeLog({ id: 'b', accion: 'upsert_config_fichas' })],
+      meta: { total: 2 },
+    })
+    renderPage()
+    expect(await screen.findByText('Actualizar geovisor')).toBeInTheDocument()
+    expect(screen.getByText('Configurar fichas de capa')).toBeInTheDocument()
+  })
+})
+
+describe('AuditoriaTab — gravedad y origen', () => {
+  test('cada evento muestra su gravedad de forma accesible', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [makeLog({ accion: 'login_blocked', severidad: 'critica' })], meta: { total: 1 },
+    })
+    renderPage()
+    const fila = (await screen.findByRole('cell', { name: 'Login bloqueado' })).closest('tr')!
+    expect(within(fila).getByText('Crítica')).toBeInTheDocument()
+  })
+
+  test('muestra la IP con el navegador y el sistema debajo', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [makeLog({ ip: '186.96.117.11', navegador: 'Chrome', sistema: 'macOS', dispositivo: 'escritorio' })],
+      meta: { total: 1 },
+    })
+    renderPage()
+    expect(await screen.findByText('186.96.117.11')).toBeInTheDocument()
+    expect(screen.getByText('Chrome · macOS')).toBeInTheDocument()
+  })
+
+  test('sin datos del navegador solo muestra la IP', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog({ ip: '10.0.0.5' })], meta: { total: 1 } })
+    renderPage()
+    const fila = (await screen.findByText('10.0.0.5')).closest('tr')!
+    expect(within(fila).queryByText(/·/)).not.toBeInTheDocument()
+  })
+})
+
+describe('AuditoriaTab — filtros nuevos', () => {
+  test('el selector de gravedad envía severidad y reinicia a la página 1', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('cell', { name: 'Login' })
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Gravedad' }), 'critica')
+
+    expect(api.get).toHaveBeenLastCalledWith('/admin/audit', { params: expect.objectContaining({ severidad: 'critica', offset: 0 }) })
+  })
+
+  test('tras el debounce, los campos usuario e IP viajan como parámetros', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('cell', { name: 'Login' })
+
+    await user.type(screen.getByLabelText('Usuario'), 'ana@')
+    await user.type(screen.getByLabelText('IP'), '186.96')
+    await new Promise((resolve) => setTimeout(resolve, 450))
+
+    expect(api.get).toHaveBeenCalledWith('/admin/audit', { params: expect.objectContaining({ usuario: 'ana@', ip: '186.96' }) })
+  })
+
+  test('el campo IP descarta los caracteres que no pueden formar una dirección', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('cell', { name: 'Login' })
+
+    await user.type(screen.getByLabelText('IP'), "1'; XYZ--")
+
+    expect(screen.getByLabelText('IP')).toHaveValue('1')
+  })
+
+  test('"Limpiar filtros" aparece al filtrar y los deja todos vacíos', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('cell', { name: 'Login' })
+    expect(screen.queryByRole('button', { name: 'Limpiar filtros' })).not.toBeInTheDocument()
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Gravedad' }), 'critica')
+    await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
+
+    expect(screen.getByRole('combobox', { name: 'Gravedad' })).toHaveValue('')
+    expect(screen.queryByRole('button', { name: 'Limpiar filtros' })).not.toBeInTheDocument()
+  })
+})
+
+describe('AuditoriaTab — resumen de 24 horas', () => {
+  function respuestaPorRuta(resumen: Record<string, number>) {
+    vi.mocked(api.get).mockImplementation(async (url: string) =>
+      (url === '/admin/audit/resumen'
+        ? resumen
+        : { data: [makeLog()], meta: { total: 1 } }) as never)
+  }
+
+  test('muestra los contadores que devuelve el backend', async () => {
+    respuestaPorRuta({ eventosHoy: 12, eventos24h: 40, loginsFallidos24h: 3, bloqueos24h: 1, criticos24h: 2, ipsDistintas24h: 5, usuariosActivos24h: 4 })
+    renderPage()
+
+    const resumen = await screen.findByRole('region', { name: /Resumen de las últimas 24 horas/i })
+    await waitFor(() => expect(within(resumen).getByText('12')).toBeInTheDocument())
+    expect(within(resumen).getByText('1 cuenta bloqueada')).toBeInTheDocument()
+    expect(within(resumen).getByText('4 usuarios activos')).toBeInTheDocument()
+  })
+
+  test('pulsar «Eventos críticos» filtra la tabla por gravedad crítica', async () => {
+    respuestaPorRuta({ eventosHoy: 1, eventos24h: 1, loginsFallidos24h: 0, bloqueos24h: 0, criticos24h: 2, ipsDistintas24h: 1, usuariosActivos24h: 1 })
+    const user = userEvent.setup()
+    renderPage()
+    const boton = await screen.findByRole('button', { name: /Eventos críticos/i })
+    await waitFor(() => expect(boton).toBeEnabled())
+
+    await user.click(boton)
+
+    expect(screen.getByRole('combobox', { name: 'Gravedad' })).toHaveValue('critica')
+  })
+
+  test('pulsar «Intentos fallidos» filtra por la acción login_failed', async () => {
+    respuestaPorRuta({ eventosHoy: 3, eventos24h: 3, loginsFallidos24h: 3, bloqueos24h: 0, criticos24h: 0, ipsDistintas24h: 1, usuariosActivos24h: 0 })
+    const user = userEvent.setup()
+    renderPage()
+    const boton = await screen.findByRole('button', { name: /Intentos fallidos/i })
+    await waitFor(() => expect(boton).toBeEnabled())
+
+    await user.click(boton)
+
+    expect(screen.getByRole('combobox', { name: 'Acción' })).toHaveValue('login_failed')
+  })
+
+  test('un contador en cero no es pulsable', async () => {
+    respuestaPorRuta({ eventosHoy: 0, eventos24h: 0, loginsFallidos24h: 0, bloqueos24h: 0, criticos24h: 0, ipsDistintas24h: 0, usuariosActivos24h: 0 })
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: /Eventos críticos/i })).toBeDisabled()
+  })
+})
+
+describe('AuditoriaTab — detalle del evento', () => {
+  const evento = makeLog({
+    id: 'evt-99', accion: 'update_geovisor', modulo: 'geovisores', descripcion: 'Geovisor actualizado: Estaciones Climaticas Choco Biogeografico completo',
+    usuario_email: 'admin@iiap.org.co', ip: '186.96.117.11', entidad_id: 'gv-1', severidad: 'info',
+    navegador: 'Chrome', sistema: 'macOS', dispositivo: 'escritorio', userAgent: 'Mozilla/5.0 (Macintosh) Chrome/126',
+  })
+
+  test('el ojo abre un panel con la descripción completa, el dispositivo y el recurso', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [evento], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Ver detalle de Actualizar geovisor' }))
+
+    const panel = screen.getByRole('dialog')
+    expect(within(panel).getByText(/Estaciones Climaticas Choco Biogeografico completo/)).toBeInTheDocument()
+    expect(within(panel).getByText('Chrome · macOS · Escritorio')).toBeInTheDocument()
+    expect(within(panel).getByText('gv-1')).toBeInTheDocument()
+    expect(within(panel).getByText('evt-99')).toBeInTheDocument()
+    expect(within(panel).getByText('Mozilla/5.0 (Macintosh) Chrome/126')).toBeInTheDocument()
+  })
+
+  test('hacer clic en la fila también abre el panel', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [evento], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByText('admin@iiap.org.co'))
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  test('se cierra con el botón y con Escape', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [evento], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: 'Ver detalle de Actualizar geovisor' }))
+
+    await user.click(screen.getByRole('button', { name: 'Cerrar detalle' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Ver detalle de Actualizar geovisor' }))
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  test('un evento sin datos del navegador lo dice y no muestra User-Agent', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog({ id: 'x1', accion: 'login' })], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Ver detalle de Login' }))
+
+    const panel = screen.getByRole('dialog')
+    expect(within(panel).getByText('Sin datos del navegador')).toBeInTheDocument()
+    expect(within(panel).queryByText('User-Agent')).not.toBeInTheDocument()
   })
 })
 
@@ -89,10 +287,12 @@ describe('AuditoriaTab — estados', () => {
     expect(await screen.findByRole('button', { name: /Exportar Excel/i })).toBeDisabled()
   })
 
-  test('muestra un spinner de carga mientras isLoading', () => {
+  test('muestra filas de carga (esqueleto) mientras isLoading, sin el mensaje de «Sin eventos»', () => {
     vi.mocked(api.get).mockReturnValue(new Promise(() => {}))
     renderPage()
-    expect(document.querySelector('.animate-spin')).not.toBeNull()
+    expect(screen.getAllByRole('status', { name: '' }).length).toBeGreaterThan(0)
+    expect(document.querySelectorAll('tbody tr[aria-hidden="true"]').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Sin eventos registrados')).not.toBeInTheDocument()
   })
 })
 
@@ -204,5 +404,98 @@ describe('AuditoriaTab — exportar Excel', () => {
     await user.click(screen.getByRole('button', { name: /Exportar Excel/i }))
 
     expect(await screen.findByText(/No se pudo generar el archivo Excel/i)).toBeInTheDocument()
+  })
+})
+
+describe('AuditoriaTab — fase 2 (resultado, cambios y accesos denegados)', () => {
+  const denegado = makeLog({
+    id: 'd1', accion: 'acceso_denegado', modulo: 'seguridad', descripcion: 'Acceso denegado: GET /api/v1/admin/x',
+    resultado: 'denegado', request_id: 'req-42',
+  })
+  const conCambios = makeLog({
+    id: 'c1', accion: 'update_rol', modulo: 'usuarios', entidad_id: 'u-7', entidad_tipo: 'usuario',
+    cambios: { rol: { antes: 'tecnico', despues: 'investigador' }, activo: { antes: false, despues: true } },
+  })
+
+  test('el selector de resultado envía el parámetro y reinicia a la página 1', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('cell', { name: 'Login' })
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Resultado' }), 'denegado')
+
+    expect(api.get).toHaveBeenLastCalledWith('/admin/audit', { params: expect.objectContaining({ resultado: 'denegado', offset: 0 }) })
+  })
+
+  test('un evento que no fue exitoso lleva su etiqueta en la tabla y uno exitoso no', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [denegado, makeLog({ id: '2' })], meta: { total: 2 } })
+    renderPage()
+
+    const fila = (await screen.findByText('Acceso denegado: GET /api/v1/admin/x')).closest('tr') as HTMLElement
+    expect(within(fila).getByText('Denegado')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getAllByText('Denegado')).toHaveLength(1)
+  })
+
+  test('pulsar «Accesos denegados» filtra la tabla por resultado denegado', async () => {
+    vi.mocked(api.get).mockImplementation(async (url: string) =>
+      (url === '/admin/audit/resumen'
+        ? { eventosHoy: 1, eventos24h: 1, loginsFallidos24h: 0, bloqueos24h: 0, criticos24h: 0, ipsDistintas24h: 1, usuariosActivos24h: 1, accesosDenegados24h: 4 }
+        : { data: [makeLog()], meta: { total: 1 } }) as never)
+    const user = userEvent.setup()
+    renderPage()
+    const boton = await screen.findByRole('button', { name: /Accesos denegados/i })
+    await waitFor(() => expect(boton).toBeEnabled())
+
+    await user.click(boton)
+
+    expect(screen.getByRole('combobox', { name: 'Resultado' })).toHaveValue('denegado')
+  })
+
+  test('el detalle muestra resultado, ID de petición y la tabla de cambios antes/después', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [conCambios], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Ver detalle de Cambio de rol' }))
+
+    const panel = screen.getByRole('dialog')
+    expect(within(panel).getByText('Éxito')).toBeInTheDocument()
+    const tabla = within(panel).getByRole('table')
+    expect(within(tabla).getByText('tecnico')).toBeInTheDocument()
+    expect(within(tabla).getByText('investigador')).toBeInTheDocument()
+    expect(within(tabla).getByText('No')).toBeInTheDocument()
+    expect(within(tabla).getByText('Sí')).toBeInTheDocument()
+    expect(within(panel).getByText('usuario · u-7')).toBeInTheDocument()
+  })
+
+  test('el detalle de un acceso denegado muestra el ID de petición y no tiene tabla de cambios', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [denegado], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Ver detalle de Acceso denegado' }))
+
+    const panel = screen.getByRole('dialog')
+    expect(within(panel).getByText('req-42')).toBeInTheDocument()
+    expect(within(panel).queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  test('exporta con los filtros de resultado, usuario e IP', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('cell', { name: 'Login' })
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Resultado' }), 'fallo')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Gravedad' }), 'advertencia')
+    await user.type(screen.getByLabelText('Usuario'), 'ana@')
+    await user.type(screen.getByLabelText('IP'), '186.96')
+    await new Promise((resolve) => setTimeout(resolve, 450))
+    await user.click(screen.getByRole('button', { name: /Exportar Excel/i }))
+
+    expect(exportarActividadExcel).toHaveBeenCalledWith(expect.objectContaining({
+      resultado: 'fallo', severidad: 'advertencia', usuario: 'ana@', ip: '186.96',
+    }))
   })
 })

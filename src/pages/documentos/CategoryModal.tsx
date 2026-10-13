@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, Search, ArrowUpDown, Eye, Download, X, BookOpen } from 'lucide-react'
-import { categoryIcons, CATEGORY_COLORS, typeStyles, SORT_OPTIONS } from './documentos.constants'
+import { categoryIcons, getCategoryColors, typeStyles, SORT_OPTIONS } from './documentos.constants'
 import { useClickOutside } from './documentos.utils'
 import type { CategoryItem, DocItem } from './documentos.utils'
 import { matches } from '@/lib/search'
@@ -72,7 +72,7 @@ interface CategoryModalProps {
 
 export function CategoryModal({ category, onClose, onPreview, onDownload }: CategoryModalProps) {
   const Icon = (categoryIcons as Record<string, typeof BookOpen>)[category.icon ?? ''] || BookOpen
-  const colors = (CATEGORY_COLORS as Record<string, typeof CATEGORY_COLORS.default>)[category.title] || CATEGORY_COLORS.default
+  const colors = getCategoryColors(category.title)
   const [localQuery, setLocalQuery] = useState('')
   const [sortBy, setSortBy] = useState('name-asc')
   const [showSort, setShowSort] = useState(false)

@@ -17,6 +17,7 @@ import {
   useDeleteCategoria,
   useUpdateModulosCategoria,
 } from '@/hooks/useCategorias'
+import { SkeletonLista } from '@/components/ui/Skeleton'
 
 const fadeUp = fadeUpSm
 
@@ -380,6 +381,8 @@ export default function GestionCategorias() {
       </motion.div>
 
       {/* Filtro por módulo -- ¿qué categorías están asignadas a cada módulo? */}
+      {isLoading && <SkeletonLista filas={5} />}
+
       {!isLoading && categorias.length > 0 && (
         <motion.div {...fadeUp(0.02)} className="flex flex-wrap items-center gap-2">
           <span className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mr-1">Filtrar por módulo</span>

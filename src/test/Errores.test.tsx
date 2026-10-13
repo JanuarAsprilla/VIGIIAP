@@ -63,10 +63,11 @@ describe('Errores — estados', () => {
     expect(screen.getByText(/todo en orden/i)).toBeInTheDocument()
   })
 
-  test('muestra un spinner de carga mientras isLoading', () => {
+  test('muestra tarjetas de carga (esqueleto) mientras isLoading', () => {
     vi.mocked(api.get).mockReturnValue(new Promise(() => {}))
     renderPage()
-    expect(document.querySelector('.animate-spin')).not.toBeNull()
+    expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByText('Cargando…')).toBeInTheDocument()
   })
 
   test('un error de carga muestra el mensaje de fallo con botón de reintentar', async () => {

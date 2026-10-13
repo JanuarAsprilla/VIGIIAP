@@ -3,7 +3,7 @@ import type { MouseEvent } from 'react'
 import { motion, useMotionValue, useTransform, useSpring, useMotionTemplate } from 'framer-motion'
 import { ArrowRight, BookOpen } from 'lucide-react'
 import Thumbnail from '@/components/ui/Thumbnail'
-import { categoryIcons, CATEGORY_COLORS } from './documentos.constants'
+import { categoryIcons, getCategoryColors } from './documentos.constants'
 import type { CategoryItem } from './documentos.utils'
 
 interface CategoryCardProps {
@@ -15,7 +15,7 @@ interface CategoryCardProps {
 
 export function CategoryCard({ category, filteredCount, onOpen, index }: CategoryCardProps) {
   const Icon   = (categoryIcons as Record<string, typeof BookOpen>)[category.icon] || BookOpen
-  const colors = (CATEGORY_COLORS as Record<string, typeof CATEGORY_COLORS.default>)[category.title] || CATEGORY_COLORS.default
+  const colors = getCategoryColors(category.title)
   const hasFilter = filteredCount !== null
 
   const ref    = useRef<HTMLButtonElement>(null)

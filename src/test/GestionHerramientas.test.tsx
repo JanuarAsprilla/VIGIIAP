@@ -269,3 +269,13 @@ describe('GestionHerramientas — eliminar', () => {
     expect(mutateAsync).not.toHaveBeenCalled()
   })
 })
+
+describe('GestionHerramientas — carga', () => {
+  test('mientras carga muestra tarjetas de esqueleto en vez de una lista vacía', () => {
+    vi.mocked(useHerramientasList).mockReturnValue({ data: undefined, isLoading: true } as unknown as ReturnType<typeof useHerramientasList>)
+    render(<GestionHerramientas />)
+
+    expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByText('Cargando…', { selector: '.sr-only' })).toBeInTheDocument()
+  })
+})
