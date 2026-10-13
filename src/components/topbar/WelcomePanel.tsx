@@ -12,10 +12,10 @@
  * LoginPanel es quien pide el correo y la contraseña. TopBar decide cuál de
  * los dos renderizar vía `activePanel` ('welcome' | 'login').
  *
- * "Continuar como visitante" es un atajo directo sin pasar por LoginPanel,
- * igual que el WelcomeGate original que este panel reemplazó.
+ * "Continuar como visitante" es un atajo sin pasar por LoginPanel, igual que el WelcomeGate
+ * original que este panel reemplazó: pide un nombre opcional para identificar la visita y entra.
  */
-import { useState, type RefObject } from 'react'
+import { useState, type FormEvent, type RefObject } from 'react'
 import { AlertCircle, Building2, Compass, FileCheck2, Globe, User } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import Portal from '@/components/ui/Portal'
@@ -30,12 +30,15 @@ export default function WelcomePanel({ onClose, onIniciarSesion, onSolicitar, bo
   const { loginVisitante } = useAuth()
   const [entering, setEntering] = useState(false)
   const [error, setError]       = useState<string | null>(null)
+  const [pidiendoNombre, setPidiendoNombre] = useState(false)
+  const [nombre, setNombre]     = useState('')
 
-  const handleVisitante = async () => {
+  const handleVisitante = async (e?: FormEvent) => {
+    e?.preventDefault()
     setEntering(true)
     setError(null)
     try {
-      await loginVisitante()
+      await loginVisitante(nombre.trim())
       onClose()
     } catch (err) {
       setError((err as Error)?.message || 'No se pudo acceder como visitante. Intente de nuevo.')
@@ -82,11 +85,28 @@ export default function WelcomePanel({ onClose, onIniciarSesion, onSolicitar, bo
             className="w-full flex items-center justify-center gap-2 py-3 bg-primary-800 text-white rounded-xl text-sm font-bold hover:bg-primary-700 transition-colors shadow-sm">
             <User className="w-4 h-4" aria-hidden="true" />Iniciar sesión
           </button>
-          <button type="button" onClick={handleVisitante} disabled={entering}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border border-border text-text hover:border-primary-800 hover:text-primary-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
-            <Compass className="w-4 h-4" aria-hidden="true" />
-            {entering ? 'Entrando…' : 'Continuar como visitante'}
-          </button>
+          {pidiendoNombre ? (
+            <form onSubmit={handleVisitante} className="space-y-2 p-3.5 rounded-xl border border-border bg-[var(--card-bg)]">
+              <label htmlFor="bienvenida-nombre-visitante" className="block text-[0.8rem] font-bold text-text">
+                ¿Cómo te llamas? <span className="font-normal text-text-muted">(opcional)</span>
+              </label>
+              <input id="bienvenida-nombre-visitante" type="text" value={nombre} maxLength={100}
+                onChange={(e) => setNombre(e.target.value)} autoFocus autoComplete="name"
+                placeholder="Tu nombre, para identificar tu visita"
+                className="w-full px-3 py-2.5 bg-bg border border-border rounded-xl text-sm focus:outline-none focus:border-primary-800 transition" />
+              <button type="submit" disabled={entering}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border border-border text-text hover:border-primary-800 hover:text-primary-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                <Compass className="w-4 h-4" aria-hidden="true" />
+                {entering ? 'Entrando…' : nombre.trim() ? 'Entrar como visitante' : 'Entrar sin nombre'}
+              </button>
+            </form>
+          ) : (
+            <button type="button" onClick={() => setPidiendoNombre(true)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border border-border text-text hover:border-primary-800 hover:text-primary-800 transition-colors">
+              <Compass className="w-4 h-4" aria-hidden="true" />
+              Continuar como visitante
+            </button>
+          )}
           <button type="button" onClick={onSolicitar}
             className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-text-muted hover:text-primary-800 transition-colors">
             <FileCheck2 className="w-3.5 h-3.5" aria-hidden="true" />¿No tiene cuenta? Solicitar acceso

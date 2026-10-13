@@ -15,6 +15,7 @@ import Card3D from '@/components/ui/Card3D'
 import CategoryCombobox from '@/components/admin/CategoryCombobox'
 import { useDocumentosList, useCreateDocumento, useUpdateDocumento, useDeleteDocumento } from '@/hooks/useDocumentos'
 import { useCategoriasList } from '@/hooks/useCategorias'
+import { SkeletonLista } from '@/components/ui/Skeleton'
 
 const fadeUp = fadeUpSm
 
@@ -401,6 +402,8 @@ export default function GestionDocumentos() {
           </button>
         </motion.div>
       )}
+
+      {isLoading && <SkeletonLista filas={5} />}
 
       {/* Empty state */}
       {!isLoading && !isError && docs.length === 0 && (

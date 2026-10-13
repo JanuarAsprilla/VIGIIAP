@@ -7,6 +7,7 @@ vi.mock('@/lib/api', () => ({ default: { get: vi.fn() } }))
 import api from '@/lib/api'
 import {
   useAnaliticaResumen, usePaginasTop, useDispositivos, useFuentesTrafico, useEntradaSalida,
+  useUbicaciones, useSesionesRecientes,
 } from '@/hooks/useAnalitica'
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -71,5 +72,29 @@ describe('useEntradaSalida', () => {
     const { result } = renderHook(() => useEntradaSalida({ desde: '2026-01-01', hasta: '2026-01-15' }), { wrapper })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual({ entradas: [], salidas: [] })
+  })
+})
+
+describe('useUbicaciones', () => {
+  test('envía desde/hasta como params', async () => {
+    vi.mocked(api.get).mockResolvedValue({ paises: [], departamentos: [], sinUbicacion: 0 })
+    const { result } = renderHook(() => useUbicaciones({ desde: '2026-01-01', hasta: '2026-01-15' }), { wrapper })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(api.get).toHaveBeenCalledWith('/analitica/ubicaciones', { params: { desde: '2026-01-01', hasta: '2026-01-15' } })
+  })
+
+  test('no dispara la petición si enabled=false', () => {
+    renderHook(() => useUbicaciones({}, false), { wrapper })
+    expect(api.get).not.toHaveBeenCalled()
+  })
+})
+
+describe('useSesionesRecientes', () => {
+  test('llama a /analitica/sesiones-recientes', async () => {
+    vi.mocked(api.get).mockResolvedValue([{ id: 's1' }])
+    const { result } = renderHook(() => useSesionesRecientes(), { wrapper })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(api.get).toHaveBeenCalledWith('/analitica/sesiones-recientes')
+    expect(result.current.data).toEqual([{ id: 's1' }])
   })
 })

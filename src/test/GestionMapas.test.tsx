@@ -675,3 +675,13 @@ describe('GestionMapas — columnas de la lista', () => {
     expect(localStorage.getItem('vigiiap:admin-mapas-cols')).toBe('2')
   })
 })
+
+describe('GestionMapas — carga', () => {
+  test('mientras carga muestra tarjetas de esqueleto accesibles en vez de un listado vacío', () => {
+    vi.mocked(useMapasList).mockReturnValue({ data: undefined, isLoading: true, isError: false } as unknown as ReturnType<typeof useMapasList>)
+    render(<GestionMapas />)
+
+    expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByText('Cargando…', { selector: '.sr-only' })).toBeInTheDocument()
+  })
+})

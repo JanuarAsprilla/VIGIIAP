@@ -159,3 +159,13 @@ describe('Papelera — categorías usan nombre como clave', () => {
     expect(api.patch).toHaveBeenCalledWith('/admin/papelera/categoria/Biodiversidad/restaurar')
   })
 })
+
+describe('Papelera — carga', () => {
+  test('mientras carga muestra filas de esqueleto en la tabla y no el mensaje de vacío', () => {
+    vi.mocked(api.get).mockReturnValue(new Promise(() => {}))
+    renderPage()
+
+    expect(screen.getByText('Cargando…')).toBeInTheDocument()
+    expect(document.querySelectorAll('tbody tr[aria-hidden="true"]').length).toBeGreaterThan(0)
+  })
+})

@@ -2,7 +2,7 @@ import { Fragment, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Doughnut, Bar } from 'react-chartjs-2'
 import {
-  ChevronLeft, ChevronRight, Loader2, AlertCircle, AlertTriangle, ChevronDown, ChevronUp,
+  ChevronLeft, ChevronRight, AlertCircle, AlertTriangle, ChevronDown, ChevronUp,
   Search, Copy, Check, ServerCrash, Clock, Repeat2, ShieldCheck,
 } from 'lucide-react'
 import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
@@ -12,6 +12,7 @@ import { timeAgo } from '@/lib/dateUtils'
 import { SEVERIDAD_COLOR, DOUGHNUT_OPTIONS, HORIZONTAL_BAR_OPTIONS } from '@/lib/erroresChartConfig'
 import { useAuth } from '@/contexts/AuthContext'
 import { puedeEditarModulo } from '@/lib/permisosModulo'
+import { SkeletonLista } from '@/components/ui/Skeleton'
 
 const fadeUp = fadeUpSm
 const PAGE_SIZE = 10
@@ -456,11 +457,7 @@ export default function Errores() {
         className="bg-[var(--card-bg)] border border-border/70 rounded-xl overflow-hidden"
         whileHover={{ y: -2 }}
       >
-        {isLoading && (
-          <div className="px-5 py-14 text-center">
-            <Loader2 className="w-6 h-6 animate-spin text-primary-700 mx-auto" />
-          </div>
-        )}
+        {isLoading && <SkeletonLista filas={4} className="p-5" />}
         {isError && (
           <div className="px-5 py-14 text-center">
             <AlertCircle className="w-6 h-6 text-red-400 mx-auto mb-2" aria-hidden="true" />

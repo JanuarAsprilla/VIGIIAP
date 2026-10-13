@@ -227,3 +227,13 @@ describe('GestionConexionesGeoserver — editar conexión, campos adicionales', 
     }))
   })
 })
+
+describe('GestionConexionesGeoserver — carga', () => {
+  test('mientras carga muestra tarjetas de esqueleto accesibles en vez de un listado vacío', () => {
+    vi.mocked(useConexionesGeoserverList).mockReturnValue({ data: [], isLoading: true } as unknown as ReturnType<typeof useConexionesGeoserverList>)
+    render(<GestionConexionesGeoserver />)
+
+    expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByText('Cargando…', { selector: '.sr-only' })).toBeInTheDocument()
+  })
+})

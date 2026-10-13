@@ -12,6 +12,7 @@ import Card3D from '@/components/ui/Card3D'
 import { ESTADO_API, useSolicitudesAdmin, useUpdateEstadoSolicitud, useResponderSolicitud,
          useSolicitudArchivos, useDeleteSolicitudArchivo, solicitudArchivoDescargaUrl } from '@/hooks/useSolicitudes'
 import { useToast, ToastContainer } from '@/components/Toast'
+import { SkeletonFilasTabla } from '@/components/ui/Skeleton'
 
 const fadeUp = fadeUpSm
 
@@ -42,7 +43,7 @@ export default function GestionSolicitudes() {
   // eslint-disable-next-line react-hooks/set-state-in-effect -- reset intencional de paginación al cambiar filtros
   useEffect(() => { setPage(1) }, [search, filtroEstado, filtroTipo])
 
-  const { data } = useSolicitudesAdmin({
+  const { data, isLoading } = useSolicitudesAdmin({
     limit: PAGE_SIZE,
     page,
     ...(search       && { q: search }),
@@ -247,7 +248,8 @@ export default function GestionSolicitudes() {
               </tr>
             </thead>
             <tbody>
-              {pageItems.length === 0 && (
+              {isLoading && <SkeletonFilasTabla columnas={6} />}
+              {!isLoading && pageItems.length === 0 && (
                 <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-text-muted">Sin resultados</td></tr>
               )}
               {pageItems.map((s) => (

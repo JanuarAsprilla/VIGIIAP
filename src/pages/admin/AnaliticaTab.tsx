@@ -1,11 +1,14 @@
 import { motion } from 'framer-motion'
 import { Line } from 'react-chartjs-2'
 import {
-  Eye, Users, LogOut, Clock, Loader2, AlertCircle,
+  Eye, Users, LogOut, Clock,
   Smartphone, Tablet, Monitor, Globe, ArrowDownToLine, ArrowUpFromLine,
 } from 'lucide-react'
 import { fadeUpSm } from '@/lib/animations'
 import MetricPanel, { type Metric } from '@/components/ui/MetricPanel'
+import BarraCategoria from '@/components/admin/actividad/BarraCategoria'
+import EstadoCarga from '@/components/admin/actividad/EstadoCarga'
+import UbicacionVisitas from '@/components/admin/actividad/UbicacionVisitas'
 import { LINE_CHART_OPTIONS } from '@/lib/reportesChartConfig'
 import {
   useAnaliticaResumen, usePaginasTop, useDispositivos, useFuentesTrafico, useEntradaSalida,
@@ -116,34 +119,6 @@ function KpiCards() {
   )
 }
 
-// ── Barra de porcentaje horizontal (dispositivos / fuentes) ──
-function BarraCategoria({ label, valor, total, delay, icon: Icon }: { label: string; valor: number; total: number; delay: number; icon?: typeof Smartphone }) {
-  const pct = total > 0 ? Math.round((valor / total) * 100) : 0
-  return (
-    <div className="flex items-center gap-3">
-      {Icon && <Icon className="w-4 h-4 text-text-muted shrink-0" aria-hidden="true" />}
-      <span className="text-xs text-text-muted w-28 shrink-0 truncate">{label}</span>
-      <div className="flex-1 h-2 bg-bg-alt rounded-full overflow-hidden">
-        <motion.div
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: pct / 100 }}
-          transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
-          style={{ transformOrigin: 'left' }}
-          className="h-full bg-primary-700 rounded-full"
-        />
-      </div>
-      <span className="text-xs font-semibold text-text w-16 text-right shrink-0">{valor} ({pct}%)</span>
-    </div>
-  )
-}
-
-function EstadoCarga({ isLoading, isError, vacio }: { isLoading: boolean; isError: boolean; vacio: boolean }) {
-  if (isLoading) return <div className="py-8 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-primary-700" /></div>
-  if (isError) return <div className="py-8 flex flex-col items-center gap-1"><AlertCircle className="w-5 h-5 text-red-400" /><p className="text-xs text-red-500">No se pudo cargar</p></div>
-  if (vacio) return <p className="py-8 text-center text-xs text-text-muted">Sin datos en el período seleccionado</p>
-  return null
-}
-
 interface AnaliticaTabProps {
   desde: string
   hasta: string
@@ -166,12 +141,14 @@ export default function AnaliticaTab({ desde, hasta }: AnaliticaTabProps) {
   return (
     <div className="space-y-6">
       <motion.p {...fadeUp(0)} className="text-sm text-text-muted">
-        Navegación anónima en la plataforma — nunca se registra IP ni identidad, ni siquiera para usuarios con sesión iniciada.
+        Navegación en la plataforma sin identidad: se guarda la IP y la ubicación aproximada de cada sesión, nunca el usuario, y la IP se elimina a los 90 días.
       </motion.p>
 
       <KpiCards />
 
       <TendenciaChart />
+
+      <UbicacionVisitas rango={rango} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Páginas más visitadas */}

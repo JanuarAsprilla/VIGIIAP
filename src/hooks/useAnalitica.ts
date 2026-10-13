@@ -88,3 +88,40 @@ export function useEntradaSalida(rango: RangoFechas = {}, enabled: boolean = tru
     enabled,
   })
 }
+
+export interface UbicacionesAnalitica {
+  paises: { pais: string; sesiones: number }[]
+  departamentos: { departamento: string; sesiones: number }[]
+  sinUbicacion: number
+}
+
+export function useUbicaciones(rango: RangoFechas = {}, enabled: boolean = true) {
+  return useQuery<UbicacionesAnalitica>({
+    queryKey: ['admin', 'analitica', 'ubicaciones', rango],
+    queryFn:  () => api.get('/analitica/ubicaciones', { params: paramsRango(rango) }),
+    staleTime: 1000 * 60 * 2,
+    enabled,
+  })
+}
+
+export interface SesionReciente {
+  id: string
+  primera_visita_en: string
+  ip: string | null
+  pais: string | null
+  departamento: string | null
+  ciudad: string | null
+  dispositivo: 'movil' | 'tablet' | 'escritorio'
+  navegador: string | null
+  sistema_operativo: string | null
+}
+
+/** Últimas sesiones con su IP (se borra a los 90 días); el backend solo la entrega a administradores. */
+export function useSesionesRecientes(enabled: boolean = true) {
+  return useQuery<SesionReciente[]>({
+    queryKey: ['admin', 'analitica', 'sesiones-recientes'],
+    queryFn:  () => api.get('/analitica/sesiones-recientes'),
+    staleTime: 1000 * 60,
+    enabled,
+  })
+}
