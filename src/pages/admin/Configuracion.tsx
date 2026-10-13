@@ -685,7 +685,7 @@ export default function Configuracion() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-text">Activar modo mantenimiento</p>
-              <p className="text-xs text-text-muted">Muestra un aviso a todos los usuarios no administradores</p>
+              <p className="text-xs text-text-muted">Pausa toda la plataforma: nadie puede navegar, solo se ve el aviso</p>
             </div>
             <Toggle
               checked={mantenimiento.modoMantenimiento}
@@ -702,7 +702,7 @@ export default function Configuracion() {
             >
               <div className="bg-[var(--note-bg)] border border-[var(--note-border)] rounded-xl p-4 flex gap-3">
                 <AlertTriangle className="w-4 h-4 text-[var(--note-text)] shrink-0 mt-0.5" />
-                <p className="text-xs text-[var(--note-text)]">El modo mantenimiento está activo. Los usuarios no administradores verán el mensaje configurado.</p>
+                <p className="text-xs text-[var(--note-text)]">El modo mantenimiento está activo. Toda la plataforma está en pausa para los usuarios no administradores: solo verán el mensaje configurado. Los administradores con sesión siguen entrando.</p>
               </div>
               <div>
                 <label htmlFor="conf-mant-msg" className="block text-[0.65rem] font-bold uppercase tracking-wider text-text-muted mb-1.5">Mensaje de mantenimiento</label>
