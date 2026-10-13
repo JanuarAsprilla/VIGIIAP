@@ -10,6 +10,7 @@ import { useToast, ToastContainer } from '@/components/Toast'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { formatDate } from '@/lib/dateUtils'
 import api from '@/lib/api'
+import { SkeletonFilasTabla } from '@/components/ui/Skeleton'
 
 const fadeUp = fadeUpSm
 const PAGE_SIZE = 10
@@ -143,13 +144,7 @@ export default function Papelera() {
               </tr>
             </thead>
             <tbody>
-              {isLoading && (
-                <tr>
-                  <td colSpan={3} className="px-5 py-10 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary-700 mx-auto" />
-                  </td>
-                </tr>
-              )}
+              {isLoading && <SkeletonFilasTabla columnas={3} />}
               {isError && (
                 <tr>
                   <td colSpan={3} className="px-5 py-10 text-center">
