@@ -526,3 +526,13 @@ describe('GestionCategorias — módulos asignados en la tarjeta (solo lectura)'
     expect(screen.getByText('Sin módulo asignado')).toBeInTheDocument()
   })
 })
+
+describe('GestionCategorias — carga', () => {
+  test('mientras carga muestra tarjetas de esqueleto accesibles en vez de un listado vacío', () => {
+    vi.mocked(useCategoriasList).mockReturnValue({ data: [], isLoading: true } as unknown as ReturnType<typeof useCategoriasList>)
+    render(<GestionCategorias />)
+
+    expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByText('Cargando…', { selector: '.sr-only' })).toBeInTheDocument()
+  })
+})
