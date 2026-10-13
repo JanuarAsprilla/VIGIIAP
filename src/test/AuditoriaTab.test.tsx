@@ -287,10 +287,12 @@ describe('AuditoriaTab — estados', () => {
     expect(await screen.findByRole('button', { name: /Exportar Excel/i })).toBeDisabled()
   })
 
-  test('muestra un spinner de carga mientras isLoading', () => {
+  test('muestra filas de carga (esqueleto) mientras isLoading, sin el mensaje de «Sin eventos»', () => {
     vi.mocked(api.get).mockReturnValue(new Promise(() => {}))
     renderPage()
-    expect(document.querySelector('.animate-spin')).not.toBeNull()
+    expect(screen.getAllByRole('status', { name: '' }).length).toBeGreaterThan(0)
+    expect(document.querySelectorAll('tbody tr[aria-hidden="true"]').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Sin eventos registrados')).not.toBeInTheDocument()
   })
 })
 
