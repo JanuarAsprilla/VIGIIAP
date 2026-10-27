@@ -37,10 +37,10 @@ vi.mock('@/hooks/useCategorias', () => ({
 }))
 
 vi.mock('@/hooks/useConexionesGeoserver', () => ({
-  useConexionesGeoserverList: vi.fn(),
+  useConexionesSeleccionables: vi.fn(),
   useWorkspacesDeConexion: vi.fn(),
 }))
-import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
+import { useConexionesSeleccionables, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
 
 // El formulario consulta qué capas con fichas siguen sin configurar; el detalle se prueba
 // en useFichasPunto.test.tsx y GeovisorFormModal.test.tsx, acá basta con que no haya ninguna.
@@ -80,9 +80,9 @@ beforeEach(() => {
   vi.mocked(useGeovisoresList).mockReturnValue({
     data: { data: [makeGeovisor()], meta: { total: 1 } }, isLoading: false,
   } as unknown as ReturnType<typeof useGeovisoresList>)
-  vi.mocked(useConexionesGeoserverList).mockReturnValue({
+  vi.mocked(useConexionesSeleccionables).mockReturnValue({
     data: [makeConexion()],
-  } as unknown as ReturnType<typeof useConexionesGeoserverList>)
+  } as unknown as ReturnType<typeof useConexionesSeleccionables>)
   vi.mocked(useWorkspacesDeConexion).mockReturnValue({
     data: [{ id: 't_15_geologia', nombre: 'Geologia', totalCapas: 3, capas: [{ id: 't_15_geologia:fallas', nombre: 'Fallas', tipo: 'vectorial' }] }], isFetching: false,
   } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
@@ -104,10 +104,29 @@ describe('GestionGeovisores — listado', () => {
   })
 
   test('sin conexiones registradas, el botón de crear está deshabilitado y muestra una advertencia', () => {
-    vi.mocked(useConexionesGeoserverList).mockReturnValue({ data: [] } as unknown as ReturnType<typeof useConexionesGeoserverList>)
+    vi.mocked(useConexionesSeleccionables).mockReturnValue({ data: [] } as unknown as ReturnType<typeof useConexionesSeleccionables>)
     render(<GestionGeovisores />)
     expect(screen.getByRole('button', { name: /Nuevo geovisor/i })).toBeDisabled()
-    expect(screen.getByText(/Todavía no hay ninguna conexión GeoServer registrada/i)).toBeInTheDocument()
+    expect(screen.getByText(/Todavía no hay ninguna conexión GeoServer disponible/i)).toBeInTheDocument()
+  })
+
+  // Regresión: quien tiene Geovisores pero no Conexiones recibía 403 al pedir la lista; quedaba vacía
+  // y el botón se desactivaba sin explicación. Ahora se pide la lista mínima y un fallo se distingue.
+  test('si la lista de conexiones falla, lo dice y deja reintentar, sin afirmar que «no hay conexiones»', async () => {
+    const refetch = vi.fn()
+    vi.mocked(useConexionesSeleccionables).mockReturnValue({ data: undefined, isError: true, refetch } as unknown as ReturnType<typeof useConexionesSeleccionables>)
+    const user = userEvent.setup()
+    render(<GestionGeovisores />)
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/No se pudo cargar la lista de conexiones GeoServer/i)
+    expect(screen.queryByText(/Todavía no hay ninguna conexión GeoServer disponible/i)).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }))
+    expect(refetch).toHaveBeenCalled()
+  })
+
+  test('con conexiones disponibles el botón de crear está habilitado', () => {
+    render(<GestionGeovisores />)
+    expect(screen.getByRole('button', { name: /Nuevo geovisor/i })).toBeEnabled()
   })
 })
 

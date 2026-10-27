@@ -47,7 +47,7 @@ import { useCatalogue } from '@/hooks/useCatalogue'
 import {
   useGeovisoresList, useGeovisoresPublico, useGeovisorPorSlug, useCapasDeGeovisor,
 } from '@/hooks/useGeovisores'
-import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
+import { useConexionesGeoserverList, useConexionesSeleccionables, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
 
 // ─── QueryClient wrapper (fresh per test, no retries) ─────────────────────────
 function makeWrapper() {
@@ -454,6 +454,27 @@ describe('useGeovisoresList', () => {
 
     expect(api.get).toHaveBeenCalledWith('/geovisores', { params: { admin: 'true', limit: 100, page: 1 } })
     expect(result.current.data?.data).toEqual([rawGeovisor])
+  })
+})
+
+describe('useConexionesSeleccionables', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('pide /admin/conexiones-geoserver/seleccionables (lista mínima, con el permiso de Geovisores)', async () => {
+    vi.mocked(api.get).mockResolvedValue([{ id: 'c1', nombre: 'GeoServer IIAP', tipo: 'propio', activo: true }])
+
+    const { result } = renderHook(() => useConexionesSeleccionables(), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+    expect(api.get).toHaveBeenCalledWith('/admin/conexiones-geoserver/seleccionables')
+    expect(result.current.data).toEqual([{ id: 'c1', nombre: 'GeoServer IIAP', tipo: 'propio', activo: true }])
+  })
+
+  test('un fallo de la petición queda como error (no como lista vacía)', async () => {
+    vi.mocked(api.get).mockRejectedValue(Object.assign(new Error('Sin permiso'), { status: 403 }))
+
+    const { result } = renderHook(() => useConexionesSeleccionables(), { wrapper: makeWrapper() })
+    await waitFor(() => expect(result.current.isError).toBe(true))
   })
 })
 
