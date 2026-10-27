@@ -19,10 +19,10 @@ vi.mock('framer-motion', () => {
 })
 
 vi.mock('@/hooks/useConexionesGeoserver', () => ({
-  useConexionesGeoserverList: vi.fn(),
+  useConexionesSeleccionables: vi.fn(),
   useWorkspacesDeConexion: vi.fn(),
 }))
-import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
+import { useConexionesSeleccionables, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
 
 vi.mock('@/hooks/useGeovisores', () => ({
   useCreateGeovisor: vi.fn(),
@@ -112,9 +112,9 @@ async function abrirTema(user: ReturnType<typeof userEvent.setup>, nombre: RegEx
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(useConexionesGeoserverList).mockReturnValue({
+  vi.mocked(useConexionesSeleccionables).mockReturnValue({
     data: conexionesFixture,
-  } as unknown as ReturnType<typeof useConexionesGeoserverList>)
+  } as unknown as ReturnType<typeof useConexionesSeleccionables>)
   vi.mocked(useWorkspacesDeConexion).mockReturnValue({
     data: workspacesFixture, isFetching: false,
   } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
