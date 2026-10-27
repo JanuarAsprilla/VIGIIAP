@@ -394,3 +394,13 @@ describe('GestionDocumentos — eliminación', () => {
     expect(await screen.findByText('Documento "Informe de Biodiversidad" eliminado')).toBeInTheDocument()
   })
 })
+
+describe('GestionDocumentos — carga', () => {
+  test('mientras carga muestra tarjetas de esqueleto accesibles en vez de un listado vacío', () => {
+    vi.mocked(useDocumentosList).mockReturnValue({ data: undefined, isLoading: true, isError: false, refetch: vi.fn() } as unknown as ReturnType<typeof useDocumentosList>)
+    render(<GestionDocumentos />)
+
+    expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByText('Cargando…', { selector: '.sr-only' })).toBeInTheDocument()
+  })
+})

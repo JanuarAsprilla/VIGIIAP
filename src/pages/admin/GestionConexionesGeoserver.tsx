@@ -15,6 +15,7 @@ import {
 } from '@/hooks/useConexionesGeoserver'
 import type { ConexionGeoserverRaw, TipoConexionGeoserver } from '@/types'
 import type { FormErrors } from '@/types/forms'
+import { SkeletonLista } from '@/components/ui/Skeleton'
 
 const fadeUp = fadeUpSm
 
@@ -250,6 +251,8 @@ export default function GestionConexionesGeoserver() {
           </p>
         </motion.div>
       )}
+
+      {isLoading && <SkeletonLista filas={5} />}
 
       {!isLoading && conexiones.length === 0 && (
         <motion.div {...fadeUp(0.08)} className="flex flex-col items-center justify-center py-20 text-center bg-[var(--card-bg)] border border-dashed border-border rounded-2xl">

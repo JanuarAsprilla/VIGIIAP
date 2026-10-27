@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { X, Loader2, AlertCircle, ArrowLeft, ArrowRight, Check } from 'lucide-react'
 import { panelAnim } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
-import { useConexionesGeoserverList, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
+import { useConexionesSeleccionables, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
 import { useCreateGeovisor, useUpdateGeovisor, useUploadGeovisorThumbnail } from '@/hooks/useGeovisores'
 import { useCategoriasList } from '@/hooks/useCategorias'
 import { useCapasSinConfigFichas } from '@/hooks/useFichasPunto'
@@ -52,7 +52,7 @@ export default function GeovisorFormBody({ editing, onClose, onSaved }: {
   )
   const cuerpoRef = useRef<HTMLDivElement>(null)
 
-  const { data: conexiones = [] } = useConexionesGeoserverList()
+  const { data: conexiones = [] } = useConexionesSeleccionables()
   const { data: workspaces = [], isFetching: loadingWorkspaces } = useWorkspacesDeConexion(form.conexionGeoserverId || null)
   // Categorías del módulo compartido — geovisores.categoria tiene FK a
   // categorias(nombre) en el backend. Solo se puede ELEGIR entre las ya

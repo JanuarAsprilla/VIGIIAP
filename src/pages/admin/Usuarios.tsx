@@ -14,6 +14,7 @@ import { fadeUpSm, panelAnim, drawerAnim, EASE_OUT_EXPO } from '@/lib/animations
 import Card3D from '@/components/ui/Card3D'
 import { useUsuariosList, useCreateUsuario, useUpdateUsuarioRol, useToggleActivo, useDeleteUsuario, ROLE_MAP_REVERSE } from '@/hooks/useUsuarios'
 import { useToast, ToastContainer } from '@/components/Toast'
+import { SkeletonFilasTabla } from '@/components/ui/Skeleton'
 
 const fadeUp = fadeUpSm
 
@@ -272,7 +273,7 @@ export default function Usuarios() {
   // eslint-disable-next-line react-hooks/set-state-in-effect -- reset intencional de paginación al cambiar filtros
   useEffect(() => { setPage(1) }, [search, filtroRol, filtroEstado])
 
-  const { data } = useUsuariosList({
+  const { data, isLoading } = useUsuariosList({
     limit: PAGE_SIZE,
     page,
     ...(search       && { q: search }),
@@ -410,7 +411,8 @@ export default function Usuarios() {
               </tr>
             </thead>
             <tbody>
-              {paginated.length === 0 && (
+              {isLoading && <SkeletonFilasTabla columnas={6} />}
+              {!isLoading && paginated.length === 0 && (
                 <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-text-muted">Sin resultados</td></tr>
               )}
               {paginated.map((u) => { const manageable = canManageRow(u); return (

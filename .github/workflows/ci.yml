@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: 20
           cache: npm
@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: 20
           cache: npm
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: 20
           cache: npm
@@ -65,7 +65,7 @@ jobs:
     needs: [typecheck, lint, test]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: 20
           cache: npm
@@ -85,56 +85,24 @@ jobs:
     needs: [build]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: 20
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      # authenticated.spec.ts necesita un backend real (no hay staging), así que
-      # las credenciales y la URL de producción SOLO se pasan en push a
-      # develop/main (post-merge) — nunca en pull_request. Un PR (incluso de una
-      # rama propia del repo) no debe tener sesión admin real contra producción
-      # ni acceso a estos secrets; en PRs, authenticated.spec.ts simplemente
-      # hace skip vía su propio test.skip() por falta de credenciales.
-      #
-      # IMPORTANTE: en PR, VITE_API_URL debe quedar sin definir (no ""). api.ts
-      # usa `?? '/api/v1'`, y `??` solo cae al fallback con null/undefined —
-      # un string vacío pasa de largo y rompe la rehidratación de sesión contra
-      # una ruta que no existe en el preview server (visto en CI: los 4 tests
-      # de redirección de auth.spec.ts quedaban colgados hasta timeout).
+      # E2E sin backend real: VITE_API_URL queda sin definir (no ""). api.ts usa `?? '/api/v1'` y `??`
+      # solo cae al fallback con null/undefined: un string vacío rompería la rehidratación de sesión
+      # (los tests de redirección de auth.spec.ts se colgaban hasta el timeout).
+      # Antes, en push se apuntaba al backend de Render (ya abandonado: el despliegue real es el VPS) y
+      # esos runs fallaban; producción tampoco sirve para esto (su CORS rechaza el origen del preview).
+      # authenticated.spec.ts hace test.skip() por su cuenta cuando no hay credenciales.
       - name: Build
-        run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            export VITE_API_URL="https://vigiiap-backend.onrender.com/api/v1"
-          fi
-          npm run build
-      # En push, auth.spec.ts y authenticated.spec.ts dependen del backend real
-      # de Render (free tier, se duerme sin tráfico). Sin esto, la primera
-      # request de la suite paga el cold-start completo y puede superar el
-      # timeout de la aserción en vez del de la request.
-      - name: Despertar backend (solo push)
-        if: github.event_name == 'push'
-        run: |
-          ping_once() {
-            curl -s -o /dev/null -w "%{http_code}" --max-time 55 \
-              https://vigiiap-backend.onrender.com/health
-          }
-          STATUS=$(ping_once) || STATUS="000"
-          if [ "$STATUS" != "200" ] && [ "$STATUS" != "503" ]; then
-            echo "Primer intento: HTTP $STATUS — reintentando en 10s..."
-            sleep 10
-            STATUS=$(ping_once) || STATUS="000"
-          fi
-          echo "Backend respondió HTTP $STATUS antes de arrancar Playwright"
+        run: npm run build
       - name: Servir build y ejecutar tests E2E
         run: npx playwright test e2e/public.spec.ts e2e/auth.spec.ts e2e/authenticated.spec.ts
         env:
           CI: true
-          E2E_ADMIN_EMAIL: ${{ github.event_name == 'push' && secrets.E2E_ADMIN_EMAIL || '' }}
-          E2E_ADMIN_PASSWORD: ${{ github.event_name == 'push' && secrets.E2E_ADMIN_PASSWORD || '' }}
-          E2E_USER_EMAIL: ${{ github.event_name == 'push' && secrets.E2E_USER_EMAIL || '' }}
-          E2E_USER_PASSWORD: ${{ github.event_name == 'push' && secrets.E2E_USER_PASSWORD || '' }}
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -147,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7.1.0
         with:
           node-version: 20
           cache: npm

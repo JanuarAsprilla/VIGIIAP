@@ -9,7 +9,7 @@ import { getApiErrorMessage, asApiError } from '@/lib/apiError'
 import {
   useGeovisoresList, useToggleGeovisorActivo, useDeleteGeovisor, useCompletitudGeovisor,
 } from '@/hooks/useGeovisores'
-import { useConexionesGeoserverList } from '@/hooks/useConexionesGeoserver'
+import { useConexionesSeleccionables } from '@/hooks/useConexionesGeoserver'
 import type { GeovisorRaw, CompletitudGeovisor, CompletitudCapa } from '@/types'
 import GeovisorFormModal from '@/components/admin/geovisores/GeovisorFormModal'
 import Thumbnail from '@/components/ui/Thumbnail'
@@ -191,7 +191,7 @@ export default function GestionGeovisores() {
   // ninguna pista de que hubo un error -- indistinguible de "no hay
   // geovisores" para quien lo ve. Ahora se distingue y se puede reintentar.
   const { data, isLoading, isError, refetch, isRefetching } = useGeovisoresList()
-  const { data: conexiones = [] } = useConexionesGeoserverList()
+  const { data: conexiones = [], isError: errorConexiones, refetch: recargarConexiones } = useConexionesSeleccionables()
   const geovisores = data?.data ?? []
 
   const toggleActivo   = useToggleGeovisorActivo()
@@ -279,6 +279,7 @@ export default function GestionGeovisores() {
         </div>
         <button onClick={openCreate}
           disabled={conexiones.length === 0}
+          title={conexiones.length === 0 ? 'Necesitas al menos una conexión GeoServer disponible' : undefined}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0">
           <Plus className="w-4 h-4" /> Nuevo geovisor
         </button>
@@ -325,12 +326,24 @@ export default function GestionGeovisores() {
         </motion.div>
       )}
 
-      {!isLoading && conexiones.length === 0 && (
+      {!isLoading && errorConexiones && (
+        <motion.div {...fadeUp(0.04)} role="alert" className="flex items-start gap-3 p-4 bg-red/10 border border-red/20 rounded-xl">
+          <ShieldAlert className="w-4 h-4 text-red-dark mt-0.5 shrink-0" />
+          <p className="text-xs text-red-dark flex-1">
+            No se pudo cargar la lista de conexiones GeoServer, así que por ahora no se puede crear un geovisor.
+          </p>
+          <button type="button" onClick={() => recargarConexiones()} className="text-xs font-semibold text-red-dark underline underline-offset-2 shrink-0">
+            Reintentar
+          </button>
+        </motion.div>
+      )}
+
+      {!isLoading && !errorConexiones && conexiones.length === 0 && (
         <motion.div {...fadeUp(0.04)} className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/25 rounded-xl">
           <ShieldAlert className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
           <p className="text-xs text-amber-700">
-            Todavía no hay ninguna conexión GeoServer registrada. Ve a <strong>Conexiones GeoServer</strong> y crea una
-            antes de configurar el primer geovisor — cada geovisor descubre sus capas a partir de una conexión.
+            Todavía no hay ninguna conexión GeoServer disponible. Un administrador con acceso a <strong>Conexiones GeoServer</strong> debe
+            crear una antes de configurar el primer geovisor — cada geovisor descubre sus capas a partir de una conexión.
           </p>
         </motion.div>
       )}

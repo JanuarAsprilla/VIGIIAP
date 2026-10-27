@@ -11,6 +11,7 @@ import { exportarActividadExcel } from '@/lib/exportarActividadExcel'
 import { RESULTADO_META, RESULTADOS_ORDEN, SEVERIDAD_META, SEVERIDADES_ORDEN, resumenOrigen } from '@/lib/constants/auditoria'
 import ResumenAuditoria from '@/components/admin/actividad/ResumenAuditoria'
 import DetalleEventoDrawer from '@/components/admin/actividad/DetalleEventoDrawer'
+import { SkeletonFilasTabla } from '@/components/ui/Skeleton'
 
 const fadeUp = fadeUpSm
 
@@ -258,13 +259,7 @@ export default function AuditoriaTab() {
               </tr>
             </thead>
             <tbody>
-              {isLoading && (
-                <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary-700 mx-auto" />
-                  </td>
-                </tr>
-              )}
+              {isLoading && <SkeletonFilasTabla columnas={8} />}
               {isError && (
                 <tr>
                   <td colSpan={8} className="px-5 py-10 text-center">
