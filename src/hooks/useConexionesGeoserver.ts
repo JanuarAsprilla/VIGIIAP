@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
-import type { ConexionGeoserverRaw, ConexionGeoserverInput, WorkspaceOption } from '@/types'
+import type { ConexionGeoserverRaw, ConexionGeoserverInput, TipoConexionGeoserver, WorkspaceOption } from '@/types'
 
 const KEYS = {
   all:        ['conexiones-geoserver'],
   list:       () => ['conexiones-geoserver', 'list'],
+  seleccionables: () => ['conexiones-geoserver', 'seleccionables'],
   workspaces: (conexionId: string | null | undefined) => ['conexiones-geoserver', 'workspaces', conexionId],
 }
 
@@ -12,6 +13,26 @@ export function useConexionesGeoserverList() {
   return useQuery<ConexionGeoserverRaw[]>({
     queryKey: KEYS.list(),
     queryFn:  () => api.get('/admin/conexiones-geoserver'),
+  })
+}
+
+/** Lo mínimo para elegir una conexión al armar un geovisor (sin URL ni credenciales). */
+export interface ConexionSeleccionable {
+  id: string
+  nombre: string
+  tipo: TipoConexionGeoserver
+  activo: boolean
+}
+
+/**
+ * Conexiones que se pueden ELEGIR para un geovisor. Se pide con el permiso del módulo Geovisores:
+ * quien no tiene Conexiones GeoServer puede usar las existentes sin verlas ni administrarlas
+ * (useConexionesGeoserverList, que exige ese módulo, queda para su propia pantalla).
+ */
+export function useConexionesSeleccionables() {
+  return useQuery<ConexionSeleccionable[]>({
+    queryKey: KEYS.seleccionables(),
+    queryFn:  () => api.get('/admin/conexiones-geoserver/seleccionables'),
   })
 }
 
