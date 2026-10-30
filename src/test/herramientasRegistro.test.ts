@@ -29,3 +29,13 @@ describe('REGISTRO_HERRAMIENTAS', () => {
     expect(REGISTRO_HERRAMIENTAS['panel-choco'].color).toBe('gold')
   })
 })
+
+describe('REGISTRO_HERRAMIENTAS: biodiversidad', () => {
+  test('está registrada con ícono, color y marca de enlace directo', () => {
+    const e = REGISTRO_HERRAMIENTAS.biodiversidad
+    expect(e).toBeDefined()
+    expect(e.focusable).toBe(true)
+    expect(e.icon).toBeDefined()
+    expect(['primary', 'orange', 'gold', 'green']).toContain(e.color)
+  })
+})
