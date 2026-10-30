@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertCircle, ArrowLeft, PlusCircle, SearchX } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
@@ -24,7 +25,9 @@ function GridSkeleton() {
 export default function Herramientas() {
   const { query }                    = useSearch()
   const [showSolicitar, setShowSolicitar] = useState(false)
-  const [herramientaAbiertaId, setHerramientaAbiertaId] = useState<string | null>(null)
+  // La herramienta abierta vive en la URL (?herramienta=clave): permite enlace directo y atrás/adelante.
+  const [params, setParams] = useSearchParams()
+  const herramientaAbiertaId = params.get('herramienta')
   const { columnas, setColumnas } = useColumnasGrid('vigiiap:herramientas-cols')
   const { toasts, toast, dismiss }   = useToast()
   const { items: herramientas, isLoading, isError } = useHerramientasCatalogo()
@@ -39,7 +42,7 @@ export default function Herramientas() {
     return (
       <div className="space-y-6">
         <button
-          onClick={() => setHerramientaAbiertaId(null)}
+          onClick={() => setParams({})}
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-text-muted hover:text-primary-800 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" aria-hidden="true" />
@@ -105,7 +108,7 @@ export default function Herramientas() {
                   description={tool.descripcion ?? ''}
                   icon={tool.icon}
                   color={tool.color}
-                  onAbrir={() => setHerramientaAbiertaId(tool.clave)}
+                  onAbrir={() => setParams({ herramienta: tool.clave })}
                 />
               </motion.div>
             ))}
