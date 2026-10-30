@@ -3,7 +3,12 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
 import { BarChart3, MapPinCheck } from 'lucide-react'
-import Herramientas from '@/pages/Herramientas'
+import { MemoryRouter } from 'react-router-dom'
+import PaginaHerramientas from '@/pages/Herramientas'
+
+const Herramientas = ({ ruta = '/herramientas' }: { ruta?: string }) => (
+  <MemoryRouter initialEntries={[ruta]}><PaginaHerramientas /></MemoryRouter>
+)
 
 vi.mock('framer-motion', () => {
   const cache = new Map<string, (p: Record<string, unknown>) => ReactNode>()
@@ -92,6 +97,20 @@ describe('Herramientas — grilla y filtrado', () => {
 
     await user.click(screen.getByRole('button', { name: /Volver a Herramientas/i }))
     expect(screen.queryByText('Herramienta: Validador')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Abrir Validador de Coordenadas/i })).toBeInTheDocument()
+  })
+
+  test('enlace directo ?herramienta=clave abre la herramienta y "Volver" regresa a la grilla', async () => {
+    const user = userEvent.setup()
+    render(<Herramientas ruta="/herramientas?herramienta=validador-coordenadas&grupo=aves" />)
+    expect(screen.getByText('Herramienta: Validador')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Volver a Herramientas/i }))
+    expect(screen.queryByText('Herramienta: Validador')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Abrir Validador de Coordenadas/i })).toBeInTheDocument()
+  })
+
+  test('enlace directo a una clave inexistente en el catálogo muestra la grilla', () => {
+    render(<Herramientas ruta="/herramientas?herramienta=no-existe" />)
     expect(screen.getByRole('button', { name: /Abrir Validador de Coordenadas/i })).toBeInTheDocument()
   })
 

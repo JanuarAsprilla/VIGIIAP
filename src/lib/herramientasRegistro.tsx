@@ -1,6 +1,7 @@
-import { BarChart3, MapPinCheck, type LucideIcon } from 'lucide-react'
+import { BarChart3, Leaf, MapPinCheck, type LucideIcon } from 'lucide-react'
 import type { ComponentType } from 'react'
 import PanelChocoTool from '@/components/herramientas/PanelChocoTool'
+import BiodiversidadTool from '@/components/herramientas/BiodiversidadTool'
 import ValidadorCoordenadasTool from '@/components/herramientas/ValidadorCoordenadasTool'
 
 type AccentColor = 'primary' | 'orange' | 'gold' | 'green'
@@ -11,6 +12,8 @@ interface EntradaRegistro {
    *  obligatorios) y, al abrirla, ocupa toda la página -- ver Herramientas.tsx. */
   icon: LucideIcon
   color: AccentColor
+  /** Herramienta que gestiona su propio estado en la URL y admite enlace directo (?herramienta=clave). */
+  focusable?: boolean
 }
 
 /**
@@ -25,4 +28,5 @@ interface EntradaRegistro {
 export const REGISTRO_HERRAMIENTAS: Record<string, EntradaRegistro> = {
   'panel-choco': { Component: PanelChocoTool, icon: BarChart3, color: 'gold' },
   'validador-coordenadas': { Component: ValidadorCoordenadasTool, icon: MapPinCheck, color: 'primary' },
+  biodiversidad: { Component: BiodiversidadTool, icon: Leaf, color: 'green', focusable: true },
 }
