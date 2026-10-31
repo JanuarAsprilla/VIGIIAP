@@ -60,7 +60,7 @@ export function listarDepartamentos(municipios: MunicipioConteo[]): string[] {
   return [...new Set(municipios.map((m) => m.departamento))].sort((a, b) => a.localeCompare(b, 'es'))
 }
 
-export type ColumnaMunicipios = 'municipio' | 'departamento' | 'registros' | 'sin_especie'
+export type ColumnaMunicipios = 'municipio' | 'departamento' | 'registros' | 'especies' | 'sin_especie'
 
 export function ordenarMunicipios(
   municipios: MunicipioConteo[], columna: ColumnaMunicipios, descendente: boolean,

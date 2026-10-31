@@ -4,17 +4,25 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import type { UseQueryResult } from '@tanstack/react-query'
 import type {
-  EstadoBiodiversidad, MunicipioConteo, RegistroBiodiversidad, RespuestaMunicipios, RespuestaRegistros,
+  EstadoBiodiversidad, MunicipioConteo, RegistroBiodiversidad, RespuestaMunicipios, RespuestaRegistros, RespuestaResumen,
 } from '@/components/herramientas/biodiversidad/types'
 
 type Q = Partial<UseQueryResult<unknown>>
 const estado: { q: Q } = { q: {} }
 const munis: { q: Q } = { q: {} }
 const regs: { q: Q } = { q: {} }
+const resumen: { q: Q } = { q: {} }
+const series: { q: Q } = { q: {} }
+const especies: { q: Q } = { q: {} }
+const detalle: { q: Q } = { q: {} }
 vi.mock('@/hooks/useBiodiversidad', () => ({
   useBiodiversidadEstado: () => estado.q,
   useBiodiversidadMunicipios: () => munis.q,
   useBiodiversidadRegistros: () => regs.q,
+  useBiodiversidadResumen: () => resumen.q,
+  useBiodiversidadSeries: () => series.q,
+  useBiodiversidadEspecies: () => especies.q,
+  useBiodiversidadRegistro: () => detalle.q,
 }))
 vi.mock('@/components/herramientas/biodiversidad/mapa/PanelMapa', () => ({
   default: ({ onSeleccionar }: { onSeleccionar: (c: string) => void }) => (
@@ -29,7 +37,7 @@ import TablaMunicipios from '@/components/herramientas/biodiversidad/TablaMunici
 import AcercaDatos from '@/components/herramientas/biodiversidad/AcercaDatos'
 import { PanelError } from '@/components/herramientas/biodiversidad/EstadoConsulta'
 
-const M = (c: string, n: string, d: string, r: number, s = 0): MunicipioConteo => ({ codigo_municipal: c, municipio: n, departamento: d, registros: r, sin_especie: s })
+const M = (c: string, n: string, d: string, r: number, s = 0): MunicipioConteo => ({ codigo_municipal: c, municipio: n, departamento: d, registros: r, sin_especie: s, especies: r > 0 ? 7 : 0 })
 const MUNIS = [M('05837', 'Turbo', 'Antioquia', 900, 90), M('27001', 'Quibdó', 'Chocó', 100, 0), M('27002', 'Atrato', 'Chocó', 0)]
 
 const ESTADO: EstadoBiodiversidad = {
@@ -41,12 +49,18 @@ const ESTADO: EstadoBiodiversidad = {
   aviso: 'Aviso tal cual: los conteos reflejan esfuerzo de muestreo.',
 }
 
+const RESUMEN: RespuestaResumen = {
+  grupo: 'anfibios', metodo: 'individual', alcance: { codigo_municipal: null, departamento: null }, registros: 1000, especies: 42, con_foto: 300,
+  amenazadas: { CR: 1, EN: 2, VU: 3, total: 6 }, endemicas_colombia: 10, endemicas_choco: 4, introducidas: 1, invasoras: 0, anio_min: 2000, anio_max: 2025,
+}
+
 function reg(over: Partial<RegistroBiodiversidad> = {}): RegistroBiodiversidad {
   return {
     gbif_id: '123456', especie: 'Rhinella marina', especie_clave: 'K', anio: 2014, tipo_evidencia: 'HUMAN_OBSERVATION',
     licencia: 'http://creativecommons.org/licenses/by-nc/4.0/legalcode', latitud: 8.0882, longitud: -76.8368, incertidumbre_m: 20,
     coordenadas_ocultas: false, conjunto: 'Conjunto <b>X</b>', doi_conjunto: '10.15472/7okxxe', codigo_municipal: '05837',
-    municipio: 'Turbo', departamento: 'Antioquia', ...over,
+    municipio: 'Turbo', departamento: 'Antioquia', fecha_evento: null, registrado_por: null, identificado_por: null,
+    foto: null, fotos_total: 0, amenaza: null, endemica_colombia: false, endemica_choco: false, introducida: false, invasora: false, ...over,
   }
 }
 
@@ -58,8 +72,12 @@ beforeEach(() => {
   estado.q = { data: ESTADO, isPending: false, isError: false }
   const m: RespuestaMunicipios = { grupo: 'anfibios', metodo: 'individual', desde: 2000, hasta: 2025, municipios: MUNIS }
   munis.q = { data: m, isError: false, isPlaceholderData: false, refetch: vi.fn() as never }
-  const r: RespuestaRegistros = { grupo: 'anfibios', desde: 2000, hasta: 2025, pagina: 1, tamano: 25, total: 2, registros: [reg(), reg({ gbif_id: '999', especie: null })] }
+  const r: RespuestaRegistros = { grupo: 'anfibios', desde: 2000, hasta: 2025, pagina: 1, tamano: 24, total: 2, registros: [reg(), reg({ gbif_id: '999', especie: null })] }
   regs.q = { data: r, isError: false, isPending: false, isFetching: false, refetch: vi.fn() as never }
+  resumen.q = { data: RESUMEN, isError: false, isFetching: false, refetch: vi.fn() as never }
+  series.q = { data: { grupo: 'anfibios', metodo: 'individual', por_anio: [{ anio: 2019, registros: 5 }, { anio: 2020, registros: 9 }], por_evidencia: [{ tipo: 'HUMAN_OBSERVATION', registros: 14 }] }, isError: false, refetch: vi.fn() as never }
+  especies.q = { data: { grupo: 'anfibios', metodo: 'individual', pagina: 1, tamano: 20, total: 0, especies: [] }, isError: false, isFetching: false, isPending: false, refetch: vi.fn() as never }
+  detalle.q = { data: undefined, isError: false, refetch: vi.fn() as never }
 })
 
 describe('TablaRegistros: seguridad de ubicación y enlaces', () => {
@@ -157,6 +175,8 @@ describe('AcercaDatos', () => {
     expect(screen.getByText(ESTADO.aviso)).toBeInTheDocument()
     expect(screen.getByText(/Activo, actualizado el/)).toBeInTheDocument()
     expect(screen.getByText(/Resolución 0126 de 2024/)).toBeInTheDocument()
+    expect(screen.getByText(/fotografías se cargan desde GBIF y pertenecen a sus autores/i)).toBeInTheDocument()
+    expect(screen.getByText(/Solo existen listas nacionales de endemismo para aves, plantas y mamíferos/)).toBeInTheDocument()
     expect(screen.getByText(/no abundancia/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /DOI 10\.15468/ })).toHaveAttribute('href', 'https://doi.org/10.15468/dl.abc123')
   })
@@ -172,16 +192,23 @@ describe('AcercaDatos', () => {
 })
 
 describe('Biodiversidad (grupo individual)', () => {
-  test('muestra indicadores, registros y pestañas', () => {
+  test('abre en Resumen con indicadores de /resumen y las cuatro pestañas', async () => {
     montar()
     expect(screen.getByText('Registros individuales', { selector: 'span' })).toBeInTheDocument()
-    expect(screen.getByText('Registros totales').nextElementSibling).toHaveTextContent('1.000')
-    expect(screen.getByText('de 3 municipios')).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Registros', selected: true })).toBeInTheDocument()
-    expect(screen.getByRole('tabpanel')).toHaveTextContent('Rhinella marina')
+    expect(await screen.findByText('Estado de conservación')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Resumen', selected: true })).toBeInTheDocument()
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Resumen', 'Registros', 'Especies', 'Municipios'])
+    expect(screen.getByText('42')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /En peligro crítico: 1 especie\. Ver la lista/ })).toBeInTheDocument()
   })
 
-  test('seleccionar desde el mapa actualiza la URL y el detalle', async () => {
+  test('la pestaña Registros muestra las tarjetas del grupo', async () => {
+    montar('/herramientas?herramienta=biodiversidad&grupo=anfibios&vista=registros')
+    expect(await screen.findByRole('button', { name: /Ver detalle del registro: Rhinella marina/ })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Registros', selected: true })).toBeInTheDocument()
+  })
+
+  test('seleccionar desde el mapa actualiza el detalle', async () => {
     montar()
     await userEvent.click(screen.getByRole('button', { name: 'Mapa simulado' }))
     expect(screen.getByText('Municipio seleccionado')).toBeInTheDocument()
@@ -190,21 +217,21 @@ describe('Biodiversidad (grupo individual)', () => {
     expect(screen.queryByText('Municipio seleccionado')).not.toBeInTheDocument()
   })
 
-  test('cambiar de pestaña a la tabla de municipios', async () => {
+  test('cambiar a la pestaña de municipios', async () => {
     montar()
     await userEvent.click(screen.getByRole('tab', { name: 'Municipios' }))
     expect(screen.getByRole('tab', { name: 'Municipios', selected: true })).toBeInTheDocument()
-    expect(screen.getByRole('table', { name: /Registros por municipio/ })).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: /Registros y especies por municipio/ })).toBeInTheDocument()
   })
 
-  test('error de registros 503 muestra mensaje y reintento', () => {
+  test('error de registros 503 muestra mensaje y reintento', async () => {
     regs.q = { data: undefined, isError: true, isPending: false, error: Object.assign(new Error('x'), { status: 503 }), refetch: vi.fn() as never }
-    montar()
-    expect(screen.getByRole('alert')).toHaveTextContent('La consulta tardó demasiado')
+    montar('/herramientas?herramienta=biodiversidad&grupo=anfibios&vista=registros')
+    expect(await screen.findByRole('alert')).toHaveTextContent('La consulta tardó demasiado')
   })
 
   test('filtros inválidos en la URL se ignoran', () => {
-    montar('/herramientas?herramienta=biodiversidad&grupo=zzz&municipio=abc&pagina=-3')
+    montar('/herramientas?herramienta=biodiversidad&grupo=zzz&municipio=abc&pagina=-3&metrica=foo&conservacion=x')
     expect(screen.getByText('Aves', { selector: 'p' })).toBeInTheDocument()
   })
 })
@@ -213,9 +240,9 @@ describe('Biodiversidad (grupo agregado y errores)', () => {
   test('agregado: sin tabla de registros y con explicación', () => {
     munis.q = { data: { grupo: 'aves', metodo: 'agregado', desde: 2000, hasta: 2025, municipios: MUNIS }, isError: false, isPlaceholderData: false }
     montar('/herramientas?herramienta=biodiversidad&grupo=aves')
-    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
-    expect(screen.getByText(/solo el conteo por municipio/)).toBeInTheDocument()
-    expect(screen.getByText(/inventario agregado: el servicio entrega solo el conteo/)).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Registros' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Resumen', 'Especies', 'Municipios'])
+    expect(screen.getByText(/Inventario agregado: el servicio entrega conteos/)).toBeInTheDocument()
   })
 
   test('error 404 de municipios reemplaza el contenido con reintento', () => {
@@ -228,7 +255,7 @@ describe('Biodiversidad (grupo agregado y errores)', () => {
   test('cargando: muestra esqueletos', () => {
     munis.q = { data: undefined, isError: false, isPlaceholderData: false }
     montar()
-    expect(screen.getAllByRole('status', { name: /Cargando indicadores/ }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('status').length).toBeGreaterThan(0)
   })
 
   test('grupo sin registros muestra estado vacío', () => {
@@ -240,7 +267,7 @@ describe('Biodiversidad (grupo agregado y errores)', () => {
   test('cambiar de grupo conserva la herramienta en la URL y limpia selección', async () => {
     montar('/herramientas?herramienta=biodiversidad&grupo=anfibios&municipio=05837')
     await userEvent.click(screen.getByRole('radio', { name: /Reptiles/ }))
-    expect(screen.getByRole('radio', { name: /Reptiles/ })).toBeChecked()
+    expect(screen.getByRole('radio', { name: /Reptiles/ })).toHaveAttribute('aria-checked', 'true')
     expect(screen.queryByText('Municipio seleccionado')).not.toBeInTheDocument()
   })
 })

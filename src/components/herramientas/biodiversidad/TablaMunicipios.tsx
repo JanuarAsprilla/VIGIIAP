@@ -14,6 +14,7 @@ const COLUMNAS: { clave: ColumnaMunicipios; titulo: string; numerica: boolean }[
   { clave: 'municipio', titulo: 'Municipio', numerica: false },
   { clave: 'departamento', titulo: 'Departamento', numerica: false },
   { clave: 'registros', titulo: 'Registros', numerica: true },
+  { clave: 'especies', titulo: 'Especies', numerica: true },
   { clave: 'sin_especie', titulo: 'Sin especie', numerica: true },
 ]
 
@@ -24,13 +25,13 @@ export default function TablaMunicipios({ municipios, seleccionado, onSelecciona
 
   function alOrdenar(c: ColumnaMunicipios) {
     if (c === columna) setDescendente((d) => !d)
-    else { setColumna(c); setDescendente(c === 'registros' || c === 'sin_especie') }
+    else { setColumna(c); setDescendente(c !== 'municipio' && c !== 'departamento') }
   }
 
   return (
     <div className="bio-tabla-caja" tabIndex={0} role="region" aria-label="Tabla de municipios, desplazable">
       <table className="bio-tabla">
-        <caption className="sr-only">Registros por municipio. Activa un encabezado para ordenar.</caption>
+        <caption className="sr-only">Registros y especies por municipio. Activa un encabezado para ordenar.</caption>
         <thead>
           <tr>
             {COLUMNAS.map((c) => (
@@ -57,13 +58,14 @@ export default function TablaMunicipios({ municipios, seleccionado, onSelecciona
               </td>
               <td className="text-text-muted">{m.departamento}</td>
               <td className="bio-num font-semibold">{fmtNum(m.registros)}</td>
+              <td className="bio-num">{fmtNum(m.especies)}</td>
               <td className="bio-num text-text-muted">
                 {fmtNum(m.sin_especie)} <span className="text-[0.6875rem]">({fmtPct(m.sin_especie, m.registros)})</span>
               </td>
             </tr>
           ))}
           {filas.length === 0 && (
-            <tr><td colSpan={4} className="text-center text-text-muted py-6">No hay municipios para mostrar.</td></tr>
+            <tr><td colSpan={5} className="text-center text-text-muted py-6">No hay municipios para mostrar.</td></tr>
           )}
         </tbody>
       </table>

@@ -1,3 +1,6 @@
+import type { Metrica } from './metrica'
+import { fmtNum } from './format'
+
 export const NUM_CLASES = 5
 
 /** Cortes por cuantiles sobre los valores > 0 (la distribución es muy sesgada: de 0 a cientos de
@@ -14,9 +17,9 @@ export function calcularCortes(valores: number[], clases = NUM_CLASES): number[]
   return cortes
 }
 
-/** 0 = sin registros; 1..n = clase por cortes. */
-export function claseDe(valor: number, cortes: number[]): number {
-  if (!(valor > 0)) return 0
+/** 0 = sin datos; 1..n = clase por cortes. Un valor 0 con datos (p. ej. 0 % sin especie) cae en la clase 1. */
+export function claseDe(valor: number | null, cortes: number[]): number {
+  if (valor === null || Number.isNaN(valor)) return 0
   const i = cortes.findIndex((c) => valor <= c)
   return i === -1 ? cortes.length + 1 : i + 1
 }
@@ -27,13 +30,21 @@ export interface TramoLeyenda {
   hasta: number
 }
 
-/** Rangos [desde, hasta] de cada clase 1..n para la leyenda. */
-export function tramosLeyenda(cortes: number[], maximo: number): TramoLeyenda[] {
+/** Rangos de cada clase 1..n para la leyenda. En métricas enteras los tramos no se solapan (desde = anterior + 1). */
+export function tramosLeyenda(cortes: number[], maximo: number, entero = true): TramoLeyenda[] {
   if (maximo <= 0) return []
   const limites = [...cortes, maximo]
   return limites.map((hasta, i) => ({
     clase: i + 1,
-    desde: i === 0 ? 1 : limites[i - 1] + 1,
+    desde: i === 0 ? (entero ? 1 : 0) : entero ? limites[i - 1] + 1 : limites[i - 1],
     hasta,
   }))
+}
+
+export function etiquetaTramo(t: TramoLeyenda, metrica: Metrica): string {
+  if (metrica === 'sin_especie') {
+    const f = (n: number) => n.toLocaleString('es-CO', { maximumFractionDigits: 1 })
+    return `${f(t.desde)} – ${f(t.hasta)} %`
+  }
+  return t.desde === t.hasta ? fmtNum(t.hasta) : `${fmtNum(t.desde)} – ${fmtNum(t.hasta)}`
 }

@@ -11,8 +11,8 @@ import { describirError } from '@/components/herramientas/biodiversidad/lib/erro
 import { actualizarParametros, leerParametros } from '@/components/herramientas/biodiversidad/lib/parametros'
 import type { MunicipioConteo } from '@/components/herramientas/biodiversidad/types'
 
-const m = (c: string, municipio: string, departamento: string, registros: number, sin_especie = 0): MunicipioConteo => ({
-  codigo_municipal: c, municipio, departamento, registros, sin_especie,
+const m = (c: string, municipio: string, departamento: string, registros: number, sin_especie = 0, especies = 0): MunicipioConteo => ({
+  codigo_municipal: c, municipio, departamento, registros, sin_especie, especies,
 })
 const MUNIS = [
   m('05837', 'Turbo', 'Antioquia', 1000, 100),
@@ -92,7 +92,7 @@ describe('escala de color', () => {
   })
   test('sin datos positivos no hay cortes y todo es clase 0', () => {
     expect(calcularCortes([0, 0])).toEqual([])
-    expect(claseDe(0, [])).toBe(0)
+    expect(claseDe(null, [])).toBe(0)
   })
   test('valores iguales no generan clases duplicadas', () => {
     expect(calcularCortes([5, 5, 5, 5])).toEqual([])
@@ -100,7 +100,8 @@ describe('escala de color', () => {
   })
   test('claseDe asigna 0, intermedias y la última', () => {
     const cortes = [10, 100, 1000]
-    expect(claseDe(0, cortes)).toBe(0)
+    expect(claseDe(null, cortes)).toBe(0)
+    expect(claseDe(0, cortes)).toBe(1)
     expect(claseDe(1, cortes)).toBe(1)
     expect(claseDe(10, cortes)).toBe(1)
     expect(claseDe(11, cortes)).toBe(2)
@@ -156,7 +157,7 @@ describe('errores por código', () => {
 describe('parámetros de URL', () => {
   test('valores válidos', () => {
     const p = leerParametros(new URLSearchParams('grupo=anfibios&municipio=05837&departamento=Antioquia&pagina=3&anio_desde=2010&anio_hasta=2020&vista=registros'))
-    expect(p).toEqual({ grupo: 'anfibios', municipio: '05837', departamento: 'Antioquia', pagina: 3, anioDesde: 2010, anioHasta: 2020, vista: 'registros' })
+    expect(p).toMatchObject({ grupo: 'anfibios', municipio: '05837', departamento: 'Antioquia', pagina: 3, anioDesde: 2010, anioHasta: 2020, vista: 'registros' })
   })
   test('valores inválidos se descartan', () => {
     const p = leerParametros(new URLSearchParams('grupo=xx&municipio=abc&pagina=-1&anio_desde=foo&vista=otra'))

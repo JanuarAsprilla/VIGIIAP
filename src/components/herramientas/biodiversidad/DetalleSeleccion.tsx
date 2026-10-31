@@ -42,10 +42,11 @@ export default function DetalleSeleccion({ municipio, puesto, totalGrupo, depart
               Quitar
             </button>
           </div>
-          <dl className="grid grid-cols-3 gap-4 mt-4">
+          <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
             {municipio ? (
               <>
                 <Dato etiqueta="Registros" valor={fmtNum(municipio.registros)} />
+                <Dato etiqueta="Especies" valor={fmtNum(municipio.especies)} />
                 <Dato etiqueta="Del grupo" valor={fmtPct(municipio.registros, totalGrupo)} />
                 <Dato etiqueta="Puesto" valor={puesto ? `#${puesto}` : '—'} />
               </>
