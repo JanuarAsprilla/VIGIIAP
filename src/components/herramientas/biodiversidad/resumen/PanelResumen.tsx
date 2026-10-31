@@ -1,9 +1,10 @@
 import { useBiodiversidadResumen, useBiodiversidadSeries } from '@/hooks/useBiodiversidad'
 import { Cargando, PanelError } from '../EstadoConsulta'
 import { fmtNum, fmtPct } from '../lib/format'
-import type { Amenaza, AlcanceTerritorial, Grupo, RespuestaResumen, TipoConservacion } from '../types'
+import type { Amenaza, AlcanceTerritorial, EspecieResumen, Grupo, RespuestaResumen, TipoConservacion } from '../types'
 import BarrasEvidencia from './BarrasEvidencia'
 import GraficoAnios from './GraficoAnios'
+import EspeciesDestacadas from './EspeciesDestacadas'
 import PanelConservacion from './PanelConservacion'
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
   nombreAlcance: string | null
   esIndividual: boolean
   onFiltrarEspecies: (f: { conservacion: TipoConservacion; amenaza: Amenaza | null }) => void
+  onVerRegistros: (e: EspecieResumen) => void
 }
 
 function Kpis({ r }: { r: RespuestaResumen }) {
@@ -38,7 +40,7 @@ function Kpis({ r }: { r: RespuestaResumen }) {
   )
 }
 
-export default function PanelResumen({ grupo, alcance, nombreAlcance, esIndividual, onFiltrarEspecies }: Props) {
+export default function PanelResumen({ grupo, alcance, nombreAlcance, esIndividual, onFiltrarEspecies, onVerRegistros }: Props) {
   const resumen = useBiodiversidadResumen(grupo, alcance)
   const series = useBiodiversidadSeries(grupo, alcance)
   if (resumen.isError && !resumen.data) return <PanelError error={resumen.error} onReintentar={() => void resumen.refetch()} />
@@ -55,6 +57,7 @@ export default function PanelResumen({ grupo, alcance, nombreAlcance, esIndividu
       ) : (
         <div className={`space-y-5 ${resumen.isFetching ? 'bio-cargando' : 'bio-entra'}`} aria-busy={resumen.isFetching}>
           <Kpis r={resumen.data} />
+          <EspeciesDestacadas grupo={grupo} alcance={alcance} activo={esIndividual && resumen.data.amenazadas.total > 0} onVer={onVerRegistros} />
           <div className="grid gap-5 xl:grid-cols-2 [&>*]:min-w-0">
             <PanelConservacion resumen={resumen.data} grupo={grupo} puedeVerEspecies onFiltrar={onFiltrarEspecies} />
             <section className="bio-panel p-4 sm:p-5 space-y-5" aria-labelledby="bio-series-titulo">

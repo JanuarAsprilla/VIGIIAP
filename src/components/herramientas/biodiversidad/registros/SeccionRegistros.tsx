@@ -1,6 +1,6 @@
 import { useRef } from 'react'
-import { LayoutGrid, Table2 } from 'lucide-react'
 import { useBiodiversidadRegistros } from '@/hooks/useBiodiversidad'
+import ConmutadorVista from '../ConmutadorVista'
 import { Cargando, PanelError, PanelVacio } from '../EstadoConsulta'
 import Paginacion from '../Paginacion'
 import { fmtNum } from '../lib/format'
@@ -60,10 +60,7 @@ export default function SeccionRegistros({ grupo, municipios, valores, pagina, m
             ? `Mostrando ${fmtNum(primero)}–${fmtNum(ultimo)} de ${fmtNum(datos.total)} registros`
             : 'Sin registros con estos filtros') : consulta.isPending ? 'Cargando registros…' : ''}
         </p>
-        <div role="group" aria-label="Forma de ver los registros" className="bio-segmentos">
-          <button type="button" aria-pressed={modo === 'tarjetas'} onClick={() => onCambio({ modo: null })}><LayoutGrid className="w-4 h-4" aria-hidden="true" />Tarjetas</button>
-          <button type="button" aria-pressed={modo === 'tabla'} onClick={() => onCambio({ modo: 'tabla' })}><Table2 className="w-4 h-4" aria-hidden="true" />Tabla</button>
-        </div>
+        <ConmutadorVista etiqueta="Forma de ver los registros" modo={modo} onCambio={(m) => onCambio({ modo: m === 'tarjetas' ? null : m })} />
       </div>
       {consulta.isError && !datos ? (
         <PanelError error={consulta.error} onReintentar={() => void consulta.refetch()} />
@@ -77,7 +74,7 @@ export default function SeccionRegistros({ grupo, municipios, valores, pagina, m
             <TablaRegistros registros={datos.registros} onAbrir={abrir} />
           ) : (
             <ul className="bio-rejilla-tarjetas">
-              {datos.registros.map((r) => <li key={r.gbif_id}><TarjetaRegistro r={r} onAbrir={abrir} /></li>)}
+              {datos.registros.map((r) => <li key={r.gbif_id}><TarjetaRegistro r={r} grupo={grupo} onAbrir={abrir} /></li>)}
             </ul>
           )}
         </div>

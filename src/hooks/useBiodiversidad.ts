@@ -74,10 +74,11 @@ export function useBiodiversidadSeries(grupo: Grupo, alcance: AlcanceTerritorial
   })
 }
 
-export function useBiodiversidadEspecies(filtros: FiltrosEspecies) {
+export function useBiodiversidadEspecies(filtros: FiltrosEspecies, habilitado = true) {
   return useQuery<RespuestaEspecies>({
     queryKey: biodiversidadKeys.especies(filtros),
     queryFn: () => api.get(`${BASE}/especies`, { params: limpiar(filtros) }),
+    enabled: habilitado,
     staleTime: 60 * 1000,
     retry: false,
     placeholderData: keepPreviousData,

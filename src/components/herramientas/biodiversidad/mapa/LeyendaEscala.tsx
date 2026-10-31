@@ -12,12 +12,12 @@ export default function LeyendaEscala({ cortes, maximo, metrica = 'registros' }:
   const tramos = tramosLeyenda(cortes, maximo, metrica !== 'sin_especie')
   return (
     <div className="bio-leyenda" role="group" aria-label={`Leyenda: ${TITULO_LEYENDA[metrica].toLowerCase()}`}>
-      <div className="flex items-baseline justify-between gap-2">
+      <div className="bio-leyenda-cab">
         <p className="bio-eyebrow">{TITULO_LEYENDA[metrica]}</p>
-        <p className="text-[0.625rem] text-text-muted">Clases por cuantiles</p>
+        <p className="text-[0.625rem] text-text-muted">Cada tramo reúne una cantidad parecida de municipios</p>
       </div>
       <ul>
-        <li><span className="bio-muestra bio-muestra-vacia" aria-hidden="true" /><span>Sin datos</span></li>
+        <li title="Municipios sin registros para esta medida"><span className="bio-muestra bio-muestra-vacia" aria-hidden="true" /><span>Sin datos</span></li>
         {tramos.map((t) => (
           <li key={t.clase}>
             <span className="bio-muestra" style={{ background: `var(--bio-c${t.clase})` }} aria-hidden="true" />

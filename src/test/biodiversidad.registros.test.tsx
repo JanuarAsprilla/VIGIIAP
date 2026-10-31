@@ -66,7 +66,7 @@ describe('SeccionRegistros', () => {
     const { container } = render(<Contenedor />)
     expect(container.querySelectorAll('.bio-tarjeta')).toHaveLength(2)
     expect(screen.getByRole('button', { name: 'Tarjetas' })).toHaveAttribute('aria-pressed', 'true')
-    await userEvent.click(screen.getByRole('button', { name: 'Tabla' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Tabla detallada' }))
     expect(todas()).toContain('"modo":"tabla"')
     await userEvent.click(screen.getByRole('button', { name: 'Tarjetas' }))
     expect(todas()).toContain('"modo":null')
