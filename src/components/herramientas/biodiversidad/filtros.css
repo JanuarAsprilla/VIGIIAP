@@ -1,0 +1,147 @@
+/* Observatorio de Biodiversidad: filtros, capa de puntos y ubicación del registro. Reutiliza los tokens de biodiversidad.css. */
+
+/* ── Composición: panel lateral + contenido ───────────────────────────────── */
+.bio-con-filtros { display: grid; gap: 1.5rem; align-items: start; }
+.bio-principal { min-width: 0; container-type: inline-size; container-name: bio-principal; }
+.bio-rejilla-mapa { display: grid; gap: 1.5rem; align-items: start; grid-template-columns: minmax(0, 1fr); }
+@container bio-principal (min-width: 56rem) { .bio-rejilla-mapa { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
+@media (min-width: 64rem) { .bio-con-filtros-abierto { grid-template-columns: 19.5rem minmax(0, 1fr); } }
+.bio-lateral {
+  position: sticky; top: 4.5rem; display: flex; flex-direction: column; max-height: calc(100dvh - 5.5rem);
+  background: var(--bio-superficie); border: 1px solid var(--bio-linea); border-radius: var(--radius-xl); overflow: hidden;
+}
+.bio-filtros { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.bio-filtros-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; padding: 1rem 1rem 0.75rem; }
+.bio-filtros-cuerpo { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.bio-filtros-pie {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.75rem 1rem;
+  font-size: 0.75rem; color: var(--color-text-muted); border-top: 1px solid var(--bio-linea);
+  background: color-mix(in srgb, var(--color-text) 3%, var(--bio-superficie));
+}
+.bio-filtros-pie p { min-width: 0; line-height: 1.35; }
+
+/* ── Hoja inferior (móvil y tableta) ──────────────────────────────────────── */
+.bio-velo-hoja { place-items: end center; padding: 0; overflow: hidden; }
+.bio-hoja {
+  display: flex; flex-direction: column; width: min(100%, 38rem); max-height: 92dvh; outline: none;
+  background: var(--bio-superficie); color: var(--color-text); border: 1px solid var(--bio-linea); border-bottom: 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0; box-shadow: 0 -18px 50px -20px rgba(0, 0, 0, 0.5);
+  animation: bio-hoja 260ms var(--bio-ease) both;
+}
+.bio-hoja::before { content: ''; align-self: center; width: 2.5rem; height: 0.25rem; margin-top: 0.5rem; border-radius: 999px; background: var(--bio-linea); flex: none; }
+@keyframes bio-hoja { from { transform: translateY(100%); } to { transform: none; } }
+
+/* ── Secciones plegables ──────────────────────────────────────────────────── */
+.bio-seccion { border-top: 1px solid var(--bio-linea); }
+.bio-seccion > summary {
+  display: flex; align-items: center; gap: 0.5rem; min-height: 2.9rem; padding: 0 1rem; cursor: pointer; list-style: none;
+  font-size: 0.8125rem; font-weight: 700; color: var(--color-text); transition: background-color 150ms;
+}
+.bio-seccion > summary::-webkit-details-marker { display: none; }
+.bio-seccion > summary::after {
+  content: ''; width: 0.5rem; height: 0.5rem; margin-left: auto; border-right: 2px solid var(--color-text-muted); border-bottom: 2px solid var(--color-text-muted);
+  transform: rotate(45deg) translate(-2px, -2px); transition: transform 180ms var(--bio-ease);
+}
+.bio-seccion[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
+.bio-seccion > summary:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
+.bio-seccion-titulo { letter-spacing: 0.01em; }
+.bio-seccion-cuerpo { padding: 0.25rem 1rem 1.1rem; }
+.bio-seccion-cuenta {
+  display: inline-grid; place-items: center; min-width: 1.35rem; height: 1.35rem; padding: 0 0.35rem; border-radius: 999px;
+  font-size: 0.6875rem; font-weight: 800; font-variant-numeric: tabular-nums; color: #fff; background: var(--color-primary-800);
+}
+.bio-seccion-bloqueada { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.6875rem; font-weight: 600; color: var(--color-text-muted); }
+.bio-seccion-aviso { margin-top: 0.5rem; font-size: 0.75rem; line-height: 1.45; color: var(--color-text-muted); }
+
+/* ── Combobox ─────────────────────────────────────────────────────────────── */
+.bio-combo { position: relative; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.bio-combo-caja input::placeholder { color: var(--color-text-muted); }
+.bio-combo-off { opacity: 0.5; }
+.bio-combo-motivo { font-size: 0.6875rem; color: var(--color-text-muted); }
+.bio-combo-lista {
+  max-height: 14rem; overflow-y: auto; overscroll-behavior: contain; padding: 0.25rem; margin: 0; list-style: none;
+  background: var(--bio-superficie); border: 1px solid var(--bio-linea); border-radius: var(--radius-md); box-shadow: var(--shadow-elevated);
+}
+.bio-combo-lista li[role='option'] {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; min-height: 2.25rem; padding: 0.4rem 0.6rem;
+  font-size: 0.8125rem; border-radius: 6px; cursor: pointer;
+}
+.bio-combo-lista li[aria-selected='true'] .bio-combo-nombre { font-weight: 800; }
+.bio-combo-activa { background: color-mix(in srgb, var(--color-primary-600) 14%, transparent); }
+.bio-combo-nombre { min-width: 0; overflow-wrap: anywhere; }
+.bio-combo-detalle { flex: none; font-size: 0.6875rem; font-variant-numeric: tabular-nums; color: var(--color-text-muted); }
+.bio-combo-estado { padding: 0.5rem 0.6rem; font-size: 0.75rem; color: var(--color-text-muted); }
+.bio-fbarra-busqueda .bio-combo-lista { position: absolute; top: 100%; left: 0; right: 0; z-index: 30; margin-top: 0.25rem; }
+
+/* ── Barra principal: búsqueda, atajos, chips ─────────────────────────────── */
+.bio-fbarra { padding: 0.9rem 1rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
+.bio-fbarra-fila { display: flex; gap: 0.6rem; align-items: flex-start; }
+.bio-fbarra-busqueda { flex: 1; min-width: 0; }
+.bio-boton-panel { flex: none; min-height: 2.5rem; }
+.bio-boton-panel .bio-seccion-cuenta { margin-left: 0.1rem; }
+.bio-boton-lleno { color: #fff; background: var(--color-primary-800); border-color: var(--color-primary-800); }
+.bio-boton-lleno:hover:not(:disabled) { background: var(--color-primary-700); border-color: var(--color-primary-700); }
+.bio-atajos { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.5rem; }
+.bio-atajos .bio-eyebrow { margin-right: 0.15rem; }
+.bio-fbarra-resumen { display: grid; gap: 0.5rem; }
+.bio-resumen-texto { font-size: 0.8125rem; color: var(--color-text-light); font-variant-numeric: tabular-nums; }
+.bio-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+.bio-chips .bio-chip-filtro { max-width: 100%; }
+.bio-chips .bio-chip-filtro span { min-width: 0; overflow-wrap: anywhere; }
+.bio-limpiar { min-height: 2.25rem; padding: 0 0.6rem; font-size: 0.8125rem; font-weight: 600; color: var(--color-primary-700); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.dark .bio-limpiar { color: var(--color-primary-300); }
+.bio-limpiar:hover { text-decoration-thickness: 2px; }
+
+.bio-aviso {
+  display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.65rem 0.75rem 0.65rem 0.9rem; font-size: 0.8125rem; line-height: 1.45;
+  background: color-mix(in srgb, var(--color-gold-500, #c9a227) 14%, var(--bio-superficie)); border: 1px solid color-mix(in srgb, var(--color-gold-500, #c9a227) 45%, var(--bio-linea)); border-radius: var(--radius-lg);
+}
+.bio-aviso p { flex: 1; }
+.bio-ctl-chico { width: 2rem; height: 2rem; flex: none; }
+
+.bio-kpis.bio-kpis-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 40rem) { .bio-kpis.bio-kpis-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* ── Tarjetas: fuente del registro ────────────────────────────────────────── */
+.bio-tarjeta-fuente { display: flex; flex-direction: column; gap: 0.1rem; width: 100%; font-size: 0.6875rem; line-height: 1.35; color: var(--color-text-muted); }
+
+/* ── Capa de puntos ───────────────────────────────────────────────────────── */
+.bio-root .bio-punto { fill: var(--bio-acento); fill-opacity: 0.92; stroke: var(--bio-anillo-luz); stroke-width: 1.5; }
+.bio-root .bio-punto-foco { fill: none; stroke: var(--color-text); stroke-width: 3; }
+.bio-cluster span {
+  display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; font: 700 0.8125rem var(--font-body);
+  font-variant-numeric: tabular-nums; color: var(--bio-activo-texto); background: var(--bio-acento);
+  border: 3px solid var(--bio-anillo-luz); box-shadow: 0 0 0 1px var(--bio-anillo-sombra), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.bio-root .bio-popup-caja .leaflet-popup-content-wrapper { color: var(--color-text); background: var(--bio-superficie); border: 1px solid var(--bio-linea); border-radius: var(--radius-md); box-shadow: var(--shadow-elevated); }
+.bio-root .bio-popup-caja .leaflet-popup-tip { background: var(--bio-superficie); }
+.bio-root .bio-popup-caja .leaflet-popup-close-button { width: 2rem; height: 2rem; font-size: 1.25rem; line-height: 2rem; color: var(--color-text-muted); }
+.bio-popup { display: grid; gap: 0.5rem; justify-items: start; min-width: 10rem; font: 400 0.8125rem/1.35 var(--font-body); }
+.bio-popup strong { font-weight: 700; }
+.bio-puntos-msgs { display: grid; gap: 0.35rem; margin-top: 0.75rem; }
+.bio-puntos-linea { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.75rem; line-height: 1.45; color: var(--color-text-light); }
+.bio-puntos-linea svg { margin-top: 0.1rem; color: var(--color-text-muted); }
+.bio-puntos-reservada {
+  padding: 0.5rem 0.7rem; color: var(--color-text); background: color-mix(in srgb, var(--color-text) 6%, var(--bio-superficie));
+  border: 1px dashed var(--color-text-muted); border-radius: var(--radius-md);
+}
+
+/* ── Ubicación del registro ───────────────────────────────────────────────── */
+.bio-minimapa {
+  height: 14rem; border-radius: var(--radius-lg); border: 1px solid var(--bio-linea);
+  background-color: color-mix(in srgb, var(--color-bg-alt) 75%, transparent);
+  background-image: radial-gradient(color-mix(in srgb, var(--color-text) 12%, transparent) 1px, transparent 1.2px); background-size: 14px 14px;
+}
+.bio-root .bio-mini-muni { fill: var(--bio-c1); fill-opacity: 0.6; stroke: var(--bio-trazo); stroke-linejoin: round; }
+.bio-root .bio-mini-incertidumbre { fill: var(--bio-acento); fill-opacity: 0.16; stroke: var(--bio-acento); stroke-dasharray: 4 3; }
+.bio-root .bio-mini-punto { fill: var(--bio-acento); fill-opacity: 1; stroke: var(--bio-anillo-luz); }
+.bio-ubicacion-reservada {
+  display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.9rem 1rem; color: var(--color-text);
+  background: color-mix(in srgb, var(--color-text) 5%, var(--bio-superficie)); border: 1px dashed var(--color-text-muted); border-radius: var(--radius-lg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bio-hoja { animation: none; }
+  .bio-seccion > summary::after { transition: none; }
+}
+.bio-filtros-pie .bio-boton { flex: none; white-space: nowrap; }

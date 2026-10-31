@@ -25,6 +25,14 @@ function Fila({ etiqueta, valor, nota, onClick }: { etiqueta: string; valor: num
 
 export default function PanelConservacion({ resumen, grupo, puedeVerEspecies, onFiltrar }: Props) {
   const { amenazadas: a } = resumen
+  if (a.total === null) {
+    return (
+      <section className="bio-panel p-4 sm:p-5 space-y-2" aria-labelledby="bio-cons-titulo">
+        <h3 id="bio-cons-titulo" className="section-title">Estado de conservación</h3>
+        <p className="text-sm text-text-muted">Con el filtro de fuente activo no se calcula el estado de conservación. Quita la entidad o el conjunto para verlo.</p>
+      </section>
+    )
+  }
   const ir = (conservacion: TipoConservacion, amenaza: Amenaza | null = null) => (puedeVerEspecies ? () => onFiltrar({ conservacion, amenaza }) : undefined)
   return (
     <section className="bio-panel p-4 sm:p-5 space-y-5" aria-labelledby="bio-cons-titulo">
@@ -34,7 +42,7 @@ export default function PanelConservacion({ resumen, grupo, puedeVerEspecies, on
       </div>
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {CATEGORIAS_AMENAZA.map((c) => {
-          const n = a[c]
+          const n = a[c] ?? 0
           const cuerpo = (
             <>
               <span className={`bio-uicn bio-uicn-${c}`}>{c}</span>

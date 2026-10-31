@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
 import type { MunicipioConteo } from './types'
 import { ordenarMunicipios, type ColumnaMunicipios } from './lib/derivar'
-import { fmtNum, fmtPct } from './lib/format'
+import { fmtNum, fmtNumONulo, fmtPct } from './lib/format'
 
 interface Props {
   municipios: MunicipioConteo[]
@@ -58,9 +58,9 @@ export default function TablaMunicipios({ municipios, seleccionado, onSelecciona
               </td>
               <td className="text-text-muted">{m.departamento}</td>
               <td className="bio-num font-semibold">{fmtNum(m.registros)}</td>
-              <td className="bio-num">{fmtNum(m.especies)}</td>
+              <td className="bio-num">{fmtNumONulo(m.especies)}</td>
               <td className="bio-num text-text-muted">
-                {fmtNum(m.sin_especie)} <span className="text-[0.6875rem]">({fmtPct(m.sin_especie, m.registros)})</span>
+                {fmtNumONulo(m.sin_especie)} <span className="text-[0.6875rem]">({fmtPct(m.sin_especie, m.registros)})</span>
               </td>
             </tr>
           ))}
