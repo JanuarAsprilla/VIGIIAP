@@ -199,7 +199,7 @@ export default function MapaMunicipios({ geo, datos, metrica, cortes, selecciona
     })
   }, [datos, metrica, cortes, seleccionado, departamento, foco, geo])
 
-  // Contorno doble y etiqueta del municipio seleccionado; encuadre sobre la selección.
+  // Contorno triple neutro (luz, sombra, luz) y etiqueta del municipio seleccionado; encuadre sobre la selección.
   useEffect(() => {
     const mapa = mapaRef.current
     if (!mapa) return
@@ -214,7 +214,7 @@ export default function MapaMunicipios({ geo, datos, metrica, cortes, selecciona
       etiqueta.textContent = sel.nombre
       const tip = L.tooltip({ permanent: true, direction: 'center', className: 'bio-etiqueta', pane: 'seleccion', interactive: false, opacity: 1 })
         .setContent(etiqueta).setLatLng(centroEtiqueta(feature, sel.layer as L.Polygon)).addTo(mapa)
-      adornos.current = [dibujar('bio-halo', 7), dibujar('bio-sel', 2.6), tip]
+      adornos.current = [dibujar('bio-halo', 8), dibujar('bio-sel', 3), tip]
     }
     encuadrar(true)
   }, [seleccionado, departamento, geo, encuadrar])

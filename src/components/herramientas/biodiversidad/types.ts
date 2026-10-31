@@ -156,6 +156,9 @@ export interface EspecieResumen extends Conservacion {
   genero: string | null
   registros: number
   municipios: number
+  /** Foto representativa (solo grupos individuales); null en agregados o si la especie no tiene fotos válidas. */
+  foto?: Foto | null
+  fotos_total?: number
 }
 
 export interface FiltrosEspecies extends AlcanceTerritorial {
@@ -164,6 +167,7 @@ export interface FiltrosEspecies extends AlcanceTerritorial {
   conservacion?: TipoConservacion
   amenaza?: Amenaza
   orden?: 'registros' | 'nombre'
+  con_foto?: 'true'
   pagina: number
   tamano: number
 }

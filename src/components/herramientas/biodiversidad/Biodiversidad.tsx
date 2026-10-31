@@ -11,7 +11,9 @@ import SelectorGrupo from './SelectorGrupo'
 import TablaMunicipios from './TablaMunicipios'
 import { calcularCortes } from './lib/escala'
 import { calcularIndicadores, resumenPorDepartamento } from './lib/derivar'
-import { fmtFecha } from './lib/format'
+import { fmtFecha, fmtNum } from './lib/format'
+import { estiloGrupo } from './lib/paleta'
+import GrupoIcono from './GrupoIcono'
 import { etiquetaMetodo } from './lib/metodo'
 import { valorMetrica, METRICA_INICIAL, type Metrica } from './lib/metrica'
 import { actualizarParametros, leerParametros, type Vista } from './lib/parametros'
@@ -98,8 +100,10 @@ export default function Biodiversidad() {
     conFoto: p.conFoto, conservacion: p.conservacion, amenaza: p.amenaza, especie: p.especie, nombreEspecie: p.nombreEspecie,
   }
   const descripcion = metodo === 'agregado'
-    ? 'Inventario agregado: el servicio entrega conteos y especies por municipio, no los registros individuales.'
-    : 'Registros de ocurrencia publicados en GBIF, ubicados por municipio. Los conteos reflejan esfuerzo de muestreo.'
+    ? 'Inventario agregado: el servicio entrega conteos y especies por municipio, no los registros individuales. Más registros indica dónde se ha muestreado más, no dónde hay más vida.'
+    : 'Registros de ocurrencia publicados en GBIF y ubicados por municipio. Más registros indica dónde se ha muestreado más, no dónde hay más vida.'
+  const periodo = (mun ?? info) ? `${(mun ?? info)!.desde}–${(mun ?? info)!.hasta}` : '2000–2025'
+  const masRegistros = ranking[0] && ranking[0].registros > 0 ? ranking[0] : null
 
   const tablaMunicipios = (
     <div className="space-y-3">
@@ -115,7 +119,7 @@ export default function Biodiversidad() {
   const pestanas = [
     { id: 'resumen' as const, titulo: 'Resumen', contenido: (
       <Suspense fallback={<CargandoPestana />}>
-        <PanelResumen grupo={p.grupo} alcance={alcance} nombreAlcance={nombreAlcance} esIndividual={esIndividual} onFiltrarEspecies={filtrarEspecies} />
+        <PanelResumen grupo={p.grupo} alcance={alcance} nombreAlcance={nombreAlcance} esIndividual={esIndividual} onFiltrarEspecies={filtrarEspecies} onVerRegistros={verRegistrosDe} />
       </Suspense>
     ) },
     ...(esIndividual ? [{ id: 'registros' as const, titulo: 'Registros', contenido: (
@@ -131,7 +135,7 @@ export default function Biodiversidad() {
       <Suspense fallback={<CargandoPestana />}>
         <SeccionEspecies
           grupo={p.grupo} esIndividual={esIndividual} municipio={p.municipio} departamento={deptoActivo} buscar={p.buscar}
-          conservacion={p.conservacion} amenaza={p.amenaza} orden={p.orden} pagina={p.pagina} onCambio={cambiar} onVerRegistros={verRegistrosDe}
+          conservacion={p.conservacion} amenaza={p.amenaza} conFoto={p.conFoto} orden={p.orden} modo={p.modo} pagina={p.pagina} onCambio={cambiar} onVerRegistros={verRegistrosDe}
         />
       </Suspense>
     ) },
@@ -139,21 +143,29 @@ export default function Biodiversidad() {
   ]
 
   return (
-    <div className="bio-root space-y-6">
+    <div className="bio-root bio-tema space-y-6" style={estiloGrupo(p.grupo)}>
       <header className="bio-panel p-4 sm:p-6 space-y-5">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-          <div>
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+          <div className="min-w-0 bio-cambia" key={p.grupo}>
             <p className="bio-eyebrow">Chocó biogeográfico · datos de GBIF</p>
-            <p className="font-display text-[clamp(2rem,5vw,3.25rem)] font-bold leading-none mt-2 text-text" aria-live="polite">
-              {NOMBRES_GRUPO[p.grupo]}
-            </p>
+            <div className="bio-titulo-grupo">
+              <span className="bio-titulo-chip"><GrupoIcono grupo={p.grupo} /></span>
+              <p className="font-display text-[clamp(2rem,5vw,3.25rem)] font-bold leading-none text-text" aria-live="polite">
+                {NOMBRES_GRUPO[p.grupo]}
+              </p>
+            </div>
             <div className="flex flex-wrap items-center gap-2 mt-3">
               <span className="bio-insignia">{etiquetaMetodo(metodo)}</span>
-              <span className="bio-insignia tabular-nums">{(mun ?? info) ? `${(mun ?? info)!.desde}–${(mun ?? info)!.hasta}` : '2000–2025'}</span>
+              <span className="bio-insignia tabular-nums">{periodo}</span>
               {info && <span className="text-xs text-text-muted">Fuente al {fmtFecha(info.fecha_fuente)}</span>}
             </div>
+            <p className="text-sm text-text-muted max-w-xl leading-relaxed mt-3">{descripcion}</p>
           </div>
-          <p className="text-sm text-text-muted max-w-md leading-relaxed">{descripcion}</p>
+          <dl className="bio-cifras-clave" aria-label="Cifras clave del grupo">
+            <div><dt>Registros</dt><dd className="bio-cifra text-[clamp(1.5rem,3.2vw,2.25rem)]">{indicadores ? fmtNum(indicadores.registros) : '—'}</dd></div>
+            <div><dt>Municipios con datos</dt><dd className="bio-cifra text-[clamp(1.5rem,3.2vw,2.25rem)]">{indicadores ? <>{indicadores.municipiosConRegistros}<span className="text-text-muted text-[0.5em] font-semibold"> / {indicadores.totalMunicipios}</span></> : '—'}</dd></div>
+            <div><dt>Departamentos</dt><dd className="bio-cifra text-[clamp(1.5rem,3.2vw,2.25rem)]">{indicadores ? indicadores.departamentos : '—'}</dd></div>
+          </dl>
         </div>
         <SelectorGrupo grupo={p.grupo} grupos={estado.data?.grupos} onCambiar={cambiarGrupo} />
       </header>
@@ -164,7 +176,7 @@ export default function Biodiversidad() {
         <PanelVacio titulo="Sin registros" detalle="Este grupo no tiene registros en el periodo consultado." />
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] items-start [&>*]:min-w-0">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] items-start [&>*]:min-w-0">
             <PanelMapa
               datos={datos} metrica={p.metrica} cortes={cortes} maximo={maximo} seleccionado={municipioSel?.codigo_municipal ?? null}
               departamento={deptoActivo} cargandoDatos={!mun || munQ.isPlaceholderData} onSeleccionar={seleccionarMunicipio} onMetrica={cambiarMetrica}
@@ -175,11 +187,13 @@ export default function Biodiversidad() {
                 puesto={municipioSel ? ranking.findIndex((m) => m.codigo_municipal === municipioSel.codigo_municipal) + 1 : null}
                 totalGrupo={indicadores?.registros ?? 0}
                 departamento={deptoSel}
+                destacado={masRegistros}
+                onElegir={seleccionarMunicipio}
                 onLimpiar={() => cambiar({ municipio: null, departamento: null })}
               />
               {mun ? (
                 <RankingPanel
-                  municipios={municipios} seleccionado={municipioSel?.codigo_municipal ?? null} departamento={p.departamento}
+                  municipios={municipios} metrica={p.metrica} seleccionado={municipioSel?.codigo_municipal ?? null} departamento={p.departamento}
                   onMunicipio={seleccionarMunicipio} onDepartamento={(d) => cambiar({ departamento: d, municipio: null })}
                 />
               ) : <Cargando etiqueta="Cargando ranking" className="h-96" />}

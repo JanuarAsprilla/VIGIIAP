@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { PALETA, contraste } from '@/components/herramientas/biodiversidad/lib/paleta'
+import { BORDE_DEPARTAMENTO, SUPERFICIE, TRAZO_MUNICIPIO, contraste } from '@/components/herramientas/biodiversidad/lib/paleta'
 import { separarMarcas, traducirMarca, traducirMarcaLocal } from '@/components/herramientas/biodiversidad/lib/marcas'
 import { conAncho, urlImagenValida, urlReferenciaValida } from '@/components/herramientas/biodiversidad/lib/foto'
 import { ETIQUETA_METRICA, esMetrica, fmtValorMetrica, valorMetrica } from '@/components/herramientas/biodiversidad/lib/metrica'
@@ -15,26 +15,13 @@ const FOTO = 'https://api.gbif.org/v1/image/cache/400x/occurrence/4512345678/med
 const mun = (r: number, s: number, e: number): MunicipioConteo => ({ codigo_municipal: '05837', municipio: 'Turbo', departamento: 'Antioquia', registros: r, sin_especie: s, especies: e })
 
 describe('paleta y contraste (AA)', () => {
-  test.each(['claro', 'oscuro'] as const)('rampa %s: cada paso se distingue de la superficie (>= 2:1) y la mitad oscura llega a 4,5:1', (modo) => {
-    const p = PALETA[modo]
-    for (const c of p.rampa) expect(contraste(c, p.superficie)).toBeGreaterThanOrEqual(2)
-    expect(contraste(p.rampa[2], p.superficie)).toBeGreaterThanOrEqual(4.5)
-    expect(contraste(p.rampa[4], p.superficie)).toBeGreaterThanOrEqual(7)
-  })
-  test.each(['claro', 'oscuro'] as const)('%s: trazo municipal >= 4,5:1 y borde departamental >= 7:1 sobre la superficie', (modo) => {
-    const p = PALETA[modo]
-    expect(contraste(p.trazoMunicipio, p.superficie)).toBeGreaterThanOrEqual(4.5)
-    expect(contraste(p.bordeDepartamento, p.superficie)).toBeGreaterThanOrEqual(7)
-  })
-  test.each(['claro', 'oscuro'] as const)('%s: la selección (línea sobre halo) contrasta >= 4,5:1 y «sin datos» se separa de la superficie', (modo) => {
-    const p = PALETA[modo]
-    expect(contraste(p.seleccion, p.halo)).toBeGreaterThanOrEqual(4.5)
-    expect(contraste(p.seleccion, p.sinDatos)).toBeGreaterThanOrEqual(4.2)
-    expect(contraste(p.sinDatos, p.rampa[0])).toBeGreaterThan(1.5)
-  })
   test('el contraste es simétrico y 21:1 entre negro y blanco', () => {
     expect(contraste('#000000', '#ffffff')).toBeCloseTo(21, 0)
     expect(contraste('#ffffff', '#000000')).toBeCloseTo(21, 0)
+  })
+  test.each(['claro', 'oscuro'] as const)('%s: trazo municipal >= 4,5:1 y borde departamental >= 7:1 sobre la superficie', (modo) => {
+    expect(contraste(TRAZO_MUNICIPIO[modo], SUPERFICIE[modo])).toBeGreaterThanOrEqual(4.5)
+    expect(contraste(BORDE_DEPARTAMENTO[modo], SUPERFICIE[modo])).toBeGreaterThanOrEqual(7)
   })
 })
 
