@@ -72,6 +72,7 @@ export default function Biodiversidad() {
   const filtrarEspecies = (c: { conservacion: TipoConservacion; amenaza: Amenaza | null }) =>
     t.cambiar({ vista: 'especies', ...cambiosConservacion(c.conservacion, c.amenaza), buscar: null })
   const verRegistrosDe = (e: EspecieResumen) => t.cambiar({ vista: 'registros', ...cambiosEspecie(e.especie_clave, e.especie), conservacion: null, amenaza: null })
+  const verMunicipiosDe = (e: EspecieResumen) => t.cambiar({ vista: 'municipios', ...cambiosEspecie(e.especie_clave, e.especie), conservacion: null, amenaza: null })
   const abrirRegistro = (r: RegistroBiodiversidad, el: HTMLElement) => { origenDetalle.current = el; t.cambiar({ registro: r.gbif_id, pagina: p.pagina }) }
   const abrirDesdeMapa = (id: string, el: HTMLElement) => { origenDetalle.current = el; t.cambiar({ registro: id, pagina: p.pagina }) }
 
@@ -135,7 +136,7 @@ export default function Biodiversidad() {
       <Suspense fallback={<CargandoPestana />}>
         <SeccionEspecies
           grupo={p.grupo} esIndividual={esIndividual} params={paramsEspecies} orden={ordenEspecies(p.ordenar)} modo={p.modo} pagina={p.pagina}
-          ayuda={ayuda} onCambio={t.cambiar} onVerRegistros={verRegistrosDe}
+          ayuda={ayuda} onCambio={t.cambiar} onVerRegistros={verRegistrosDe} onVerMunicipios={verMunicipiosDe}
         />
       </Suspense>
     ) },

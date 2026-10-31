@@ -23,9 +23,11 @@ interface Props {
   ayuda: AyudaFiltros
   onCambio: (cambios: Record<string, string | number | null>) => void
   onVerRegistros: (e: EspecieResumen) => void
+  /** Inventarios agregados: lleva a los municipios donde aparece la especie. */
+  onVerMunicipios?: (e: EspecieResumen) => void
 }
 
-export default function SeccionEspecies({ grupo, esIndividual, params, orden, modo, pagina, ayuda, onCambio, onVerRegistros }: Props) {
+export default function SeccionEspecies({ grupo, esIndividual, params, orden, modo, pagina, ayuda, onCambio, onVerRegistros, onVerMunicipios }: Props) {
   const consulta = useBiodiversidadEspecies(grupo, { ...params, orden, pagina, tamano: TAMANO_PAGINA_ESPECIES })
   const datos = consulta.data
   const maxPaginas = datos ? Math.max(1, Math.ceil(datos.total / TAMANO_PAGINA_ESPECIES)) : 1
@@ -57,7 +59,7 @@ export default function SeccionEspecies({ grupo, esIndividual, params, orden, mo
           ) : (
             <ul className="bio-rejilla-tarjetas">
               {datos.especies.map((e) => (
-                <li key={e.especie_clave}><TarjetaEspecie e={e} grupo={grupo} esIndividual={esIndividual} onVerRegistros={onVerRegistros} /></li>
+                <li key={e.especie_clave}><TarjetaEspecie e={e} grupo={grupo} esIndividual={esIndividual} onVerRegistros={onVerRegistros} onVerMunicipios={onVerMunicipios} /></li>
               ))}
             </ul>
           )}

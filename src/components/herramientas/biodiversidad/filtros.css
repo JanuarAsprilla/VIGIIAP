@@ -50,6 +50,13 @@
   display: inline-grid; place-items: center; min-width: 1.35rem; height: 1.35rem; padding: 0 0.35rem; border-radius: 999px;
   font-size: 0.6875rem; font-weight: 800; font-variant-numeric: tabular-nums; color: #fff; background: var(--color-primary-800);
 }
+.bio-seccion-resumen {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right;
+  font-size: 0.75rem; font-weight: 500; color: var(--color-text-muted);
+}
+.bio-seccion[open] .bio-seccion-resumen { display: none; }
+/* Raíl de la cascada: hace visible que cada campo depende del anterior (de lo general a lo específico). */
+.bio-seccion-cuerpo > [role='group'] { padding-left: 0.75rem; border-left: 2px solid color-mix(in srgb, var(--color-primary-600) 30%, var(--bio-linea)); }
 .bio-seccion-bloqueada { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.6875rem; font-weight: 600; color: var(--color-text-muted); }
 .bio-seccion-aviso { margin-top: 0.5rem; font-size: 0.75rem; line-height: 1.45; color: var(--color-text-muted); }
 
