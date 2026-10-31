@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertCircle, ArrowLeft, PlusCircle, SearchX } from 'lucide-react'
@@ -9,6 +9,7 @@ import { useToast, ToastContainer } from '@/components/Toast'
 import { useHerramientasCatalogo, type HerramientaCatalogo } from '@/hooks/useHerramientasCatalogo'
 import { useColumnasGrid, CLASES_GRID_COLUMNAS } from '@/hooks/useColumnasGrid'
 import SelectorColumnas from '@/components/ui/SelectorColumnas'
+import { registrarEvento } from '@/lib/analyticsEventos'
 
 import HerramientaLauncherCard  from '@/components/herramientas/HerramientaLauncherCard'
 import ResumenActividad        from '@/components/herramientas/ResumenActividad'
@@ -37,6 +38,11 @@ export default function Herramientas() {
   // catálogo real vacío o inalcanzable, no algo que el usuario tecleó mal.
   const sinCatalogo = !isLoading && herramientas.length === 0
   const herramientaAbierta = herramientas.find((t) => t.clave === herramientaAbiertaId)
+  const claveAbierta = herramientaAbierta?.clave
+
+  useEffect(() => {
+    if (claveAbierta) registrarEvento('usar_herramienta', claveAbierta)
+  }, [claveAbierta])
 
   if (herramientaAbierta) {
     return (
