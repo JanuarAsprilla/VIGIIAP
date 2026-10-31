@@ -51,7 +51,7 @@ export default function TablaMunicipios({ municipios, seleccionado, onSelecciona
             <tr key={m.codigo_municipal}>
               <td>
                 <button type="button" aria-pressed={m.codigo_municipal === seleccionado}
-                  className={`font-semibold text-left min-h-8 hover:underline ${m.codigo_municipal === seleccionado ? 'text-[var(--bio-sel)]' : 'text-text'}`}
+                  className={`font-semibold text-left min-h-8 hover:underline ${m.codigo_municipal === seleccionado ? 'text-[var(--bio-acento)]' : 'text-text'}`}
                   onClick={() => onSeleccionar(m.codigo_municipal)}>
                   {m.municipio}
                 </button>

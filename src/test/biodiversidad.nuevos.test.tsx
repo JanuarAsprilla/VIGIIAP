@@ -249,14 +249,14 @@ describe('DetalleRegistro', () => {
 describe('SeccionEspecies', () => {
   const props = {
     grupo: 'anfibios' as const, esIndividual: true, municipio: null, departamento: null, buscar: '', conservacion: null, amenaza: null,
-    orden: 'registros' as const, pagina: 1,
+    orden: 'registros' as const, pagina: 1, conFoto: false, modo: 'tarjetas' as const,
   }
   test('lista con taxonomía, insignias, cifras y acción para ver registros', async () => {
     const onVerRegistros = vi.fn()
     render(<SeccionEspecies {...props} onCambio={vi.fn()} onVerRegistros={onVerRegistros} />)
     expect(screen.getByText('2 especies')).toBeInTheDocument()
     expect(screen.getByText('Atelopus spurrelli').tagName).toBe('I')
-    expect(screen.getAllByText('Amphibia · Anura · Bufonidae')).toHaveLength(2)
+    expect(screen.getAllByText('Anura · Bufonidae')).toHaveLength(2)
     expect(screen.getByText('CR · En peligro crítico')).toBeInTheDocument()
     expect(screen.getByText('Endémica de Colombia')).toBeInTheDocument()
     await userEvent.click(screen.getAllByRole('button', { name: /Ver registros/ })[0])
@@ -309,7 +309,7 @@ describe('PanelResumen', () => {
     series.q = { data: { grupo: 'aves', metodo: 'agregado', por_anio: [{ anio: 2000, registros: 10 }, { anio: 2001, registros: 30 }], por_evidencia: [{ tipo: 'HUMAN_OBSERVATION', registros: 30 }, { tipo: 'PRESERVED_SPECIMEN', registros: 10 }] }, isError: false, refetch: vi.fn() as never }
   })
   test('indicadores, conservación con colores UICN y evidencia traducida', () => {
-    render(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} />)
+    render(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
     expect(screen.getByText('2.919.072')).toBeInTheDocument()
     expect(screen.getByText('el inventario agregado no las incluye')).toBeInTheDocument()
     expect(screen.getByText('2000–2025')).toBeInTheDocument()
@@ -321,7 +321,7 @@ describe('PanelResumen', () => {
   })
   test('el alcance se nombra y las teselas con cero no son botones', async () => {
     const onFiltrar = vi.fn()
-    render(<PanelResumen grupo="aves" alcance={{ departamento: 'Chocó' }} nombreAlcance="Chocó" esIndividual={false} onFiltrarEspecies={onFiltrar} />)
+    render(<PanelResumen grupo="aves" alcance={{ departamento: 'Chocó' }} nombreAlcance="Chocó" esIndividual={false} onFiltrarEspecies={onFiltrar} onVerRegistros={vi.fn()} />)
     expect(screen.getByText('Chocó', { selector: 'b' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /En peligro crítico/ })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /Vulnerable: 9 especies/ }))
@@ -331,28 +331,28 @@ describe('PanelResumen', () => {
   })
   test('cargando y error con reintento', async () => {
     resumen.q = { data: undefined, isError: false, isFetching: true, refetch: vi.fn() as never }
-    const { rerender } = render(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} />)
+    const { rerender } = render(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
     expect(screen.getAllByRole('status', { name: /Cargando indicadores/ }).length).toBe(4)
     const refetch = vi.fn()
     resumen.q = { data: undefined, isError: true, error: { status: 503 } as never, refetch: refetch as never }
-    rerender(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} />)
+    rerender(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /Reintentar/ }))
     expect(refetch).toHaveBeenCalled()
   })
   test('grupos sin lista nacional de endemismo no muestran un cero engañoso', () => {
-    render(<PanelResumen grupo="anfibios" alcance={{}} nombreAlcance={null} esIndividual onFiltrarEspecies={vi.fn()} />)
+    render(<PanelResumen grupo="anfibios" alcance={{}} nombreAlcance={null} esIndividual onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
     expect(screen.getByText('Sin lista nacional')).toBeInTheDocument()
     expect(screen.getByText(/Endémicas del Chocó, reportadas por el IIAP \(2011\)/)).toBeInTheDocument()
     expect(screen.getByText(/no implica que sea nativa ni que no esté amenazada/)).toBeInTheDocument()
   })
   test('aves sí muestran el conteo de endémicas de Colombia', () => {
-    render(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} />)
+    render(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
     expect(screen.queryByText('Sin lista nacional')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Endémicas de Colombia/ })).toHaveTextContent('30')
   })
   test('con fotos se cuenta el porcentaje', () => {
     resumen.q = { data: { ...R, con_foto: 291907 }, isError: false, isFetching: false, refetch: vi.fn() as never }
-    render(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual onFiltrarEspecies={vi.fn()} />)
+    render(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
     expect(screen.getByText(/10,0\D+de los registros/)).toBeInTheDocument()
   })
 })

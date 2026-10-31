@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { Sparkles, X } from 'lucide-react'
 import type { MunicipioConteo } from './types'
 import type { ResumenDepartamento } from './lib/derivar'
 import { fmtNum, fmtPct } from './lib/format'
@@ -8,6 +8,8 @@ interface Props {
   puesto: number | null
   totalGrupo: number
   departamento: ResumenDepartamento | null
+  destacado: MunicipioConteo | null
+  onElegir: (codigo: string) => void
   onLimpiar: () => void
 }
 
@@ -20,15 +22,29 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   )
 }
 
-export default function DetalleSeleccion({ municipio, puesto, totalGrupo, departamento, onLimpiar }: Props) {
+export default function DetalleSeleccion({ municipio, puesto, totalGrupo, departamento, destacado, onElegir, onLimpiar }: Props) {
   const titulo = municipio?.municipio ?? departamento?.departamento ?? null
   return (
     <section className="bio-panel p-4 sm:p-5" aria-labelledby="bio-sel-titulo" aria-live="polite">
       {!titulo ? (
-        <>
-          <p id="bio-sel-titulo" className="bio-eyebrow">Selección</p>
-          <p className="text-sm text-text-muted mt-2">Elige un municipio en el mapa, en el ranking o en la tabla para ver su detalle y filtrar los registros.</p>
-        </>
+        <div className="bio-sel-vacia">
+          <div>
+            <p id="bio-sel-titulo" className="bio-eyebrow">Selección</p>
+            <p className="font-display text-lg font-bold text-text mt-1">Aún no hay un municipio elegido</p>
+            <p className="text-sm text-text-muted mt-1">Elige uno en el mapa, en el ranking o en la tabla para ver su detalle y filtrar registros y especies.</p>
+          </div>
+          {destacado && (
+            <button type="button" className="bio-sel-atajo" onClick={() => onElegir(destacado.codigo_municipal)}>
+              <Sparkles className="w-4 h-4 text-[var(--bio-acento)]" aria-hidden="true" />
+              <span className="min-w-0">
+                <span className="block text-xs text-text-muted">Para empezar: el municipio con más registros</span>
+                <span className="block text-sm font-semibold text-text truncate">{destacado.municipio} <span className="text-text-muted font-normal">· {destacado.departamento}</span></span>
+              </span>
+              <b className="text-sm text-text">{fmtNum(destacado.registros)}</b>
+            </button>
+          )}
+          <p className="bio-teclas text-xs text-text-muted">Con el teclado: enfoca el mapa, <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> para recorrerlo y <kbd>Enter</kbd> para elegir.</p>
+        </div>
       ) : (
         <div className="bio-entra">
           <div className="flex items-start justify-between gap-3">
@@ -42,7 +58,7 @@ export default function DetalleSeleccion({ municipio, puesto, totalGrupo, depart
               Quitar
             </button>
           </div>
-          <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+          <dl className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 min-[90rem]:grid-cols-4 gap-4 mt-4">
             {municipio ? (
               <>
                 <Dato etiqueta="Registros" valor={fmtNum(municipio.registros)} />
