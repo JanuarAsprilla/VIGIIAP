@@ -23,6 +23,9 @@ vi.mock('@/hooks/useBiodiversidad', () => ({
   useBiodiversidadSeries: () => series.q,
   useBiodiversidadEspecies: () => especies.q,
   useBiodiversidadRegistro: () => detalle.q,
+  useBiodiversidadSugerencias: () => ({ data: undefined, isFetching: false, isError: false }),
+  useBiodiversidadOpciones: () => ({ data: { valores: [] }, isFetching: false, isError: false }),
+  useBiodiversidadPuntos: () => ({ data: undefined, isFetching: false, isError: false, refetch: vi.fn() }),
 }))
 vi.mock('@/components/herramientas/biodiversidad/mapa/PanelMapa', () => ({
   default: ({ onSeleccionar }: { onSeleccionar: (c: string) => void }) => (
@@ -52,6 +55,7 @@ const ESTADO: EstadoBiodiversidad = {
 const RESUMEN: RespuestaResumen = {
   grupo: 'anfibios', metodo: 'individual', alcance: { codigo_municipal: null, departamento: null }, registros: 1000, especies: 42, con_foto: 300,
   amenazadas: { CR: 1, EN: 2, VU: 3, total: 6 }, endemicas_colombia: 10, endemicas_choco: 4, introducidas: 1, invasoras: 0, anio_min: 2000, anio_max: 2025,
+  entidades: 12, conjuntos: 20, con_ubicacion: 800,
 }
 
 function reg(over: Partial<RegistroBiodiversidad> = {}): RegistroBiodiversidad {
@@ -264,10 +268,15 @@ describe('Biodiversidad (grupo agregado y errores)', () => {
     expect(screen.getAllByText('Sin registros').length).toBeGreaterThan(0)
   })
 
-  test('cambiar de grupo conserva la herramienta en la URL y limpia selección', async () => {
-    montar('/herramientas?herramienta=biodiversidad&grupo=anfibios&municipio=05837')
+  test('cambiar de grupo conserva territorio y conservación, quita la taxonomía y avisa', async () => {
+    montar('/herramientas?herramienta=biodiversidad&grupo=anfibios&municipio=05837&familia=Hylidae&conservacion=amenazada')
+    expect(screen.getByRole('button', { name: /Quitar el filtro Familia: Hylidae/ })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('radio', { name: /Reptiles/ }))
     expect(screen.getByRole('radio', { name: /Reptiles/ })).toHaveAttribute('aria-checked', 'true')
-    expect(screen.queryByText('Municipio seleccionado')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Quitar el filtro Familia/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Quitar el filtro Municipio/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Quitar el filtro Conservación: Amenazadas/ })).toBeInTheDocument()
+    expect(screen.getByText(/Al pasar a Reptiles se quitaron filtros/)).toBeInTheDocument()
+    expect(screen.getByText(/Familia Hylidae/)).toBeInTheDocument()
   })
 })

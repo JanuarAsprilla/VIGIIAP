@@ -1,20 +1,21 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
+import { useId, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { ExternalLink, X } from 'lucide-react'
 import { useBiodiversidadRegistro } from '@/hooks/useBiodiversidad'
+import { useDialogoModal } from '@/hooks/useDialogoModal'
 import { PanelError } from '../EstadoConsulta'
 import InsigniasConservacion from '../InsigniasConservacion'
 import { urlDoi, urlRegistroGbif } from '../lib/enlaces'
 import { traducirEvidencia } from '../lib/evidencia'
 import { etiquetarLicencia } from '../lib/licencia'
 import { separarMarcas, traducirMarca, traducirMarcaLocal, type MarcaTraducida } from '../lib/marcas'
-import type { Grupo, RegistroDetalle } from '../types'
+import { estiloGrupo } from '../lib/paleta'
+import type { Grupo, RegistroBiodiversidad, RegistroDetalle } from '../types'
 import { CreditoFoto, ImagenGbif } from './FotoRegistro'
 import { textoAlt } from './textoAlt'
-import { Ubicacion } from './UbicacionRegistro'
+import UbicacionDetalle from './UbicacionDetalle'
 
 const ENLACE = { target: '_blank', rel: 'noopener noreferrer' } as const
-const FOCALIZABLES = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"]), select, input'
 const FECHA = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
 
 interface Props {
@@ -22,6 +23,7 @@ interface Props {
   gbifId: string
   origen: RefObject<HTMLElement | null>
   onCerrar: () => void
+  onVerEnMapa?: (r: RegistroBiodiversidad) => void
 }
 
 function fmtFechaEvento(valor: string | null, anio: number | null): string {
@@ -87,7 +89,7 @@ function ListaMarcas({ titulo, marcas, vacio }: { titulo: string; marcas: MarcaT
   )
 }
 
-function Contenido({ r }: { r: RegistroDetalle }) {
+function Contenido({ r, onVerEnMapa }: { r: RegistroDetalle; onVerEnMapa?: (r: RegistroBiodiversidad) => void }) {
   const gbif = urlRegistroGbif(r.gbif_id)
   const doi = urlDoi(r.doi_conjunto)
   const lic = etiquetarLicencia(r.licencia)
@@ -105,7 +107,6 @@ function Contenido({ r }: { r: RegistroDetalle }) {
           <Dato etiqueta="Fecha del evento">{fmtFechaEvento(r.fecha_evento, r.anio)}</Dato>
           <Dato etiqueta="Evidencia">{traducirEvidencia(r.tipo_evidencia)}</Dato>
           <Dato etiqueta="Lugar">{r.municipio}, {r.departamento}</Dato>
-          <Dato etiqueta="Ubicación"><Ubicacion r={r} /></Dato>
           <Dato etiqueta="Observador">{r.registrado_por ?? 'Sin indicar'}</Dato>
           <Dato etiqueta="Identificado por">{r.identificado_por ?? 'Sin indicar'}</Dato>
           {r.nombre_original && r.nombre_original !== r.especie && <Dato etiqueta="Nombre original">{r.nombre_original}</Dato>}
@@ -113,6 +114,7 @@ function Contenido({ r }: { r: RegistroDetalle }) {
             {lic.href ? <a className="bio-enlace" href={lic.href} {...ENLACE}>{lic.etiqueta}</a> : lic.etiqueta}
           </Dato>
         </dl>
+        <UbicacionDetalle r={r} onVerEnMapa={onVerEnMapa} />
         <section aria-labelledby="bio-det-fuente">
           <h3 id="bio-det-fuente" className="bio-eyebrow mb-2">Fuente</h3>
           <p className="text-sm text-text-light">{r.conjunto ?? 'Conjunto sin título'}</p>
@@ -135,37 +137,14 @@ function Contenido({ r }: { r: RegistroDetalle }) {
 }
 
 /** Diálogo modal accesible: foco atrapado, Escape cierra y el foco vuelve a la tarjeta que lo abrió. */
-export default function DetalleRegistro({ grupo, gbifId, origen, onCerrar }: Props) {
+export default function DetalleRegistro({ grupo, gbifId, origen, onCerrar, onVerEnMapa }: Props) {
   const titulo = useId()
-  const caja = useRef<HTMLDivElement>(null)
   const consulta = useBiodiversidadRegistro(grupo, gbifId)
-  const cierre = useRef(onCerrar)
-
-  useEffect(() => { cierre.current = onCerrar }, [onCerrar])
-  useEffect(() => {
-    const devolver = origen.current
-    const previo = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    caja.current?.focus({ preventScroll: true })
-    return () => {
-      document.body.style.overflow = previo
-      if (devolver?.isConnected) devolver.focus()
-    }
-  }, [origen])
-
-  function alTeclear(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.key === 'Escape') { e.stopPropagation(); cierre.current(); return }
-    if (e.key !== 'Tab' || !caja.current) return
-    const lista = [...caja.current.querySelectorAll<HTMLElement>(FOCALIZABLES)].filter((x) => !x.hasAttribute('disabled'))
-    if (lista.length === 0) { e.preventDefault(); return }
-    const [primero, ultimo] = [lista[0], lista[lista.length - 1]]
-    if (e.shiftKey && (document.activeElement === primero || document.activeElement === caja.current)) { e.preventDefault(); ultimo.focus() }
-    else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus() }
-  }
+  const { caja, alTeclear } = useDialogoModal(origen, onCerrar)
 
   const r = consulta.data
   return createPortal(
-    <div className="bio-root bio-velo" onMouseDown={(e) => { if (e.target === e.currentTarget) onCerrar() }}>
+    <div className="bio-root bio-tema bio-velo" style={estiloGrupo(grupo)} onMouseDown={(e) => { if (e.target === e.currentTarget) onCerrar() }}>
       <div ref={caja} role="dialog" aria-modal="true" aria-labelledby={titulo} tabIndex={-1} className="bio-detalle" onKeyDown={alTeclear}>
         <header className="bio-detalle-cabecera">
           <div className="min-w-0">
@@ -185,7 +164,7 @@ export default function DetalleRegistro({ grupo, gbifId, origen, onCerrar }: Pro
             <div className="bg-bg-alt rounded-xl aspect-[4/3]" />
             <div className="space-y-3"><div className="h-5 bg-bg-alt rounded w-2/3" /><div className="h-24 bg-bg-alt rounded" /><div className="h-24 bg-bg-alt rounded" /></div>
           </div>
-        ) : <Contenido r={r} />}
+        ) : <Contenido r={r} onVerEnMapa={onVerEnMapa} />}
       </div>
     </div>,
     document.body,

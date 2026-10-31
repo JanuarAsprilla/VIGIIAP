@@ -3,11 +3,12 @@ import InsigniasConservacion from '../InsigniasConservacion'
 import { fmtNum } from '../lib/format'
 import { CreditoFoto, ImagenGbif } from '../registros/FotoRegistro'
 import { fotoValida } from '../lib/especie'
-import type { AlcanceTerritorial, EspecieResumen, Grupo } from '../types'
+import type { EspecieResumen, Grupo, ParamsApi } from '../types'
 
 interface Props {
   grupo: Grupo
-  alcance: AlcanceTerritorial
+  /** Filtros de `/especies`; aquí se fija además «amenazadas con foto». */
+  params: ParamsApi
   activo: boolean
   onVer: (e: EspecieResumen) => void
 }
@@ -15,9 +16,9 @@ interface Props {
 const CUANTAS = 4
 
 /** Especies amenazadas con fotografía: el rostro de la cifra de conservación. Solo grupos individuales. */
-export default function EspeciesDestacadas({ grupo, alcance, activo, onVer }: Props) {
-  const consulta = useBiodiversidadEspecies({
-    grupo, ...alcance, conservacion: 'amenazada', con_foto: 'true', orden: 'registros', pagina: 1, tamano: CUANTAS,
+export default function EspeciesDestacadas({ grupo, params, activo, onVer }: Props) {
+  const consulta = useBiodiversidadEspecies(grupo, {
+    ...params, conservacion: 'amenazada', con_foto: 'true', orden: 'registros', pagina: 1, tamano: CUANTAS,
   }, activo)
   const lista = (consulta.data?.especies ?? []).filter((e) => fotoValida(e) !== null)
   if (!activo || lista.length === 0) return null

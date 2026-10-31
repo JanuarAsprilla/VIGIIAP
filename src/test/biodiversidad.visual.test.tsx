@@ -180,8 +180,8 @@ describe('Conmutador Tarjetas | Tabla y su estado en la URL', () => {
 
 describe('SeccionEspecies: tarjetas por omisión, tabla opcional y filtro de fotos', () => {
   const base = {
-    grupo: 'anfibios' as const, esIndividual: true, municipio: null, departamento: null, buscar: '', conservacion: null, amenaza: null,
-    conFoto: false, orden: 'registros' as const, modo: 'tarjetas' as const, pagina: 1, onVerRegistros: vi.fn(),
+    grupo: 'anfibios' as const, esIndividual: true, params: {}, orden: 'registros' as const, modo: 'tarjetas' as const, pagina: 1, onVerRegistros: vi.fn(),
+    ayuda: { chips: [], onCambio: vi.fn(), onLimpiar: vi.fn() },
   }
   beforeEach(() => {
     especies.llamadas = []
@@ -210,16 +210,10 @@ describe('SeccionEspecies: tarjetas por omisión, tabla opcional y filtro de fot
     await userEvent.click(screen.getByRole('button', { name: 'Tarjetas' }))
     expect(onCambio).toHaveBeenLastCalledWith({ modo: null })
   })
-  test('«Solo con foto» se pide a la API y solo existe en grupos individuales', async () => {
-    const onCambio = vi.fn()
-    const { rerender } = render(<SeccionEspecies {...base} onCambio={onCambio} />)
-    await userEvent.click(screen.getByRole('switch', { name: /Fotografías/ }))
-    expect(onCambio).toHaveBeenLastCalledWith({ con_foto: '1' })
-    rerender(<SeccionEspecies {...base} conFoto onCambio={onCambio} />)
-    expect((ultima()[0] as Record<string, unknown>).con_foto).toBe('true')
-    rerender(<SeccionEspecies {...base} conFoto esIndividual={false} onCambio={onCambio} />)
-    expect(screen.queryByRole('switch')).not.toBeInTheDocument()
-    expect((ultima()[0] as Record<string, unknown>).con_foto).toBeUndefined()
+  test('los filtros llegan al hook tal cual, con orden, página y tamaño', () => {
+    render(<SeccionEspecies {...base} params={{ con_foto: 'true', familia: 'Hylidae' }} orden="municipios" onCambio={vi.fn()} />)
+    expect(ultima()[0]).toBe('anfibios')
+    expect(ultima()[1]).toMatchObject({ con_foto: 'true', familia: 'Hylidae', orden: 'municipios', pagina: 1, tamano: 20 })
   })
 })
 
@@ -230,6 +224,8 @@ describe('TablaEspecies', () => {
     expect(screen.getByRole('columnheader', { name: /Registros/ })).toHaveAttribute('aria-sort', 'descending')
     await userEvent.click(screen.getByRole('button', { name: /^Especie/ }))
     expect(onOrden).toHaveBeenCalledWith('nombre')
+    await userEvent.click(screen.getByRole('button', { name: /^Municipios/ }))
+    expect(onOrden).toHaveBeenLastCalledWith('municipios')
     expect(screen.getAllByText('—').length).toBeGreaterThan(0)
   })
 })
@@ -285,11 +281,11 @@ describe('Selección: estado vacío con atajo', () => {
 describe('EspeciesDestacadas', () => {
   test('muestra solo especies con foto válida y respeta la visibilidad', () => {
     especies.q = { data: { grupo: 'anfibios', metodo: 'individual', pagina: 1, tamano: 4, total: 2, especies: [esp(), esp({ especie_clave: 'E2', especie: 'Mala foto', foto: foto({ imagen: 'https://evil.example/a.jpg' }) })] }, isError: false, refetch: vi.fn() as never }
-    const { rerender } = render(<EspeciesDestacadas grupo="anfibios" alcance={{}} activo onVer={vi.fn()} />)
+    const { rerender } = render(<EspeciesDestacadas grupo="anfibios" params={{ departamento: 'Chocó' }} activo onVer={vi.fn()} />)
     expect(screen.getByText('Atelopus spurrelli')).toBeInTheDocument()
     expect(screen.queryByText('Mala foto')).not.toBeInTheDocument()
-    rerender(<EspeciesDestacadas grupo="anfibios" alcance={{}} activo={false} onVer={vi.fn()} />)
+    rerender(<EspeciesDestacadas grupo="anfibios" params={{}} activo={false} onVer={vi.fn()} />)
     expect(screen.queryByText('Atelopus spurrelli')).not.toBeInTheDocument()
-    expect((ultima()[1])).toBe(false)
+    expect(ultima()[2]).toBe(false)
   })
 })

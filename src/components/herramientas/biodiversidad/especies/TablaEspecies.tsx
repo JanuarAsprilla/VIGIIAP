@@ -4,10 +4,11 @@ import { fmtNum } from '../lib/format'
 import type { EspecieResumen } from '../types'
 import { insigniasDe } from '../lib/conservacion'
 import { fotoValida } from '../lib/especie'
+import type { OrdenEspecies } from '../lib/orden'
 
 const tieneMarca = (e: EspecieResumen) => insigniasDe(e).length > 0
 
-type Orden = 'registros' | 'nombre'
+type Orden = OrdenEspecies
 
 interface Props {
   especies: EspecieResumen[]
@@ -35,7 +36,7 @@ export default function TablaEspecies({ especies, esIndividual, orden, onOrden, 
   return (
     <div className="bio-tabla-caja" tabIndex={0} role="region" aria-label="Tabla de especies, desplazable">
       <table className="bio-tabla bio-reg">
-        <caption className="sr-only">Especies de la página actual. Activa «Especie» o «Registros» para ordenar todas las especies.</caption>
+        <caption className="sr-only">Especies de la página actual. Activa «Especie», «Registros» o «Municipios» para ordenar todas las especies.</caption>
         <thead>
           <tr>
             <Encabezado titulo="Especie" orden="nombre" actual={orden} onOrden={onOrden} />
@@ -43,7 +44,7 @@ export default function TablaEspecies({ especies, esIndividual, orden, onOrden, 
             <Encabezado titulo="Orden" actual={orden} onOrden={onOrden} />
             <Encabezado titulo="Familia" actual={orden} onOrden={onOrden} />
             <Encabezado titulo="Registros" orden="registros" actual={orden} onOrden={onOrden} numerica />
-            <Encabezado titulo="Municipios" actual={orden} onOrden={onOrden} numerica />
+            <Encabezado titulo="Municipios" orden="municipios" actual={orden} onOrden={onOrden} numerica />
             <Encabezado titulo="Fotos" actual={orden} onOrden={onOrden} numerica />
             <Encabezado titulo="Conservación" actual={orden} onOrden={onOrden} />
             {esIndividual && <th scope="col"><span className="sr-only">Acciones</span></th>}

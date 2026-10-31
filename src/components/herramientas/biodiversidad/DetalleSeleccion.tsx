@@ -1,7 +1,7 @@
 import { Sparkles, X } from 'lucide-react'
 import type { MunicipioConteo } from './types'
 import type { ResumenDepartamento } from './lib/derivar'
-import { fmtNum, fmtPct } from './lib/format'
+import { fmtNum, fmtNumONulo, fmtPct } from './lib/format'
 
 interface Props {
   municipio: MunicipioConteo | null
@@ -62,7 +62,7 @@ export default function DetalleSeleccion({ municipio, puesto, totalGrupo, depart
             {municipio ? (
               <>
                 <Dato etiqueta="Registros" valor={fmtNum(municipio.registros)} />
-                <Dato etiqueta="Especies" valor={fmtNum(municipio.especies)} />
+                <Dato etiqueta="Especies" valor={fmtNumONulo(municipio.especies)} />
                 <Dato etiqueta="Del grupo" valor={fmtPct(municipio.registros, totalGrupo)} />
                 <Dato etiqueta="Puesto" valor={puesto ? `#${puesto}` : '—'} />
               </>

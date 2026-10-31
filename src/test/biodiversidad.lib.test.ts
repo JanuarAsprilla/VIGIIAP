@@ -9,6 +9,7 @@ import {
 } from '@/components/herramientas/biodiversidad/lib/derivar'
 import { describirError } from '@/components/herramientas/biodiversidad/lib/errores'
 import { actualizarParametros, leerParametros } from '@/components/herramientas/biodiversidad/lib/parametros'
+import { leerFiltros } from '@/components/herramientas/biodiversidad/lib/filtros'
 import type { MunicipioConteo } from '@/components/herramientas/biodiversidad/types'
 
 const m = (c: string, municipio: string, departamento: string, registros: number, sin_especie = 0, especies = 0): MunicipioConteo => ({
@@ -157,11 +158,14 @@ describe('errores por código', () => {
 describe('parámetros de URL', () => {
   test('valores válidos', () => {
     const p = leerParametros(new URLSearchParams('grupo=anfibios&municipio=05837&departamento=Antioquia&pagina=3&anio_desde=2010&anio_hasta=2020&vista=registros'))
-    expect(p).toMatchObject({ grupo: 'anfibios', municipio: '05837', departamento: 'Antioquia', pagina: 3, anioDesde: 2010, anioHasta: 2020, vista: 'registros' })
+    expect(p).toMatchObject({ grupo: 'anfibios', pagina: 3, vista: 'registros' })
+    expect(leerFiltros(new URLSearchParams('municipio=05837&departamento=Antioquia&anio_desde=2010&anio_hasta=2020')))
+      .toMatchObject({ municipio: '05837', departamento: 'Antioquia', anioDesde: 2010, anioHasta: 2020 })
   })
   test('valores inválidos se descartan', () => {
     const p = leerParametros(new URLSearchParams('grupo=xx&municipio=abc&pagina=-1&anio_desde=foo&vista=otra'))
-    expect(p).toMatchObject({ grupo: 'aves', municipio: null, pagina: 1, anioDesde: null, vista: null })
+    expect(p).toMatchObject({ grupo: 'aves', pagina: 1, vista: null })
+    expect(leerFiltros(new URLSearchParams('municipio=abc&anio_desde=foo'))).toMatchObject({ municipio: null, anioDesde: null })
     expect(leerParametros(new URLSearchParams('pagina=99999')).pagina).toBe(1)
   })
   test('actualizar conserva claves ajenas y elimina vacías', () => {

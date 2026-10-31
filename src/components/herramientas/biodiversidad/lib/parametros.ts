@@ -1,5 +1,4 @@
-import { esGrupo, type Amenaza, type Grupo, type TipoConservacion } from '../types'
-import { esAmenaza, esTipoConservacion } from './conservacion'
+import { esGrupo, type Grupo } from '../types'
 import { esMetrica, METRICA_INICIAL, type Metrica } from './metrica'
 
 export const GRUPO_INICIAL: Grupo = 'aves'
@@ -13,25 +12,18 @@ export type ModoRegistros = 'tarjetas' | 'tabla'
 
 export interface ParametrosVista {
   grupo: Grupo
-  municipio: string | null
-  departamento: string | null
   pagina: number
-  anioDesde: number | null
-  anioHasta: number | null
   vista: Vista | null
   metrica: Metrica
   modo: ModoRegistros
-  buscar: string
-  conFoto: boolean
-  conservacion: TipoConservacion | null
-  amenaza: Amenaza | null
-  especie: string | null
-  nombreEspecie: string | null
   registro: string | null
-  orden: 'registros' | 'nombre'
+  /** Ordenamiento pedido en la URL (se valida contra las opciones de cada sección). */
+  ordenar: string | null
+  /** Capa de puntos de registros activa en el mapa. */
+  puntos: boolean
 }
 
-function entero(valor: string | null, min: number, max: number): number | null {
+export function entero(valor: string | null, min: number, max: number): number | null {
   if (valor === null || !/^\d{1,5}$/.test(valor)) return null
   const n = Number(valor)
   return n >= min && n <= max ? n : null
@@ -45,36 +37,22 @@ export function sanearBusqueda(valor: string | null): string {
   return limpio.length >= 2 ? limpio : ''
 }
 
-/** Lee y sanea los parámetros de la URL: cualquier valor fuera de rango se descarta. */
+/** Lee y sanea los parámetros de la vista; los de filtro los lee `leerFiltros`. */
 export function leerParametros(p: URLSearchParams): ParametrosVista {
   const grupo = p.get('grupo')
-  const municipio = p.get('municipio')
-  const departamento = p.get('departamento')
   const vista = p.get('vista')
   const metrica = p.get('metrica')
-  const conservacion = p.get('conservacion')
-  const amenaza = p.get('amenaza')
-  const especie = p.get('especie')
   const registro = p.get('registro')
-  const especieValida = especie && /^[A-Za-z0-9]{1,20}$/.test(especie) ? especie : null
+  const ordenar = p.get('ordenar') ?? p.get('orden')
   return {
     grupo: esGrupo(grupo) ? grupo : GRUPO_INICIAL,
-    municipio: municipio && /^\d{5}$/.test(municipio) ? municipio : null,
-    departamento: departamento && departamento.length >= 2 && departamento.length <= 60 ? departamento : null,
     pagina: entero(p.get('pagina'), 1, MAX_REGISTROS_CONSULTABLES / 10) ?? 1,
-    anioDesde: entero(p.get('anio_desde'), 1900, 2100),
-    anioHasta: entero(p.get('anio_hasta'), 1900, 2100),
     vista: (VISTAS as readonly string[]).includes(vista ?? '') ? (vista as Vista) : null,
     metrica: esMetrica(metrica) ? metrica : METRICA_INICIAL,
     modo: p.get('modo') === 'tabla' ? 'tabla' : 'tarjetas',
-    buscar: sanearBusqueda(p.get('buscar')),
-    conFoto: p.get('con_foto') === '1',
-    conservacion: esTipoConservacion(conservacion) ? conservacion : null,
-    amenaza: esAmenaza(amenaza) ? amenaza : null,
-    especie: especieValida,
-    nombreEspecie: especieValida ? sanearBusqueda(p.get('nombre_especie')) || null : null,
     registro: registro && /^[0-9]{1,20}$/.test(registro) ? registro : null,
-    orden: p.get('orden') === 'nombre' ? 'nombre' : 'registros',
+    ordenar: ordenar && /^[a-z_]{3,20}$/.test(ordenar) ? ordenar : null,
+    puntos: p.get('puntos') === '1',
   }
 }
 

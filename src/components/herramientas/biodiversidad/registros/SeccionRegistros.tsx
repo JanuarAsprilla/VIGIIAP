@@ -1,80 +1,66 @@
-import { useRef } from 'react'
 import { useBiodiversidadRegistros } from '@/hooks/useBiodiversidad'
 import ConmutadorVista from '../ConmutadorVista'
-import { Cargando, PanelError, PanelVacio } from '../EstadoConsulta'
+import { Cargando, PanelError } from '../EstadoConsulta'
+import type { AyudaFiltros } from '../filtros/ayuda'
+import SelectorOrden from '../filtros/SelectorOrden'
+import SinResultados from '../filtros/SinResultados'
 import Paginacion from '../Paginacion'
 import { fmtNum } from '../lib/format'
+import { ORDENES_REGISTROS, ORDEN_REGISTROS_INICIAL, type OrdenRegistros } from '../lib/orden'
 import { MAX_REGISTROS_CONSULTABLES, TAMANO_PAGINA, type ModoRegistros } from '../lib/parametros'
-import type { Grupo, MunicipioConteo, RegistroBiodiversidad } from '../types'
-import DetalleRegistro from './DetalleRegistro'
-import FiltrosRegistros, { type ValoresFiltro } from './FiltrosRegistros'
+import type { Grupo, ParamsApi, RegistroBiodiversidad } from '../types'
 import TablaRegistros from './TablaRegistros'
 import TarjetaRegistro from './TarjetaRegistro'
 
 interface Props {
   grupo: Grupo
-  municipios: MunicipioConteo[]
-  valores: ValoresFiltro
+  /** Filtros de la ruta `/registros` ya validados. */
+  params: ParamsApi
+  orden: OrdenRegistros
   pagina: number
   modo: ModoRegistros
-  abierto: string | null
-  desde: number
-  hasta: number
+  ayuda: AyudaFiltros
   onCambio: (cambios: Record<string, string | number | null>) => void
-  onLimpiar: () => void
+  onAbrir: (r: RegistroBiodiversidad, origen: HTMLElement) => void
+  onVerEnMapa: (r: RegistroBiodiversidad) => void
 }
 
-export default function SeccionRegistros({ grupo, municipios, valores, pagina, modo, abierto, desde, hasta, onCambio, onLimpiar }: Props) {
-  const origen = useRef<HTMLElement | null>(null)
-  const consulta = useBiodiversidadRegistros({
-    grupo,
-    pagina,
-    tamano: TAMANO_PAGINA,
-    codigo_municipal: valores.municipio ?? undefined,
-    departamento: valores.municipio ? undefined : valores.departamento ?? undefined,
-    anio_desde: valores.anioDesde ?? undefined,
-    anio_hasta: valores.anioHasta ?? undefined,
-    buscar: valores.buscar || undefined,
-    con_foto: valores.conFoto ? 'true' : undefined,
-    conservacion: valores.conservacion ?? undefined,
-    amenaza: valores.amenaza ?? undefined,
-    especie_clave: valores.especie ?? undefined,
-  }, true)
-
+export default function SeccionRegistros({ grupo, params, orden, pagina, modo, ayuda, onCambio, onAbrir, onVerEnMapa }: Props) {
+  const consulta = useBiodiversidadRegistros(grupo, { ...params, orden, pagina, tamano: TAMANO_PAGINA }, true)
   const datos = consulta.data
   const maxPaginas = datos ? Math.max(1, Math.min(Math.ceil(datos.total / TAMANO_PAGINA), Math.floor(MAX_REGISTROS_CONSULTABLES / TAMANO_PAGINA))) : 1
   const primero = datos && datos.total > 0 ? (datos.pagina - 1) * TAMANO_PAGINA + 1 : 0
   const ultimo = datos ? Math.min(datos.pagina * TAMANO_PAGINA, datos.total) : 0
 
-  function abrir(r: RegistroBiodiversidad, el: HTMLElement) {
-    origen.current = el
-    onCambio({ registro: r.gbif_id, pagina })
-  }
-
   return (
     <div className="space-y-4">
-      <FiltrosRegistros municipios={municipios} valores={valores} desde={desde} hasta={hasta} onCambio={onCambio} onLimpiar={onLimpiar} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-text-muted" role="status" aria-live="polite">
           {datos ? (datos.total > 0
             ? `Mostrando ${fmtNum(primero)}–${fmtNum(ultimo)} de ${fmtNum(datos.total)} registros`
             : 'Sin registros con estos filtros') : consulta.isPending ? 'Cargando registros…' : ''}
         </p>
-        <ConmutadorVista etiqueta="Forma de ver los registros" modo={modo} onCambio={(m) => onCambio({ modo: m === 'tarjetas' ? null : m })} />
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <SelectorOrden
+            etiqueta="Ordenar por" valor={orden} opciones={ORDENES_REGISTROS}
+            onCambio={(o) => onCambio({ ordenar: o === ORDEN_REGISTROS_INICIAL ? null : o })}
+          />
+          <ConmutadorVista etiqueta="Forma de ver los registros" modo={modo} onCambio={(m) => onCambio({ modo: m === 'tarjetas' ? null : m })} />
+        </div>
       </div>
       {consulta.isError && !datos ? (
         <PanelError error={consulta.error} onReintentar={() => void consulta.refetch()} />
       ) : !datos ? (
         <Cargando etiqueta="Cargando registros" className="h-80" />
       ) : datos.total === 0 ? (
-        <PanelVacio titulo="Sin registros" detalle="Prueba ampliando el rango de años o quitando filtros como «Solo con foto»." />
+        <SinResultados titulo="Sin registros" sinFiltros="No hay registros en este grupo para el periodo consultado." {...ayuda} />
       ) : (
         <div className={consulta.isFetching ? 'bio-cargando' : ''} aria-busy={consulta.isFetching}>
           {modo === 'tabla' ? (
-            <TablaRegistros registros={datos.registros} onAbrir={abrir} />
+            <TablaRegistros registros={datos.registros} onAbrir={onAbrir} onVerEnMapa={onVerEnMapa} />
           ) : (
             <ul className="bio-rejilla-tarjetas">
-              {datos.registros.map((r) => <li key={r.gbif_id}><TarjetaRegistro r={r} grupo={grupo} onAbrir={abrir} /></li>)}
+              {datos.registros.map((r) => <li key={r.gbif_id}><TarjetaRegistro r={r} grupo={grupo} onAbrir={onAbrir} onVerEnMapa={onVerEnMapa} /></li>)}
             </ul>
           )}
         </div>
@@ -83,11 +69,8 @@ export default function SeccionRegistros({ grupo, municipios, valores, pagina, m
       <Paginacion
         etiqueta="Paginación de registros" pagina={pagina} maxPaginas={maxPaginas} onCambio={(p) => onCambio({ pagina: p })}
         nota={datos && datos.total > MAX_REGISTROS_CONSULTABLES
-          ? `La consulta alcanza como máximo los primeros ${fmtNum(MAX_REGISTROS_CONSULTABLES)} registros; acota con municipio, departamento o años para ver el resto.` : undefined}
+          ? `La consulta alcanza como máximo los primeros ${fmtNum(MAX_REGISTROS_CONSULTABLES)} registros; acota con los filtros para ver el resto.` : undefined}
       />
-      {abierto && (
-        <DetalleRegistro grupo={grupo} gbifId={abierto} origen={origen} onCerrar={() => onCambio({ registro: null, pagina })} />
-      )}
     </div>
   )
 }

@@ -23,7 +23,7 @@ export function calcularIndicadores(municipios: MunicipioConteo[]): Indicadores 
   let conRegistros = 0
   for (const m of municipios) {
     registros += m.registros
-    sinEspecie += m.sin_especie
+    sinEspecie += m.sin_especie ?? 0
     if (m.registros > 0) {
       conRegistros += 1
       deptos.add(m.departamento)
@@ -48,7 +48,7 @@ export function resumenPorDepartamento(municipios: MunicipioConteo[]): ResumenDe
     mapa.set(m.departamento, {
       ...previo,
       registros: previo.registros + m.registros,
-      sinEspecie: previo.sinEspecie + m.sin_especie,
+      sinEspecie: previo.sinEspecie + (m.sin_especie ?? 0),
       totalMunicipios: previo.totalMunicipios + 1,
       municipiosConRegistros: previo.municipiosConRegistros + (m.registros > 0 ? 1 : 0),
     })
@@ -67,9 +67,17 @@ export function ordenarMunicipios(
 ): MunicipioConteo[] {
   const factor = descendente ? -1 : 1
   return [...municipios].sort((a, b) => {
-    const va = a[columna]
-    const vb = b[columna]
+    const va = a[columna] ?? -1
+    const vb = b[columna] ?? -1
     const cmp = typeof va === 'number' && typeof vb === 'number' ? va - vb : String(va).localeCompare(String(vb), 'es')
     return cmp * factor || a.municipio.localeCompare(b.municipio, 'es')
   })
+}
+
+/** Registros del territorio elegido: un municipio, un departamento o todo el conjunto. */
+export function registrosEnTerritorio(municipios: MunicipioConteo[], municipio: string | null, departamento: string | null): number {
+  const dentro = municipio
+    ? municipios.filter((m) => m.codigo_municipal === municipio)
+    : departamento ? municipios.filter((m) => m.departamento === departamento) : municipios
+  return dentro.reduce((suma, m) => suma + m.registros, 0)
 }

@@ -1,9 +1,8 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useState } from 'react'
 import type { UseQueryResult } from '@tanstack/react-query'
-import type { MunicipioConteo, RegistroBiodiversidad } from '@/components/herramientas/biodiversidad/types'
+import type { RegistroBiodiversidad } from '@/components/herramientas/biodiversidad/types'
 
 type Q = Partial<UseQueryResult<unknown>>
 const regs: { q: Q; filtros: unknown[] } = { q: {}, filtros: [] }
@@ -11,8 +10,9 @@ const geo: { q: Q } = { q: {} }
 const llamadas: Record<string, string | number | null>[] = []
 const todas = () => JSON.stringify(llamadas)
 vi.mock('@/hooks/useBiodiversidad', () => ({
-  useBiodiversidadRegistros: (f: unknown) => { regs.filtros.push(f); return regs.q },
+  useBiodiversidadRegistros: (g: string, f: unknown) => { regs.filtros.push({ grupo: g, ...(f as object) }); return regs.q },
   useBiodiversidadRegistro: () => ({ data: undefined, isError: false }),
+  useBiodiversidadPuntos: () => ({ data: undefined, isFetching: false, isError: false, refetch: vi.fn() }),
 }))
 vi.mock('@/components/herramientas/biodiversidad/mapa/geoMunicipios', () => ({ useGeoMunicipios: () => geo.q }))
 vi.mock('@/components/herramientas/biodiversidad/mapa/MapaMunicipios', () => ({ default: () => <div>Mapa simulado</div> }))
@@ -22,28 +22,20 @@ import PanelMapa from '@/components/herramientas/biodiversidad/mapa/PanelMapa'
 import Pestanas from '@/components/herramientas/biodiversidad/Pestanas'
 import { etiquetaMetodo, metodosPorGrupo } from '@/components/herramientas/biodiversidad/lib/metodo'
 
-const M = (c: string, n: string, d: string): MunicipioConteo => ({ codigo_municipal: c, municipio: n, departamento: d, registros: 5, sin_especie: 1, especies: 3 })
-const MUNIS = [M('05837', 'Turbo', 'Antioquia'), M('27001', 'Quibdó', 'Chocó')]
 const reg = (id: string): RegistroBiodiversidad => ({
   gbif_id: id, especie: 'Rhinella marina', especie_clave: 'K', anio: 2014, fecha_evento: null, tipo_evidencia: 'HUMAN_OBSERVATION', licencia: null,
   latitud: null, longitud: null, incertidumbre_m: null, coordenadas_ocultas: true, conjunto: 'C', doi_conjunto: null, codigo_municipal: '05837',
   municipio: 'Turbo', departamento: 'Antioquia', registrado_por: null, identificado_por: null, foto: null, fotos_total: 0,
   amenaza: null, endemica_colombia: false, endemica_choco: false, introducida: false, invasora: false,
 })
-const VALORES = {
-  departamento: null, municipio: null, anioDesde: null, anioHasta: null, buscar: '', conFoto: false, conservacion: null, amenaza: null, especie: null, nombreEspecie: null,
-}
+const AYUDA = { chips: [{ clave: 'con_foto', etiqueta: 'Solo con foto', quitarEtiqueta: 'Quitar el filtro Solo con foto', quitar: { con_foto: null } }], onCambio: vi.fn(), onLimpiar: vi.fn() }
 
-function Contenedor({ inicial = {}, modo = 'tarjetas' as const, abierto = null as string | null }) {
-  const [valores, setValores] = useState({ ...VALORES, ...inicial })
+function Contenedor({ params = {}, modo = 'tarjetas' as const, orden = 'anio_desc' as 'anio_desc' | 'anio_asc' | 'especie' }) {
   return (
-    <>
-      <SeccionRegistros
-        grupo="anfibios" municipios={MUNIS} valores={valores} pagina={1} modo={modo} abierto={abierto} desde={2000} hasta={2025}
-        onCambio={(c) => { llamadas.push(c); if ('con_foto' in c) setValores((v) => ({ ...v, conFoto: c.con_foto === '1' })); if ('especie' in c) setValores((v) => ({ ...v, especie: null, nombreEspecie: null })) }}
-        onLimpiar={() => setValores(VALORES)}
-      />
-    </>
+    <SeccionRegistros
+      grupo="anfibios" params={params} orden={orden} pagina={1} modo={modo} ayuda={AYUDA}
+      onCambio={(c) => { llamadas.push(c) }} onAbrir={(r) => { llamadas.push({ registro: r.gbif_id }) }} onVerEnMapa={(r) => { llamadas.push({ mapa: r.gbif_id }) }}
+    />
   )
 }
 
@@ -55,12 +47,18 @@ beforeEach(() => {
 })
 
 describe('SeccionRegistros', () => {
-  test('arma la consulta con los filtros nuevos', () => {
-    render(<Contenedor inicial={{ buscar: 'Rhi', conFoto: true, conservacion: 'amenazada', amenaza: 'CR', especie: 'K1', municipio: '05837', departamento: 'Antioquia' }} />)
+  test('pide los registros con los filtros recibidos, el orden y el tamaño de página', () => {
+    render(<Contenedor params={{ codigo_municipal: '05837', buscar: 'Rhi', con_foto: 'true' }} orden="anio_asc" />)
     expect(regs.filtros[regs.filtros.length - 1]).toMatchObject({
-      grupo: 'anfibios', pagina: 1, tamano: 24, codigo_municipal: '05837', departamento: undefined, buscar: 'Rhi', con_foto: 'true',
-      conservacion: 'amenazada', amenaza: 'CR', especie_clave: 'K1',
+      grupo: 'anfibios', pagina: 1, tamano: 24, orden: 'anio_asc', codigo_municipal: '05837', buscar: 'Rhi', con_foto: 'true',
     })
+  })
+  test('el selector de orden envía el cambio y vuelve a null con el orden inicial', async () => {
+    render(<Contenedor />)
+    await userEvent.selectOptions(screen.getByLabelText('Ordenar por'), 'especie')
+    expect(todas()).toContain('"ordenar":"especie"')
+    await userEvent.selectOptions(screen.getByLabelText('Ordenar por'), 'anio_desc')
+    expect(todas()).toContain('"ordenar":null')
   })
   test('tarjetas por omisión, tabla al conmutar y estado en aria-pressed', async () => {
     const { container } = render(<Contenedor />)
@@ -76,30 +74,34 @@ describe('SeccionRegistros', () => {
     expect(screen.getByRole('table')).toBeInTheDocument()
     expect(screen.getAllByText('Ubicación reservada').length).toBeGreaterThan(0)
   })
-  test('el interruptor «Solo con foto» y limpiar filtros', async () => {
+  test('«Ver en el mapa» solo existe con ubicación pública', async () => {
+    regs.q = { data: { grupo: 'anfibios', desde: 2000, hasta: 2025, pagina: 1, tamano: 24, total: 2, registros: [
+      { ...reg('1'), coordenadas_ocultas: false, latitud: 5.5, longitud: -76.6 }, reg('2'),
+    ] }, isError: false, isPending: false, isFetching: false, refetch: vi.fn() as never }
     render(<Contenedor />)
-    const sw = screen.getByRole('switch', { name: 'Fotografías' })
-    expect(sw).toHaveAttribute('aria-checked', 'false')
-    await userEvent.click(sw)
-    expect(screen.getByRole('switch', { name: 'Fotografías' })).toHaveAttribute('aria-checked', 'true')
-    await userEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
-    expect(screen.getByRole('switch', { name: 'Fotografías' })).toHaveAttribute('aria-checked', 'false')
+    const botones = screen.getAllByRole('button', { name: /Ver en el mapa/ })
+    expect(botones).toHaveLength(1)
+    await userEvent.click(botones[0])
+    expect(todas()).toContain('"mapa":"1"')
   })
-  test('la especie elegida aparece como filtro quitable', async () => {
-    render(<Contenedor inicial={{ especie: 'K1', nombreEspecie: 'Atelopus spurrelli' }} />)
-    expect(screen.getByText('Atelopus spurrelli')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Quitar el filtro de especie' }))
-    expect(screen.queryByText('Atelopus spurrelli')).not.toBeInTheDocument()
+  test('«Ver en el mapa» no aparece si llegan coordenadas con coordenadas_ocultas=true', () => {
+    regs.q = { data: { grupo: 'anfibios', desde: 2000, hasta: 2025, pagina: 1, tamano: 24, total: 1, registros: [
+      { ...reg('1'), coordenadas_ocultas: true, latitud: 5.5, longitud: -76.6 },
+    ] }, isError: false, isPending: false, isFetching: false, refetch: vi.fn() as never }
+    const { container } = render(<Contenedor />)
+    expect(screen.queryByRole('button', { name: /Ver en el mapa/ })).not.toBeInTheDocument()
+    expect(container.textContent).not.toMatch(/5[,.]5|76[,.]6/)
   })
-  test('departamento y municipio se encadenan; años como selectores', async () => {
-    render(<Contenedor />)
-    await userEvent.selectOptions(screen.getByLabelText('Municipio'), '27001')
-    expect(todas()).toContain('"municipio":"27001"')
-    expect(todas()).toContain('"departamento":"Chocó"')
-    await userEvent.selectOptions(screen.getByLabelText('Departamento'), 'Antioquia')
-    await userEvent.selectOptions(screen.getByLabelText('Año desde'), '2010')
-    await userEvent.selectOptions(screen.getByLabelText('Año hasta'), '2020')
-    expect(todas()).toContain('"anio_hasta":"2020"')
+  test('muestra observador, identificador y conjunto con DOI válido', () => {
+    regs.q = { data: { grupo: 'anfibios', desde: 2000, hasta: 2025, pagina: 1, tamano: 24, total: 1, registros: [
+      { ...reg('1'), registrado_por: 'Ana Pérez', identificado_por: 'Luis Gómez', conjunto: 'Colección <i>X</i>', doi_conjunto: '10.15472/abc123' },
+    ] }, isError: false, isPending: false, isFetching: false, refetch: vi.fn() as never }
+    const { container } = render(<Contenedor />)
+    expect(screen.getByText('Observó: Ana Pérez')).toBeInTheDocument()
+    expect(screen.getByText('Identificó: Luis Gómez')).toBeInTheDocument()
+    expect(screen.getByText('Colección <i>X</i>')).toBeInTheDocument()
+    expect(container.querySelector('i')).toBeNull()
+    expect(screen.getByRole('link', { name: /DOI del conjunto/ })).toHaveAttribute('href', 'https://doi.org/10.15472/abc123')
   })
   test('paginación y apertura del detalle', async () => {
     render(<Contenedor />)
@@ -109,11 +111,14 @@ describe('SeccionRegistros', () => {
     await userEvent.click(screen.getAllByRole('button', { name: /Ver detalle del registro/ })[0])
     expect(todas()).toContain('"registro":"1"')
   })
-  test('vacío, carga y error', async () => {
+  test('sin resultados sugiere qué filtro quitar', async () => {
     regs.q = { data: { grupo: 'anfibios', desde: 2000, hasta: 2025, pagina: 1, tamano: 24, total: 0, registros: [] }, isError: false, isFetching: false, refetch: vi.fn() as never }
-    const { unmount } = render(<Contenedor />)
+    render(<Contenedor />)
     expect(screen.getByText('Sin registros')).toBeInTheDocument()
-    unmount()
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar el filtro Solo con foto' }))
+    expect(AYUDA.onCambio).toHaveBeenCalledWith({ con_foto: null })
+  })
+  test('carga y error con reintento', async () => {
     regs.q = { data: undefined, isError: false, isPending: true, refetch: vi.fn() as never }
     const r2 = render(<Contenedor />)
     expect(screen.getByRole('status', { name: 'Cargando registros' })).toBeInTheDocument()
@@ -124,14 +129,10 @@ describe('SeccionRegistros', () => {
     await userEvent.click(screen.getByRole('button', { name: /Reintentar/ }))
     expect(refetch).toHaveBeenCalled()
   })
-  test('abre el diálogo cuando la URL trae un registro', () => {
-    render(<Contenedor abierto="777" />)
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
-  })
 })
 
 describe('PanelMapa', () => {
-  const props = { datos: new Map(), metrica: 'registros' as const, cortes: [1], maximo: 5, seleccionado: null, departamento: null, cargandoDatos: false, onSeleccionar: vi.fn(), onMetrica: vi.fn() }
+  const props = { grupo: 'anfibios' as const, puntosDisponibles: true, puntosActivos: false, paramsPuntos: {}, enfoque: null, onPuntos: vi.fn(), onAbrirRegistro: vi.fn(), datos: new Map(), metrica: 'registros' as const, cortes: [1], maximo: 5, seleccionado: null, departamento: null, cargandoDatos: false, onSeleccionar: vi.fn(), onMetrica: vi.fn() }
   test('selector de métrica como radiogroup y leyenda integrada', async () => {
     const onMetrica = vi.fn()
     render(<PanelMapa {...props} onMetrica={onMetrica} />)

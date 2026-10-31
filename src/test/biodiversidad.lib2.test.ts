@@ -6,6 +6,7 @@ import { ETIQUETA_METRICA, esMetrica, fmtValorMetrica, valorMetrica } from '@/co
 import { etiquetaTramo, tramosLeyenda, claseDe, calcularCortes } from '@/components/herramientas/biodiversidad/lib/escala'
 import { insigniasDe, esAmenaza, esTipoConservacion, NOMBRE_AMENAZA } from '@/components/herramientas/biodiversidad/lib/conservacion'
 import { etiquetarLicencia } from '@/components/herramientas/biodiversidad/lib/licencia'
+import { leerFiltros } from '@/components/herramientas/biodiversidad/lib/filtros'
 import { leerParametros, sanearBusqueda, actualizarParametros } from '@/components/herramientas/biodiversidad/lib/parametros'
 import { puntoInterior } from '@/components/herramientas/biodiversidad/lib/geometria'
 import { ordenarMunicipios } from '@/components/herramientas/biodiversidad/lib/derivar'
@@ -133,11 +134,15 @@ describe('licencias de fotos', () => {
 describe('parámetros nuevos de URL', () => {
   test('lee y sanea todos los filtros', () => {
     const p = leerParametros(new URLSearchParams('metrica=especies&modo=tabla&buscar=%20Rhinella%20&con_foto=1&conservacion=amenazada&amenaza=CR&especie=ABC123&nombre_especie=Rhinella%20marina&registro=987&orden=nombre'))
-    expect(p).toMatchObject({ metrica: 'especies', modo: 'tabla', buscar: 'Rhinella', conFoto: true, conservacion: 'amenazada', amenaza: 'CR', especie: 'ABC123', nombreEspecie: 'Rhinella marina', registro: '987', orden: 'nombre' })
+    expect(p).toMatchObject({ metrica: 'especies', modo: 'tabla', registro: '987', ordenar: 'nombre' })
+    expect(leerFiltros(new URLSearchParams('buscar=%20Rhinella%20&con_foto=1&conservacion=amenazada&amenaza=CR&especie=ABC123&nombre_especie=Rhinella%20marina')))
+      .toMatchObject({ buscar: 'Rhinella', conFoto: true, conservacion: 'amenazada', amenaza: 'CR', especie: 'ABC123', nombreEspecie: 'Rhinella marina' })
   })
   test('descarta valores inválidos', () => {
     const p = leerParametros(new URLSearchParams('metrica=x&modo=y&buscar=a&con_foto=si&conservacion=z&amenaza=LC&especie=a/b&nombre_especie=zz&registro=12ab&orden=zz&vista=nada'))
-    expect(p).toMatchObject({ metrica: 'registros', modo: 'tarjetas', buscar: '', conFoto: false, conservacion: null, amenaza: null, especie: null, nombreEspecie: null, registro: null, orden: 'registros', vista: null })
+    expect(p).toMatchObject({ metrica: 'registros', modo: 'tarjetas', registro: null, ordenar: null, vista: null })
+    expect(leerFiltros(new URLSearchParams('buscar=a&con_foto=si&conservacion=z&amenaza=LC&especie=a/b&nombre_especie=zz')))
+      .toMatchObject({ buscar: '', conFoto: false, conservacion: null, amenaza: null, especie: null, nombreEspecie: null })
   })
   test('la búsqueda se limita a 60 caracteres y quita controles', () => {
     expect(sanearBusqueda('a'.repeat(100))).toHaveLength(60)
