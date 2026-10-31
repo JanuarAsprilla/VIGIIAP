@@ -140,7 +140,7 @@ describe('PanelError', () => {
 describe('RankingPanel', () => {
   test('lista top por registros y selecciona', async () => {
     const onMunicipio = vi.fn()
-    render(<RankingPanel municipios={MUNIS} seleccionado="05837" departamento={null} onMunicipio={onMunicipio} onDepartamento={vi.fn()} />)
+    render(<RankingPanel municipios={MUNIS} metrica="registros" seleccionado="05837" departamento={null} onMunicipio={onMunicipio} onDepartamento={vi.fn()} />)
     const items = screen.getAllByRole('listitem')
     expect(items).toHaveLength(2)
     expect(within(items[0]).getByText('Turbo')).toBeInTheDocument()
@@ -151,7 +151,7 @@ describe('RankingPanel', () => {
 
   test('alterna a departamentos', async () => {
     const onDepartamento = vi.fn()
-    render(<RankingPanel municipios={MUNIS} seleccionado={null} departamento={null} onMunicipio={vi.fn()} onDepartamento={onDepartamento} />)
+    render(<RankingPanel municipios={MUNIS} metrica="registros" seleccionado={null} departamento={null} onMunicipio={vi.fn()} onDepartamento={onDepartamento} />)
     await userEvent.click(screen.getByRole('button', { name: 'Departamentos' }))
     await userEvent.click(screen.getByRole('button', { name: /Antioquia/ }))
     expect(onDepartamento).toHaveBeenCalledWith('Antioquia')

@@ -7,8 +7,8 @@ interface Punto {
 }
 
 const ANCHO = 640
-const ALTO = 190
-const MARGEN = { izq: 8, der: 8, sup: 10, inf: 24 }
+const ALTO = 205
+const MARGEN = { izq: 8, der: 8, sup: 24, inf: 24 }
 
 function pasoEtiquetas(n: number): number {
   return n > 20 ? 5 : n > 10 ? 2 : 1
@@ -35,15 +35,21 @@ export default function GraficoAnios({ datos }: { datos: Punto[] }) {
         onMouseLeave={() => setActivo(null)}>
         <line x1={MARGEN.izq} x2={ANCHO - MARGEN.der} y1={MARGEN.sup + area.h} y2={MARGEN.sup + area.h} className="bio-eje" />
         <line x1={MARGEN.izq} x2={ANCHO - MARGEN.der} y1={MARGEN.sup} y2={MARGEN.sup} className="bio-rejilla" />
-        <text x={MARGEN.izq} y={MARGEN.sup - 2} className="bio-eje-texto">{fmtNum(maximo)}</text>
         {datos.map((d, i) => {
           const h = Math.max(d.registros > 0 ? 2 : 0, (d.registros / maximo) * area.h)
           const x = MARGEN.izq + i * paso + (paso - ancho) / 2
+          const esPico = d.anio === pico.anio
+          const alIzquierda = x > ANCHO * 0.7
           return (
             <g key={d.anio} onMouseEnter={() => setActivo(i)}>
               <rect x={MARGEN.izq + i * paso} y={MARGEN.sup} width={paso} height={area.h} fill="transparent" />
               <rect x={x} y={MARGEN.sup + area.h - h} width={ancho} height={h} rx={Math.min(2, ancho / 2)}
-                className={`bio-barra-anio ${activo === i ? 'bio-barra-activa' : ''}`} />
+                className={`bio-barra-anio ${activo === i ? 'bio-barra-activa' : esPico ? 'bio-barra-pico' : ''}`} />
+              {esPico && (
+                <text x={alIzquierda ? x + ancho : x} y={MARGEN.sup + area.h - h - 6} textAnchor={alIzquierda ? 'end' : 'start'} className="bio-anota">
+                  Pico {d.anio} · {fmtNum(d.registros)}
+                </text>
+              )}
               {i % paso5 === 0 && (
                 <text x={x + ancho / 2} y={ALTO - 7} textAnchor="middle" className="bio-eje-texto">{d.anio}</text>
               )}

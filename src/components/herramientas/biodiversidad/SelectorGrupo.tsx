@@ -1,6 +1,7 @@
 import { useEffect, useRef, type KeyboardEvent } from 'react'
 import GrupoIcono from './GrupoIcono'
 import { fmtNum } from './lib/format'
+import { estiloGrupo } from './lib/paleta'
 import { GRUPOS, NOMBRES_GRUPO, type Grupo, type GrupoEstado } from './types'
 
 interface Props {
@@ -43,9 +44,9 @@ export default function SelectorGrupo({ grupo, grupos, onCambiar }: Props) {
           return (
             <button
               key={g} ref={(el) => { refs.current[i] = el }} type="button" role="radio" aria-checked={activo}
-              tabIndex={activo ? 0 : -1} className="bio-grupo" onClick={() => onCambiar(g)} onKeyDown={(e) => alTeclear(e, i)}
+              tabIndex={activo ? 0 : -1} className="bio-grupo bio-tema" style={estiloGrupo(g)} onClick={() => onCambiar(g)} onKeyDown={(e) => alTeclear(e, i)}
             >
-              <GrupoIcono grupo={g} className="bio-grupo-icono" />
+              <span className="bio-grupo-chip"><GrupoIcono grupo={g} className="bio-grupo-icono" /></span>
               <span className="bio-grupo-nombre">{NOMBRES_GRUPO[g]}</span>
               <span className="bio-grupo-total">
                 {info ? <><b>{fmtNum(info.registros)}</b> registros</> : <span className="bio-grupo-vacio" aria-hidden="true" />}

@@ -27,7 +27,7 @@ export default function PanelMapa({ datos, metrica, cortes, maximo, seleccionado
       <div className="px-1 pb-3 flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <h2 id={titulo} className="section-title">Mapa por municipio</h2>
-          <p className="text-xs text-text-muted mt-0.5">Elige un municipio con clic o con las flechas del teclado.</p>
+          <p className="text-xs text-text-muted mt-0.5">Toca o haz clic en un municipio para ver su detalle y filtrar el resto de la herramienta.</p>
         </div>
         <div role="radiogroup" aria-label="Qué pintar en el mapa" className="bio-segmentos">
           {METRICAS.map((m) => (
@@ -42,7 +42,7 @@ export default function PanelMapa({ datos, metrica, cortes, maximo, seleccionado
       ) : !geo.data ? (
         <Cargando etiqueta="Cargando mapa" className="bio-mapa" />
       ) : (
-        <div aria-busy={cargandoDatos}>
+        <div aria-busy={cargandoDatos} className="bio-mapa-cuerpo">
           <Suspense fallback={<Cargando etiqueta="Cargando mapa" className="bio-mapa" />}>
             <MapaMunicipios
               geo={geo.data} datos={datos} metrica={metrica} cortes={cortes}
