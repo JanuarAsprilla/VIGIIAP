@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import type { RefObject } from 'react'
 import { isTrustedUrl } from '@/lib/trustedUrl'
+import { registrarDescargaDeUrl } from '@/lib/analyticsEventos'
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api/v1'
 
@@ -40,6 +41,7 @@ export async function forceDownload(url: string | null | undefined, filename?: s
     return
   }
   const name = filename || url.split('?')[0].split('/').pop() || 'archivo'
+  registrarDescargaDeUrl(url, filename)
   try {
     const res  = await fetch(url)
     const blob = await res.blob()
