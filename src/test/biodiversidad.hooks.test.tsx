@@ -6,7 +6,10 @@ import { createElement, type ReactNode } from 'react'
 vi.mock('@/lib/api', () => ({ default: { get: vi.fn() } }))
 
 import api from '@/lib/api'
-import { useBiodiversidadEstado, useBiodiversidadMunicipios, useBiodiversidadRegistros } from '@/hooks/useBiodiversidad'
+import {
+  useBiodiversidadEspecies, useBiodiversidadEstado, useBiodiversidadMunicipios, useBiodiversidadRegistro, useBiodiversidadRegistros,
+  useBiodiversidadResumen, useBiodiversidadSeries,
+} from '@/hooks/useBiodiversidad'
 
 function wrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
@@ -54,5 +57,48 @@ describe('hooks de biodiversidad', () => {
   test('registros: deshabilitado no consulta', () => {
     renderHook(() => useBiodiversidadRegistros({ grupo: 'aves', pagina: 1, tamano: 25 }, false), { wrapper: wrapper() })
     expect(api.get).not.toHaveBeenCalled()
+  })
+
+  test('registros: envía los filtros nuevos y descarta vacíos', async () => {
+    vi.mocked(api.get).mockResolvedValue({ registros: [], total: 0, pagina: 1, tamano: 24 })
+    const { result } = renderHook(
+      () => useBiodiversidadRegistros({ grupo: 'anfibios', pagina: 1, tamano: 24, buscar: 'Rhi', con_foto: 'true', conservacion: 'amenazada', amenaza: 'CR', especie_clave: 'K1', departamento: undefined }, true),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(api.get).toHaveBeenCalledWith('/biodiversidad/registros', {
+      params: { grupo: 'anfibios', pagina: 1, tamano: 24, buscar: 'Rhi', con_foto: 'true', conservacion: 'amenazada', amenaza: 'CR', especie_clave: 'K1' },
+    })
+  })
+
+  test('resumen y series: grupo más alcance territorial', async () => {
+    vi.mocked(api.get).mockResolvedValue({ registros: 1 })
+    const { result } = renderHook(() => ({
+      r: useBiodiversidadResumen('aves', { departamento: 'Chocó' }), s: useBiodiversidadSeries('aves', { codigo_municipal: '27001' }),
+    }), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.r.isSuccess && result.current.s.isSuccess).toBe(true))
+    expect(api.get).toHaveBeenCalledWith('/biodiversidad/resumen', { params: { grupo: 'aves', departamento: 'Chocó' } })
+    expect(api.get).toHaveBeenCalledWith('/biodiversidad/series', { params: { grupo: 'aves', codigo_municipal: '27001' } })
+  })
+
+  test('series deshabilitadas no consultan', () => {
+    renderHook(() => useBiodiversidadSeries('aves', {}, false), { wrapper: wrapper() })
+    expect(api.get).not.toHaveBeenCalled()
+  })
+
+  test('especies: filtros limpios', async () => {
+    vi.mocked(api.get).mockResolvedValue({ especies: [], total: 0 })
+    const { result } = renderHook(() => useBiodiversidadEspecies({ grupo: 'aves', pagina: 2, tamano: 20, orden: 'nombre', buscar: '' }), { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(api.get).toHaveBeenCalledWith('/biodiversidad/especies', { params: { grupo: 'aves', pagina: 2, tamano: 20, orden: 'nombre' } })
+  })
+
+  test('detalle: codifica el id y solo consulta con id', async () => {
+    vi.mocked(api.get).mockResolvedValue({ gbif_id: '55' })
+    const { result, rerender } = renderHook(({ id }: { id: string | null }) => useBiodiversidadRegistro('anfibios', id), { wrapper: wrapper(), initialProps: { id: null as string | null } })
+    expect(api.get).not.toHaveBeenCalled()
+    rerender({ id: '55' })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(api.get).toHaveBeenCalledWith('/biodiversidad/registros/55', { params: { grupo: 'anfibios' } })
   })
 })
