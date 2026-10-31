@@ -27,8 +27,26 @@ function apiBaseUrl(): string {
   return import.meta.env.VITE_API_URL ?? '/api/v1';
 }
 
+export type NombreEvento =
+  | 'descarga_mapa' | 'descarga_documento' | 'abrir_geovisor' | 'usar_herramienta' | 'buscar' | 'compartir';
+
+export interface EventoPayload {
+  sessionId: string;
+  nombre: NombreEvento;
+  recurso: string | null;
+  ruta: string;
+}
+
 export function enviarPageviewBeacon(payload: PageviewPayload): void {
-  const url = `${apiBaseUrl()}/analitica/pageview`;
+  enviarBeacon('pageview', payload);
+}
+
+export function enviarEventoBeacon(payload: EventoPayload): void {
+  enviarBeacon('evento', payload);
+}
+
+function enviarBeacon(endpoint: 'pageview' | 'evento', payload: PageviewPayload | EventoPayload): void {
+  const url = `${apiBaseUrl()}/analitica/${endpoint}`;
   const body = JSON.stringify(payload);
 
   try {
