@@ -155,11 +155,29 @@ describe('TarjetaEspecie', () => {
     expect(screen.queryByText(/Aún sin fotografía/)).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Ver registros/ })).not.toBeInTheDocument()
   })
-  test('«Ver registros» entrega la especie', async () => {
+  test('«Ver registros» entrega la especie y su nombre accesible dice de cuál', async () => {
     const onVer = vi.fn()
     render(<TarjetaEspecie e={esp()} {...props} onVerRegistros={onVer} />)
-    await userEvent.click(screen.getByRole('button', { name: /Ver registros/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Ver registros de Atelopus spurrelli' }))
     expect(onVer).toHaveBeenCalledWith(expect.objectContaining({ especie_clave: 'E1' }))
+  })
+  test('agregado: la franja sin foto es baja (no media tarjeta vacía)', () => {
+    const { container } = render(<TarjetaEspecie e={esp({ foto: null })} {...props} esIndividual={false} />)
+    expect((container.querySelector('.bio-foto') as HTMLElement).style.aspectRatio).toBe('16 / 6')
+  })
+  test('agregado: ofrece «Ver municipios» de esa especie en lugar de registros', async () => {
+    const onMun = vi.fn()
+    render(<TarjetaEspecie e={esp({ foto: null })} {...props} esIndividual={false} onVerMunicipios={onMun} />)
+    expect(screen.queryByRole('button', { name: /Ver registros/ })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Ver municipios de Atelopus spurrelli' }))
+    expect(onMun).toHaveBeenCalledWith(expect.objectContaining({ especie_clave: 'E1' }))
+  })
+  test('las cifras van antes que la conservación (así quedan alineadas entre tarjetas) y el linaje completo está en el título de la taxonomía', () => {
+    const { container } = render(<TarjetaEspecie e={esp()} {...props} />)
+    const insignias = container.querySelector('[aria-label="Estado de conservación"]')!
+    const cifras = container.querySelector('.bio-especie-mini')!
+    expect(cifras.compareDocumentPosition(insignias) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByText('Anura · Bufonidae')).toHaveAttribute('title', 'Animalia › Amphibia › Anura › Bufonidae › Atelopus')
   })
 })
 

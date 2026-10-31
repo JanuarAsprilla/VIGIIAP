@@ -25,8 +25,8 @@ function rangoAnios(f: Filtros): string {
 /** Un chip por filtro activo, en el orden en que se leen: territorio, taxonomía, conservación, fuente, tiempo, calidad. */
 export function chipsActivos(f: Filtros, nombreMunicipio: string | null): ChipFiltro[] {
   const c: ChipFiltro[] = []
-  if (f.municipio) c.push(chip('municipio', `Municipio: ${nombreMunicipio ?? f.municipio}`, { municipio: null, departamento: null }))
-  else if (f.departamento) c.push(chip('departamento', `Departamento: ${f.departamento}`, { departamento: null }))
+  if (f.departamento) c.push(chip('departamento', `Departamento: ${f.departamento}`, { departamento: null, municipio: null }))
+  if (f.municipio) c.push(chip('municipio', `Municipio: ${nombreMunicipio ?? f.municipio}`, { municipio: null }))
   for (const n of NIVELES_TAXON) if (f[n]) c.push(chip(n, `${NOMBRE_NIVEL[n]}: ${f[n]}`, cambiosTaxon(n, null)))
   if (f.especie) c.push(chip('especie', `Especie: ${f.nombreEspecie ?? f.especie}`, { especie: null, nombre_especie: null }))
   if (f.buscar) c.push(chip('buscar', `Nombre: «${f.buscar}»`, { buscar: null }))
