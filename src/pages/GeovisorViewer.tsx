@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { MapContainer, WMSTileLayer, ScaleControl } from 'react-leaflet'
 import type { WMSParams } from 'leaflet'
@@ -10,6 +10,7 @@ import api from '@/lib/api'
 import { fadeUp } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { useGeovisorPorSlug, useCapasDeGeovisor } from '@/hooks/useGeovisores'
+import { registrarEvento } from '@/lib/analyticsEventos'
 import BasemapCapas from '@/components/geovisor-viewer/BasemapCapas'
 import BasemapGaleria from '@/components/geovisor-viewer/BasemapGaleria'
 import PanelCapas from '@/components/geovisor-viewer/PanelCapas'
@@ -30,6 +31,11 @@ export default function GeovisorViewer() {
   const { slug } = useParams<{ slug: string }>()
   const { data: geovisor, isLoading: cargandoGeovisor, isError, error } = useGeovisorPorSlug(slug)
   const { data: temas = [], isLoading: cargandoCapas } = useCapasDeGeovisor(slug)
+  const geovisorCargado = Boolean(geovisor)
+
+  useEffect(() => {
+    if (geovisorCargado && slug) registrarEvento('abrir_geovisor', slug)
+  }, [geovisorCargado, slug])
 
   const [basemap, setBasemap] = useState<string | null>(null)
   const [capasActivas, setCapasActivas] = useState<CapaActiva[]>([])

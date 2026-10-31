@@ -75,6 +75,49 @@ export function useFuentesTrafico(rango: RangoFechas = {}, enabled: boolean = tr
   })
 }
 
+export interface EventoStat {
+  nombre: string
+  total: number
+  sesiones: number
+}
+
+export interface RecursoEvento {
+  nombre: string
+  recurso: string
+  total: number
+}
+
+export interface EventosTop {
+  eventos: EventoStat[]
+  recursos: RecursoEvento[]
+}
+
+export function useEventosTop(rango: RangoFechas = {}, enabled: boolean = true) {
+  return useQuery<EventosTop>({
+    queryKey: ['admin', 'analitica', 'eventos-top', rango],
+    queryFn:  () => api.get('/analitica/eventos-top', { params: paramsRango(rango) }),
+    staleTime: 1000 * 60 * 2,
+    enabled,
+  })
+}
+
+export interface TiempoReal {
+  ventanaMin: number
+  visitantesActivos: number
+  paginasActuales: { ruta: string; visitantes: number }[]
+}
+
+const REFRESCO_TIEMPO_REAL_MS = 30_000
+
+export function useTiempoReal(enabled: boolean = true) {
+  return useQuery<TiempoReal>({
+    queryKey: ['admin', 'analitica', 'tiempo-real'],
+    queryFn:  () => api.get('/analitica/tiempo-real'),
+    refetchInterval: REFRESCO_TIEMPO_REAL_MS,
+    enabled,
+  })
+}
+
 export interface EntradaSalida {
   entradas: { ruta: string; veces: number }[]
   salidas:  { ruta: string; veces: number }[]

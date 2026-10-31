@@ -9,6 +9,8 @@ import MetricPanel, { type Metric } from '@/components/ui/MetricPanel'
 import BarraCategoria from '@/components/admin/actividad/BarraCategoria'
 import EstadoCarga from '@/components/admin/actividad/EstadoCarga'
 import UbicacionVisitas from '@/components/admin/actividad/UbicacionVisitas'
+import AccionesVisitantes from '@/components/admin/actividad/AccionesVisitantes'
+import TiempoReal from '@/components/admin/actividad/TiempoReal'
 import { LINE_CHART_OPTIONS } from '@/lib/reportesChartConfig'
 import {
   useAnaliticaResumen, usePaginasTop, useDispositivos, useFuentesTrafico, useEntradaSalida,
@@ -144,9 +146,13 @@ export default function AnaliticaTab({ desde, hasta }: AnaliticaTabProps) {
         Navegación en la plataforma sin identidad: se guarda la IP y la ubicación aproximada de cada sesión, nunca el usuario, y la IP se elimina a los 90 días.
       </motion.p>
 
+      <TiempoReal />
+
       <KpiCards />
 
       <TendenciaChart />
+
+      <AccionesVisitantes rango={rango} />
 
       <UbicacionVisitas rango={rango} />
 
