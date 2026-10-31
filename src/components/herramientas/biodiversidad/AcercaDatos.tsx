@@ -1,18 +1,19 @@
 import { ChevronDown, Info } from 'lucide-react'
 import { PanelError } from './EstadoConsulta'
 import { fmtFecha, fmtNum } from './lib/format'
+import { AVISO_SIN_MARCA } from './lib/conservacion'
 import { urlDoi } from './lib/enlaces'
 import { etiquetaMetodo } from './lib/metodo'
 import { NOMBRES_GRUPO, type EstadoBiodiversidad } from './types'
 
 const LISTAS_CONSERVACION = [
   'Amenaza nacional: MADS, Resolución 0126 de 2024',
-  'Endemismo: IIAP',
+  'Endemismo del Chocó: lista del IIAP (2011), histórica y parcial',
   'Especies introducidas: GRIIS',
   'Especies invasoras: MADS',
-  'Endemismo de aves: ACO',
-  'Plantas: UNAL',
-  'Mamíferos: SCMas',
+  'Endemismo nacional de aves: ACO',
+  'Endemismo nacional de plantas: UNAL',
+  'Endemismo nacional de mamíferos: SCMas',
 ]
 
 interface Props {
@@ -46,6 +47,11 @@ export default function AcercaDatos({ estado, error, cargando, onReintentar }: P
                     Los registros provienen de GBIF y de las instituciones que publican cada conjunto de datos; pertenecen a sus
                     publicadores y se usan bajo la licencia indicada en cada registro. Cita siempre el conjunto de datos (DOI) y respeta su licencia.
                   </p>
+                  <h3 className="bio-eyebrow mt-4 mb-2">Fotografías</h3>
+                  <p className="text-sm text-text-light leading-relaxed">
+                    Las fotografías se cargan desde GBIF y pertenecen a sus autores: cada una se muestra con su autoría y licencia.
+                    Es la única excepción a que esta herramienta no use servicios externos; las imágenes no se descargan ni se almacenan aquí.
+                  </p>
                   <h3 className="bio-eyebrow mt-4 mb-2">Cruce con listas de conservación</h3>
                   <p className="text-sm text-text-light">
                     {estado.conservacion.activa
@@ -55,6 +61,11 @@ export default function AcercaDatos({ estado, error, cargando, onReintentar }: P
                   <ul className="mt-2 text-sm text-text-light list-disc pl-5 space-y-0.5">
                     {LISTAS_CONSERVACION.map((l) => <li key={l}>{l}</li>)}
                   </ul>
+                  <p className="text-sm text-text-light leading-relaxed mt-3">
+                    Solo existen listas nacionales de endemismo para aves, plantas y mamíferos: en anfibios, reptiles, insectos y hongos
+                    un valor de cero no significa «sin endémicas», sino «sin lista». «Introducida» e «invasora» son indicadores independientes.
+                    {' '}{AVISO_SIN_MARCA}
+                  </p>
                   <p className="text-sm mt-4 font-semibold text-text">
                     Los conteos reflejan esfuerzo de muestreo, no abundancia: un municipio con más registros no necesariamente tiene más individuos ni más especies.
                   </p>

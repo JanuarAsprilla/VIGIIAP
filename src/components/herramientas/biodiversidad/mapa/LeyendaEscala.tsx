@@ -1,21 +1,30 @@
-import { fmtNum } from '../lib/format'
-import { tramosLeyenda } from '../lib/escala'
+import { etiquetaTramo, tramosLeyenda } from '../lib/escala'
+import { TITULO_LEYENDA, type Metrica } from '../lib/metrica'
 
-export default function LeyendaEscala({ cortes, maximo }: { cortes: number[]; maximo: number }) {
-  const tramos = tramosLeyenda(cortes, maximo)
+interface Props {
+  cortes: number[]
+  maximo: number
+  metrica?: Metrica
+}
+
+/** Leyenda integrada: barra de clases con rótulos debajo; no se superpone al mapa. */
+export default function LeyendaEscala({ cortes, maximo, metrica = 'registros' }: Props) {
+  const tramos = tramosLeyenda(cortes, maximo, metrica !== 'sin_especie')
   return (
-    <div className="bio-leyenda" role="group" aria-label="Leyenda: registros por municipio">
-      <p className="bio-eyebrow">Registros por municipio</p>
+    <div className="bio-leyenda" role="group" aria-label={`Leyenda: ${TITULO_LEYENDA[metrica].toLowerCase()}`}>
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="bio-eyebrow">{TITULO_LEYENDA[metrica]}</p>
+        <p className="text-[0.625rem] text-text-muted">Clases por cuantiles</p>
+      </div>
       <ul>
-        <li><span className="bio-muestra" style={{ background: 'var(--bio-c0)' }} aria-hidden="true" />Sin registros</li>
+        <li><span className="bio-muestra bio-muestra-vacia" aria-hidden="true" /><span>Sin datos</span></li>
         {tramos.map((t) => (
           <li key={t.clase}>
             <span className="bio-muestra" style={{ background: `var(--bio-c${t.clase})` }} aria-hidden="true" />
-            {t.desde === t.hasta ? fmtNum(t.hasta) : `${fmtNum(t.desde)} – ${fmtNum(t.hasta)}`}
+            <span>{etiquetaTramo(t, metrica)}</span>
           </li>
         ))}
       </ul>
-      <p className="text-[0.625rem] text-text-muted mt-1.5">Clases por cuantiles (escala no lineal)</p>
     </div>
   )
 }
