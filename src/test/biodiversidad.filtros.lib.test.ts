@@ -48,10 +48,10 @@ describe('estado de filtros en la URL', () => {
     expect(cambiosConservacion('endemica', 'CR')).toEqual({ conservacion: 'endemica', amenaza: null })
     expect(cambiosEntidad(UUID, 'X')).toMatchObject({ conjunto: null, nombre_conjunto: null })
   })
-  test('limpiar todo elimina cada clave de filtro y cuenta los activos (territorio cuenta una vez)', () => {
+  test('limpiar todo elimina cada clave de filtro y cuenta los activos (departamento y municipio cuentan por separado, como sus chips)', () => {
     const url = actualizarParametros(new URLSearchParams('grupo=aves&familia=X1&municipio=05837&departamento=Antioquia'), QUITAR_TODOS)
     expect([...url.keys()]).toEqual(['grupo'])
-    expect(contarFiltros(f({ municipio: '05837', departamento: 'Antioquia', familia: 'Hylidae', conFoto: true }))).toBe(3)
+    expect(contarFiltros(f({ municipio: '05837', departamento: 'Antioquia', familia: 'Hylidae', conFoto: true }))).toBe(4)
   })
 })
 
@@ -135,10 +135,15 @@ describe('chips y resumen', () => {
   test('un chip por filtro, en orden de lectura, con la acción que lo quita', () => {
     const chips = chipsActivos(f({ municipio: '05837', departamento: 'Antioquia', clase: 'Amphibia', familia: 'Hylidae', conservacion: 'amenazada', amenaza: 'CR', anioDesde: 2010, conFoto: true }), 'Turbo')
     expect(chips.map((c) => c.etiqueta)).toEqual([
-      'Municipio: Turbo', 'Clase: Amphibia', 'Familia: Hylidae', 'Amenazadas: CR · En peligro crítico', 'Años: desde 2010', 'Solo con foto',
+      'Departamento: Antioquia', 'Municipio: Turbo', 'Clase: Amphibia', 'Familia: Hylidae', 'Amenazadas: CR · En peligro crítico', 'Años: desde 2010', 'Solo con foto',
     ])
-    expect(chips[1].quitar).toMatchObject({ clase: null, orden_taxon: null, familia: null, genero: null, especie: null })
-    expect(chips[0].quitarEtiqueta).toBe('Quitar el filtro Municipio: Turbo')
+    expect(chips[2].quitar).toMatchObject({ clase: null, orden_taxon: null, familia: null, genero: null, especie: null })
+    expect(chips[1].quitarEtiqueta).toBe('Quitar el filtro Municipio: Turbo')
+  })
+  test('quitar el chip del municipio conserva el departamento; quitar el del departamento limpia ambos', () => {
+    const [depto, muni] = chipsActivos(f({ municipio: '05837', departamento: 'Antioquia' }), 'Turbo')
+    expect(muni.quitar).toEqual({ municipio: null })
+    expect(depto.quitar).toEqual({ departamento: null, municipio: null })
   })
   test('texto resumen con «de N» solo cuando hay filtros que reducen', () => {
     expect(textoResumen(f({ clase: 'Amphibia', familia: 'Hylidae' }), 'Anfibios', 'Chocó', 1234, 28856, fmtNum))

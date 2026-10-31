@@ -151,7 +151,7 @@ export function hayFuente(f: Filtros): boolean {
 
 export function contarFiltros(f: Filtros): number {
   return NIVELES_TAXON.filter((n) => f[n] !== null).length
-    + [f.municipio ?? f.departamento, f.especie, f.buscar || null, f.conservacion, f.entidad, f.conjunto, f.anioDesde, f.anioHasta, f.evidencia]
+    + [f.departamento, f.municipio, f.especie, f.buscar || null, f.conservacion, f.entidad, f.conjunto, f.anioDesde, f.anioHasta, f.evidencia]
       .filter((v) => v !== null).length
     + (f.conFoto ? 1 : 0) + (f.conUbicacion ? 1 : 0)
 }

@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
-import { listarDepartamentos } from '../lib/derivar'
 import type { CambiosUrl, Filtros } from '../lib/filtros'
+import { opcionesTerritorio } from '../lib/territorio'
 import type { MunicipioConteo } from '../types'
+import Combobox from './Combobox'
 
 interface Props {
   filtros: Filtros
@@ -9,42 +10,32 @@ interface Props {
   onCambio: (cambios: CambiosUrl) => void
 }
 
-function Campo({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1 min-w-0">
-      <span className="bio-eyebrow">{etiqueta}</span>
-      {children}
-    </label>
-  )
-}
-
+/** Departamento y municipio se encadenan: elegir un municipio fija su departamento; cambiar de departamento suelta el
+ *  municipio; quitar el municipio conserva el departamento. Las cifras siguen el resto de filtros activos. */
 export default function SeccionTerritorio({ filtros, municipios, onCambio }: Props) {
-  const departamentos = useMemo(() => listarDepartamentos(municipios), [municipios])
-  const delDepto = useMemo(
-    () => municipios.filter((m) => !filtros.departamento || m.departamento === filtros.departamento)
-      .sort((a, b) => a.municipio.localeCompare(b.municipio, 'es')),
-    [municipios, filtros.departamento],
+  const { departamentos, municipios: opcMunicipios } = useMemo(
+    () => opcionesTerritorio(municipios, filtros.departamento), [municipios, filtros.departamento],
+  )
+  const nombreMunicipio = useMemo(
+    () => (filtros.municipio ? municipios.find((m) => m.codigo_municipal === filtros.municipio)?.municipio ?? null : null),
+    [municipios, filtros.municipio],
   )
   return (
-    <div className="grid gap-3">
-      <Campo etiqueta="Departamento">
-        <select className="bio-campo" value={filtros.departamento ?? ''} onChange={(e) => onCambio({ departamento: e.target.value || null, municipio: null })}>
-          <option value="">Todos</option>
-          {departamentos.map((d) => <option key={d} value={d}>{d}</option>)}
-        </select>
-      </Campo>
-      <Campo etiqueta="Municipio">
-        <select
-          className="bio-campo" value={filtros.municipio ?? ''}
-          onChange={(e) => {
-            const m = municipios.find((x) => x.codigo_municipal === e.target.value)
-            onCambio({ municipio: m ? m.codigo_municipal : null, ...(m ? { departamento: m.departamento } : {}) })
-          }}
-        >
-          <option value="">Todos</option>
-          {delDepto.map((m) => <option key={m.codigo_municipal} value={m.codigo_municipal}>{m.municipio}</option>)}
-        </select>
-      </Campo>
+    <div className="grid gap-3" role="group" aria-label="Territorio, de lo general a lo específico">
+      <Combobox
+        etiqueta="Departamento" placeholder="Todos los departamentos" seleccion={filtros.departamento} opciones={departamentos}
+        onElegir={(o) => onCambio({ departamento: o.valor, municipio: null })}
+        onLimpiar={() => onCambio({ departamento: null, municipio: null })}
+      />
+      <Combobox
+        etiqueta="Municipio" placeholder={filtros.departamento ? `Todos en ${filtros.departamento}` : 'Todos los municipios'}
+        seleccion={nombreMunicipio} opciones={opcMunicipios} vacio="Ningún municipio coincide"
+        onElegir={(o) => {
+          const m = municipios.find((x) => x.codigo_municipal === o.valor)
+          if (m) onCambio({ municipio: m.codigo_municipal, departamento: m.departamento })
+        }}
+        onLimpiar={() => onCambio({ municipio: null })}
+      />
     </div>
   )
 }
