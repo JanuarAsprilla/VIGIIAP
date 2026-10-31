@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useBiodiversidadEstado, useBiodiversidadMunicipios } from '@/hooks/useBiodiversidad'
 import { alCambiarGrupo, aplicabilidad, METODO_DE_GRUPO, reconciliar } from './lib/aplicabilidad'
@@ -9,6 +9,7 @@ import { QUITAR_TODOS, leerFiltros, type CambiosUrl } from './lib/filtros'
 import { valorMetrica } from './lib/metrica'
 import { actualizarParametros, leerParametros } from './lib/parametros'
 import { paramsApi } from './lib/paramsApi'
+import { corregirTerritorio } from './lib/territorio'
 import { NOMBRES_GRUPO, type Grupo, type MunicipioConteo } from './types'
 import { fmtNum } from './lib/format'
 
@@ -36,6 +37,12 @@ export function useTablero() {
   const baseQ = useBiodiversidadMunicipios(p.grupo)
   const mun = munQ.data
   const municipios = mun?.municipios ?? SIN_MUNICIPIOS
+
+  // Un enlace con municipio de otro departamento, o con valores que no existen, se corrige en la URL sin añadir historial.
+  const correccionTerritorio = useMemo(() => (mun ? corregirTerritorio(crudos, municipios) : null), [mun, crudos, municipios])
+  useEffect(() => {
+    if (correccionTerritorio) setBusqueda(actualizarParametros(busqueda, correccionTerritorio), { replace: true })
+  }, [correccionTerritorio, busqueda, setBusqueda])
 
   const datos = useMemo(() => new Map(municipios.map((m) => [m.codigo_municipal, m])), [municipios])
   const valores = useMemo(() => municipios.map((m) => valorMetrica(m, p.metrica)).filter((v): v is number => v !== null), [municipios, p.metrica])

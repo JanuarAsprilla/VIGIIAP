@@ -4,6 +4,7 @@ import type { Aplicabilidad } from '../lib/aplicabilidad'
 import {
   NIVELES_TAXON, cambiosConservacion, contarFiltros, type CambiosUrl, type Filtros,
 } from '../lib/filtros'
+import { resumenTerritorio } from '../lib/territorio'
 import type { Grupo, Metodo, MunicipioConteo, ParamsApi } from '../types'
 import SeccionCalidad from './SeccionCalidad'
 import SeccionFiltro from './SeccionFiltro'
@@ -52,7 +53,7 @@ export default function PanelFiltros({
         </div>
       </header>
       <div className="bio-filtros-cuerpo">
-        <SeccionFiltro titulo="Territorio" activos={cuenta(f.municipio ?? f.departamento)} abierta>
+        <SeccionFiltro titulo="Territorio" activos={cuenta(f.departamento, f.municipio)} resumen={resumenTerritorio(f, municipios)} abierta>
           <SeccionTerritorio filtros={f} municipios={municipios} onCambio={onCambio} />
         </SeccionFiltro>
         <SeccionFiltro titulo="Taxonomía" activos={cuenta(...NIVELES_TAXON.map((n) => f[n]), f.especie, f.buscar)} abierta>

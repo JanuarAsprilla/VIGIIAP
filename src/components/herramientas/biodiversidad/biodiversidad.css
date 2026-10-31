@@ -326,8 +326,11 @@
 
 /* ── Especies: tarjetas con foto o reemplazo del grupo ────────────────────── */
 .bio-tarjeta-especie .bio-tarjeta-nombre { font-family: var(--font-display); font-size: 1.0625rem; letter-spacing: -0.005em; }
-.bio-especie-mini { display: flex; gap: 1.25rem; margin-top: 0.45rem; }
-.bio-especie-mini dt { font-size: 0.5625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); }
+.bio-tarjeta-especie .bio-tarjeta-cuerpo { gap: 0.35rem; }
+.bio-tarjeta-especie .bio-tarjeta-meta { cursor: help; }
+.bio-especie-mini { display: flex; gap: 1.5rem; margin-top: 0.3rem; padding-top: 0.55rem; border-top: 1px solid var(--bio-linea); }
+.bio-especie-mini dt { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-muted); }
+@media (max-width: 39.99rem) { .bio-tarjeta-especie .bio-foto:has(img) { aspect-ratio: 16 / 10 !important; } }
 .bio-especie-mini dd { font-family: var(--font-display); font-weight: 700; font-size: 1.0625rem; font-variant-numeric: tabular-nums; line-height: 1.2; }
 .bio-foto-grupo {
   position: relative; display: grid; place-content: center; justify-items: center; gap: 0.4rem; height: 100%; padding: 1rem; text-align: center;
