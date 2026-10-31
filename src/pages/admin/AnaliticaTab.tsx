@@ -11,6 +11,8 @@ import EstadoCarga from '@/components/admin/actividad/EstadoCarga'
 import UbicacionVisitas from '@/components/admin/actividad/UbicacionVisitas'
 import AccionesVisitantes from '@/components/admin/actividad/AccionesVisitantes'
 import TiempoReal from '@/components/admin/actividad/TiempoReal'
+import EmbudosConversion from '@/components/admin/actividad/EmbudosConversion'
+import FlujoNavegacion from '@/components/admin/actividad/FlujoNavegacion'
 import { LINE_CHART_OPTIONS } from '@/lib/reportesChartConfig'
 import {
   useAnaliticaResumen, usePaginasTop, useDispositivos, useFuentesTrafico, useEntradaSalida,
@@ -153,6 +155,10 @@ export default function AnaliticaTab({ desde, hasta }: AnaliticaTabProps) {
       <TendenciaChart />
 
       <AccionesVisitantes rango={rango} />
+
+      <EmbudosConversion rango={rango} />
+
+      <FlujoNavegacion rango={rango} />
 
       <UbicacionVisitas rango={rango} />
 

@@ -118,6 +118,43 @@ export function useTiempoReal(enabled: boolean = true) {
   })
 }
 
+export interface PasoEmbudo {
+  etiqueta: string
+  sesiones: number
+  pctDelAnterior: number
+  pctDelInicio: number
+}
+
+export interface Embudo {
+  id: string
+  titulo: string
+  pasos: PasoEmbudo[]
+}
+
+export function useEmbudos(rango: RangoFechas = {}, enabled: boolean = true) {
+  return useQuery<Embudo[]>({
+    queryKey: ['admin', 'analitica', 'embudos', rango],
+    queryFn:  () => api.get('/analitica/embudos', { params: paramsRango(rango) }),
+    staleTime: 1000 * 60 * 2,
+    enabled,
+  })
+}
+
+export interface TransicionPagina {
+  desde: string
+  hacia: string
+  veces: number
+}
+
+export function useFlujoNavegacion(rango: RangoFechas = {}, enabled: boolean = true) {
+  return useQuery<TransicionPagina[]>({
+    queryKey: ['admin', 'analitica', 'flujo-navegacion', rango],
+    queryFn:  () => api.get('/analitica/flujo-navegacion', { params: paramsRango(rango) }),
+    staleTime: 1000 * 60 * 2,
+    enabled,
+  })
+}
+
 export interface EntradaSalida {
   entradas: { ruta: string; veces: number }[]
   salidas:  { ruta: string; veces: number }[]
