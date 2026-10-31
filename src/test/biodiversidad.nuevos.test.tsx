@@ -9,6 +9,7 @@ import type {
 
 type Q = Partial<UseQueryResult<unknown>>
 const detalle: { q: Q } = { q: {} }
+const AYUDA = { chips: [{ clave: 'buscar', etiqueta: 'Nombre: «zzz»', quitarEtiqueta: 'Quitar el filtro Nombre: «zzz»', quitar: { buscar: null } }], onCambio: vi.fn(), onLimpiar: vi.fn() }
 const especies: { q: Q } = { q: {} }
 const resumen: { q: Q } = { q: {} }
 const series: { q: Q } = { q: {} }
@@ -17,6 +18,11 @@ vi.mock('@/hooks/useBiodiversidad', () => ({
   useBiodiversidadEspecies: () => especies.q,
   useBiodiversidadResumen: () => resumen.q,
   useBiodiversidadSeries: () => series.q,
+  useBiodiversidadSugerencias: () => ({ data: undefined, isFetching: false, isError: false }),
+}))
+vi.mock('@/components/herramientas/biodiversidad/mapa/geoMunicipios', () => ({ useGeoMunicipios: () => ({ data: undefined }) }))
+vi.mock('@/components/herramientas/biodiversidad/mapa/MiniMapa', () => ({
+  default: (p: { descripcion: string; lat: number }) => <div data-testid="minimapa" role="img" aria-label={p.descripcion} data-lat={p.lat} />,
 }))
 
 import SelectorGrupo from '@/components/herramientas/biodiversidad/SelectorGrupo'
@@ -248,8 +254,7 @@ describe('DetalleRegistro', () => {
 
 describe('SeccionEspecies', () => {
   const props = {
-    grupo: 'anfibios' as const, esIndividual: true, municipio: null, departamento: null, buscar: '', conservacion: null, amenaza: null,
-    orden: 'registros' as const, pagina: 1, conFoto: false, modo: 'tarjetas' as const,
+    grupo: 'anfibios' as const, esIndividual: true, params: {}, orden: 'registros' as const, pagina: 1, modo: 'tarjetas' as const, ayuda: AYUDA,
   }
   test('lista con taxonomía, insignias, cifras y acción para ver registros', async () => {
     const onVerRegistros = vi.fn()
@@ -267,19 +272,22 @@ describe('SeccionEspecies', () => {
     expect(screen.queryByRole('button', { name: /Ver registros/ })).not.toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Inventario agregado')
   })
-  test('filtros y orden salen como cambios de URL', async () => {
+  test('el orden sale como cambio de URL y el inicial lo limpia', async () => {
     const onCambio = vi.fn()
     render(<SeccionEspecies {...props} onCambio={onCambio} onVerRegistros={vi.fn()} />)
-    await userEvent.click(screen.getByRole('button', { name: 'Amenazadas' }))
-    expect(onCambio).toHaveBeenLastCalledWith({ conservacion: 'amenazada', amenaza: null })
-    await userEvent.click(screen.getByRole('button', { name: 'Nombre' }))
-    expect(onCambio).toHaveBeenLastCalledWith({ orden: 'nombre' })
+    await userEvent.selectOptions(screen.getByLabelText('Ordenar por'), 'municipios')
+    expect(onCambio).toHaveBeenLastCalledWith({ ordenar: 'municipios' })
+    await userEvent.selectOptions(screen.getByLabelText('Ordenar por'), 'nombre')
+    expect(onCambio).toHaveBeenLastCalledWith({ ordenar: 'nombre' })
+    await userEvent.selectOptions(screen.getByLabelText('Ordenar por'), 'registros')
+    expect(onCambio).toHaveBeenLastCalledWith({ ordenar: null })
   })
   test('vacío con filtros, error con reintento y carga', async () => {
     especies.q = { data: { grupo: 'anfibios', metodo: 'individual', pagina: 1, tamano: 20, total: 0, especies: [] }, isError: false, isFetching: false, refetch: vi.fn() as never }
-    const { rerender } = render(<SeccionEspecies {...props} buscar="zzz" onCambio={vi.fn()} onVerRegistros={vi.fn()} />)
+    const { rerender } = render(<SeccionEspecies {...props} onCambio={vi.fn()} onVerRegistros={vi.fn()} />)
     expect(screen.getByText('Sin especies')).toBeInTheDocument()
-    expect(screen.getByText(/Prueba con otro nombre/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar el filtro Nombre: «zzz»' }))
+    expect(AYUDA.onCambio).toHaveBeenCalledWith({ buscar: null })
     const refetch = vi.fn()
     especies.q = { data: undefined, isError: true, error: { status: 422 } as never, refetch: refetch as never }
     rerender(<SeccionEspecies {...props} onCambio={vi.fn()} onVerRegistros={vi.fn()} />)
@@ -303,13 +311,14 @@ describe('PanelResumen', () => {
   const R: RespuestaResumen = {
     grupo: 'aves', metodo: 'agregado', alcance: { codigo_municipal: null, departamento: null }, registros: 2919072, especies: 1500, con_foto: null,
     amenazadas: { CR: 0, EN: 4, VU: 9, total: 13 }, endemicas_colombia: 30, endemicas_choco: 12, introducidas: 2, invasoras: 1, anio_min: 2000, anio_max: 2025,
+    entidades: null, conjuntos: null, con_ubicacion: null,
   }
   beforeEach(() => {
     resumen.q = { data: R, isError: false, isFetching: false, refetch: vi.fn() as never }
     series.q = { data: { grupo: 'aves', metodo: 'agregado', por_anio: [{ anio: 2000, registros: 10 }, { anio: 2001, registros: 30 }], por_evidencia: [{ tipo: 'HUMAN_OBSERVATION', registros: 30 }, { tipo: 'PRESERVED_SPECIMEN', registros: 10 }] }, isError: false, refetch: vi.fn() as never }
   })
   test('indicadores, conservación con colores UICN y evidencia traducida', () => {
-    render(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
+    render(<PanelResumen grupo="aves" paramsResumen={{}} paramsSeries={{}} paramsEspecies={{}} notaSeries={null} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
     expect(screen.getByText('2.919.072')).toBeInTheDocument()
     expect(screen.getByText('el inventario agregado no las incluye')).toBeInTheDocument()
     expect(screen.getByText('2000–2025')).toBeInTheDocument()
@@ -321,7 +330,7 @@ describe('PanelResumen', () => {
   })
   test('el alcance se nombra y las teselas con cero no son botones', async () => {
     const onFiltrar = vi.fn()
-    render(<PanelResumen grupo="aves" alcance={{ departamento: 'Chocó' }} nombreAlcance="Chocó" esIndividual={false} onFiltrarEspecies={onFiltrar} onVerRegistros={vi.fn()} />)
+    render(<PanelResumen grupo="aves" paramsResumen={{ departamento: 'Chocó' }} paramsSeries={{}} paramsEspecies={{}} notaSeries={null} nombreAlcance="Chocó" esIndividual={false} onFiltrarEspecies={onFiltrar} onVerRegistros={vi.fn()} />)
     expect(screen.getByText('Chocó', { selector: 'b' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /En peligro crítico/ })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /Vulnerable: 9 especies/ }))
@@ -331,28 +340,28 @@ describe('PanelResumen', () => {
   })
   test('cargando y error con reintento', async () => {
     resumen.q = { data: undefined, isError: false, isFetching: true, refetch: vi.fn() as never }
-    const { rerender } = render(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
+    const { rerender } = render(<PanelResumen grupo="aves" paramsResumen={{}} paramsSeries={{}} paramsEspecies={{}} notaSeries={null} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
     expect(screen.getAllByRole('status', { name: /Cargando indicadores/ }).length).toBe(4)
     const refetch = vi.fn()
     resumen.q = { data: undefined, isError: true, error: { status: 503 } as never, refetch: refetch as never }
-    rerender(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
+    rerender(<PanelResumen grupo="aves" paramsResumen={{}} paramsSeries={{}} paramsEspecies={{}} notaSeries={null} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /Reintentar/ }))
     expect(refetch).toHaveBeenCalled()
   })
   test('grupos sin lista nacional de endemismo no muestran un cero engañoso', () => {
-    render(<PanelResumen grupo="anfibios" alcance={{}} nombreAlcance={null} esIndividual onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
+    render(<PanelResumen grupo="anfibios" paramsResumen={{}} paramsSeries={{}} paramsEspecies={{}} notaSeries={null} nombreAlcance={null} esIndividual onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
     expect(screen.getByText('Sin lista nacional')).toBeInTheDocument()
     expect(screen.getByText(/Endémicas del Chocó, reportadas por el IIAP \(2011\)/)).toBeInTheDocument()
     expect(screen.getByText(/no implica que sea nativa ni que no esté amenazada/)).toBeInTheDocument()
   })
   test('aves sí muestran el conteo de endémicas de Colombia', () => {
-    render(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
+    render(<PanelResumen grupo="aves" paramsResumen={{}} paramsSeries={{}} paramsEspecies={{}} notaSeries={null} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
     expect(screen.queryByText('Sin lista nacional')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Endémicas de Colombia/ })).toHaveTextContent('30')
   })
   test('con fotos se cuenta el porcentaje', () => {
     resumen.q = { data: { ...R, con_foto: 291907 }, isError: false, isFetching: false, refetch: vi.fn() as never }
-    render(<PanelResumen grupo="aves" alcance={{}} nombreAlcance={null} esIndividual onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
+    render(<PanelResumen grupo="aves" paramsResumen={{}} paramsSeries={{}} paramsEspecies={{}} notaSeries={null} nombreAlcance={null} esIndividual onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
     expect(screen.getByText(/10,0\D+de los registros/)).toBeInTheDocument()
   })
 })

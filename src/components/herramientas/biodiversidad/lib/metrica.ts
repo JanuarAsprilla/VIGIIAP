@@ -25,7 +25,8 @@ export function esMetrica(v: unknown): v is Metrica {
 export function valorMetrica(m: MunicipioConteo | undefined, metrica: Metrica): number | null {
   if (!m || m.registros <= 0) return null
   if (metrica === 'registros') return m.registros
-  if (metrica === 'especies') return m.especies > 0 ? m.especies : null
+  if (metrica === 'especies') return m.especies !== null && m.especies > 0 ? m.especies : null
+  if (m.sin_especie === null) return null
   return Math.round((m.sin_especie / m.registros) * 1000) / 10
 }
 

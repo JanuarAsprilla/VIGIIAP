@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import { Maximize2, Minus, Plus, Target } from 'lucide-react'
 import type { MunicipioConteo } from '../types'
 import { claseDe } from '../lib/escala'
-import { fmtNum, fmtPct } from '../lib/format'
+import { fmtNum, fmtNumONulo, fmtPct } from '../lib/format'
 import { valorMetrica, type Metrica } from '../lib/metrica'
 import { puntoInterior } from '../lib/geometria'
 import { siguienteEnDireccion, type Direccion, type Punto } from '../lib/navegacion'
@@ -19,6 +19,8 @@ interface Props {
   seleccionado: string | null
   departamento: string | null
   onSeleccionar: (codigo: string | null) => void
+  /** Entrega la instancia del mapa a capas externas (puntos); null al desmontar. */
+  onMapa?: (mapa: L.Map | null) => void
 }
 
 interface Tooltip {
@@ -72,14 +74,14 @@ function actualizarTooltip(t: Tooltip, nombre: string, depto: string, m: Municip
   t.depto.textContent = depto
   const con = m && m.registros > 0
   t.filas.registros.valor.textContent = con ? fmtNum(m.registros) : 'Sin registros'
-  t.filas.especies.valor.textContent = con ? fmtNum(m.especies) : '—'
+  t.filas.especies.valor.textContent = con ? fmtNumONulo(m.especies) : '—'
   t.filas.sin_especie.valor.textContent = con ? fmtPct(m.sin_especie, m.registros) : '—'
   for (const k of Object.keys(t.filas) as Metrica[]) t.filas[k].fila.classList.toggle('bio-tip-activa', k === metrica)
 }
 
 function textoDetalle(m: MunicipioConteo | undefined, depto: string): string {
   if (!m || m.registros <= 0) return `${depto} · Sin registros`
-  return `${depto} · ${fmtNum(m.registros)} registros · ${fmtNum(m.especies)} especies`
+  return `${depto} · ${fmtNum(m.registros)} registros · ${fmtNumONulo(m.especies)} especies`
 }
 
 function centroEtiqueta(feature: GeoMunicipios['features'][number], capa: L.Polygon): L.LatLng {
@@ -94,7 +96,7 @@ function prefiereMovimientoReducido(): boolean {
 
 /** Mapa coroplético sin mapa base externo: solo la capa GeoJSON propia. El color lo pone el CSS
  *  (clases bio-c0..bio-c5) para que el cambio de tema no requiera repintar en JS. */
-export default function MapaMunicipios({ geo, datos, metrica, cortes, seleccionado, departamento, onSeleccionar }: Props) {
+export default function MapaMunicipios({ geo, datos, metrica, cortes, seleccionado, departamento, onSeleccionar, onMapa }: Props) {
   const contenedor = useRef<HTMLDivElement>(null)
   const mapaRef = useRef<L.Map | null>(null)
   const capas = useRef(new Map<string, Capa>())
@@ -106,7 +108,10 @@ export default function MapaMunicipios({ geo, datos, metrica, cortes, selecciona
   const [pista, setPista] = useState(false)
   const temporizador = useRef<number | undefined>(undefined)
 
+  const alMapa = useRef(onMapa)
+
   useEffect(() => { alSeleccionar.current = onSeleccionar }, [onSeleccionar])
+  useEffect(() => { alMapa.current = onMapa }, [onMapa])
   useEffect(() => { vigente.current = { seleccionado, departamento } }, [seleccionado, departamento])
 
   const encuadrar = useCallback((animar: boolean) => {
@@ -134,6 +139,7 @@ export default function MapaMunicipios({ geo, datos, metrica, cortes, selecciona
       scrollWheelZoom: false, boxZoom: false, keyboard: false, zoomSnap: 0.25, zoomDelta: 0.5, minZoom: 3, maxZoom: 13,
     })
     mapaRef.current = mapa
+    alMapa.current?.(mapa)
     const registro = capas.current
     const capa = L.geoJSON(geo, {
       style: () => ({ className: 'bio-m bio-c0', weight: 0.8, fill: true, fillOpacity: 1 }),
@@ -175,6 +181,7 @@ export default function MapaMunicipios({ geo, datos, metrica, cortes, selecciona
       window.clearTimeout(temporizador.current)
       quitarBordes()
       adornos.current = []
+      alMapa.current?.(null)
       mapa.remove()
       mapaRef.current = null
       registro.clear()

@@ -4,6 +4,7 @@ import { traducirEvidencia } from '../lib/evidencia'
 import { urlDoi, urlRegistroGbif } from '../lib/enlaces'
 import { etiquetarLicencia } from '../lib/licencia'
 import type { RegistroBiodiversidad } from '../types'
+import AccionVerEnMapa from './AccionVerEnMapa'
 import { Ubicacion } from './UbicacionRegistro'
 
 export { Ubicacion }
@@ -34,16 +35,17 @@ function Licencia({ url }: { url: string | null }) {
 interface Props {
   registros: RegistroBiodiversidad[]
   onAbrir?: (r: RegistroBiodiversidad, origen: HTMLElement) => void
+  onVerEnMapa?: (r: RegistroBiodiversidad) => void
 }
 
-export default function TablaRegistros({ registros, onAbrir }: Props) {
+export default function TablaRegistros({ registros, onAbrir, onVerEnMapa }: Props) {
   return (
     <div className="bio-tabla-caja" tabIndex={0} role="region" aria-label="Tabla de registros, desplazable">
       <table className="bio-tabla bio-reg">
         <caption className="sr-only">Registros individuales de la página actual</caption>
         <thead>
           <tr>
-            {['Especie', 'Año', 'Evidencia', 'Municipio', 'Conjunto de datos', 'Licencia', 'Ubicación', 'GBIF'].map((t) => <th key={t} scope="col">{t}</th>)}
+            {['Especie', 'Año', 'Evidencia', 'Personas', 'Municipio', 'Conjunto de datos', 'Licencia', 'Ubicación', 'GBIF'].map((t) => <th key={t} scope="col">{t}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -64,10 +66,18 @@ export default function TablaRegistros({ registros, onAbrir }: Props) {
                 </td>
                 <td data-etiqueta="Año" className="tabular-nums">{r.anio ?? '—'}</td>
                 <td data-etiqueta="Evidencia">{traducirEvidencia(r.tipo_evidencia)}{r.fotos_total > 0 && <span className="block text-[0.6875rem] text-text-muted">{r.fotos_total} {r.fotos_total === 1 ? 'foto' : 'fotos'}</span>}</td>
+                <td data-etiqueta="Personas">
+                  {r.registrado_por ? <span className="block">Observó: {r.registrado_por}</span> : null}
+                  {r.identificado_por ? <span className="block text-[0.6875rem] text-text-muted">Identificó: {r.identificado_por}</span> : null}
+                  {!r.registrado_por && !r.identificado_por && <span className="text-text-muted">Sin indicar</span>}
+                </td>
                 <td data-etiqueta="Municipio">{r.municipio}<span className="block text-[0.6875rem] text-text-muted">{r.departamento}</span></td>
                 <td data-etiqueta="Conjunto"><Conjunto r={r} /></td>
                 <td data-etiqueta="Licencia"><Licencia url={r.licencia} /></td>
-                <td data-etiqueta="Ubicación"><Ubicacion r={r} /></td>
+                <td data-etiqueta="Ubicación">
+                  <Ubicacion r={r} />
+                  {onVerEnMapa && <AccionVerEnMapa r={r} onVerEnMapa={onVerEnMapa} />}
+                </td>
                 <td data-etiqueta="GBIF">
                   {gbif ? (
                     <a className="bio-enlace inline-flex items-center gap-1" href={gbif} {...ENLACE_EXTERNO} aria-label={`Ver el registro ${r.gbif_id} en GBIF (se abre en una pestaña nueva)`}>

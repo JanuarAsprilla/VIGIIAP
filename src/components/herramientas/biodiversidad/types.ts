@@ -24,8 +24,9 @@ export interface MunicipioConteo {
   municipio: string
   departamento: string
   registros: number
-  sin_especie: number
-  especies: number
+  /** null cuando el filtro activo no permite calcularlo (inventarios agregados con filtro de fuente). */
+  sin_especie: number | null
+  especies: number | null
 }
 
 export interface RespuestaMunicipios {
@@ -110,40 +111,32 @@ export interface RespuestaRegistros {
   registros: RegistroBiodiversidad[]
 }
 
-export interface FiltrosRegistros {
-  grupo: Grupo
-  codigo_municipal?: string
-  departamento?: string
-  anio_desde?: number
-  anio_hasta?: number
-  buscar?: string
-  con_foto?: 'true'
-  conservacion?: TipoConservacion
-  amenaza?: Amenaza
-  especie_clave?: string
-  pagina: number
-  tamano: number
-}
-
 export interface AlcanceTerritorial {
   codigo_municipal?: string
   departamento?: string
 }
+
+/** Parámetros de consulta ya validados y listos para enviarse (sin `grupo`). */
+export type ParamsApi = Record<string, string | number>
 
 export interface RespuestaResumen {
   grupo: Grupo
   metodo: Metodo
   alcance: { codigo_municipal: string | null; departamento: string | null }
   registros: number
-  especies: number
+  especies: number | null
   con_foto: number | null
-  amenazadas: { CR: number; EN: number; VU: number; total: number }
-  endemicas_colombia: number
-  endemicas_choco: number
-  introducidas: number
-  invasoras: number
+  /** Cada cifra es null cuando el filtro activo no permite calcular la conservación. */
+  amenazadas: { CR: number | null; EN: number | null; VU: number | null; total: number | null }
+  endemicas_colombia: number | null
+  endemicas_choco: number | null
+  introducidas: number | null
+  invasoras: number | null
   anio_min: number | null
   anio_max: number | null
+  entidades: number | null
+  conjuntos: number | null
+  con_ubicacion: number | null
 }
 
 export interface EspecieResumen extends Conservacion {
@@ -161,17 +154,6 @@ export interface EspecieResumen extends Conservacion {
   fotos_total?: number
 }
 
-export interface FiltrosEspecies extends AlcanceTerritorial {
-  grupo: Grupo
-  buscar?: string
-  conservacion?: TipoConservacion
-  amenaza?: Amenaza
-  orden?: 'registros' | 'nombre'
-  con_foto?: 'true'
-  pagina: number
-  tamano: number
-}
-
 export interface RespuestaEspecies {
   grupo: Grupo
   metodo: Metodo
@@ -186,6 +168,39 @@ export interface RespuestaSeries {
   metodo: Metodo
   por_anio: { anio: number; registros: number }[]
   por_evidencia: { tipo: string; registros: number }[]
+}
+
+export const CAMPOS_OPCIONES = ['reino', 'division', 'clase', 'orden', 'familia', 'genero', 'entidad', 'conjunto', 'tipo_evidencia', 'anio'] as const
+export type CampoOpciones = (typeof CAMPOS_OPCIONES)[number]
+
+export interface OpcionFiltro {
+  valor: string
+  nombre: string
+  registros: number
+}
+
+export interface RespuestaOpciones {
+  grupo: Grupo
+  campo: CampoOpciones
+  valores: OpcionFiltro[]
+}
+
+export interface PuntoMapa {
+  id: string
+  lat: number
+  lon: number
+  e: string | null
+  ek: string | null
+  a: Amenaza | null
+}
+
+export interface RespuestaPuntos {
+  grupo: Grupo
+  total: number
+  mostrados: number
+  ocultos: number
+  muestreado: boolean
+  puntos: PuntoMapa[]
 }
 
 export const NOMBRES_GRUPO: Record<Grupo, string> = {
