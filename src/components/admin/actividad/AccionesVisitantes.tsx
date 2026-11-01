@@ -3,15 +3,7 @@ import { MousePointerClick } from 'lucide-react'
 import { fadeUpSm } from '@/lib/animations'
 import EstadoCarga from '@/components/admin/actividad/EstadoCarga'
 import { useEventosTop, type RangoFechas } from '@/hooks/useAnalitica'
-
-const ETIQUETA_EVENTO: Record<string, string> = {
-  descarga_mapa: 'Descargas de mapas',
-  descarga_documento: 'Descargas de documentos',
-  abrir_geovisor: 'Geovisores abiertos',
-  usar_herramienta: 'Herramientas usadas',
-  buscar: 'Búsquedas',
-  compartir: 'Compartidos',
-}
+import { ETIQUETA_EVENTO } from '@/lib/analiticaFormato'
 
 /** Acciones concretas de los visitantes (descargar, abrir un geovisor, usar una herramienta) y lo más solicitado. */
 export default function AccionesVisitantes({ rango }: { rango: RangoFechas }) {
