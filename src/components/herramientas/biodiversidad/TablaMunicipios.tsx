@@ -29,7 +29,7 @@ export default function TablaMunicipios({ municipios, seleccionado, onSelecciona
   }
 
   return (
-    <div className="bio-tabla-caja" tabIndex={0} role="region" aria-label="Tabla de municipios, desplazable">
+    <div className="bio-tabla-caja" data-lenis-prevent tabIndex={0} role="region" aria-label="Tabla de municipios, desplazable">
       <table className="bio-tabla">
         <caption className="sr-only">Registros y especies por municipio. Activa un encabezado para ordenar.</caption>
         <thead>

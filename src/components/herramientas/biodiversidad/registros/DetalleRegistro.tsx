@@ -79,7 +79,7 @@ function ListaMarcas({ titulo, marcas, vacio }: { titulo: string; marcas: MarcaT
         <ul className="space-y-1.5">
           {marcas.map((m) => (
             <li key={m.codigo} className={`bio-marca bio-marca-${m.tono}`}>
-              <span className="bio-marca-tono">{m.tono === 'aviso' ? 'Advertencia' : 'Informativa'}</span>
+              <span className="bio-marca-tono">{m.tono === 'aviso' ? 'Ten en cuenta' : 'Nota'}</span>
               <span>{m.texto}</span>
             </li>
           ))}
@@ -123,6 +123,7 @@ function Contenido({ r, onVerEnMapa }: { r: RegistroDetalle; onVerEnMapa?: (r: R
         </section>
         <section aria-labelledby="bio-det-calidad" className="space-y-3">
           <h3 id="bio-det-calidad" className="bio-eyebrow">Calidad del dato</h3>
+          <p className="text-xs text-text-muted">Observaciones automáticas sobre el origen y la ubicación del dato. No significan que el registro sea incorrecto.</p>
           <ListaMarcas titulo="Revisión de Vigía" marcas={locales} vacio="No se detectaron observaciones en la revisión de la plataforma." />
           <ListaMarcas titulo="Marcas de GBIF" marcas={deGbif} vacio="GBIF no señaló observaciones sobre este registro." />
         </section>
@@ -144,7 +145,7 @@ export default function DetalleRegistro({ grupo, gbifId, origen, onCerrar, onVer
 
   const r = consulta.data
   return createPortal(
-    <div className="bio-root bio-tema bio-velo" style={estiloGrupo(grupo)} onMouseDown={(e) => { if (e.target === e.currentTarget) onCerrar() }}>
+    <div className="bio-root bio-tema bio-velo" data-lenis-prevent style={estiloGrupo(grupo)} onMouseDown={(e) => { if (e.target === e.currentTarget) onCerrar() }}>
       <div ref={caja} role="dialog" aria-modal="true" aria-labelledby={titulo} tabIndex={-1} className="bio-detalle" onKeyDown={alTeclear}>
         <header className="bio-detalle-cabecera">
           <div className="min-w-0">
