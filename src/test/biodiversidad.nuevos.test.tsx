@@ -189,7 +189,7 @@ describe('DetalleRegistro', () => {
   test('calidad del dato: marcas locales (separadas por «;») y de GBIF traducidas con su tono', () => {
     abrir()
     expect(screen.getByText('La incertidumbre de la coordenada es grande: la ubicación es aproximada').closest('li')).toHaveClass('bio-marca-aviso')
-    expect(screen.getByText('El publicador no informó la incertidumbre de la coordenada')).toBeInTheDocument()
+    expect(screen.getByText('El publicador no indicó la precisión de la coordenada')).toBeInTheDocument()
     expect(screen.getByText('Marca de revisión de la plataforma: marca_nueva')).toBeInTheDocument()
     expect(screen.getByText('Coordenadas redondeadas por el publicador')).toBeInTheDocument()
     expect(screen.getByText('Marca de calidad de GBIF: MARCA_RARA')).toBeInTheDocument()
