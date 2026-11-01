@@ -147,6 +147,9 @@
   background: color-mix(in srgb, var(--color-text) 5%, var(--bio-superficie)); border: 1px dashed var(--color-text-muted); border-radius: var(--radius-lg);
 }
 
+/* Diálogos y listas que flotan sobre contenido: opacos. La superficie de las tarjetas es translúcida en oscuro y dejaba ver el texto de debajo. */
+.bio-root .bio-detalle, .bio-root .bio-hoja, .bio-root .bio-combo-lista { background: color-mix(in srgb, var(--color-bg) 95%, var(--color-text)); }
+
 @media (prefers-reduced-motion: reduce) {
   .bio-hoja { animation: none; }
   .bio-seccion > summary::after { transition: none; }

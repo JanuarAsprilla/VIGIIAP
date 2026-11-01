@@ -184,7 +184,7 @@ describe('punto interior para etiquetas', () => {
 
 describe('marcas locales de revisión', () => {
   test.each([
-    ['incertidumbre_no_informada', 'aviso'], ['incertidumbre_mayor_umbral', 'aviso'],
+    ['incertidumbre_no_informada', 'info'], ['incertidumbre_mayor_umbral', 'aviso'],
     ['incertidumbre_alcanza_borde_regional', 'aviso'], ['incertidumbre_alcanza_borde_municipal', 'info'],
   ])('%s', (codigo, tono) => {
     expect(traducirMarcaLocal(codigo).tono).toBe(tono)

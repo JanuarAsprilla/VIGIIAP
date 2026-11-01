@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import { useBiodiversidadEspecies } from '@/hooks/useBiodiversidad'
 import ConmutadorVista from '../ConmutadorVista'
 import { Cargando, PanelError } from '../EstadoConsulta'
@@ -9,6 +10,7 @@ import { fmtNum } from '../lib/format'
 import { ORDENES_ESPECIES, ORDEN_ESPECIES_INICIAL, type OrdenEspecies } from '../lib/orden'
 import { TAMANO_PAGINA_ESPECIES, type ModoRegistros } from '../lib/parametros'
 import type { EspecieResumen, Grupo, ParamsApi } from '../types'
+import DetalleEspecie from './DetalleEspecie'
 import TablaEspecies from './TablaEspecies'
 import TarjetaEspecie from './TarjetaEspecie'
 
@@ -28,6 +30,9 @@ interface Props {
 }
 
 export default function SeccionEspecies({ grupo, esIndividual, params, orden, modo, pagina, ayuda, onCambio, onVerRegistros, onVerMunicipios }: Props) {
+  const [abierta, setAbierta] = useState<EspecieResumen | null>(null)
+  const origenDetalle = useRef<HTMLElement | null>(null)
+  const abrirDetalle = (e: EspecieResumen, origen: HTMLElement) => { origenDetalle.current = origen; setAbierta(e) }
   const consulta = useBiodiversidadEspecies(grupo, { ...params, orden, pagina, tamano: TAMANO_PAGINA_ESPECIES })
   const datos = consulta.data
   const maxPaginas = datos ? Math.max(1, Math.ceil(datos.total / TAMANO_PAGINA_ESPECIES)) : 1
@@ -59,13 +64,20 @@ export default function SeccionEspecies({ grupo, esIndividual, params, orden, mo
           ) : (
             <ul className="bio-rejilla-tarjetas">
               {datos.especies.map((e) => (
-                <li key={e.especie_clave}><TarjetaEspecie e={e} grupo={grupo} esIndividual={esIndividual} onVerRegistros={onVerRegistros} onVerMunicipios={onVerMunicipios} /></li>
+                <li key={e.especie_clave}><TarjetaEspecie e={e} grupo={grupo} esIndividual={esIndividual} onVerRegistros={onVerRegistros} onVerMunicipios={onVerMunicipios} onVerMas={abrirDetalle} /></li>
               ))}
             </ul>
           )}
         </div>
       )}
       {consulta.isError && datos && <PanelError error={consulta.error} onReintentar={() => void consulta.refetch()} compacto />}
+      {abierta && (
+        <DetalleEspecie
+          e={abierta} grupo={grupo} esIndividual={esIndividual} origen={origenDetalle} onCerrar={() => setAbierta(null)}
+          onVerRegistros={(e) => { setAbierta(null); onVerRegistros(e) }}
+          onVerMunicipios={onVerMunicipios && ((e) => { setAbierta(null); onVerMunicipios(e) })}
+        />
+      )}
       <Paginacion etiqueta="Paginación de especies" pagina={pagina} maxPaginas={maxPaginas} onCambio={(p) => onCambio({ pagina: p })} />
     </div>
   )

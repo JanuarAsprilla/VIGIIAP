@@ -21,9 +21,13 @@ export default function RankingPanel({ municipios, metrica, seleccionado, depart
   const deptosOk = admiteDepartamentos(metrica)
   const modo: Modo = deptosOk ? elegido : 'municipios'
 
+  // Con un departamento elegido, el ranking de municipios es el de ese departamento, no el general.
+  const delDepartamento = useMemo(
+    () => (departamento ? municipios.filter((m) => m.departamento === departamento) : municipios), [municipios, departamento],
+  )
   const filas = useMemo(() => modo === 'municipios'
-    ? rankingMunicipios(municipios, metrica, TOP)
-    : rankingDepartamentos(resumenPorDepartamento(municipios), metrica, TOP), [modo, municipios, metrica])
+    ? rankingMunicipios(delDepartamento, metrica, TOP)
+    : rankingDepartamentos(resumenPorDepartamento(municipios), metrica, TOP), [modo, delDepartamento, municipios, metrica])
   const maximo = Math.max(1, ...filas.map((f) => f.valor))
   const activa = (clave: string) => (modo === 'municipios' ? clave === seleccionado : clave === departamento && !seleccionado)
 
@@ -33,7 +37,7 @@ export default function RankingPanel({ municipios, metrica, seleccionado, depart
         <div className="min-w-0">
           <h2 id="bio-rank-titulo" className="section-title">Ranking</h2>
           <p className="text-xs text-text-muted mt-0.5" aria-live="polite">
-            {modo === 'municipios' ? TITULO_RANKING[metrica] : `Departamentos por ${ETIQUETA_METRICA[metrica].toLowerCase()}`}
+            {modo === 'municipios' ? `${TITULO_RANKING[metrica]}${departamento ? ` en ${departamento}` : ''}` :`Departamentos por ${ETIQUETA_METRICA[metrica].toLowerCase()}`}
           </p>
         </div>
         <div role="group" aria-label="Agrupar ranking por" className="flex gap-1.5">
