@@ -52,7 +52,7 @@ export default function PanelFiltros({
           )}
         </div>
       </header>
-      <div className="bio-filtros-cuerpo">
+      <div className="bio-filtros-cuerpo" data-lenis-prevent>
         <SeccionFiltro titulo="Territorio" activos={cuenta(f.departamento, f.municipio)} resumen={resumenTerritorio(f, municipios)} abierta>
           <SeccionTerritorio filtros={f} municipios={municipios} onCambio={onCambio} />
         </SeccionFiltro>
@@ -69,12 +69,20 @@ export default function PanelFiltros({
         <SeccionFiltro titulo="Fuente de datos" activos={cuenta(f.entidad, f.conjunto)} noAplica={apl.fuente ? null : apl.motivoFuente}>
           <SeccionFuente grupo={grupo} filtros={f} params={paramsOpciones} onCambio={onCambio} />
         </SeccionFiltro>
-        <SeccionFiltro titulo="Tiempo y evidencia" activos={cuenta(f.anioDesde, f.anioHasta, f.evidencia)} noAplica={apl.tiempo ? null : apl.motivoRegistro}>
-          <SeccionTiempo grupo={grupo} filtros={f} params={paramsOpciones} desde={desde} hasta={hasta} onCambio={onCambio} />
-        </SeccionFiltro>
-        <SeccionFiltro titulo="Calidad del dato" activos={cuenta(f.conFoto, f.conUbicacion)} noAplica={apl.calidad ? null : apl.motivoRegistro}>
-          <SeccionCalidad filtros={f} onCambio={onCambio} />
-        </SeccionFiltro>
+        {metodo === 'individual' ? (
+          <>
+            <SeccionFiltro titulo="Tiempo y evidencia" activos={cuenta(f.anioDesde, f.anioHasta, f.evidencia)} noAplica={apl.tiempo ? null : apl.motivoRegistro}>
+              <SeccionTiempo grupo={grupo} filtros={f} params={paramsOpciones} desde={desde} hasta={hasta} onCambio={onCambio} />
+            </SeccionFiltro>
+            <SeccionFiltro titulo="Calidad del dato" activos={cuenta(f.conFoto, f.conUbicacion)} noAplica={apl.calidad ? null : apl.motivoRegistro}>
+              <SeccionCalidad filtros={f} onCambio={onCambio} />
+            </SeccionFiltro>
+          </>
+        ) : (
+          <p className="bio-seccion-aviso px-4 py-3 border-t border-[var(--bio-linea)]">
+            Tiempo, evidencia y calidad del dato solo existen para mamíferos, anfibios, reptiles y hongos, que se publican registro a registro.
+          </p>
+        )}
       </div>
       <footer className="bio-filtros-pie">
         <p aria-hidden="true">{resultado}</p>

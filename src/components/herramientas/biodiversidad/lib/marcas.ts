@@ -27,7 +27,7 @@ export function traducirMarca(codigo: string): MarcaTraducida {
 }
 
 const MARCAS_LOCALES: Record<string, { texto: string; tono: TonoMarca }> = {
-  incertidumbre_no_informada: { texto: 'El publicador no informó la incertidumbre de la coordenada', tono: 'aviso' },
+  incertidumbre_no_informada: { texto: 'El publicador no indicó la precisión de la coordenada', tono: 'info' },
   incertidumbre_mayor_umbral: { texto: 'La incertidumbre de la coordenada es grande: la ubicación es aproximada', tono: 'aviso' },
   incertidumbre_alcanza_borde_regional: { texto: 'La incertidumbre alcanza el borde de la región: el punto podría quedar fuera de ella', tono: 'aviso' },
   incertidumbre_alcanza_borde_municipal: { texto: 'La incertidumbre cruza el límite del municipio: el municipio asignado es aproximado', tono: 'info' },

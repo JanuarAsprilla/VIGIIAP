@@ -207,10 +207,10 @@ describe('panel de filtros y grupos agregados', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Limpiar todo' }))
     expect(onLimpiar).toHaveBeenCalled()
   })
-  test('agregado: tiempo, evidencia y calidad deshabilitados con explicación; sin controles', () => {
+  test('agregado: tiempo, evidencia y calidad no se muestran vacíos: una nota explica por qué; sin controles', () => {
     montar(f(), 'agregado')
-    expect(screen.getAllByText('No aplica')).toHaveLength(2)
-    expect(screen.getAllByText(/inventario agregado/).length).toBeGreaterThan(0)
+    expect(screen.queryByText('No aplica')).not.toBeInTheDocument()
+    expect(screen.getByText(/solo existen para mamíferos, anfibios, reptiles y hongos/)).toBeInTheDocument()
     expect(screen.queryByRole('switch', { name: /Solo con foto/ })).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Desde')).not.toBeInTheDocument()
   })
@@ -218,7 +218,7 @@ describe('panel de filtros y grupos agregados', () => {
     const { unmount } = render(<div />)
     unmount()
     montar(f({ familia: 'Tyrannidae' }), 'agregado')
-    expect(screen.getAllByText('No aplica')).toHaveLength(3)
+    expect(screen.getAllByText('No aplica')).toHaveLength(1)
     expect(screen.getByText(/La fuente no se combina|la fuente no se combina|no se combina con taxonomía/i)).toBeInTheDocument()
   })
   test('agregado con fuente: los niveles de taxonomía quedan deshabilitados', () => {

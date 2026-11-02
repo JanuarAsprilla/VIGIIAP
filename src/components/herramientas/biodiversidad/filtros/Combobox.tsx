@@ -130,7 +130,7 @@ export default function Combobox({
       </div>
       {motivo && <p id={`${base}-motivo`} className="bio-combo-motivo">{motivo}</p>}
       {abierto && (
-        <ul id={idLista} ref={lista} role="listbox" aria-label={etiqueta} className="bio-combo-lista">
+        <ul id={idLista} ref={lista} role="listbox" aria-label={etiqueta} className="bio-combo-lista" data-lenis-prevent>
           {visibles.map((o, i) => (
             <li
               key={o.valor} id={`${base}-o${i}`} data-i={i} role="option" aria-selected={o.etiqueta === seleccion}
