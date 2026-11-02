@@ -118,6 +118,30 @@ export function useTiempoReal(enabled: boolean = true) {
   })
 }
 
+export interface MetricasPeriodo {
+  desde: string
+  hasta: string
+  vistas: number
+  sesiones: number
+  acciones: number
+  rebotePct: number
+}
+
+export interface Comparativa {
+  actual: MetricasPeriodo
+  anterior: MetricasPeriodo
+  variacion: { vistas: number; sesiones: number; acciones: number; rebotePuntos: number }
+}
+
+export function useComparativa(rango: RangoFechas = {}, enabled: boolean = true) {
+  return useQuery<Comparativa>({
+    queryKey: ['admin', 'analitica', 'comparativa', rango],
+    queryFn:  () => api.get('/analitica/comparativa', { params: paramsRango(rango) }),
+    staleTime: 1000 * 60 * 2,
+    enabled,
+  })
+}
+
 export interface PasoEmbudo {
   etiqueta: string
   sesiones: number
