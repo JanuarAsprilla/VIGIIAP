@@ -16,7 +16,7 @@ interface Props {
   onVerMas?: (e: EspecieResumen, origen: HTMLElement) => void
 }
 
-/** En inventarios agregados nunca hay foto: el icono del grupo ocupa una franja, no media tarjeta. */
+/** En inventarios agregados una especie puede no tener foto representativa: el icono del grupo ocupa una franja, no media tarjeta. */
 const PROPORCION_SIN_FOTOS = '16 / 6'
 
 export default function TarjetaEspecie({ e, grupo, esIndividual, onVerRegistros, onVerMunicipios, onVerMas }: Props) {
@@ -27,7 +27,7 @@ export default function TarjetaEspecie({ e, grupo, esIndividual, onVerRegistros,
     <article className="bio-tarjeta bio-tarjeta-especie">
       <div className="relative">
         <ImagenGbif
-          foto={foto} grupo={grupo} ancho={480} alt={`Fotografía representativa de ${e.especie}`} proporcion={esIndividual ? undefined : PROPORCION_SIN_FOTOS}
+          foto={foto} grupo={grupo} ancho={480} alt={`Fotografía representativa de ${e.especie}`} proporcion={esIndividual || foto ? undefined : PROPORCION_SIN_FOTOS}
           sinFotoTexto={esIndividual ? 'Aún sin fotografía' : undefined}
         />
         {fotos > 1 && <span className="bio-tarjeta-fotos" aria-label={`${fotos} fotografías`}>{fotos} fotos</span>}

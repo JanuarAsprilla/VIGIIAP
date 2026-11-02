@@ -71,8 +71,16 @@ export default function Biodiversidad() {
 
   const filtrarEspecies = (c: { conservacion: TipoConservacion; amenaza: Amenaza | null }) =>
     t.cambiar({ vista: 'especies', ...cambiosConservacion(c.conservacion, c.amenaza), buscar: null })
-  const verRegistrosDe = (e: EspecieResumen) => t.cambiar({ vista: 'registros', ...cambiosEspecie(e.especie_clave, e.especie), conservacion: null, amenaza: null })
-  const verMunicipiosDe = (e: EspecieResumen) => t.cambiar({ vista: 'municipios', ...cambiosEspecie(e.especie_clave, e.especie), conservacion: null, amenaza: null })
+  // Al pasar de la lista de especies a otra pestaña, la página queda a media altura: se vuelve al inicio del detalle.
+  const irAlDetalle = () => requestAnimationFrame(() => document.getElementById('bio-detalle-datos')?.scrollIntoView({ behavior: sinMovimiento() ? 'auto' : 'smooth', block: 'start' }))
+  const verRegistrosDe = (e: EspecieResumen) => {
+    t.cambiar({ vista: 'registros', ...cambiosEspecie(e.especie_clave, e.especie), conservacion: null, amenaza: null })
+    irAlDetalle()
+  }
+  const verMunicipiosDe = (e: EspecieResumen) => {
+    t.cambiar({ vista: 'municipios', ...cambiosEspecie(e.especie_clave, e.especie), conservacion: null, amenaza: null })
+    irAlDetalle()
+  }
   const abrirRegistro = (r: RegistroBiodiversidad, el: HTMLElement) => { origenDetalle.current = el; t.cambiar({ registro: r.gbif_id, pagina: p.pagina }) }
   const abrirDesdeMapa = (id: string, el: HTMLElement) => { origenDetalle.current = el; t.cambiar({ registro: id, pagina: p.pagina }) }
 
@@ -221,7 +229,7 @@ export default function Biodiversidad() {
                 </div>
               </div>
               {mun && (
-                <section className="bio-panel p-4 sm:p-5" aria-label="Detalle de los datos">
+                <section id="bio-detalle-datos" className="bio-panel p-4 sm:p-5" aria-label="Detalle de los datos">
                   <Pestanas etiqueta="Información del grupo" activa={vista} onCambiar={(v) => t.cambiar({ vista: v === 'resumen' ? null : v })} pestanas={pestanas} />
                 </section>
               )}

@@ -165,6 +165,12 @@ describe('TarjetaEspecie', () => {
     const { container } = render(<TarjetaEspecie e={esp({ foto: null })} {...props} esIndividual={false} />)
     expect((container.querySelector('.bio-foto') as HTMLElement).style.aspectRatio).toBe('16 / 6')
   })
+  test('agregado con foto representativa: se muestra con su crédito y proporción normal, no la franja baja', () => {
+    const { container } = render(<TarjetaEspecie e={esp()} {...props} esIndividual={false} />)
+    expect(screen.getByRole('img', { name: /Fotografía representativa de Atelopus spurrelli/ })).toBeInTheDocument()
+    expect(screen.getByText(/Foto: Ana Pérez/)).toBeInTheDocument()
+    expect((container.querySelector('.bio-foto') as HTMLElement).style.aspectRatio).toBe('4 / 3')
+  })
   test('agregado: ofrece «Ver municipios» de esa especie en lugar de registros', async () => {
     const onMun = vi.fn()
     render(<TarjetaEspecie e={esp({ foto: null })} {...props} esIndividual={false} onVerMunicipios={onMun} />)

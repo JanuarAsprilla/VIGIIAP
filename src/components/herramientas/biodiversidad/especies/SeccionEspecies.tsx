@@ -44,7 +44,7 @@ export default function SeccionEspecies({ grupo, esIndividual, params, orden, mo
         <p className="text-sm text-text-muted" role="status" aria-live="polite">
           {datos ? (datos.total > 0 ? `${fmtNum(datos.total)} ${datos.total === 1 ? 'especie' : 'especies'}` : 'Sin especies con estos filtros')
             : consulta.isPending ? 'Cargando especies…' : ''}
-          {!esIndividual && datos && datos.total > 0 && ' · Inventario agregado: se muestran conteos, sin registros individuales ni fotografías.'}
+          {!esIndividual && datos && datos.total > 0 && ' · Inventario agregado: conteos por municipio, sin registros individuales. La foto es una imagen representativa de la especie.'}
         </p>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <SelectorOrden etiqueta="Ordenar por" valor={orden} opciones={ORDENES_ESPECIES} onCambio={cambiarOrden} />
