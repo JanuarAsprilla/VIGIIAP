@@ -9,7 +9,7 @@ const datos = vi.hoisted(() => ({ estado: null as unknown, ejecuciones: { ejecuc
 
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: datos.usuario }) }))
 vi.mock('@/hooks/useActualizacionBiodiversidad', () => {
-  const exito = (fn: ReturnType<typeof vi.fn>) => () => ({
+  const exito = (fn: (arg: unknown) => void) => () => ({
     mutate: (arg: unknown, opts?: { onSuccess?: () => void }) => { fn(arg); opts?.onSuccess?.() }, isPending: false,
   })
   return {
