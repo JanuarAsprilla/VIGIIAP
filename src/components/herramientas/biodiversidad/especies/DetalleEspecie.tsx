@@ -44,7 +44,7 @@ function Galeria({ especie, fotos, grupo, esIndividual }: { especie: string; fot
           {fotos.map((f, i) => (
             <li key={f.imagen}>
               <button type="button" aria-label={`Ver fotografía ${i + 1} de ${fotos.length}`} aria-current={i === indice} onClick={() => setIndice(i)}>
-                <ImagenGbif foto={f} alt="" ancho={120} proporcion="1 / 1" />
+                <ImagenGbif foto={f} alt="" ancho={120} proporcion="1 / 1" prioridad />
               </button>
             </li>
           ))}
@@ -93,7 +93,7 @@ export default function DetalleEspecie({ e, grupo, esIndividual, origen, onCerra
           <Galeria especie={e.especie} fotos={fotos} grupo={grupo} esIndividual={esIndividual} />
           <div className="space-y-5 min-w-0">
             <InsigniasConservacion c={e} />
-            <dl className="bio-datos">
+            <dl className="bio-datos bio-datos-cifras">
               <div className="bio-dato"><dt>Registros</dt><dd>{fmtNum(e.registros)}</dd></div>
               <div className="bio-dato"><dt>Municipios</dt><dd>{fmtNum(e.municipios)}</dd></div>
               {esIndividual && (e.fotos_total ?? 0) > 0 && <div className="bio-dato"><dt>Fotografías</dt><dd>{fmtNum(e.fotos_total ?? 0)}</dd></div>}
