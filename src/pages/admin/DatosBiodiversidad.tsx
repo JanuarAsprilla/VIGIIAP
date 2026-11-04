@@ -9,6 +9,7 @@ import {
   type EjecucionActualizacion, type EstadoActualizacion, type EstadoEjecucion, type TareaActualizacion,
 } from '@/hooks/useActualizacionBiodiversidad'
 import { SkeletonLista } from '@/components/ui/Skeleton'
+import Switch from '@/components/ui/Switch'
 
 const TAREAS: { clave: TareaActualizacion; titulo: string; ayuda: string }[] = [
   { clave: 'fotos', titulo: 'Fotos por especie', ayuda: 'Busca una foto representativa para cada especie de aves, insectos y plantas.' },
@@ -66,7 +67,7 @@ function Cortes({ estado }: { estado: EstadoActualizacion }) {
         <div className="overflow-x-auto" data-lenis-prevent>
           <table className="w-full text-sm">
             <caption className="sr-only">Cortes de datos publicados por grupo</caption>
-            <thead><tr className="text-left text-xs text-text-muted"><th className="py-1.5 pr-3 font-semibold">Grupo</th><th className="py-1.5 pr-3 font-semibold text-right">Registros</th><th className="py-1.5 pr-3 font-semibold">Fuente al</th><th className="py-1.5 font-semibold text-right">GBIF desde entonces</th></tr></thead>
+            <thead><tr className="text-left text-xs text-text-muted"><th className="py-1.5 pr-3 font-semibold">Grupo</th><th className="py-1.5 pr-3 font-semibold text-right">Registros</th><th className="py-1.5 pr-3 font-semibold">Fuente a la fecha</th><th className="py-1.5 font-semibold text-right">GBIF desde entonces</th></tr></thead>
             <tbody>
               {estado.cortes.map((c) => {
                 const crec = grupos[c.grupo]?.crecimiento_pct
@@ -110,7 +111,7 @@ function Tareas({ estado, puedeEditar, onAviso }: { estado: EstadoActualizacion;
                 </p>
               </div>
               {puedeEditar && (
-                <button type="button" className="bio-boton bio-boton-chico" disabled={pendiente || sinCuenta || solicitar.isPending}
+                <button type="button" className="admin-boton" disabled={pendiente || sinCuenta || solicitar.isPending}
                   title={sinCuenta ? 'Requiere el modo con cuenta de GBIF' : undefined} onClick={() => pedir(t.clave)}>
                   <RefreshCw className="w-4 h-4" aria-hidden="true" />{pendiente ? 'En espera' : 'Actualizar ahora'}
                 </button>
@@ -134,10 +135,10 @@ function Ajustes({ estado, esSuper, onAviso }: { estado: EstadoActualizacion; es
   return (
     <Tarjeta titulo="Configuración" icono={ShieldCheck} aviso={esSuper ? 'Solo el Super Administrador cambia esto.' : 'Solo lectura: lo administra el Super Administrador.'}>
       <div className="space-y-4 text-sm">
-        <label className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <span><span className="font-semibold block">Actualización automática</span><span className="text-xs text-text-muted">Si se apaga, solo se ejecuta lo que se pida a mano.</span></span>
-          <input type="checkbox" role="switch" aria-label="Actualización automática" className="w-5 h-5 accent-primary-700" checked={ajustes.activa} disabled={bloqueado} onChange={(e) => aplicar({ activa: e.target.checked })} />
-        </label>
+          <Switch label="Actualización automática" checked={ajustes.activa} disabled={bloqueado} onChange={(activa) => aplicar({ activa })} />
+        </div>
         <fieldset className="space-y-2" disabled={bloqueado}>
           <legend className="font-semibold mb-1">Modo</legend>
           <label className="flex items-start gap-2"><input type="radio" name="modo" className="mt-1" checked={ajustes.modo === 'publico'} onChange={() => aplicar({ modo: 'publico' })} /><span><span className="font-medium">Sin cuenta de GBIF</span><span className="block text-xs text-text-muted">Fotos y medición de frescura con la API pública.</span></span></label>
@@ -145,13 +146,13 @@ function Ajustes({ estado, esSuper, onAviso }: { estado: EstadoActualizacion; es
         </fieldset>
         {ajustes.modo === 'cuenta' && (
           <label className="block"><span className="font-semibold block mb-1">Quién aporta la cuenta</span>
-            <select className="bio-campo w-full" value={ajustes.credencial_usuario_id ?? ''} disabled={bloqueado} onChange={(e) => aplicar({ credencial_usuario_id: e.target.value })}>
+            <select className="admin-campo w-full" value={ajustes.credencial_usuario_id ?? ''} disabled={bloqueado} onChange={(e) => aplicar({ credencial_usuario_id: e.target.value })}>
               {credenciales.map((c) => <option key={c.usuario_id} value={c.usuario_id}>{c.nombre} · {c.gbif_usuario}</option>)}
             </select>
           </label>
         )}
         <label className="block"><span className="font-semibold block mb-1">Cada cuántos días revisar</span>
-          <select className="bio-campo" value={ajustes.frecuencia_dias} disabled={bloqueado} onChange={(e) => aplicar({ frecuencia_dias: Number(e.target.value) })}>
+          <select className="admin-campo" value={ajustes.frecuencia_dias} disabled={bloqueado} onChange={(e) => aplicar({ frecuencia_dias: Number(e.target.value) })}>
             {FRECUENCIAS.map((d) => <option key={d} value={d}>{d} días</option>)}
           </select>
         </label>
@@ -185,21 +186,21 @@ function MiCuenta({ estado, userId, esSuper, onAviso }: { estado: EstadoActualiz
       {propia && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border p-3 text-sm">
           <span>Tu cuenta: <strong>{propia.gbif_usuario}</strong> <span className="text-text-muted">({propia.gbif_correo}) · {fecha(propia.actualizado_en)}</span></span>
-          <button type="button" className="bio-boton bio-boton-chico" onClick={() => quitar()} disabled={borrar.isPending}><Trash2 className="w-4 h-4" aria-hidden="true" />Quitar</button>
+          <button type="button" className="admin-boton" onClick={() => quitar()} disabled={borrar.isPending}><Trash2 className="w-4 h-4" aria-hidden="true" />Quitar</button>
         </div>
       )}
       <form onSubmit={enviar} className="grid gap-3 sm:grid-cols-3" autoComplete="off">
-        <label className="text-sm"><span className="font-semibold block mb-1">Usuario de GBIF</span><input className="bio-campo w-full" required minLength={3} maxLength={100} value={form.gbif_usuario} onChange={(e) => setForm({ ...form, gbif_usuario: e.target.value })} /></label>
-        <label className="text-sm"><span className="font-semibold block mb-1">Correo de la cuenta</span><input className="bio-campo w-full" type="email" required maxLength={200} value={form.gbif_correo} onChange={(e) => setForm({ ...form, gbif_correo: e.target.value })} /></label>
-        <label className="text-sm"><span className="font-semibold block mb-1">Clave</span><input className="bio-campo w-full" type="password" required minLength={6} maxLength={200} autoComplete="new-password" value={form.clave} onChange={(e) => setForm({ ...form, clave: e.target.value })} /></label>
-        <div className="sm:col-span-3"><button type="submit" className="bio-boton bio-boton-lleno" disabled={guardar.isPending || !estado.cifrado_disponible}>{propia ? 'Reemplazar mi cuenta' : 'Guardar mi cuenta'}</button></div>
+        <label className="text-sm"><span className="font-semibold block mb-1">Usuario de GBIF</span><input className="admin-campo w-full" required minLength={3} maxLength={100} value={form.gbif_usuario} onChange={(e) => setForm({ ...form, gbif_usuario: e.target.value })} /></label>
+        <label className="text-sm"><span className="font-semibold block mb-1">Correo de la cuenta</span><input className="admin-campo w-full" type="email" required maxLength={200} value={form.gbif_correo} onChange={(e) => setForm({ ...form, gbif_correo: e.target.value })} /></label>
+        <label className="text-sm"><span className="font-semibold block mb-1">Clave</span><input className="admin-campo w-full" type="password" required minLength={6} maxLength={200} autoComplete="new-password" value={form.clave} onChange={(e) => setForm({ ...form, clave: e.target.value })} /></label>
+        <div className="sm:col-span-3"><button type="submit" className="admin-boton admin-boton-lleno" disabled={guardar.isPending || !estado.cifrado_disponible}>{propia ? 'Reemplazar mi cuenta' : 'Guardar mi cuenta'}</button></div>
       </form>
       {esSuper && estado.credenciales.some((c) => c.usuario_id !== userId) && (
         <ul className="space-y-2 text-sm" aria-label="Cuentas de otras personas">
           {estado.credenciales.filter((c) => c.usuario_id !== userId).map((c) => (
             <li key={c.usuario_id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border p-3">
               <span><strong>{c.nombre}</strong> <span className="text-text-muted">· {c.gbif_usuario} · {fecha(c.actualizado_en)}</span></span>
-              <button type="button" className="bio-boton bio-boton-chico" onClick={() => quitar(c.usuario_id)} disabled={borrar.isPending} aria-label={`Quitar la cuenta de ${c.nombre}`}><Trash2 className="w-4 h-4" aria-hidden="true" />Quitar</button>
+              <button type="button" className="admin-boton" onClick={() => quitar(c.usuario_id)} disabled={borrar.isPending} aria-label={`Quitar la cuenta de ${c.nombre}`}><Trash2 className="w-4 h-4" aria-hidden="true" />Quitar</button>
             </li>
           ))}
         </ul>

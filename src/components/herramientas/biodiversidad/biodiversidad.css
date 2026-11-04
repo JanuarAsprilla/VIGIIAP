@@ -439,3 +439,13 @@
 @keyframes bio-cambia { from { opacity: 0.4; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .bio-cambia { animation: bio-cambia 260ms var(--bio-ease) both; }
 @media (prefers-reduced-motion: reduce) { .bio-cambia { animation: none; } .bio-grupo, .bio-grupo-chip, .bio-sel-atajo { transition: none; } }
+
+/* Cifras clave del detalle: mismo numeral de pantalla que las tarjetas de especie */
+.bio-datos-cifras { grid-template-columns: repeat(auto-fit, minmax(5.5rem, max-content)); gap: 0.6rem 2rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--bio-linea); }
+.bio-datos-cifras .bio-dato dd { margin-top: 0.3rem; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+/* Tira de miniaturas: barra de desplazamiento fina y discreta */
+.bio-miniaturas { scrollbar-width: thin; scrollbar-color: var(--bio-linea) transparent; }
+.bio-miniaturas::-webkit-scrollbar { height: 6px; }
+.bio-miniaturas::-webkit-scrollbar-thumb { background: var(--bio-linea); border-radius: 999px; }
+.bio-miniaturas li { flex: none; }
