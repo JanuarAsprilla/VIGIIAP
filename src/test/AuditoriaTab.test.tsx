@@ -23,7 +23,7 @@ vi.mock('@/components/ui/Card3D', () => ({
     <div className={className}>{children}</div>,
 }))
 
-vi.mock('@/lib/api', () => ({ default: { get: vi.fn() } }))
+vi.mock('@/lib/api', () => ({ default: { get: vi.fn(), defaults: { baseURL: '/api/v1' } } }))
 import api from '@/lib/api'
 
 vi.mock('@/lib/exportarActividadExcel', () => ({ exportarActividadExcel: vi.fn().mockResolvedValue(undefined) }))
@@ -390,8 +390,35 @@ describe('AuditoriaTab — exportar Excel', () => {
     await user.click(screen.getByRole('button', { name: /Exportar Excel/i }))
 
     expect(exportarActividadExcel).toHaveBeenCalledWith(expect.objectContaining({
-      desde: '2026-01-01', hasta: '2026-01-31',
+      desde: '2026-01-01', hasta: '2026-01-31T23:59:59.999Z',
     }))
+  })
+
+  test('el CSV completo es un enlace de descarga que lleva los filtros activos', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 1 } })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('cell', { name: 'Login' })
+
+    await user.type(screen.getByLabelText('Desde'), '2026-01-01')
+    await user.type(screen.getByLabelText('Hasta'), '2026-01-31')
+
+    const enlace = screen.getByRole('link', { name: /Exportar CSV completo/i })
+    const url = new URL(enlace.getAttribute('href') ?? '', 'https://x.test')
+    expect(url.pathname).toBe('/api/v1/admin/export/audit')
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      formato: 'csv', desde: '2026-01-01', hasta: '2026-01-31T23:59:59.999Z',
+    })
+    expect(enlace).toHaveAttribute('download')
+  })
+
+  test('el CSV no se ofrece si hay más eventos que el tope del backend', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [makeLog()], meta: { total: 500_001 } })
+    renderPage()
+    await screen.findByRole('cell', { name: 'Login' })
+
+    expect(screen.queryByRole('link', { name: /Exportar CSV completo/i })).not.toBeInTheDocument()
+    expect(screen.getByText(/acota las fechas para exportar/i)).toBeInTheDocument()
   })
 
   test('un fallo al exportar muestra un mensaje de error', async () => {
