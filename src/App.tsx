@@ -8,7 +8,7 @@ import { ThemeProvider } from './contexts/ThemeContext'
 import MainLayout from './layouts/MainLayout'
 import ThemeSync from './components/ThemeSync'
 import AdminLayout from './layouts/AdminLayout'
-import { RequireVerified, RequireAdmin, RequireSuperAdmin } from './components/RequireAuth'
+import { RequireVerified, RequireAdmin, RequireSuperAdmin, RequireModulo } from './components/RequireAuth'
 import ErrorBoundary from './components/ErrorBoundary'
 import Preloader from './components/Preloader'
 import MantenimientoGate from './components/MantenimientoGate'
@@ -193,18 +193,42 @@ function AppRoutes() {
           <Route element={<RequireAdmin />}>
             <Route element={<AdminLayout />}>
               <Route path="/admin"               element={<Suspense fallback={<GenericPageSkeleton />}><AdminDashboard /></Suspense>} />
-              <Route path="/admin/usuarios"      element={<Suspense fallback={<GenericPageSkeleton />}><AdminUsuarios /></Suspense>} />
-              <Route path="/admin/solicitudes"   element={<Suspense fallback={<GenericPageSkeleton />}><AdminSolicitudes /></Suspense>} />
-              <Route path="/admin/documentos"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminDocumentos /></Suspense>} />
-              <Route path="/admin/mapas"         element={<Suspense fallback={<GenericPageSkeleton />}><AdminMapas /></Suspense>} />
-              <Route path="/admin/geovisores"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminGeovisores /></Suspense>} />
-              <Route path="/admin/conexiones-geoserver" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConexionesGeoserver /></Suspense>} />
-              <Route path="/admin/biodiversidad-datos" element={<Suspense fallback={<GenericPageSkeleton />}><AdminDatosBiodiversidad /></Suspense>} />
-              <Route path="/admin/configuracion" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConfig /></Suspense>} />
-              <Route path="/admin/actividad"     element={<Suspense fallback={<GenericPageSkeleton />}><AdminActividad /></Suspense>} />
-              <Route path="/admin/errores"       element={<Suspense fallback={<GenericPageSkeleton />}><AdminErrores /></Suspense>} />
-              <Route path="/admin/categorias"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminCategorias /></Suspense>} />
-              <Route path="/admin/herramientas"  element={<Suspense fallback={<GenericPageSkeleton />}><AdminHerramientas /></Suspense>} />
+              <Route element={<RequireModulo modulo="usuarios" />}>
+                <Route path="/admin/usuarios"      element={<Suspense fallback={<GenericPageSkeleton />}><AdminUsuarios /></Suspense>} />
+              </Route>
+              <Route element={<RequireModulo modulo="solicitudes" />}>
+                <Route path="/admin/solicitudes"   element={<Suspense fallback={<GenericPageSkeleton />}><AdminSolicitudes /></Suspense>} />
+              </Route>
+              <Route element={<RequireModulo modulo="documentos" />}>
+                <Route path="/admin/documentos"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminDocumentos /></Suspense>} />
+              </Route>
+              <Route element={<RequireModulo modulo="mapas" />}>
+                <Route path="/admin/mapas"         element={<Suspense fallback={<GenericPageSkeleton />}><AdminMapas /></Suspense>} />
+              </Route>
+              <Route element={<RequireModulo modulo="geovisores" />}>
+                <Route path="/admin/geovisores"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminGeovisores /></Suspense>} />
+              </Route>
+              <Route element={<RequireModulo modulo="conexiones_geoserver" />}>
+                <Route path="/admin/conexiones-geoserver" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConexionesGeoserver /></Suspense>} />
+              </Route>
+              <Route element={<RequireModulo modulo="biodiversidad_datos" />}>
+                <Route path="/admin/biodiversidad-datos" element={<Suspense fallback={<GenericPageSkeleton />}><AdminDatosBiodiversidad /></Suspense>} />
+              </Route>
+              <Route element={<RequireModulo modulo="configuracion" />}>
+                <Route path="/admin/configuracion" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConfig /></Suspense>} />
+              </Route>
+              <Route element={<RequireModulo modulo="actividad" />}>
+                <Route path="/admin/actividad"     element={<Suspense fallback={<GenericPageSkeleton />}><AdminActividad /></Suspense>} />
+              </Route>
+              <Route element={<RequireModulo modulo="errores" />}>
+                <Route path="/admin/errores"       element={<Suspense fallback={<GenericPageSkeleton />}><AdminErrores /></Suspense>} />
+              </Route>
+              <Route element={<RequireModulo modulo="categorias" />}>
+                <Route path="/admin/categorias"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminCategorias /></Suspense>} />
+              </Route>
+              <Route element={<RequireModulo modulo="herramientas" />}>
+                <Route path="/admin/herramientas"  element={<Suspense fallback={<GenericPageSkeleton />}><AdminHerramientas /></Suspense>} />
+              </Route>
               {/* "Reportes" era una pantalla aparte -- ahora es una pestaña de Actividad (ver pages/admin/Actividad.tsx) */}
               <Route path="/admin/reportes"      element={<Navigate to="/admin/actividad?tab=reportes" replace />} />
 
