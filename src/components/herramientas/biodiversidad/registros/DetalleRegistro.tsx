@@ -149,7 +149,7 @@ export default function DetalleRegistro({ grupo, gbifId, origen, onCerrar, onVer
       <div ref={caja} role="dialog" aria-modal="true" aria-labelledby={titulo} tabIndex={-1} className="bio-detalle" onKeyDown={alTeclear}>
         <header className="bio-detalle-cabecera">
           <div className="min-w-0">
-            <p className="bio-eyebrow">Registro {gbifId}</p>
+            <p className="bio-eyebrow">{/^\d+$/.test(gbifId) ? `Registro ${gbifId}` : 'Registro con ubicación reservada'}</p>
             <h2 id={titulo} className={`font-display text-xl sm:text-2xl font-bold leading-tight ${r?.especie ? 'italic' : ''}`}>
               {r ? r.especie ?? 'Sin especie determinada' : 'Cargando registro'}
             </h2>

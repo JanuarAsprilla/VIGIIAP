@@ -50,7 +50,8 @@ export function leerParametros(p: URLSearchParams): ParametrosVista {
     vista: (VISTAS as readonly string[]).includes(vista ?? '') ? (vista as Vista) : null,
     metrica: esMetrica(metrica) ? metrica : METRICA_INICIAL,
     modo: p.get('modo') === 'tabla' ? 'tabla' : 'tarjetas',
-    registro: registro && /^[0-9]{1,20}$/.test(registro) ? registro : null,
+    // Id numérico de GBIF, o el opaco `o…` con que el servidor protege los registros de ubicación reservada.
+    registro: registro && /^([0-9]{1,20}|o[A-Za-z0-9_-]{20,120})$/.test(registro) ? registro : null,
     ordenar: ordenar && /^[a-z_]{3,20}$/.test(ordenar) ? ordenar : null,
     puntos: p.get('puntos') === '1',
   }
