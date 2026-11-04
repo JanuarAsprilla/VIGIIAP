@@ -1,3 +1,5 @@
+import { puedeVerModulo } from '@/lib/permisosModulo'
+import type { ModuloClave } from '@/lib/constants/modulos'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/lib/constants/roles'
@@ -93,5 +95,15 @@ export function RequireVerified() {
   if (isUnverified) {
     return <Navigate to="/solicitar-acceso" replace />
   }
+  return <Outlet />
+}
+
+/**
+ * Defensa en profundidad dentro de las rutas de administración: un admin_sig sin el módulo no llega a la página
+ * (antes solo se ocultaba el enlace del menú). La autorización real sigue en el backend (requireModulo).
+ */
+export function RequireModulo({ modulo }: { modulo: ModuloClave }) {
+  const { user } = useAuth()
+  if (!puedeVerModulo(user, modulo)) return <Navigate to="/admin" replace />
   return <Outlet />
 }
