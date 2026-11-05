@@ -261,9 +261,9 @@ describe('AuthProvider — perfilCompleto / completarPerfil()', () => {
     vi.mocked(api.patch).mockResolvedValue({ perfilCompleto: true })
     vi.mocked(api.get).mockResolvedValueOnce({ ...rawInvestigador, perfilCompleto: true })
 
-    await act(async () => { await result.current.completarPerfil({ institucion: 'IIAP' }) })
+    await act(async () => { await result.current.completarPerfil({ institucion: 'IIAP', terminos: true }) })
 
-    expect(api.patch).toHaveBeenCalledWith('/auth/completar-perfil', { institucion: 'IIAP' })
+    expect(api.patch).toHaveBeenCalledWith('/auth/completar-perfil', { institucion: 'IIAP', terminos: true })
     expect(result.current.user).toMatchObject({ perfilCompleto: true })
   })
 
@@ -277,12 +277,12 @@ describe('AuthProvider — perfilCompleto / completarPerfil()', () => {
 
     await act(async () => {
       await result.current.completarPerfil({
-        institucion: 'IIAP', perfilSolicitado: 'investigador', motivo: 'Investigación',
+        institucion: 'IIAP', perfilSolicitado: 'investigador', motivo: 'Investigación', terminos: true,
       })
     })
 
     expect(api.patch).toHaveBeenCalledWith('/auth/completar-perfil', {
-      institucion: 'IIAP', perfilSolicitado: 'investigador', motivo: 'Investigación',
+      institucion: 'IIAP', perfilSolicitado: 'investigador', motivo: 'Investigación', terminos: true,
     })
   })
 })

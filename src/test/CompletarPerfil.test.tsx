@@ -2,6 +2,7 @@ import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createElement, type ReactNode } from 'react'
+import { MemoryRouter } from 'react-router-dom'
 import CompletarPerfilForm from '@/components/auth/CompletarPerfilForm'
 import CompletarPerfilPanel from '@/components/auth/CompletarPerfilPanel'
 
@@ -28,8 +29,10 @@ const authMock = {
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 
 function renderForm(onClose = vi.fn()) {
-  return { onClose, ...render(<CompletarPerfilForm onClose={onClose} />) }
+  return { onClose, ...render(<MemoryRouter><CompletarPerfilForm onClose={onClose} /></MemoryRouter>) }
 }
+
+const aceptarTerminos = (user: ReturnType<typeof userEvent.setup>) => user.click(screen.getByRole('checkbox'))
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -43,6 +46,16 @@ describe('CompletarPerfilForm — validación', () => {
     await user.click(screen.getByRole('button', { name: /Completar registro/i }))
 
     expect(await screen.findByText('Ingrese su institución u organización')).toBeInTheDocument()
+    expect(authMock.completarPerfil).not.toHaveBeenCalled()
+  })
+
+  test('sin aceptar los términos y el tratamiento de datos no se envía nada', async () => {
+    const user = userEvent.setup()
+    renderForm()
+    await user.type(screen.getByLabelText('Institución / Organización'), 'IIAP')
+    await user.click(screen.getByRole('button', { name: /Completar registro/i }))
+
+    expect(await screen.findByText(/Debe aceptar los términos/)).toBeInTheDocument()
     expect(authMock.completarPerfil).not.toHaveBeenCalled()
   })
 })
@@ -59,9 +72,10 @@ describe('CompletarPerfilForm — envío', () => {
     const { onClose } = renderForm()
 
     await user.type(screen.getByLabelText('Institución / Organización'), 'IIAP')
+    await aceptarTerminos(user)
     await user.click(screen.getByRole('button', { name: /Completar registro/i }))
 
-    expect(authMock.completarPerfil).toHaveBeenCalledWith({ nombre: 'Ana Restrepo', institucion: 'IIAP' })
+    expect(authMock.completarPerfil).toHaveBeenCalledWith({ nombre: 'Ana Restrepo', institucion: 'IIAP', terminos: true })
     expect(onClose).toHaveBeenCalled()
   })
 
@@ -71,6 +85,7 @@ describe('CompletarPerfilForm — envío', () => {
     const { onClose } = renderForm()
 
     await user.type(screen.getByLabelText('Institución / Organización'), 'IIAP')
+    await aceptarTerminos(user)
     await user.click(screen.getByRole('button', { name: /Completar registro/i }))
 
     expect(await screen.findByText('Institución requerida')).toBeInTheDocument()
@@ -102,11 +117,12 @@ describe('CompletarPerfilForm — solicitud de perfil de acceso', () => {
     await user.type(screen.getByLabelText('Institución / Organización'), 'IIAP')
     await user.selectOptions(screen.getByLabelText('Perfil de Acceso'), 'investigador')
     await user.type(screen.getByLabelText(/Motivo/), 'Investigación de biodiversidad')
+    await aceptarTerminos(user)
     await user.click(screen.getByRole('button', { name: /Enviar solicitud/i }))
 
     expect(authMock.completarPerfil).toHaveBeenCalledWith({
       nombre: 'Ana Restrepo', institucion: 'IIAP',
-      perfilSolicitado: 'investigador', motivo: 'Investigación de biodiversidad',
+      perfilSolicitado: 'investigador', motivo: 'Investigación de biodiversidad', terminos: true,
     })
     expect(await screen.findByText('Solicitud enviada')).toBeInTheDocument()
     expect(onClose).not.toHaveBeenCalled()
@@ -119,6 +135,7 @@ describe('CompletarPerfilForm — solicitud de perfil de acceso', () => {
 
     await user.type(screen.getByLabelText('Institución / Organización'), 'IIAP')
     await user.selectOptions(screen.getByLabelText('Perfil de Acceso'), 'tecnico')
+    await aceptarTerminos(user)
     await user.click(screen.getByRole('button', { name: /Enviar solicitud/i }))
     await screen.findByText('Solicitud enviada')
 
@@ -130,7 +147,7 @@ describe('CompletarPerfilForm — solicitud de perfil de acceso', () => {
 describe('CompletarPerfilPanel', () => {
   test('renderiza el título y pasa onClose al panel', () => {
     const onClose = vi.fn()
-    render(<CompletarPerfilPanel onClose={onClose} />)
+    render(<MemoryRouter><CompletarPerfilPanel onClose={onClose} /></MemoryRouter>)
     expect(screen.getByText('Completa tu Perfil')).toBeInTheDocument()
   })
 })

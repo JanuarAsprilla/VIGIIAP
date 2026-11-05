@@ -188,6 +188,7 @@ export default function SolicitarAccesoForm({ onClose }: { onClose: () => void }
         institucion: form.institucion,
         perfil:      form.perfil || undefined,
         motivo:      form.motivo || undefined,
+        terminos:    true, // el formulario ya validó la casilla; el servidor lo exige y guarda la prueba
       })
       setSent(true)
     } catch (err) {
