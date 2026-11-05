@@ -154,29 +154,50 @@ export default function Biodiversidad() {
   return (
     <div className="bio-root bio-tema space-y-4" style={estiloGrupo(p.grupo)}>
       <header className="bio-panel p-4 sm:p-6 space-y-5">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
-          <div className="min-w-0 bio-cambia" key={p.grupo}>
-            <p className="bio-eyebrow">Chocó biogeográfico · datos de GBIF</p>
+        <div className="space-y-2.5">
+          <p className="bio-eyebrow">Chocó biogeográfico · datos de GBIF</p>
+          <SelectorGrupo grupo={p.grupo} onCambiar={t.cambiarGrupo} />
+        </div>
+        <div className="bio-cambia space-y-4" key={p.grupo}>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <div className="bio-titulo-grupo">
               <span className="bio-titulo-chip"><GrupoIcono grupo={p.grupo} /></span>
-              <p className="font-display text-[clamp(2rem,5vw,3.25rem)] font-bold leading-none text-text" aria-live="polite">
+              <p className="font-display text-[clamp(1.75rem,4.5vw,2.75rem)] font-bold leading-none text-text" aria-live="polite">
                 {NOMBRES_GRUPO[p.grupo]}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <span className="bio-insignia">{etiquetaMetodo(metodo)}</span>
-              <span className="bio-insignia tabular-nums">{periodo}</span>
-              {info && <span className="text-xs text-text-muted">Fuente al {fmtFecha(info.fecha_fuente)}</span>}
-            </div>
-            <p className="text-sm text-text-muted max-w-xl leading-relaxed mt-3">{descripcion}</p>
+            <span className="bio-insignia">{etiquetaMetodo(metodo)}</span>
           </div>
-          <dl className="bio-cifras-clave" aria-label={hayFiltros ? 'Cifras clave con los filtros activos' : 'Cifras clave del grupo'}>
-            <div><dt>Registros</dt><dd className="bio-cifra text-[clamp(1.5rem,3.2vw,2.25rem)]">{t.indicadores ? fmtNum(t.indicadores.registros) : '—'}</dd></div>
-            <div><dt>Municipios con datos</dt><dd className="bio-cifra text-[clamp(1.5rem,3.2vw,2.25rem)]">{t.indicadores ? <>{t.indicadores.municipiosConRegistros}<span className="text-text-muted text-[0.5em] font-semibold"> / {t.indicadores.totalMunicipios}</span></> : '—'}</dd></div>
-            <div><dt>Departamentos</dt><dd className="bio-cifra text-[clamp(1.5rem,3.2vw,2.25rem)]">{t.indicadores ? t.indicadores.departamentos : '—'}</dd></div>
+          <p className="text-sm text-text-muted max-w-3xl leading-relaxed">{descripcion}</p>
+          <dl className="bio-datos-grupo" aria-label={hayFiltros ? 'Datos del grupo con los filtros activos' : 'Datos del grupo'}>
+            <div className="bio-dato-grupo bio-dato-grupo-principal">
+              <dt>Registros</dt>
+              <dd className="bio-cifra text-[clamp(2rem,4.5vw,3rem)]">{t.indicadores ? fmtNum(t.indicadores.registros) : '—'}</dd>
+              <dd className="bio-dato-sub">{hayFiltros ? 'Con los filtros activos' : 'En el corte vigente'}</dd>
+            </div>
+            <div className="bio-dato-grupo">
+              <dt>Municipios con datos</dt>
+              <dd className="bio-cifra text-[clamp(1.75rem,3.6vw,2.5rem)]">
+                {t.indicadores ? <>{t.indicadores.municipiosConRegistros}<span className="text-text-muted text-[0.5em] font-semibold"> / {t.indicadores.totalMunicipios}</span></> : '—'}
+              </dd>
+              <dd className="bio-dato-sub">
+                {t.indicadores && t.indicadores.totalMunicipios > 0 && (
+                  <span className="bio-barra-mini" aria-hidden="true"><span style={{ width: `${Math.round((t.indicadores.municipiosConRegistros / t.indicadores.totalMunicipios) * 100)}%` }} /></span>
+                )}
+              </dd>
+            </div>
+            <div className="bio-dato-grupo">
+              <dt>Departamentos</dt>
+              <dd className="bio-cifra text-[clamp(1.75rem,3.6vw,2.5rem)]">{t.indicadores ? t.indicadores.departamentos : '—'}</dd>
+              <dd className="bio-dato-sub">Con registros</dd>
+            </div>
+            <div className="bio-dato-grupo">
+              <dt>Periodo</dt>
+              <dd className="bio-cifra tabular-nums whitespace-nowrap text-[clamp(1.2rem,3vw,2.1rem)]">{periodo}</dd>
+              <dd className="bio-dato-sub">{info ? `Fuente al ${fmtFecha(info.fecha_fuente)}` : ''}</dd>
+            </div>
           </dl>
         </div>
-        <SelectorGrupo grupo={p.grupo} grupos={t.estado.data?.grupos} onCambiar={t.cambiarGrupo} />
       </header>
 
       <BarraFiltros
