@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useBiodiversidadResumen } from '@/hooks/useBiodiversidad'
 import './biodiversidad.css'
 import './filtros.css'
 import AcercaDatos from './AcercaDatos'
@@ -15,7 +16,7 @@ import Pestanas from './Pestanas'
 import RankingPanel from './RankingPanel'
 import SelectorGrupo from './SelectorGrupo'
 import TablaMunicipios from './TablaMunicipios'
-import { fmtFecha, fmtNum } from './lib/format'
+import { fmtNum } from './lib/format'
 import { cambiosConservacion, cambiosEspecie } from './lib/filtros'
 import { etiquetaMetodo } from './lib/metodo'
 import { METRICA_INICIAL, type Metrica } from './lib/metrica'
@@ -46,17 +47,19 @@ function sinMovimiento(): boolean {
 
 export default function Biodiversidad() {
   const t = useTablero()
-  const { p, filtros: f, apl, metodo, esIndividual, info, mun, municipios, municipioSel, deptoSel, deptoActivo } = t
+  const { p, filtros: f, apl, metodo, esIndividual, mun, municipios, municipioSel, deptoSel, deptoActivo } = t
   const ancho = useMediaQuery('(min-width: 64rem)')
-  const muyAncho = useMediaQuery('(min-width: 80rem)')
-  const [panelUsuario, setPanelUsuario] = useState<boolean | null>(null)
-  const panelAbierto = panelUsuario ?? muyAncho
+  // El panel solo se abre cuando la persona pulsa «Filtros»: elegir un grupo o llegar desde un botón que ya filtra
+  // aplica los filtros por dentro (se ven como chips) sin desplegar el panel.
+  const [panelUsuario, setPanelUsuario] = useState(false)
+  const panelAbierto = panelUsuario
   const botonPanel = useRef<HTMLButtonElement>(null)
   const origenDetalle = useRef<HTMLElement | null>(null)
   const [enfoque, setEnfoque] = useState<Enfoque | null>(null)
 
   const vista: Vista = p.vista === 'registros' && !esIndividual ? 'resumen' : p.vista ?? 'resumen'
   const paramsResumen = useMemo(() => paramsApi('resumen', f, metodo), [f, metodo])
+  const resumenQ = useBiodiversidadResumen(p.grupo, paramsResumen)
   const paramsSeries = useMemo(() => paramsApi('series', f, metodo), [f, metodo])
   const paramsEspecies = useMemo(() => paramsApi('especies', f, metodo), [f, metodo])
   const paramsRegistros = useMemo(() => paramsApi('registros', f, metodo), [f, metodo])
@@ -69,10 +72,19 @@ export default function Biodiversidad() {
     t.cambiar({ municipio: m ? m.codigo_municipal : null, departamento: m ? m.departamento : f.departamento })
   }, [t, f.departamento])
 
-  const filtrarEspecies = (c: { conservacion: TipoConservacion; amenaza: Amenaza | null }) =>
+  // Al cambiar de pestaña o de filtro desde un botón puntual, la página queda a media altura: se lleva la vista al inicio
+  // del detalle. Se alinea dos veces: la pestaña carga de forma diferida y su altura cambia después del primer ajuste.
+  const irAlDetalle = () => {
+    const alinear = (behavior: ScrollBehavior) => document.getElementById('bio-detalle-datos')?.scrollIntoView({ behavior, block: 'start' })
+    requestAnimationFrame(() => {
+      alinear(sinMovimiento() ? 'auto' : 'smooth')
+      window.setTimeout(() => alinear('auto'), 500)
+    })
+  }
+  const filtrarEspecies = (c: { conservacion: TipoConservacion; amenaza: Amenaza | null }) => {
     t.cambiar({ vista: 'especies', ...cambiosConservacion(c.conservacion, c.amenaza), buscar: null })
-  // Al pasar de la lista de especies a otra pestaña, la página queda a media altura: se vuelve al inicio del detalle.
-  const irAlDetalle = () => requestAnimationFrame(() => document.getElementById('bio-detalle-datos')?.scrollIntoView({ behavior: sinMovimiento() ? 'auto' : 'smooth', block: 'start' }))
+    irAlDetalle()
+  }
   const verRegistrosDe = (e: EspecieResumen) => {
     t.cambiar({ vista: 'registros', ...cambiosEspecie(e.especie_clave, e.especie), conservacion: null, amenaza: null })
     irAlDetalle()
@@ -95,7 +107,9 @@ export default function Biodiversidad() {
   const descripcion = metodo === 'agregado'
     ? 'Inventario agregado: el servicio entrega conteos y especies por municipio, no los registros individuales. Más registros indica dónde se ha muestreado más, no dónde hay más vida.'
     : 'Registros de ocurrencia publicados en GBIF y ubicados por municipio. Más registros indica dónde se ha muestreado más, no dónde hay más vida.'
-  const periodo = (mun ?? info) ? `${(mun ?? info)!.desde}–${(mun ?? info)!.hasta}` : '2000–2025'
+  // Misma consulta (y misma caché) que el panel de Resumen: sale con los filtros activos.
+  const resumenGrupo = resumenQ.data ?? null
+  const totalRegistros = resumenGrupo?.registros ?? t.indicadores?.registros ?? null
   const masRegistros = t.ranking[0] && t.ranking[0].registros > 0 ? t.ranking[0] : null
   const hayFiltros = t.chips.length > 0
   const vacio = Boolean(mun) && municipios.every((m) => m.registros === 0)
@@ -172,8 +186,18 @@ export default function Biodiversidad() {
           <dl className="bio-datos-grupo" aria-label={hayFiltros ? 'Datos del grupo con los filtros activos' : 'Datos del grupo'}>
             <div className="bio-dato-grupo bio-dato-grupo-principal">
               <dt>Registros</dt>
-              <dd className="bio-cifra text-[clamp(2rem,4.5vw,3rem)]">{t.indicadores ? fmtNum(t.indicadores.registros) : '—'}</dd>
+              <dd className="bio-cifra text-[clamp(2rem,4.5vw,3rem)]">{totalRegistros !== null ? fmtNum(totalRegistros) : '—'}</dd>
               <dd className="bio-dato-sub">{hayFiltros ? 'Con los filtros activos' : 'En el corte vigente'}</dd>
+            </div>
+            <div className="bio-dato-grupo">
+              <dt>Especies</dt>
+              <dd className="bio-cifra text-[clamp(1.75rem,3.6vw,2.5rem)]">{resumenGrupo?.especies != null ? fmtNum(resumenGrupo.especies) : '—'}</dd>
+              <dd className="bio-dato-sub">{resumenGrupo?.especies != null ? 'Distintas documentadas' : resumenGrupo ? 'No se calcula con este filtro' : ''}</dd>
+            </div>
+            <div className="bio-dato-grupo">
+              <dt>Especies amenazadas</dt>
+              <dd className="bio-cifra text-[clamp(1.75rem,3.6vw,2.5rem)]">{resumenGrupo?.amenazadas.total != null ? fmtNum(resumenGrupo.amenazadas.total) : '—'}</dd>
+              <dd className="bio-dato-sub">{resumenGrupo?.amenazadas.total != null ? 'En categoría CR, EN o VU' : resumenGrupo ? 'No se calcula con este filtro' : ''}</dd>
             </div>
             <div className="bio-dato-grupo">
               <dt>Municipios con datos</dt>
@@ -185,16 +209,6 @@ export default function Biodiversidad() {
                   <span className="bio-barra-mini" aria-hidden="true"><span style={{ width: `${Math.round((t.indicadores.municipiosConRegistros / t.indicadores.totalMunicipios) * 100)}%` }} /></span>
                 )}
               </dd>
-            </div>
-            <div className="bio-dato-grupo">
-              <dt>Departamentos</dt>
-              <dd className="bio-cifra text-[clamp(1.75rem,3.6vw,2.5rem)]">{t.indicadores ? t.indicadores.departamentos : '—'}</dd>
-              <dd className="bio-dato-sub">Con registros</dd>
-            </div>
-            <div className="bio-dato-grupo">
-              <dt>Periodo</dt>
-              <dd className="bio-cifra tabular-nums whitespace-nowrap text-[clamp(1.2rem,3vw,2.1rem)]">{periodo}</dd>
-              <dd className="bio-dato-sub">{info ? `Fuente al ${fmtFecha(info.fecha_fuente)}` : ''}</dd>
             </div>
           </dl>
         </div>
