@@ -37,7 +37,7 @@ import CampoBusqueda from '@/components/herramientas/biodiversidad/CampoBusqueda
 import Paginacion from '@/components/herramientas/biodiversidad/Paginacion'
 import LeyendaEscala from '@/components/herramientas/biodiversidad/mapa/LeyendaEscala'
 import InsigniasConservacion from '@/components/herramientas/biodiversidad/InsigniasConservacion'
-import { GRUPOS, type GrupoEstado } from '@/components/herramientas/biodiversidad/types'
+import { GRUPOS } from '@/components/herramientas/biodiversidad/types'
 
 const IMG = 'https://api.gbif.org/v1/image/cache/400x/occurrence/4512345678/media/0123456789abcdef0123456789abcdef'
 const foto = (over: Partial<Foto> = {}): Foto => ({
@@ -69,28 +69,25 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers())
 
 describe('SelectorGrupo', () => {
-  const grupos: GrupoEstado[] = [
-    { grupo: 'aves', metodo: 'agregado', desde: 2000, hasta: 2025, registros: 2919072, fecha_fuente: null, doi: null },
-    { grupo: 'anfibios', metodo: 'individual', desde: 2000, hasta: 2025, registros: 18234, fecha_fuente: null, doi: null },
-  ]
-  test('radiogroup con los siete grupos, total es-CO y método', () => {
-    render(<SelectorGrupo grupo="aves" grupos={grupos} onCambiar={vi.fn()} />)
+  test('radiogroup compacto con los siete grupos: solo icono y nombre (los datos van en la cabecera)', () => {
+    render(<SelectorGrupo grupo="aves" onCambiar={vi.fn()} />)
     expect(screen.getByRole('radiogroup', { name: 'Grupo taxonómico' })).toBeInTheDocument()
     expect(screen.getAllByRole('radio')).toHaveLength(GRUPOS.length)
     expect(screen.getByRole('radio', { name: /Aves/ })).toHaveAttribute('aria-checked', 'true')
-    expect(screen.getByRole('radio', { name: /Aves/ })).toHaveTextContent('2.919.072')
-    expect(screen.getByRole('radio', { name: /Aves/ })).toHaveTextContent('Agregado')
-    expect(screen.getByRole('radio', { name: /Anfibios/ })).toHaveTextContent('Individuales')
+    for (const r of screen.getAllByRole('radio')) {
+      expect(r).not.toHaveTextContent(/registros|Agregado|Individuales/i)
+      expect(r.querySelector('svg')).not.toBeNull()
+    }
   })
   test('solo el grupo activo está en el orden de tabulación', () => {
-    render(<SelectorGrupo grupo="mamiferos" grupos={undefined} onCambiar={vi.fn()} />)
+    render(<SelectorGrupo grupo="mamiferos" onCambiar={vi.fn()} />)
     const tabs = screen.getAllByRole('radio').map((r) => r.getAttribute('tabindex'))
     expect(tabs.filter((t) => t === '0')).toHaveLength(1)
     expect(screen.getByRole('radio', { name: /Mamíferos/ })).toHaveAttribute('tabindex', '0')
   })
   test('flechas, Inicio y Fin cambian de grupo y mueven el foco', async () => {
     const onCambiar = vi.fn()
-    render(<SelectorGrupo grupo="aves" grupos={grupos} onCambiar={onCambiar} />)
+    render(<SelectorGrupo grupo="aves" onCambiar={onCambiar} />)
     screen.getByRole('radio', { name: /Aves/ }).focus()
     await userEvent.keyboard('{ArrowRight}')
     expect(onCambiar).toHaveBeenLastCalledWith('mamiferos')
@@ -106,7 +103,7 @@ describe('SelectorGrupo', () => {
   })
   test('clic elige el grupo', async () => {
     const onCambiar = vi.fn()
-    render(<SelectorGrupo grupo="aves" grupos={grupos} onCambiar={onCambiar} />)
+    render(<SelectorGrupo grupo="aves" onCambiar={onCambiar} />)
     await userEvent.click(screen.getByRole('radio', { name: /Plantas/ }))
     expect(onCambiar).toHaveBeenCalledWith('plantas')
   })
