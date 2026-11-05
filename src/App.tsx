@@ -35,6 +35,7 @@ const GuiaUsuario     = lazy(() => import('./pages/recursos/GuiaUsuario'))
 const FAQ             = lazy(() => import('./pages/recursos/FAQ'))
 const Terminos        = lazy(() => import('./pages/recursos/Terminos'))
 const PoliticaPrivacidad = lazy(() => import('./pages/recursos/PoliticaPrivacidad'))
+const PoliticaCookies = lazy(() => import('./pages/recursos/PoliticaCookies'))
 const Perfil          = lazy(() => import('./pages/Perfil'))
 const NotFound        = lazy(() => import('./pages/NotFound'))
 
@@ -154,6 +155,9 @@ function AppRoutes() {
             } />
             <Route path="/politica-privacidad" element={
               <Suspense fallback={<GenericPageSkeleton />}><PoliticaPrivacidad /></Suspense>
+            } />
+            <Route path="/politica-cookies" element={
+              <Suspense fallback={<GenericPageSkeleton />}><PoliticaCookies /></Suspense>
             } />
 
             {/* Mapas, Documentos, Geovisores y Herramientas son públicos — cualquiera
