@@ -1,17 +1,15 @@
 import { useEffect, useRef, type KeyboardEvent } from 'react'
 import GrupoIcono from './GrupoIcono'
-import { fmtNum } from './lib/format'
 import { estiloGrupo } from './lib/paleta'
-import { GRUPOS, NOMBRES_GRUPO, type Grupo, type GrupoEstado } from './types'
+import { GRUPOS, NOMBRES_GRUPO, type Grupo } from './types'
 
 interface Props {
   grupo: Grupo
-  grupos: GrupoEstado[] | undefined
   onCambiar: (g: Grupo) => void
 }
 
-/** Selector de colección: radiogroup con teclado (flechas, Inicio, Fin) y desplazamiento con imán en móvil. */
-export default function SelectorGrupo({ grupo, grupos, onCambiar }: Props) {
+/** Selector de colección en píldoras compactas (icono y nombre): radiogroup con teclado (flechas, Inicio, Fin) y desplazamiento en móvil. Los datos del grupo se muestran aparte, en la cabecera. */
+export default function SelectorGrupo({ grupo, onCambiar }: Props) {
   const refs = useRef<(HTMLButtonElement | null)[]>([])
 
   // En móvil la fila se desplaza: el grupo activo debe quedar a la vista sin mover la página.
@@ -35,27 +33,19 @@ export default function SelectorGrupo({ grupo, grupos, onCambiar }: Props) {
   }
 
   return (
-    <div>
-      <p id="bio-grupo-etiqueta" className="bio-eyebrow mb-2.5">Grupo taxonómico</p>
-      <div role="radiogroup" aria-labelledby="bio-grupo-etiqueta" className="bio-grupos">
-        {GRUPOS.map((g, i) => {
-          const info = grupos?.find((x) => x.grupo === g)
-          const activo = g === grupo
-          return (
-            <button
-              key={g} ref={(el) => { refs.current[i] = el }} type="button" role="radio" aria-checked={activo}
-              tabIndex={activo ? 0 : -1} className="bio-grupo bio-tema" style={estiloGrupo(g)} onClick={() => onCambiar(g)} onKeyDown={(e) => alTeclear(e, i)}
-            >
-              <span className="bio-grupo-chip"><GrupoIcono grupo={g} className="bio-grupo-icono" /></span>
-              <span className="bio-grupo-nombre">{NOMBRES_GRUPO[g]}</span>
-              <span className="bio-grupo-total">
-                {info ? <><b>{fmtNum(info.registros)}</b> registros</> : <span className="bio-grupo-vacio" aria-hidden="true" />}
-              </span>
-              <span className="bio-grupo-metodo">{info ? (info.metodo === 'individual' ? 'Individuales' : 'Agregado') : ' '}</span>
-            </button>
-          )
-        })}
-      </div>
+    <div role="radiogroup" aria-label="Grupo taxonómico" className="bio-grupos">
+      {GRUPOS.map((g, i) => {
+        const activo = g === grupo
+        return (
+          <button
+            key={g} ref={(el) => { refs.current[i] = el }} type="button" role="radio" aria-checked={activo}
+            tabIndex={activo ? 0 : -1} className="bio-grupo bio-tema" style={estiloGrupo(g)} onClick={() => onCambiar(g)} onKeyDown={(e) => alTeclear(e, i)}
+          >
+            <span className="bio-grupo-chip"><GrupoIcono grupo={g} className="bio-grupo-icono" /></span>
+            <span className="bio-grupo-nombre">{NOMBRES_GRUPO[g]}</span>
+          </button>
+        )
+      })}
     </div>
   )
 }
