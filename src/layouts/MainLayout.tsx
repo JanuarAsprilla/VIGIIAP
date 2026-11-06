@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar from '@/components/Sidebar'
 import TopBar from '@/components/TopBar'
 import FooterBar from '@/components/FooterBar'
+import AvisoPrivacidad from '@/components/AvisoPrivacidad'
 import BottomTabs from '@/components/BottomTabs'
 import CommandPalette from '@/components/CommandPalette'
 import RecuperarPasswordPanel from '@/components/auth/RecuperarPasswordPanel'
@@ -168,6 +169,7 @@ export default function MainLayout() {
       </div>
 
       <BottomTabs onMore={() => setMobileMenuOpen(true)} moreOpen={mobileMenuOpen} />
+      <AvisoPrivacidad />
       <CommandPalette />
 
       <AnimatePresence>
