@@ -105,7 +105,7 @@ describe('iconos de grupo', () => {
 describe('SelectorGrupo con iconos y color', () => {
   test('siete opciones con icono, color propio y teclado', async () => {
     const onCambiar = vi.fn()
-    render(<SelectorGrupo grupo="aves" grupos={undefined} onCambiar={onCambiar} />)
+    render(<SelectorGrupo grupo="aves" onCambiar={onCambiar} />)
     const radios = screen.getAllByRole('radio')
     expect(radios).toHaveLength(7)
     radios.forEach((r) => expect(r.querySelector('svg[data-grupo-icono]')).not.toBeNull())

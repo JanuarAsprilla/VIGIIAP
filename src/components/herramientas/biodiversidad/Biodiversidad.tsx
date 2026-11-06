@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { useBiodiversidadResumen } from '@/hooks/useBiodiversidad'
 import './biodiversidad.css'
 import './filtros.css'
 import AcercaDatos from './AcercaDatos'
@@ -15,7 +16,7 @@ import Pestanas from './Pestanas'
 import RankingPanel from './RankingPanel'
 import SelectorGrupo from './SelectorGrupo'
 import TablaMunicipios from './TablaMunicipios'
-import { fmtFecha, fmtNum } from './lib/format'
+import { fmtNum } from './lib/format'
 import { cambiosConservacion, cambiosEspecie } from './lib/filtros'
 import { etiquetaMetodo } from './lib/metodo'
 import { METRICA_INICIAL, type Metrica } from './lib/metrica'
@@ -46,17 +47,19 @@ function sinMovimiento(): boolean {
 
 export default function Biodiversidad() {
   const t = useTablero()
-  const { p, filtros: f, apl, metodo, esIndividual, info, mun, municipios, municipioSel, deptoSel, deptoActivo } = t
+  const { p, filtros: f, apl, metodo, esIndividual, mun, municipios, municipioSel, deptoSel, deptoActivo } = t
   const ancho = useMediaQuery('(min-width: 64rem)')
-  const muyAncho = useMediaQuery('(min-width: 80rem)')
-  const [panelUsuario, setPanelUsuario] = useState<boolean | null>(null)
-  const panelAbierto = panelUsuario ?? muyAncho
+  // El panel solo se abre cuando la persona pulsa «Filtros»: elegir un grupo o llegar desde un botón que ya filtra
+  // aplica los filtros por dentro (se ven como chips) sin desplegar el panel.
+  const [panelUsuario, setPanelUsuario] = useState(false)
+  const panelAbierto = panelUsuario
   const botonPanel = useRef<HTMLButtonElement>(null)
   const origenDetalle = useRef<HTMLElement | null>(null)
   const [enfoque, setEnfoque] = useState<Enfoque | null>(null)
 
   const vista: Vista = p.vista === 'registros' && !esIndividual ? 'resumen' : p.vista ?? 'resumen'
   const paramsResumen = useMemo(() => paramsApi('resumen', f, metodo), [f, metodo])
+  const resumenQ = useBiodiversidadResumen(p.grupo, paramsResumen)
   const paramsSeries = useMemo(() => paramsApi('series', f, metodo), [f, metodo])
   const paramsEspecies = useMemo(() => paramsApi('especies', f, metodo), [f, metodo])
   const paramsRegistros = useMemo(() => paramsApi('registros', f, metodo), [f, metodo])
@@ -69,10 +72,19 @@ export default function Biodiversidad() {
     t.cambiar({ municipio: m ? m.codigo_municipal : null, departamento: m ? m.departamento : f.departamento })
   }, [t, f.departamento])
 
-  const filtrarEspecies = (c: { conservacion: TipoConservacion; amenaza: Amenaza | null }) =>
+  // Al cambiar de pestaña o de filtro desde un botón puntual, la página queda a media altura: se lleva la vista al inicio
+  // del detalle. Se alinea dos veces: la pestaña carga de forma diferida y su altura cambia después del primer ajuste.
+  const irAlDetalle = () => {
+    const alinear = (behavior: ScrollBehavior) => document.getElementById('bio-detalle-datos')?.scrollIntoView({ behavior, block: 'start' })
+    requestAnimationFrame(() => {
+      alinear(sinMovimiento() ? 'auto' : 'smooth')
+      window.setTimeout(() => alinear('auto'), 500)
+    })
+  }
+  const filtrarEspecies = (c: { conservacion: TipoConservacion; amenaza: Amenaza | null }) => {
     t.cambiar({ vista: 'especies', ...cambiosConservacion(c.conservacion, c.amenaza), buscar: null })
-  // Al pasar de la lista de especies a otra pestaña, la página queda a media altura: se vuelve al inicio del detalle.
-  const irAlDetalle = () => requestAnimationFrame(() => document.getElementById('bio-detalle-datos')?.scrollIntoView({ behavior: sinMovimiento() ? 'auto' : 'smooth', block: 'start' }))
+    irAlDetalle()
+  }
   const verRegistrosDe = (e: EspecieResumen) => {
     t.cambiar({ vista: 'registros', ...cambiosEspecie(e.especie_clave, e.especie), conservacion: null, amenaza: null })
     irAlDetalle()
@@ -95,7 +107,9 @@ export default function Biodiversidad() {
   const descripcion = metodo === 'agregado'
     ? 'Inventario agregado: el servicio entrega conteos y especies por municipio, no los registros individuales. Más registros indica dónde se ha muestreado más, no dónde hay más vida.'
     : 'Registros de ocurrencia publicados en GBIF y ubicados por municipio. Más registros indica dónde se ha muestreado más, no dónde hay más vida.'
-  const periodo = (mun ?? info) ? `${(mun ?? info)!.desde}–${(mun ?? info)!.hasta}` : '2000–2025'
+  // Misma consulta (y misma caché) que el panel de Resumen: sale con los filtros activos.
+  const resumenGrupo = resumenQ.data ?? null
+  const totalRegistros = resumenGrupo?.registros ?? t.indicadores?.registros ?? null
   const masRegistros = t.ranking[0] && t.ranking[0].registros > 0 ? t.ranking[0] : null
   const hayFiltros = t.chips.length > 0
   const vacio = Boolean(mun) && municipios.every((m) => m.registros === 0)
@@ -154,29 +168,50 @@ export default function Biodiversidad() {
   return (
     <div className="bio-root bio-tema space-y-4" style={estiloGrupo(p.grupo)}>
       <header className="bio-panel p-4 sm:p-6 space-y-5">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
-          <div className="min-w-0 bio-cambia" key={p.grupo}>
-            <p className="bio-eyebrow">Chocó biogeográfico · datos de GBIF</p>
+        <div className="space-y-2.5">
+          <p className="bio-eyebrow">Chocó biogeográfico · datos de GBIF</p>
+          <SelectorGrupo grupo={p.grupo} onCambiar={t.cambiarGrupo} />
+        </div>
+        <div className="bio-cambia space-y-4" key={p.grupo}>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <div className="bio-titulo-grupo">
               <span className="bio-titulo-chip"><GrupoIcono grupo={p.grupo} /></span>
-              <p className="font-display text-[clamp(2rem,5vw,3.25rem)] font-bold leading-none text-text" aria-live="polite">
+              <p className="font-display text-[clamp(1.75rem,4.5vw,2.75rem)] font-bold leading-none text-text" aria-live="polite">
                 {NOMBRES_GRUPO[p.grupo]}
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <span className="bio-insignia">{etiquetaMetodo(metodo)}</span>
-              <span className="bio-insignia tabular-nums">{periodo}</span>
-              {info && <span className="text-xs text-text-muted">Fuente al {fmtFecha(info.fecha_fuente)}</span>}
-            </div>
-            <p className="text-sm text-text-muted max-w-xl leading-relaxed mt-3">{descripcion}</p>
+            <span className="bio-insignia">{etiquetaMetodo(metodo)}</span>
           </div>
-          <dl className="bio-cifras-clave" aria-label={hayFiltros ? 'Cifras clave con los filtros activos' : 'Cifras clave del grupo'}>
-            <div><dt>Registros</dt><dd className="bio-cifra text-[clamp(1.5rem,3.2vw,2.25rem)]">{t.indicadores ? fmtNum(t.indicadores.registros) : '—'}</dd></div>
-            <div><dt>Municipios con datos</dt><dd className="bio-cifra text-[clamp(1.5rem,3.2vw,2.25rem)]">{t.indicadores ? <>{t.indicadores.municipiosConRegistros}<span className="text-text-muted text-[0.5em] font-semibold"> / {t.indicadores.totalMunicipios}</span></> : '—'}</dd></div>
-            <div><dt>Departamentos</dt><dd className="bio-cifra text-[clamp(1.5rem,3.2vw,2.25rem)]">{t.indicadores ? t.indicadores.departamentos : '—'}</dd></div>
+          <p className="text-sm text-text-muted max-w-3xl leading-relaxed">{descripcion}</p>
+          <dl className="bio-datos-grupo" aria-label={hayFiltros ? 'Datos del grupo con los filtros activos' : 'Datos del grupo'}>
+            <div className="bio-dato-grupo bio-dato-grupo-principal">
+              <dt>Registros</dt>
+              <dd className="bio-cifra text-[clamp(2rem,4.5vw,3rem)]">{totalRegistros !== null ? fmtNum(totalRegistros) : '—'}</dd>
+              <dd className="bio-dato-sub">{hayFiltros ? 'Con los filtros activos' : 'En el corte vigente'}</dd>
+            </div>
+            <div className="bio-dato-grupo">
+              <dt>Especies</dt>
+              <dd className="bio-cifra text-[clamp(1.75rem,3.6vw,2.5rem)]">{resumenGrupo?.especies != null ? fmtNum(resumenGrupo.especies) : '—'}</dd>
+              <dd className="bio-dato-sub">{resumenGrupo?.especies != null ? 'Distintas documentadas' : resumenGrupo ? 'No se calcula con este filtro' : ''}</dd>
+            </div>
+            <div className="bio-dato-grupo">
+              <dt>Especies amenazadas</dt>
+              <dd className="bio-cifra text-[clamp(1.75rem,3.6vw,2.5rem)]">{resumenGrupo?.amenazadas.total != null ? fmtNum(resumenGrupo.amenazadas.total) : '—'}</dd>
+              <dd className="bio-dato-sub">{resumenGrupo?.amenazadas.total != null ? 'En categoría CR, EN o VU' : resumenGrupo ? 'No se calcula con este filtro' : ''}</dd>
+            </div>
+            <div className="bio-dato-grupo">
+              <dt>Municipios con datos</dt>
+              <dd className="bio-cifra text-[clamp(1.75rem,3.6vw,2.5rem)]">
+                {t.indicadores ? <>{t.indicadores.municipiosConRegistros}<span className="text-text-muted text-[0.5em] font-semibold"> / {t.indicadores.totalMunicipios}</span></> : '—'}
+              </dd>
+              <dd className="bio-dato-sub">
+                {t.indicadores && t.indicadores.totalMunicipios > 0 && (
+                  <span className="bio-barra-mini" aria-hidden="true"><span style={{ width: `${Math.round((t.indicadores.municipiosConRegistros / t.indicadores.totalMunicipios) * 100)}%` }} /></span>
+                )}
+              </dd>
+            </div>
           </dl>
         </div>
-        <SelectorGrupo grupo={p.grupo} grupos={t.estado.data?.grupos} onCambiar={t.cambiarGrupo} />
       </header>
 
       <BarraFiltros

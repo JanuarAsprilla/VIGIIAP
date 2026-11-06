@@ -202,8 +202,26 @@ describe('Biodiversidad (grupo individual)', () => {
     expect(await screen.findByText('Estado de conservación')).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Resumen', selected: true })).toBeInTheDocument()
     expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Resumen', 'Registros', 'Especies', 'Municipios'])
-    expect(screen.getByText('42')).toBeInTheDocument()
+    expect(screen.getAllByText('42').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByRole('button', { name: /En peligro crítico: 1 especie\. Ver la lista/ })).toBeInTheDocument()
+  })
+
+  test('REGRESIÓN: el botón de conservación («Ver la lista») lleva la vista al inicio del detalle, no la deja a media altura', async () => {
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+    montar()
+    await userEvent.click(await screen.findByRole('button', { name: /En peligro crítico: 1 especie\. Ver la lista/ }))
+    await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ block: 'start' })))
+    expect(await screen.findByRole('tab', { name: 'Especies', selected: true })).toBeInTheDocument()
+  })
+
+  test('la cabecera muestra solo Registros, Especies, Especies amenazadas y Municipios con datos, en ese orden', async () => {
+    montar()
+    await screen.findByText('Estado de conservación')
+    const datos = screen.getByLabelText('Datos del grupo')
+    const etiquetas = Array.from(datos.querySelectorAll('dt')).map((dt) => dt.textContent)
+    expect(etiquetas).toEqual(['Registros', 'Especies', 'Especies amenazadas', 'Municipios con datos'])
+    expect(datos.textContent).not.toMatch(/Departamentos|Periodo/)
   })
 
   test('la pestaña Registros muestra las tarjetas del grupo', async () => {
