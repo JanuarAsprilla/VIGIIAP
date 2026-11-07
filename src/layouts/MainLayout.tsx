@@ -30,6 +30,10 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   // el backend ya no da por verificado el correo que solo afirma el proveedor.
   EMAIL_VERIFICATION_SENT: 'Te enviamos un correo para verificar tu cuenta. Confírmalo antes de poder ingresar.',
   EMAIL_NOT_VERIFIED: 'Debes verificar tu correo antes de ingresar. Revisa el enlace que te enviamos o solicita uno nuevo.',
+  // El servidor no abre con Google/Microsoft una cuenta que ya tiene contraseña (evita que alguien tome una cuenta ajena
+  // solo por coincidir el correo): hay que decirlo, no mostrar el error genérico.
+  EMAIL_LINKED_TO_PASSWORD_ACCOUNT: 'Ya existe una cuenta con este correo. Ingresa con tu correo y contraseña; por seguridad esa cuenta no se abre con Google o Microsoft.',
+  EMAIL_VERIFICATION_PENDING: 'Ya hay una verificación de correo en curso para esta dirección. Revisa tu bandeja de entrada o intenta de nuevo más tarde.',
 }
 
 // pb-20 compensa la altura del BottomTabs fijo — solo hace falta por debajo
