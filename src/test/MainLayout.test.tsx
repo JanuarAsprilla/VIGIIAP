@@ -196,6 +196,18 @@ describe('MainLayout — ?oauthError=... (redirect de vuelta tras un login OAuth
     expect(await screen.findByText('Debes verificar tu correo antes de ingresar. Revisa el enlace que te enviamos o solicita uno nuevo.')).toBeInTheDocument()
   })
 
+  test('una cuenta que ya tiene contraseña dice la verdad: entra con su contraseña, no con Google', async () => {
+    renderMainLayout({ pathname: '/', search: '?oauthError=EMAIL_LINKED_TO_PASSWORD_ACCOUNT' })
+    expect(await screen.findByText(/ya existe una cuenta con este correo.*contraseña/i)).toBeInTheDocument()
+    expect(screen.queryByText('No se pudo iniciar sesión. Intenta de nuevo.')).not.toBeInTheDocument()
+  })
+
+  test('una verificación de correo ya en curso se explica en vez del mensaje genérico', async () => {
+    renderMainLayout({ pathname: '/', search: '?oauthError=EMAIL_VERIFICATION_PENDING' })
+    expect(await screen.findByText(/verificación de correo en curso/i)).toBeInTheDocument()
+    expect(screen.queryByText('No se pudo iniciar sesión. Intenta de nuevo.')).not.toBeInTheDocument()
+  })
+
   test('sin oauthError en la URL, no aparece ningún toast', () => {
     renderMainLayout('/')
     expect(screen.queryByText(/Cancelaste el inicio de sesión|No se pudo iniciar sesión/)).not.toBeInTheDocument()
