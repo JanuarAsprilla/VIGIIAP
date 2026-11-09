@@ -72,6 +72,7 @@ export interface AuthContextValue {
     institucion: string
     perfilSolicitado?: 'investigador' | 'tecnico' | 'institucional'
     motivo?: string
+    terminos: true
   }) => Promise<AuthUser>
 }
 
@@ -255,6 +256,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     institucion: string
     perfilSolicitado?: 'investigador' | 'tecnico' | 'institucional'
     motivo?: string
+    terminos: true
   }) => {
     await api.patch('/auth/completar-perfil', data)
     const full = await refreshProfile()

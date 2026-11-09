@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import { Building2, Briefcase, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -29,6 +30,7 @@ export default function CompletarPerfilForm({ onClose }: { onClose: () => void }
   const [institucion, setInstitucion] = useState('')
   const [perfilSolicitado, setPerfilSolicitado] = useState<PerfilSolicitado>('')
   const [motivo, setMotivo] = useState('')
+  const [terminos, setTerminos] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [solicitudEnviada, setSolicitudEnviada] = useState(false)
@@ -36,6 +38,7 @@ export default function CompletarPerfilForm({ onClose }: { onClose: () => void }
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (institucion.trim().length < 2) { setError('Ingrese su institución u organización'); return }
+    if (!terminos) { setError('Debe aceptar los términos y el tratamiento de sus datos personales'); return }
     setError('')
     setLoading(true)
     try {
@@ -44,6 +47,7 @@ export default function CompletarPerfilForm({ onClose }: { onClose: () => void }
         institucion: institucion.trim(),
         perfilSolicitado: perfilSolicitado || undefined,
         motivo: motivo.trim() || undefined,
+        terminos: true,
       })
       if (perfilSolicitado) {
         setSolicitudEnviada(true)
@@ -175,6 +179,25 @@ export default function CompletarPerfilForm({ onClose }: { onClose: () => void }
             </motion.div>
           )}
         </AnimatePresence>
+
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox" checked={terminos}
+            onChange={(e) => setTerminos(e.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-primary-800 rounded shrink-0"
+          />
+          <span className="text-xs text-text-muted leading-relaxed">
+            Acepto los{' '}
+            <Link to="/terminos" onClick={onClose} className="font-semibold text-primary-800 hover:underline no-underline">
+              Términos y Condiciones
+            </Link>{' '}
+            y la{' '}
+            <Link to="/politica-privacidad" onClick={onClose} className="font-semibold text-primary-800 hover:underline no-underline">
+              Política de Privacidad
+            </Link>
+            , y autorizo el tratamiento de mis datos personales por el IIAP.
+          </span>
+        </label>
 
         <button type="submit"
           disabled={loading}

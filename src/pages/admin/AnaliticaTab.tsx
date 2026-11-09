@@ -13,6 +13,8 @@ import AccionesVisitantes from '@/components/admin/actividad/AccionesVisitantes'
 import TiempoReal from '@/components/admin/actividad/TiempoReal'
 import EmbudosConversion from '@/components/admin/actividad/EmbudosConversion'
 import FlujoNavegacion from '@/components/admin/actividad/FlujoNavegacion'
+import ComparativaPeriodo from '@/components/admin/actividad/ComparativaPeriodo'
+import BotonExportarAnalitica from '@/components/admin/actividad/BotonExportarAnalitica'
 import { LINE_CHART_OPTIONS } from '@/lib/reportesChartConfig'
 import {
   useAnaliticaResumen, usePaginasTop, useDispositivos, useFuentesTrafico, useEntradaSalida,
@@ -148,9 +150,15 @@ export default function AnaliticaTab({ desde, hasta }: AnaliticaTabProps) {
         Navegación en la plataforma sin identidad: se guarda la IP y la ubicación aproximada de cada sesión, nunca el usuario, y la IP se elimina a los 90 días.
       </motion.p>
 
+      <div className="flex justify-end">
+        <BotonExportarAnalitica rango={rango} />
+      </div>
+
       <TiempoReal />
 
       <KpiCards />
+
+      <ComparativaPeriodo rango={rango} />
 
       <TendenciaChart />
 

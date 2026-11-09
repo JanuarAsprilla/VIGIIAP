@@ -8,6 +8,7 @@ import { fadeUpSm, EASE_OUT_EXPO } from '@/lib/animations'
 import Card3D from '@/components/ui/Card3D'
 import { useAuditLog, useAuditResumen, MODULO_STYLES, ACCION_LABEL, type AuditLogData } from '@/hooks/useAuditLog'
 import { exportarActividadExcel } from '@/lib/exportarActividadExcel'
+import { urlExportarActividadCsv, finDeDia, MAX_FILAS_CSV } from '@/lib/exportarActividadCsv'
 import { RESULTADO_META, RESULTADOS_ORDEN, SEVERIDAD_META, SEVERIDADES_ORDEN, resumenOrigen } from '@/lib/constants/auditoria'
 import ResumenAuditoria from '@/components/admin/actividad/ResumenAuditoria'
 import DetalleEventoDrawer from '@/components/admin/actividad/DetalleEventoDrawer'
@@ -120,6 +121,18 @@ export default function AuditoriaTab() {
     setPage(1)
   }
 
+  const filtrosExport = {
+    filtroModulo: filtroModulo || undefined,
+    filtroAccion: filtroAccion || undefined,
+    severidad: filtroSeveridad || undefined,
+    resultado: filtroResultado || undefined,
+    usuario: usuario || undefined,
+    ip: ip || undefined,
+    desde: fechaDesde || undefined,
+    hasta: fechaHasta || undefined,
+  }
+  const csvDemasiadoGrande = total > MAX_FILAS_CSV
+
   const exportExcel = async () => {
     setExportando(true)
     setErrorExportar(false)
@@ -133,7 +146,7 @@ export default function AuditoriaTab() {
         usuario: usuario || undefined,
         ip: ip || undefined,
         desde: fechaDesde || undefined,
-        hasta: fechaHasta || undefined,
+        hasta: fechaHasta ? finDeDia(fechaHasta) : undefined,
       })
     } catch {
       setErrorExportar(true)
@@ -150,18 +163,46 @@ export default function AuditoriaTab() {
         <p className="text-sm text-text-muted">
           {isLoading ? '...' : `${total} eventos registrados en el sistema`}
         </p>
-        <button
-          onClick={exportExcel}
-          disabled={isLoading || logs.length === 0 || exportando}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 disabled:opacity-50 transition-colors shrink-0"
-        >
-          {exportando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-          {exportando ? 'Generando Excel…' : 'Exportar Excel'}
-        </button>
+        <div className="flex flex-wrap gap-2 shrink-0">
+          {isLoading || logs.length === 0 || csvDemasiadoGrande ? (
+            <span
+              aria-disabled="true"
+              className="inline-flex items-center gap-2 px-4 py-2.5 border border-primary-800/30 text-primary-800 rounded-xl text-sm font-semibold opacity-50 cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" />
+              Exportar CSV completo
+            </span>
+          ) : (
+            <a
+              href={urlExportarActividadCsv(filtrosExport)}
+              download="registro-de-actividad.csv"
+              className="inline-flex items-center gap-2 px-4 py-2.5 border border-primary-800/30 text-primary-800 rounded-xl text-sm font-semibold hover:bg-primary-800/5 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Exportar CSV completo
+            </a>
+          )}
+          <button
+            onClick={exportExcel}
+            disabled={isLoading || logs.length === 0 || exportando}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-800 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 disabled:opacity-50 transition-colors"
+          >
+            {exportando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {exportando ? 'Generando Excel…' : 'Exportar Excel'}
+          </button>
+        </div>
       </motion.div>
 
+      <p className="text-xs text-text-muted">
+        El Excel incluye hasta 10.000 eventos con formato institucional. El CSV trae todos los eventos que
+        cumplan los filtros (hasta {MAX_FILAS_CSV.toLocaleString('es-CO')}) y no aplica la búsqueda de texto.
+        {csvDemasiadoGrande && ' Hay más eventos que ese tope: acota las fechas para exportar.'}
+      </p>
+
       {errorExportar && (
-        <p className="text-xs text-red-500">No se pudo generar el archivo Excel. Intenta de nuevo.</p>
+        <p className="text-xs text-red-500">
+          No se pudo generar el archivo Excel. Si hay más de 10.000 eventos, usa el CSV completo o acota las fechas.
+        </p>
       )}
 
       {/* Filters */}

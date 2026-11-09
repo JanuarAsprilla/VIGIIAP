@@ -233,44 +233,32 @@
 
 /* ── Selector de grupo ────────────────────────────────────────────────────── */
 .bio-grupos {
-  display: flex; gap: 0.6rem; overflow-x: auto; padding: 0.2rem 0.15rem 0.6rem;
+  display: flex; gap: 0.45rem; overflow-x: auto; padding: 0.15rem 0.15rem 0.45rem;
   scroll-snap-type: x proximity; scrollbar-width: thin;
 }
-@media (min-width: 64rem) { .bio-grupos { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); overflow: visible; padding-bottom: 0.2rem; } }
+@media (min-width: 48rem) { .bio-grupos { flex-wrap: wrap; overflow: visible; padding-bottom: 0.15rem; } }
 .bio-grupo {
-  position: relative; flex: 0 0 8.5rem; scroll-snap-align: start; display: grid; justify-items: start; align-content: start; gap: 0.15rem;
-  min-height: 7.75rem; padding: 0.7rem 0.8rem 0.75rem; text-align: left; cursor: pointer; overflow: hidden;
-  color: var(--color-text); background: var(--bio-superficie); border: 1px solid var(--bio-linea); border-radius: var(--radius-lg);
+  flex: none; scroll-snap-align: start; display: inline-flex; align-items: center; gap: 0.5rem;
+  min-height: 2.5rem; padding: 0.25rem 0.95rem 0.25rem 0.3rem; cursor: pointer; white-space: nowrap;
+  font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; line-height: 1;
+  color: var(--color-text); background: var(--bio-superficie); border: 1px solid var(--bio-linea); border-radius: 999px;
   transition: background-color 180ms var(--bio-ease), border-color 180ms var(--bio-ease), transform 120ms var(--bio-ease), box-shadow 180ms var(--bio-ease), color 180ms var(--bio-ease);
 }
-.bio-grupo::before {
-  content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--bio-acento); opacity: 0.55;
-  transition: opacity 180ms var(--bio-ease);
-}
 .bio-grupo-chip {
-  display: grid; place-items: center; width: 2.4rem; height: 2.4rem; margin-bottom: 0.4rem; border-radius: 0.7rem;
-  color: var(--bio-acento); background: color-mix(in srgb, var(--bio-acento) 13%, var(--bio-superficie));
+  display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%;
+  color: var(--bio-acento); background: color-mix(in srgb, var(--bio-acento) 14%, var(--bio-superficie));
   transition: background-color 180ms var(--bio-ease), color 180ms var(--bio-ease);
 }
-.bio-grupo-icono { width: 1.5rem; height: 1.5rem; }
-.bio-grupo-nombre { font-family: var(--font-display); font-weight: 700; font-size: 1.0625rem; line-height: 1.1; }
-.bio-grupo-total { font-size: 0.6875rem; color: var(--color-text-muted); font-variant-numeric: tabular-nums; line-height: 1.3; }
-.bio-grupo-total b { color: var(--color-text-light); font-weight: 700; }
-.bio-grupo-vacio { display: block; height: 0.7rem; width: 4.5rem; border-radius: 4px; background: var(--color-bg-alt); }
-.bio-grupo-metodo { margin-top: 0.3rem; font-size: 0.5625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); }
+.bio-grupo-icono { width: 1.1rem; height: 1.1rem; }
 @media (hover: hover) and (pointer: fine) {
-  .bio-grupo:hover { border-color: color-mix(in srgb, var(--bio-acento) 60%, var(--bio-linea)); transform: translateY(-2px); }
-  .bio-grupo:hover::before { opacity: 1; }
+  .bio-grupo:hover { border-color: color-mix(in srgb, var(--bio-acento) 60%, var(--bio-linea)); }
 }
-.bio-grupo:active { transform: scale(0.98); }
+.bio-grupo:active { transform: scale(0.97); }
 .bio-grupo[aria-checked='true'] {
   color: var(--bio-activo-texto); background: var(--bio-acento); border-color: var(--bio-acento);
-  box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--bio-acento) 80%, transparent);
+  box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--bio-acento) 80%, transparent);
 }
-.bio-grupo[aria-checked='true']::before { opacity: 0; }
-.bio-grupo[aria-checked='true'] .bio-grupo-chip { color: var(--bio-activo-texto); background: color-mix(in srgb, var(--bio-activo-texto) 16%, transparent); }
-.bio-grupo[aria-checked='true'] .bio-grupo-total, .bio-grupo[aria-checked='true'] .bio-grupo-metodo { color: color-mix(in srgb, var(--bio-activo-texto) 82%, transparent); }
-.bio-grupo[aria-checked='true'] .bio-grupo-total b { color: var(--bio-activo-texto); }
+.bio-grupo[aria-checked='true'] .bio-grupo-chip { color: var(--bio-activo-texto); background: color-mix(in srgb, var(--bio-activo-texto) 18%, transparent); }
 
 /* ── Cabecera ─────────────────────────────────────────────────────────────── */
 .bio-titulo-grupo { display: flex; align-items: center; gap: 0.85rem; margin-top: 0.5rem; }
@@ -279,10 +267,27 @@
   color: var(--bio-activo-texto); background: var(--bio-acento);
 }
 .bio-titulo-chip svg { width: 58%; height: 58%; }
-.bio-cifras-clave { display: grid; grid-template-columns: repeat(3, auto); gap: 0.25rem 1.75rem; }
-.bio-cifras-clave dt { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--color-text-muted); }
-.bio-cifras-clave dd { margin-top: 0.25rem; }
-@media (max-width: 47.99rem) { .bio-cifras-clave { grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); gap: 0.6rem 1rem; } .bio-cifras-clave > div { min-width: 0; } }
+
+/* ── Datos del grupo elegido: protagonistas de la cabecera ────────────────── */
+.bio-datos-grupo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+@media (min-width: 64rem) { .bio-datos-grupo { grid-template-columns: 1.35fr 1fr 1fr 1.1fr; } }
+.bio-dato-grupo {
+  display: grid; align-content: space-between; gap: 0.4rem; min-width: 0; min-height: 6.75rem; padding: 1rem 1.15rem;
+  border-radius: var(--radius-xl); border: 1px solid color-mix(in srgb, var(--bio-acento) 22%, var(--bio-linea));
+  background: color-mix(in srgb, var(--bio-acento) 8%, var(--bio-superficie));
+}
+.bio-dato-grupo dt { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--color-text-muted); }
+.bio-dato-grupo dd { margin: 0; }
+.bio-dato-grupo .bio-cifra { white-space: nowrap; }
+@media (max-width: 63.99rem) { .bio-dato-grupo-principal { grid-column: 1 / -1; } }
+@media (max-width: 39.99rem) { .bio-dato-grupo:last-child { grid-column: 1 / -1; } }
+@media (min-width: 40rem) and (max-width: 63.99rem) { .bio-datos-grupo { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.bio-dato-sub { min-height: 1rem; font-size: 0.75rem; line-height: 1.3; color: var(--color-text-muted); }
+.bio-dato-grupo-principal { background: var(--bio-acento); border-color: var(--bio-acento); }
+.bio-dato-grupo-principal dt, .bio-dato-grupo-principal .bio-dato-sub { color: color-mix(in srgb, var(--bio-activo-texto) 82%, transparent); }
+.bio-dato-grupo-principal .bio-cifra { color: var(--bio-activo-texto); }
+.bio-barra-mini { display: block; height: 0.4rem; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--bio-acento) 18%, var(--bio-superficie)); }
+.bio-barra-mini > span { display: block; height: 100%; border-radius: inherit; background: var(--bio-acento); }
 
 /* ── Indicadores del resumen ──────────────────────────────────────────────── */
 .bio-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--bio-linea); border-radius: var(--radius-xl); overflow: hidden; }
@@ -439,3 +444,13 @@
 @keyframes bio-cambia { from { opacity: 0.4; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .bio-cambia { animation: bio-cambia 260ms var(--bio-ease) both; }
 @media (prefers-reduced-motion: reduce) { .bio-cambia { animation: none; } .bio-grupo, .bio-grupo-chip, .bio-sel-atajo { transition: none; } }
+
+/* Cifras clave del detalle: mismo numeral de pantalla que las tarjetas de especie */
+.bio-datos-cifras { grid-template-columns: repeat(auto-fit, minmax(5.5rem, max-content)); gap: 0.6rem 2rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--bio-linea); }
+.bio-datos-cifras .bio-dato dd { margin-top: 0.3rem; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+
+/* Tira de miniaturas: barra de desplazamiento fina y discreta */
+.bio-miniaturas { scrollbar-width: thin; scrollbar-color: var(--bio-linea) transparent; }
+.bio-miniaturas::-webkit-scrollbar { height: 6px; }
+.bio-miniaturas::-webkit-scrollbar-thumb { background: var(--bio-linea); border-radius: 999px; }
+.bio-miniaturas li { flex: none; }
