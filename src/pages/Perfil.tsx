@@ -20,6 +20,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { asApiError } from '@/lib/apiError'
 import Avatar from '@/components/ui/Avatar'
+import PrivacidadYDatos from '@/components/privacidad/PrivacidadYDatos'
 
 const fadeUp = fadeUpSm
 
@@ -949,6 +950,21 @@ export default function Perfil() {
           <Notificaciones />
         </Section>
       </motion.div>
+
+      {/* Privacidad y datos — derechos del titular (Ley 1581). El visitante no tiene cuenta que exportar o eliminar. */}
+      {user?.rol !== 'visitante' && (
+        <motion.div
+          {...fadeUp(0.23)}
+          whileHover={{ y: -3 }}
+        >
+          <Section
+            title="Privacidad y datos"
+            description="Descarga tus datos o elimina tu cuenta"
+          >
+            <PrivacidadYDatos />
+          </Section>
+        </motion.div>
+      )}
 
       {/* Apariencia */}
       <motion.div

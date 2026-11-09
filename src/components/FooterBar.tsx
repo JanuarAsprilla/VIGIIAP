@@ -27,6 +27,7 @@ const resourceLinks = [
   { label: 'Preguntas Frecuentes', href: '/faq' },
   { label: 'Términos de Uso', href: '/terminos' },
   { label: 'Política de Privacidad', href: '/politica-privacidad' },
+  { label: 'Política de Cookies', href: '/politica-cookies' },
 ]
 
 export default function Footer() {
