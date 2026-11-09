@@ -18,7 +18,10 @@ export default function AdminLayout() {
 
       <AdminSidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
 
-      <div className="relative z-10 md:ml-[220px] min-h-screen flex flex-col">
+      {/* Sin z-index aquí: un `z-10` crea un contexto de apilamiento y confina el `fixed z-50` de todos los modales del panel
+          por debajo de la barra lateral (`fixed z-40`), que les tapaba el borde izquierdo. El contenido igual queda sobre
+          las órbitas decorativas porque va después de ellas en el DOM. */}
+      <div className="relative md:ml-[220px] min-h-screen flex flex-col">
         <TopBar onMenuToggle={() => setMobileMenuOpen(true)} />
 
         {/* Admin indicator bar */}

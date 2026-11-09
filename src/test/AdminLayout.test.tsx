@@ -70,4 +70,16 @@ describe('AdminLayout — orquestación del panel admin', () => {
     await user.click(screen.getByText('Cerrar sidebar'))
     expect(screen.getByText('AdminSidebar: cerrado')).toBeInTheDocument()
   })
+
+  test('REGRESIÓN: el contenedor del contenido no atrapa los niveles de apilamiento, para que los modales queden sobre la barra lateral', () => {
+    // La barra lateral es `fixed z-40`. Si el contenedor del contenido crea su propio contexto (z-index, transform,
+    // filter...), el `fixed z-50` de cualquier modal del panel queda confinado dentro de él y la barra lo tapa: el modal
+    // «Nuevo geovisor» salía con los primeros píxeles de su borde izquierdo bajo la barra.
+    const { container } = renderAdminLayout()
+    const contenido = screen.getByText('Contenido del panel').closest('main')!.parentElement!
+    expect(contenido.className).toContain('md:ml-[220px]')
+    expect(contenido.className).not.toMatch(/(^|\s)(-?z-|isolate|transform|filter|backdrop|will-change)/)
+    expect(contenido.getAttribute('style') ?? '').not.toMatch(/z-index|transform|filter|will-change/)
+    expect(container).toBeTruthy()
+  })
 })

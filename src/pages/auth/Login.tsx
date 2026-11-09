@@ -14,6 +14,12 @@ export default function Login() {
   const location = useLocation()
 
   useEffect(() => {
+    // El backend vuelve aquí tras un login con Google/Microsoft de una cuenta con 2FA: ya dejó la cookie temporal y
+    // falta el código. Sin esto el parámetro se descartaba y la persona quedaba sin sesión y sin saber por qué.
+    if (new URLSearchParams(location.search).get('requiresTwoFactor') === '1') {
+      navigate('/verificar-2fa', { replace: true })
+      return
+    }
     navigate('/', { replace: true, state: { openLogin: true, from: location.state?.from } })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- solo debe correr una vez al montar
   }, [])
