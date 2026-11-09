@@ -6,6 +6,67 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.11.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.10.0...v1.11.0) (2026-11-09)
+
+
+### Features
+
+* «Ver más» en las tarjetas de especie, ranking por departamento y scroll en los diálogos ([48154f4](https://github.com/JanuarAsprilla/VIGIIAP/commit/48154f4ece16f711592e3ac09185b979af8c76a6))
+* «Ver más» en tarjetas de especie, ranking por departamento y scroll en diálogos ([42bfc67](https://github.com/JanuarAsprilla/VIGIIAP/commit/42bfc67a315eb59477b9017ee1fe9f8eb32201b5))
+* **actividad:** botón para verificar la integridad del registro de auditoría ([#297](https://github.com/JanuarAsprilla/VIGIIAP/issues/297)) ([37c95d4](https://github.com/JanuarAsprilla/VIGIIAP/commit/37c95d4d7c09fdc7447e9fe2b45550062e5ac6b9))
+* **actividad:** fase 1 — registro de auditoría legible, con resumen, filtros y detalle ([#289](https://github.com/JanuarAsprilla/VIGIIAP/issues/289)) ([7bee1e3](https://github.com/JanuarAsprilla/VIGIIAP/commit/7bee1e34d9e38e14eaada73cd9394dc3b2098256))
+* **actividad:** fase 2 — resultado, request id, accesos denegados y cambios antes/después ([#292](https://github.com/JanuarAsprilla/VIGIIAP/issues/292)) ([2313b7a](https://github.com/JanuarAsprilla/VIGIIAP/commit/2313b7a81a3d407ffbf0e781701069585a61bd43))
+* **actividad:** ubicación de las visitas y aviso de privacidad actualizado ([#296](https://github.com/JanuarAsprilla/VIGIIAP/issues/296)) ([36f29f0](https://github.com/JanuarAsprilla/VIGIIAP/commit/36f29f03f669dfd711b9ae8f849e76959de5f533))
+* **biodiversidad:** selector compacto, tarjetas de datos del grupo y filtros cerrados por defecto ([e579642](https://github.com/JanuarAsprilla/VIGIIAP/commit/e579642572f06a6fb8b300ea976e5433b26a76c9))
+* **biodiversidad:** selector de grupo compacto y datos del grupo como protagonistas ([4a5bafb](https://github.com/JanuarAsprilla/VIGIIAP/commit/4a5bafb2f8a4f322ea6cc45474d6f18113729a9a))
+* **biodiversidad:** tarjetas Registros/Especies/Amenazadas/Municipios, panel de filtros cerrado por defecto y desplazamiento al detalle ([4837294](https://github.com/JanuarAsprilla/VIGIIAP/commit/48372948c8e40c820541804aec6615b92d7d51d8))
+* botón para exportar el CSV completo del registro de actividad ([#355](https://github.com/JanuarAsprilla/VIGIIAP/issues/355)) ([68413e4](https://github.com/JanuarAsprilla/VIGIIAP/commit/68413e4d2eb5c154263d2f6bc94e2f48ae635c17))
+* capas nuevas de GeoServer automáticas en el visor ([#272](https://github.com/JanuarAsprilla/VIGIIAP/issues/272)) ([7c11a34](https://github.com/JanuarAsprilla/VIGIIAP/commit/7c11a34cd95cfab22786def5f0b2d66b579c9264))
+* comparación con el período anterior y exportación a Excel en la analítica ([#338](https://github.com/JanuarAsprilla/VIGIIAP/issues/338)) ([e29ea5e](https://github.com/JanuarAsprilla/VIGIIAP/commit/e29ea5e9b64cb9dcf94910c8e47de7d3af3c5e9c))
+* **cumplimiento:** envía la aceptación de términos al servidor (Ley 1581) ([2a38414](https://github.com/JanuarAsprilla/VIGIIAP/commit/2a3841474e8c7446d9a1f6be1eda4648f7a35e58))
+* **cumplimiento:** envia la aceptacion de terminos al servidor y la exige al completar el perfil ([9ef3aee](https://github.com/JanuarAsprilla/VIGIIAP/commit/9ef3aee51f35ee8ad131d59b77658bb16767889d))
+* el selector de capas del constructor marca las capas nuevas; fix uuid ([#275](https://github.com/JanuarAsprilla/VIGIIAP/issues/275)) ([cfd103c](https://github.com/JanuarAsprilla/VIGIIAP/commit/cfd103c0aec71dc6554004408d19627b1e04e5c4))
+* embudos de conversión y flujo de navegación en la pestaña Analítica ([#332](https://github.com/JanuarAsprilla/VIGIIAP/issues/332)) ([35d6882](https://github.com/JanuarAsprilla/VIGIIAP/commit/35d6882c746c6b8657a033a063cba9a4ff352516))
+* eventos de visitantes y tiempo real en la analítica del panel ([#319](https://github.com/JanuarAsprilla/VIGIIAP/issues/319)) ([469c427](https://github.com/JanuarAsprilla/VIGIIAP/commit/469c427ae0c97037fbefee08dcafb96f3835951e))
+* filtros transversales, cascada de taxonomía y ubicación en el mapa (Observatorio de Biodiversidad) ([6bfa23f](https://github.com/JanuarAsprilla/VIGIIAP/commit/6bfa23fde20d4fbe963a5d690d3edade85eb2442))
+* filtros transversales, cascada de taxonomía y ubicación en el mapa del Observatorio de Biodiversidad ([b1a68fa](https://github.com/JanuarAsprilla/VIGIIAP/commit/b1a68fa4d764289ab3124dac178b8aee13b43b6d))
+* formulario de geovisores como asistente por pasos ([#277](https://github.com/JanuarAsprilla/VIGIIAP/issues/277)) ([8def1d1](https://github.com/JanuarAsprilla/VIGIIAP/commit/8def1d1f42a5f4eac736a51e14435ee23c39854c))
+* foto representativa en tarjetas de aves, insectos y plantas; volver al detalle al cambiar de pestaña ([137f754](https://github.com/JanuarAsprilla/VIGIIAP/commit/137f754b9e3076688ae01fec7ecc946482484912))
+* interfaz del Observatorio de Biodiversidad en Herramientas ([bf00f6c](https://github.com/JanuarAsprilla/VIGIIAP/commit/bf00f6cb745be71c4c386c9af7ccaec4a6ca2849))
+* interfaz del Observatorio de Biodiversidad en Herramientas ([d2209e2](https://github.com/JanuarAsprilla/VIGIIAP/commit/d2209e2aa6212c8c45005f2bd283c82d2cd4a6d8))
+* panel de administración para la actualización de datos de biodiversidad ([b59208a](https://github.com/JanuarAsprilla/VIGIIAP/commit/b59208a8c39b23c8692353ba43d759df929d5081))
+* panel del Super Administrador para la actualización de datos de biodiversidad ([1b43974](https://github.com/JanuarAsprilla/VIGIIAP/commit/1b43974462f248347fb1e740d95f26bdb858d29d))
+* **plataforma:** pantalla global de mantenimiento, nombre opcional del visitante y esqueletos de carga ([#300](https://github.com/JanuarAsprilla/VIGIIAP/issues/300)) ([8fc012b](https://github.com/JanuarAsprilla/VIGIIAP/commit/8fc012bffa4425c0fd9436ad5337c9a32ed14599))
+* **privacidad:** política de cookies, aviso informativo y «Privacidad y datos» en el perfil ([#363](https://github.com/JanuarAsprilla/VIGIIAP/issues/363)) ([ce2436b](https://github.com/JanuarAsprilla/VIGIIAP/commit/ce2436be4029e627b358c7ea92aa0bcb0922c64b))
+* pulido del Observatorio de Biodiversidad (grupos, mapa, pestañas, fotos y detalle) ([4fa55d8](https://github.com/JanuarAsprilla/VIGIIAP/commit/4fa55d82ac144e138cfde131ff15f4fd788f7840))
+* pulido del Observatorio de Biodiversidad (selector con iconos, mapa con métricas y selección, pestañas, fotos y detalle) ([d59442e](https://github.com/JanuarAsprilla/VIGIIAP/commit/d59442e7fe79b04ae9309078888f52304da81290))
+* segunda ronda visual del Observatorio de Biodiversidad (iconos, color por grupo, especies con foto) ([f193fc0](https://github.com/JanuarAsprilla/VIGIIAP/commit/f193fc0b35e3850c1cfeaca6563abba32c723fff))
+* segunda ronda visual del Observatorio de Biodiversidad (íconos, color por grupo, especies con foto) ([ffe6f70](https://github.com/JanuarAsprilla/VIGIIAP/commit/ffe6f70f894a33a0b03b0432e3f20e096884a988))
+* **seguridad:** security.txt para reportar vulnerabilidades ([39dfe4d](https://github.com/JanuarAsprilla/VIGIIAP/commit/39dfe4d586d8947832b67ca6881bd77039cb7e07))
+* tarjetas de grupos agregados con foto representativa y regreso al detalle al cambiar de pestaña ([28713d2](https://github.com/JanuarAsprilla/VIGIIAP/commit/28713d27b58df18f26ed8dcec68b70ab88ac5a78))
+
+
+### Bug Fixes
+
+* **admin:** los modales del panel quedaban bajo la barra lateral ([#372](https://github.com/JanuarAsprilla/VIGIIAP/issues/372)) ([3ffe1ca](https://github.com/JanuarAsprilla/VIGIIAP/commit/3ffe1caa90c6de2559a35f243818081b861d0af4))
+* cabeceras de seguridad y CSP servidos por nginx ([f538b74](https://github.com/JanuarAsprilla/VIGIIAP/commit/f538b74b85ac70f9db98767211b5c9bf293850c0))
+* cierra hallazgos de auditoría de seguridad (frontend) + mensajes de verificación OAuth ([8fa0bb3](https://github.com/JanuarAsprilla/VIGIIAP/commit/8fa0bb3c47859b6f072cf51934cd9e170364cea8))
+* **ci:** release-please publica desde main aunque develop sea la rama por defecto ([#287](https://github.com/JanuarAsprilla/VIGIIAP/issues/287)) ([f2a3708](https://github.com/JanuarAsprilla/VIGIIAP/commit/f2a37080523c455acf2a760cb16e9e76e74dd8da))
+* corrige 5 hallazgos de la revisión de diseño de la plataforma ([#280](https://github.com/JanuarAsprilla/VIGIIAP/issues/280)) ([8f8b674](https://github.com/JanuarAsprilla/VIGIIAP/commit/8f8b674a9d2938191898e2da673e596d696bfd91))
+* **deps:** corrige las vulnerabilidades de npm audit (zod 4, undici, multer, body-parser, nodemailer) ([#311](https://github.com/JanuarAsprilla/VIGIIAP/issues/311)) ([59bae44](https://github.com/JanuarAsprilla/VIGIIAP/commit/59bae44f564ef009b6a53c8408013c3dd0d617cf))
+* **geovisores:** el botón «Nuevo geovisor» ya no depende del permiso de Conexiones GeoServer ([#310](https://github.com/JanuarAsprilla/VIGIIAP/issues/310)) ([86448ba](https://github.com/JanuarAsprilla/VIGIIAP/commit/86448bab35bb9e4e556796e852ef40a6e28323e7))
+* la perilla del interruptor de permisos ya no se sale de la pastilla ([#276](https://github.com/JanuarAsprilla/VIGIIAP/issues/276)) ([79b8db5](https://github.com/JanuarAsprilla/VIGIIAP/commit/79b8db5b9fa8493dcc6317ca80db38757fba3c76))
+* npm audit fix (source-map-js, severidad alta) ([#273](https://github.com/JanuarAsprilla/VIGIIAP/issues/273)) ([6680be5](https://github.com/JanuarAsprilla/VIGIIAP/commit/6680be5cc34e53a78b5c5e96b31b9a9994420955))
+* **oauth:** mensajes claros cuando Google o Microsoft no abren la cuenta ([#368](https://github.com/JanuarAsprilla/VIGIIAP/issues/368)) ([592cc00](https://github.com/JanuarAsprilla/VIGIIAP/commit/592cc005ca268076317b982d684844eee7db9da8))
+* **oauth:** tras Google con 2FA se pide el código en vez de perder el parámetro ([#371](https://github.com/JanuarAsprilla/VIGIIAP/issues/371)) ([59a912a](https://github.com/JanuarAsprilla/VIGIIAP/commit/59a912a598e1548d9376965775fd531c9a86447d))
+* pulido visual final del observatorio y del panel de datos ([7d2ebc1](https://github.com/JanuarAsprilla/VIGIIAP/commit/7d2ebc1f0385789e2f6fa99f787fa77b67d796f0))
+* pulido visual final del observatorio y del panel de datos de biodiversidad ([609fbe1](https://github.com/JanuarAsprilla/VIGIIAP/commit/609fbe19591c96df3caa52aebf91cbe8a9d73f2d))
+* **seguridad:** cabeceras de seguridad y CSP servidos por nginx ([3f29868](https://github.com/JanuarAsprilla/VIGIIAP/commit/3f29868e5a8a08280892b16609a878a926891287))
+* **seguridad:** guarda de ruta por modulo en el panel admin y acciones de ci.yml fijadas por SHA ([c90cbfb](https://github.com/JanuarAsprilla/VIGIIAP/commit/c90cbfb225fbd5c064907cc0d5fc07a22f36bb06))
+* **seguridad:** guarda de ruta por módulo y acciones de CI fijadas por SHA ([670f798](https://github.com/JanuarAsprilla/VIGIIAP/commit/670f798e492f995ef4a1326d717d194805b8f999))
+* territorio coherente en filtros del Observatorio y tarjetas de especie más claras ([4450490](https://github.com/JanuarAsprilla/VIGIIAP/commit/4450490edfc645b143868efb6b53850d6fc8b1c9))
+* territorio coherente en los filtros del Observatorio y tarjetas de especie más claras ([f5dab5d](https://github.com/JanuarAsprilla/VIGIIAP/commit/f5dab5d22b870ce3cbc4d1ba9756789a2e31708b))
+
 ## [1.10.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.9.0...v1.10.0) (2026-10-01)
 
 
