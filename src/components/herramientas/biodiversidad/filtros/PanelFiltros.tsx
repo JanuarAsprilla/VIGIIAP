@@ -53,13 +53,13 @@ export default function PanelFiltros({
         </div>
       </header>
       <div className="bio-filtros-cuerpo" data-lenis-prevent>
-        <SeccionFiltro titulo="Territorio" activos={cuenta(f.departamento, f.municipio)} resumen={resumenTerritorio(f, municipios)} abierta>
+        <SeccionFiltro titulo="Territorio" activos={cuenta(f.departamento, f.municipio)} resumen={resumenTerritorio(f, municipios)}>
           <SeccionTerritorio filtros={f} municipios={municipios} onCambio={onCambio} />
         </SeccionFiltro>
-        <SeccionFiltro titulo="Taxonomía" activos={cuenta(...NIVELES_TAXON.map((n) => f[n]), f.especie, f.buscar)} abierta>
+        <SeccionFiltro titulo="Taxonomía" activos={cuenta(...NIVELES_TAXON.map((n) => f[n]), f.especie, f.buscar)}>
           <SeccionTaxonomia grupo={grupo} metodo={metodo} filtros={f} params={paramsOpciones} motivo={apl.motivoTaxonomia} onCambio={onCambio} />
         </SeccionFiltro>
-        <SeccionFiltro titulo="Conservación" activos={cuenta(f.conservacion)} abierta>
+        <SeccionFiltro titulo="Conservación" activos={cuenta(f.conservacion)}>
           <FiltroConservacion
             conservacion={f.conservacion} amenaza={f.amenaza} deshabilitado={!apl.conservacion}
             onCambio={(c, a) => onCambio(cambiosConservacion(c, a))}
