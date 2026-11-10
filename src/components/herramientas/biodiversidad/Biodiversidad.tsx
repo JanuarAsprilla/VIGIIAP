@@ -49,10 +49,10 @@ export default function Biodiversidad() {
   const t = useTablero()
   const { p, filtros: f, apl, metodo, esIndividual, mun, municipios, municipioSel, deptoSel, deptoActivo } = t
   const ancho = useMediaQuery('(min-width: 64rem)')
-  // El panel solo se abre cuando la persona pulsa «Filtros»: elegir un grupo o llegar desde un botón que ya filtra
-  // aplica los filtros por dentro (se ven como chips) sin desplegar el panel.
-  const [panelUsuario, setPanelUsuario] = useState(false)
-  const panelAbierto = panelUsuario
+  // En pantalla ancha el panel arranca abierto (columna lateral, secciones recogidas); en móvil y tableta es una hoja
+  // modal y arranca cerrado. Desde que la persona pulsa «Filtros» o lo cierra, manda su elección.
+  const [panelUsuario, setPanelUsuario] = useState<boolean | null>(null)
+  const panelAbierto = panelUsuario ?? ancho
   const botonPanel = useRef<HTMLButtonElement>(null)
   const origenDetalle = useRef<HTMLElement | null>(null)
   const [enfoque, setEnfoque] = useState<Enfoque | null>(null)
