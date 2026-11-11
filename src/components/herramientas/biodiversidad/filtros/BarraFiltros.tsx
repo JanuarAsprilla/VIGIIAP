@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { Camera, ShieldAlert, SlidersHorizontal, Sprout, TriangleAlert, X } from 'lucide-react'
 import { MOTIVO_AGREGADO, type Aplicabilidad } from '../lib/aplicabilidad'
 import type { ChipFiltro } from '../lib/chips'
@@ -18,6 +18,8 @@ interface Props {
   onTogglePanel: () => void
   onCambio: (cambios: CambiosUrl) => void
   onLimpiar: () => void
+  /** Acción extra junto al botón de filtros (p. ej. «Descargar informe»). */
+  accion?: ReactNode
 }
 
 const ATAJOS: { tipo: TipoConservacion; texto: string; Icono: typeof Camera }[] = [
@@ -28,7 +30,7 @@ const ATAJOS: { tipo: TipoConservacion; texto: string; Icono: typeof Camera }[] 
 
 /** Entrada principal de los filtros: búsqueda de especie, atajos de un clic, botón del panel, chips activos y resumen. */
 export default function BarraFiltros({
-  grupo, metodo, filtros: f, apl, chips, resumen, panelAbierto, botonPanel, onTogglePanel, onCambio, onLimpiar,
+  grupo, metodo, filtros: f, apl, chips, resumen, panelAbierto, botonPanel, onTogglePanel, onCambio, onLimpiar, accion,
 }: Props) {
   const total = contarFiltros(f)
   return (
@@ -51,6 +53,7 @@ export default function BarraFiltros({
           Filtros
           {total > 0 && <span className="bio-seccion-cuenta" aria-label={`${total} activos`}>{total}</span>}
         </button>
+        {accion}
       </div>
       <div className="bio-atajos" role="group" aria-label="Atajos de filtro">
         <span className="bio-eyebrow">Atajos</span>
