@@ -13,7 +13,7 @@ vi.mock('react-router-dom', async (importOriginal) => ({ ...(await importOrigina
 vi.mock('@/lib/generarInforme', () => ({ generarArchivo: generar, guardarArchivo: guardar }))
 
 import BotonDescargarInforme from '@/components/informes/BotonDescargarInforme'
-import type { DatosInforme } from '@/lib/generarInforme'
+import type { DatosInforme, FormatoDescarga } from '@/lib/generarInforme'
 
 const PLANTILLA = { institucion: 'Vigía · IIAP', subtitulo: null, pie: null, aviso: null, colorPrimario: '#009846', colorAcento: '#0F172A', logoUrl: null }
 const config = (extra: Record<string, unknown> = {}) => ({
@@ -66,7 +66,7 @@ describe('BotonDescargarInforme', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Descargar informe' }))
     await userEvent.click(screen.getByRole('menuitem', { name: 'PDF' }))
     await waitFor(() => expect(guardar).toHaveBeenCalled())
-    expect(construir).toHaveBeenCalledWith(5000, expect.any(AbortSignal))
+    expect(construir).toHaveBeenCalledWith(5000, expect.any(AbortSignal), 'pdf')
     expect(generar).toHaveBeenCalledWith('pdf', DATOS, PLANTILLA, expect.any(AbortSignal))
     expect(guardar).toHaveBeenCalledWith(expect.any(Blob), 'informe.pdf')
     expect(screen.getByRole('status')).toHaveTextContent('Informe descargado: informe.pdf')
@@ -91,6 +91,17 @@ describe('BotonDescargarInforme', () => {
     expect(boton).not.toHaveAttribute('aria-haspopup')
     await userEvent.click(boton)
     await waitFor(() => expect(generar).toHaveBeenCalledWith('xlsx', DATOS, PLANTILLA, expect.any(AbortSignal)))
+  })
+
+  test('le dice a quien reúne los datos qué formato se eligió, para que solo el Excel y el CSV lleven los registros', async () => {
+    estado.config = config({ formatos: ['pdf', 'xlsx', 'csv'] })
+    const { construir } = pintar()
+    await userEvent.click(screen.getByRole('button', { name: 'Descargar informe' }))
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Excel' }))
+    await waitFor(() => expect(construir).toHaveBeenLastCalledWith(5000, expect.any(AbortSignal), 'xlsx'))
+    await userEvent.click(screen.getByRole('button', { name: 'Descargar informe' }))
+    await userEvent.click(screen.getByRole('menuitem', { name: 'CSV' }))
+    await waitFor(() => expect(construir).toHaveBeenLastCalledWith(5000, expect.any(AbortSignal), 'csv'))
   })
 
   test('si falla, lo dice, no guarda nada y deja volver a intentar', async () => {
@@ -127,7 +138,7 @@ describe('BotonDescargarInforme', () => {
 
   test('al salir de la página cancela lo que estaba preparando', async () => {
     let senal: AbortSignal | null = null
-    const construir = vi.fn((_: number, s: AbortSignal) => { senal = s; return new Promise<DatosInforme>(() => {}) })
+    const construir = vi.fn((_: number, s: AbortSignal, __: FormatoDescarga) => { senal = s; return new Promise<DatosInforme>(() => {}) })
     const { unmount } = pintar(construir)
     await userEvent.click(screen.getByRole('button', { name: 'Descargar informe' }))
     await userEvent.click(screen.getByRole('menuitem', { name: 'PDF' }))
