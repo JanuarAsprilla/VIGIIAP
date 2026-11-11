@@ -11,8 +11,11 @@ const ICONOS: Record<FormatoDescarga, typeof FileText> = { pdf: FileText, xlsx: 
 interface Props {
   /** Clave de la herramienta en Administración → Informes. */
   herramienta: string
-  /** Reúne lo que lleva el informe con los filtros vigentes. `maxFilas` es el tope que configuró el administrador. */
-  construir: (maxFilas: number, signal: AbortSignal) => Promise<DatosInforme>
+  /**
+   * Reúne lo que lleva el informe con los filtros vigentes. `maxFilas` es el tope que configuró el administrador y `formato`
+   * el que eligió la persona: el PDF es un resumen; el Excel y el CSV pueden llevar los datos completos.
+   */
+  construir: (maxFilas: number, signal: AbortSignal, formato: FormatoDescarga) => Promise<DatosInforme>
   className?: string
 }
 
@@ -50,7 +53,7 @@ export default function BotonDescargarInforme({ herramienta, construir, classNam
     const control = new AbortController()
     cancelar.current = control
     try {
-      const datos = await construir(config.maxFilas, control.signal)
+      const datos = await construir(config.maxFilas, control.signal, formato)
       const archivo = await generarArchivo(formato, datos, config.plantilla, control.signal)
       if (control.signal.aborted) return
       guardarArchivo(archivo.blob, archivo.nombre)

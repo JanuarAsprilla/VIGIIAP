@@ -185,6 +185,21 @@ describe('Excel', () => {
     expect(celda.type).toBe(ExcelJS.ValueType.String)
     expect(celda.value).toBe('=1+1')
   })
+
+  test('una hoja de miles de registros con celdas vacías se genera y conserva los decimales de las coordenadas', async () => {
+    const filas = Array.from({ length: 3000 }, (_, i) => [`g${i}`, 'Especie', 2020, i % 2 ? null : 5.69, i % 2 ? null : -76.65])
+    const libro = await abrirLibro(await generarExcel(datos({
+      secciones: [{ titulo: 'R', tablas: [{ titulo: 'Registros', columnas: ['ID GBIF', 'Especie', 'Año', 'Latitud', 'Longitud'], filas }] }],
+    }), PLANTILLA))
+    const hoja = libro.getWorksheet('Registros')!
+    expect(hoja.rowCount).toBe(3001)
+    expect(hoja.getCell('D2').value).toBe(5.69)
+    expect(hoja.getCell('E2').value).toBe(-76.65)
+    expect(hoja.getCell('D3').value).toBeNull()
+    expect(hoja.getCell('C2').value).toBe(2020)
+    expect(hoja.getColumn(4).numFmt).not.toBe('#,##0')
+    expect(hoja.autoFilter).toBeTruthy()
+  })
 })
 
 describe('generarArchivo', () => {
