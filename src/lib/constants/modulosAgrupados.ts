@@ -5,7 +5,7 @@
 // pueda exportar solo el componente -- requisito de react-refresh/only-export-components.
 import {
   Users, ClipboardList, FileText, Map, MapPinned, Server, Tag,
-  Settings, Activity, AlertTriangle, FileBarChart, KeyRound, Database, type LucideIcon,
+  Settings, Activity, AlertTriangle, FileBarChart, KeyRound, Database, FileDown, type LucideIcon,
 } from 'lucide-react'
 import { MODULOS_CATALOGO, type ModuloClave } from '@/lib/constants/modulos'
 
@@ -17,6 +17,7 @@ const MODULO_ICON_BASE: Partial<Record<ModuloClave, LucideIcon>> = {
   geovisores: MapPinned,
   conexiones_geoserver: Server,
   biodiversidad_datos: Database,
+  informes: FileDown,
   categorias: Tag,
   configuracion: Settings,
   actividad: Activity,
@@ -30,7 +31,7 @@ export function iconoDeModulo(clave: ModuloClave): LucideIcon {
 }
 
 const GRUPOS_BASE: { titulo: string; claves: ModuloClave[] }[] = [
-  { titulo: 'Gestión', claves: ['usuarios', 'solicitudes', 'documentos', 'mapas', 'geovisores', 'conexiones_geoserver', 'categorias', 'biodiversidad_datos'] },
+  { titulo: 'Gestión', claves: ['usuarios', 'solicitudes', 'documentos', 'mapas', 'geovisores', 'conexiones_geoserver', 'categorias', 'biodiversidad_datos', 'informes'] },
   { titulo: 'Sistema', claves: ['configuracion', 'actividad', 'errores', 'reportes'] },
 ]
 
