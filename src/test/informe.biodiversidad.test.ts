@@ -4,7 +4,8 @@ vi.mock('@/lib/api', () => ({ default: { get: vi.fn() } }))
 
 import api from '@/lib/api'
 import {
-  construirInforme, ESPECIES_MAXIMAS_POR_INFORME, reunirInforme, type ContextoConsulta, type EntradaInforme,
+  construirInforme, ESPECIES_MAXIMAS_POR_INFORME, reunirInforme,
+  type ContextoConsulta, type EntradaInforme, type RegistroExportado, type RespuestaExportacion,
 } from '@/components/herramientas/biodiversidad/informe/informe'
 import type { EspecieResumen, GrupoEstado, MunicipioConteo, RespuestaResumen } from '@/components/herramientas/biodiversidad/types'
 
@@ -29,6 +30,16 @@ const entrada = (extra: Partial<EntradaInforme> = {}): EntradaInforme => ({
   grupo: 'aves', metodo: 'individual', info, aviso: undefined, filtros: ['Familia: Tyrannidae'], ranking: [municipio(1, 500), municipio(2, 0), municipio(3, 300, null)],
   resumen: resumen(), especies: [especie(1), especie(2, { amenaza: 'EN', endemica_choco: true, endemica_colombia: true })], totalEspecies: 2, maxFilas: 5000,
   generadoEn: new Date('2026-11-11T15:00:00Z'), ...extra,
+})
+
+const registroExportado = (n: number, extra: Partial<RegistroExportado> = {}): RegistroExportado => ({
+  gbif_id: `g${n}`, especie: `Especie ${n}`, anio: 2020, fecha_evento: '2020-05-01', tipo_evidencia: 'HUMAN_OBSERVATION', licencia: 'CC_BY_4_0',
+  latitud: '5.69', longitud: -76.65, incertidumbre_m: 30, coordenadas_ocultas: false, conjunto: 'Conjunto de prueba', doi_conjunto: '10.1234/ds1',
+  municipio: 'Quibdó', departamento: 'Chocó', registrado_por: 'Ana', identificado_por: null,
+  amenaza: null, endemica_colombia: false, endemica_choco: false, introducida: false, invasora: false, ...extra,
+})
+const exportacion = (registros: RegistroExportado[], extra: Partial<RespuestaExportacion> = {}): RespuestaExportacion => ({
+  grupo: 'aves', desde: 2000, hasta: 2025, limite: 5000, truncado: false, registros, ...extra,
 })
 
 const cifra = (d: ReturnType<typeof construirInforme>, etiqueta: string) => d.secciones[0].cifras!.find((c) => c.etiqueta === etiqueta)
@@ -104,10 +115,60 @@ describe('construirInforme', () => {
   })
 })
 
+describe('construirInforme con registros individuales', () => {
+  const sec = (d: ReturnType<typeof construirInforme>, titulo: string) => d.secciones.find((s) => s.titulo === titulo)
+
+  test('suma la hoja de registros, que pasa a ser la tabla principal (la del CSV)', () => {
+    const d = construirInforme(entrada({ registros: exportacion([registroExportado(1)]) }))
+    expect(d.secciones.map((s) => s.titulo)).toEqual(['Cifras clave', 'Territorio', 'Especies', 'Registros individuales'])
+    const t = sec(d, 'Registros individuales')!.tablas![0]
+    expect(t.titulo).toBe('Registros')
+    expect(t.principal).toBe(true)
+    expect(sec(d, 'Especies')!.tablas![0].principal).toBe(false)
+    expect(t.columnas).toHaveLength(17)
+    expect(t.columnas.slice(0, 3)).toEqual(['ID GBIF', 'Especie', 'Año'])
+  })
+
+  test('los registros mantienen su orden, los números salen como números y no llevan formato de miles', () => {
+    const t = sec(construirInforme(entrada({ registros: exportacion([registroExportado(1), registroExportado(2, { latitud: null, longitud: null, incertidumbre_m: '' })]) })), 'Registros individuales')!.tablas![0]
+    expect(t.numericas).toBeUndefined()
+    expect(t.filas[0]).toEqual(['g1', 'Especie 1', 2020, '2020-05-01', 'HUMAN_OBSERVATION', 'CC_BY_4_0', 'Quibdó', 'Chocó', 5.69, -76.65, 30, 'Visible',
+      'Conjunto de prueba', '10.1234/ds1', 'Ana', null, null])
+    expect(t.filas[1].slice(8, 12)).toEqual([null, null, null, 'Sin coordenadas'])
+  })
+
+  test('las ubicaciones ocultas lo dicen y la conservación se resume', () => {
+    const t = sec(construirInforme(entrada({
+      registros: exportacion([registroExportado(1, { coordenadas_ocultas: true, latitud: null, longitud: null, amenaza: 'CR', endemica_choco: true })]),
+    })), 'Registros individuales')!.tablas![0]
+    expect(t.filas[0][11]).toBe('Generalizada u oculta')
+    expect(t.filas[0][16]).toBe('Amenazada (CR), Endémica del Chocó')
+  })
+
+  test('si el servidor recortó, la nota dice cuántos entraron de cuántos hay; si no, no hay nota', () => {
+    const recortada = sec(construirInforme(entrada({ registros: exportacion([registroExportado(1), registroExportado(2)], { truncado: true, limite: 2 }) })), 'Registros individuales')!.tablas![0]
+    expect(recortada.nota).toBe('Se incluyen los 2 registros más recientes de 2.919.072 que cumplen los filtros (tope de la descarga: 2).')
+    expect(sec(construirInforme(entrada({ registros: exportacion([registroExportado(1)]) })), 'Registros individuales')!.tablas![0].nota).toBeUndefined()
+  })
+
+  test('la fuente aclara las ubicaciones generalizadas solo cuando hay registros', () => {
+    const con = construirInforme(entrada({ registros: exportacion([registroExportado(1)]) })).fuente
+    expect(con.some((l) => /generalizadas u ocultas/.test(l))).toBe(true)
+    expect(construirInforme(entrada()).fuente.some((l) => /generalizadas u ocultas/.test(l))).toBe(false)
+  })
+
+  test('sin registros el informe es el de siempre: la tabla de especies sigue siendo la principal', () => {
+    const d = construirInforme(entrada())
+    expect(d.secciones.map((s) => s.titulo)).toEqual(['Cifras clave', 'Territorio', 'Especies'])
+    expect(d.secciones[2].tablas![0].principal).toBe(true)
+  })
+})
+
 describe('reunirInforme', () => {
   const contexto = (extra: Partial<ContextoConsulta> = {}): ContextoConsulta => ({
     grupo: 'aves', metodo: 'individual', info, aviso: undefined, filtros: [], ranking: [municipio(1, 5)],
-    paramsResumen: { familia: 'Tyrannidae' }, paramsEspecies: { familia: 'Tyrannidae', orden: 'nombre', pagina: 9, tamano: 5 }, ...extra,
+    paramsResumen: { familia: 'Tyrannidae' }, paramsEspecies: { familia: 'Tyrannidae', orden: 'nombre', pagina: 9, tamano: 5 },
+    paramsRegistros: { familia: 'Tyrannidae', orden: 'especie', pagina: 3, tamano: 25 }, ...extra,
   })
   const pagina = (desde: number, cuantas: number, total: number) => ({ total, especies: Array.from({ length: cuantas }, (_, i) => especie(desde + i)) })
   const senal = new AbortController().signal
@@ -146,6 +207,52 @@ describe('reunirInforme', () => {
     expect(pedidasDeEspecies()).toHaveLength(1)
     expect(d.secciones[2].tablas![0].filas).toHaveLength(37)
     expect(d.secciones[2].tablas![0].nota).toBeUndefined()
+  })
+
+  describe('según el formato', () => {
+    const responder = (extra: { registros?: unknown } = {}) => vi.mocked(api.get).mockImplementation(async (url: string) => {
+      if (url.endsWith('/resumen')) return resumen()
+      if (url.endsWith('/especies')) return pagina(1, 10, 10)
+      return extra.registros ?? exportacion([registroExportado(1)])
+    })
+    const pedidasDeRegistros = () => vi.mocked(api.get).mock.calls.filter(([u]) => String(u).endsWith('/informes/biodiversidad/registros'))
+
+    for (const formato of ['xlsx', 'csv'] as const) {
+      test(`en ${formato} pide los registros en una sola petición, sin los parámetros de listado, y los suma al informe`, async () => {
+        responder()
+        const d = await reunirInforme(contexto(), 5000, senal, formato)
+        expect(pedidasDeRegistros()).toHaveLength(1)
+        expect(pedidasDeRegistros()[0][1]).toMatchObject({ params: { grupo: 'aves', familia: 'Tyrannidae' }, signal: senal, timeout: 60_000 })
+        const params = (pedidasDeRegistros()[0][1] as { params: Record<string, unknown> }).params
+        expect(Object.keys(params).sort()).toEqual(['familia', 'grupo'])
+        expect(d.secciones.map((s) => s.titulo)).toContain('Registros individuales')
+      })
+    }
+
+    test('el PDF es un resumen: no pide registros', async () => {
+      responder()
+      const d = await reunirInforme(contexto(), 5000, senal, 'pdf')
+      expect(pedidasDeRegistros()).toHaveLength(0)
+      expect(d.secciones.map((s) => s.titulo)).not.toContain('Registros individuales')
+      const sinFormato = await reunirInforme(contexto(), 5000, senal)
+      expect(sinFormato.secciones).toHaveLength(3)
+      expect(pedidasDeRegistros()).toHaveLength(0)
+    })
+
+    test('un grupo con inventario agregado no tiene registros que pedir', async () => {
+      responder()
+      await reunirInforme(contexto({ grupo: 'plantas', metodo: 'agregado' }), 5000, senal, 'xlsx')
+      expect(pedidasDeRegistros()).toHaveLength(0)
+    })
+
+    test('si el servidor niega la descarga (sin sesión o sin permiso), el error llega a quien llama', async () => {
+      vi.mocked(api.get).mockImplementation(async (url: string) => {
+        if (url.endsWith('/resumen')) return resumen()
+        if (url.endsWith('/especies')) return pagina(1, 10, 10)
+        throw new Error('Inicia sesión para descargar informes.')
+      })
+      await expect(reunirInforme(contexto(), 5000, senal, 'xlsx')).rejects.toThrow('Inicia sesión para descargar informes.')
+    })
   })
 
   test('un fallo de la API llega a quien llama, sin dejar promesas sueltas', async () => {
