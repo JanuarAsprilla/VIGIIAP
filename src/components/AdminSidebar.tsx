@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, ClipboardList,
   FileText, Map, Settings, Activity, X,
   LogOut, Globe, Shield, Tag, ShieldCheck, Trash2, AlertTriangle,
-  MapPinned, Server, Wrench, Database,
+  MapPinned, Server, Wrench, Database, FileDown,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLES } from '@/lib/constants/roles'
@@ -49,6 +49,7 @@ const NAV_SECTIONS: { label: string; links: NavLinkDef[] }[] = [
       { label: 'Categorías',   path: '/admin/categorias',  icon: Tag,         modulo: 'categorias' as ModuloClave },
       { label: 'Herramientas', path: '/admin/herramientas', icon: Wrench,     modulo: 'herramientas' as ModuloClave },
       { label: 'Datos de biodiversidad', path: '/admin/biodiversidad-datos', icon: Database, modulo: 'biodiversidad_datos' as ModuloClave },
+      { label: 'Informes', path: '/admin/informes', icon: FileDown, modulo: 'informes' as ModuloClave },
     ],
   },
   {
