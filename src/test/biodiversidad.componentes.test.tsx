@@ -33,6 +33,9 @@ vi.mock('@/components/herramientas/biodiversidad/mapa/PanelMapa', () => ({
   ),
 }))
 
+// El botón de informe necesita sesión y QueryClient; aquí se prueba la página, no el informe (ver informe.biodiversidad.test.tsx).
+vi.mock('@/components/informes/BotonDescargarInforme', () => ({ default: () => null }))
+
 import Biodiversidad from '@/components/herramientas/biodiversidad/Biodiversidad'
 import TablaRegistros from '@/components/herramientas/biodiversidad/registros/TablaRegistros'
 import RankingPanel from '@/components/herramientas/biodiversidad/RankingPanel'
