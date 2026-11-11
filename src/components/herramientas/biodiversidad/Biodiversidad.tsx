@@ -13,6 +13,8 @@ import PanelFiltros from './filtros/PanelFiltros'
 import SinResultados from './filtros/SinResultados'
 import GrupoIcono from './GrupoIcono'
 import Pestanas from './Pestanas'
+import BotonDescargarInforme from '@/components/informes/BotonDescargarInforme'
+import { reunirInforme } from './informe/informe'
 import RankingPanel from './RankingPanel'
 import SelectorGrupo from './SelectorGrupo'
 import TablaMunicipios from './TablaMunicipios'
@@ -66,6 +68,10 @@ export default function Biodiversidad() {
   const paramsPuntos = useMemo(() => paramsApi('puntos', f, metodo), [f, metodo])
   const paramsOpciones = useMemo(() => paramsApi('opciones', f, metodo), [f, metodo])
   const ayuda = useMemo(() => ({ chips: t.chips, onCambio: t.cambiar, onLimpiar: t.limpiar }), [t.chips, t.cambiar, t.limpiar])
+  const construirInforme = useCallback((maxFilas: number, signal: AbortSignal) => reunirInforme({
+    grupo: p.grupo, metodo, info: t.info, aviso: t.estado.data?.aviso, filtros: t.chips.map((c) => c.etiqueta),
+    ranking: t.ranking, paramsResumen, paramsEspecies,
+  }, maxFilas, signal), [p.grupo, metodo, t.info, t.estado.data, t.chips, t.ranking, paramsResumen, paramsEspecies])
 
   const seleccionarMunicipio = useCallback((codigo: string | null) => {
     const m = codigo ? t.datos.get(codigo) : null
@@ -218,6 +224,7 @@ export default function Biodiversidad() {
         grupo={p.grupo} metodo={metodo} filtros={f} apl={apl} chips={t.chips} resumen={t.resumen}
         panelAbierto={panelAbierto} botonPanel={botonPanel} onTogglePanel={() => setPanelUsuario(!panelAbierto)}
         onCambio={t.cambiar} onLimpiar={t.limpiar}
+        accion={<BotonDescargarInforme herramienta="biodiversidad" construir={construirInforme} />}
       />
       {t.avisoCambio && <AvisoFiltros titulo={t.avisoCambio.titulo} elementos={t.avisoCambio.elementos} onCerrar={t.cerrarAviso} />}
       {!t.avisoCambio && t.descartados.length > 0 && (
