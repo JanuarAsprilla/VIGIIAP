@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react'
+import { Skeleton, RegionCargando } from '@/components/ui/Skeleton'
 
 // Carga perezosa: leaflet.markercluster + turf + el GeoJSON de los 92
 // municipios (~76 KB) no deben ir en el chunk compartido de /herramientas,
@@ -7,13 +8,13 @@ const ValidadorCoordenadas = lazy(() => import('./validador-coordenadas/Validado
 
 function ValidadorSkeleton() {
   return (
-    <div className="space-y-4 animate-pulse" role="status" aria-label="Cargando validador de coordenadas">
-      <div className="h-10 bg-bg-alt rounded-lg" />
+    <RegionCargando etiqueta="Cargando validador de coordenadas" className="space-y-4">
+      <Skeleton className="h-10" />
       <div className="grid grid-cols-4 gap-3">
-        {[0, 1, 2, 3].map((i) => <div key={i} className="h-16 bg-bg-alt rounded-xl" />)}
+        {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
       </div>
-      <div className="h-[440px] bg-bg-alt rounded-xl" />
-    </div>
+      <Skeleton className="h-[440px] rounded-xl" />
+    </RegionCargando>
   )
 }
 

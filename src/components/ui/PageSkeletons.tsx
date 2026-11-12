@@ -1,10 +1,10 @@
 /**
  * PageSkeletons — pantallas de carga por módulo.
- * Se usan como fallback en los Suspense de App.jsx.
- * Cada skeleton replica la estructura visual real de la página.
+ * Se usan como respaldo de los Suspense de App.tsx; cada una replica la estructura de su página para que el contenido no salte
+ * al llegar. Se arman solo con las piezas de ./Skeleton, así que comparten estilo, modo oscuro y «reducir animaciones».
  */
 
-import { Skeleton, SkeletonText, SkeletonCard } from './Skeleton'
+import { Skeleton, SkeletonText, SkeletonCard, RegionCargando } from './Skeleton'
 
 // ── Header común ──
 function SkeletonPageHeader() {
@@ -17,12 +17,17 @@ function SkeletonPageHeader() {
   )
 }
 
+// Las clases de columnas van completas y estáticas: Tailwind solo genera las que ve escritas en el código, no las que se
+// arman con una plantilla de texto (`sm:grid-cols-${n}`).
+const COLUMNAS_FILTROS = { 2: 'sm:grid-cols-2', 3: 'sm:grid-cols-3', 4: 'sm:grid-cols-4' } as const
+
 // ── Barra de filtros ──
-function SkeletonFilterBar({ cols = 3 }) {
+// La búsqueda ocupa dos columnas y los demás filtros una cada uno, de modo que la fila suma `cols` columnas en total.
+function SkeletonFilterBar({ cols = 3 }: { cols?: keyof typeof COLUMNAS_FILTROS }) {
   return (
-    <div className={`grid grid-cols-1 sm:grid-cols-${cols} gap-3 mb-6`} aria-hidden="true">
-      <Skeleton className="h-10 rounded-xl col-span-2" />
-      {Array.from({ length: cols - 1 }, (_, i) => (
+    <div className={`grid grid-cols-1 ${COLUMNAS_FILTROS[cols]} gap-3 mb-6`} aria-hidden="true">
+      <Skeleton className="h-10 rounded-xl sm:col-span-2" />
+      {Array.from({ length: cols - 2 }, (_, i) => (
         <Skeleton key={i} className="h-10 rounded-xl" />
       ))}
     </div>
@@ -34,7 +39,7 @@ function SkeletonFilterBar({ cols = 3 }) {
 // ─────────────────────────────────────────────
 export function HomeSkeleton() {
   return (
-    <div className="p-4 lg:p-8 space-y-8" role="status" aria-label="Cargando inicio...">
+    <RegionCargando etiqueta="Cargando inicio..." className="p-4 lg:p-8 space-y-8">
       {/* Hero */}
       <div className="bg-[var(--card-bg)] border border-border rounded-2xl p-6 space-y-3">
         <Skeleton className="h-3 w-20" />
@@ -69,7 +74,7 @@ export function HomeSkeleton() {
           ))}
         </div>
       </div>
-    </div>
+    </RegionCargando>
   )
 }
 
@@ -78,7 +83,7 @@ export function HomeSkeleton() {
 // ─────────────────────────────────────────────
 export function MapasSkeleton() {
   return (
-    <div className="p-4 lg:p-8" role="status" aria-label="Cargando mapas...">
+    <RegionCargando etiqueta="Cargando mapas..." className="p-4 lg:p-8">
       <SkeletonPageHeader />
       <SkeletonFilterBar cols={4} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -97,7 +102,7 @@ export function MapasSkeleton() {
           </div>
         ))}
       </div>
-    </div>
+    </RegionCargando>
   )
 }
 
@@ -106,7 +111,7 @@ export function MapasSkeleton() {
 // ─────────────────────────────────────────────
 export function DocumentosSkeleton() {
   return (
-    <div className="p-4 lg:p-8" role="status" aria-label="Cargando documentos...">
+    <RegionCargando etiqueta="Cargando documentos..." className="p-4 lg:p-8">
       <SkeletonPageHeader />
       <SkeletonFilterBar cols={4} />
       <div className="space-y-3">
@@ -132,7 +137,7 @@ export function DocumentosSkeleton() {
           </div>
         ))}
       </div>
-    </div>
+    </RegionCargando>
   )
 }
 
@@ -141,7 +146,7 @@ export function DocumentosSkeleton() {
 // ─────────────────────────────────────────────
 export function HerramientasSkeleton() {
   return (
-    <div className="p-4 lg:p-8" role="status" aria-label="Cargando herramientas...">
+    <RegionCargando etiqueta="Cargando herramientas..." className="p-4 lg:p-8">
       <SkeletonPageHeader />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {Array.from({ length: 3 }, (_, i) => (
@@ -162,7 +167,7 @@ export function HerramientasSkeleton() {
           </div>
         ))}
       </div>
-    </div>
+    </RegionCargando>
   )
 }
 
@@ -171,7 +176,7 @@ export function HerramientasSkeleton() {
 // ─────────────────────────────────────────────
 export function SolicitudesSkeleton() {
   return (
-    <div className="p-4 lg:p-8" role="status" aria-label="Cargando solicitudes...">
+    <RegionCargando etiqueta="Cargando solicitudes..." className="p-4 lg:p-8">
       <SkeletonPageHeader />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {Array.from({ length: 3 }, (_, i) => (
@@ -194,7 +199,7 @@ export function SolicitudesSkeleton() {
           </div>
         ))}
       </div>
-    </div>
+    </RegionCargando>
   )
 }
 
@@ -203,7 +208,7 @@ export function SolicitudesSkeleton() {
 // ─────────────────────────────────────────────
 export function PerfilSkeleton() {
   return (
-    <div className="p-4 lg:p-8 max-w-3xl mx-auto space-y-6" role="status" aria-label="Cargando perfil...">
+    <RegionCargando etiqueta="Cargando perfil..." className="p-4 lg:p-8 max-w-3xl mx-auto space-y-6">
       <div className="space-y-2">
         <Skeleton className="h-3 w-32" />
         <Skeleton className="h-7 w-40" />
@@ -237,7 +242,7 @@ export function PerfilSkeleton() {
           </div>
         </div>
       ))}
-    </div>
+    </RegionCargando>
   )
 }
 
@@ -246,13 +251,13 @@ export function PerfilSkeleton() {
 // ─────────────────────────────────────────────
 export function GenericPageSkeleton() {
   return (
-    <div className="p-4 lg:p-8" role="status" aria-label="Cargando...">
+    <RegionCargando etiqueta="Cargando..." className="p-4 lg:p-8">
       <SkeletonPageHeader />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {Array.from({ length: 4 }, (_, i) => (
           <SkeletonCard key={i} />
         ))}
       </div>
-    </div>
+    </RegionCargando>
   )
 }

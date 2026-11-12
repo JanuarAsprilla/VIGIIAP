@@ -11,7 +11,7 @@ describe('Thumbnail — estado de carga', () => {
     const { container } = render(<Thumbnail src="https://x.test/a.jpg" alt="" />)
     const img = container.querySelector('img')!
     expect(img.className).toContain('opacity-0')
-    expect(container.querySelector('[aria-hidden="true"]')?.className).toContain('animate-pulse')
+    expect(container.querySelector('[aria-hidden="true"]')?.className).toContain('skeleton')
   })
 
   test('al terminar de cargar, la imagen pasa a opacity-100 y el skeleton desaparece', () => {
@@ -73,6 +73,6 @@ describe('Thumbnail — cambio de miniatura', () => {
     rerender(<Thumbnail src="https://x.test/b.jpg" alt="" />)
 
     expect(container.querySelector('img')!.className).toContain('opacity-0')
-    expect(container.querySelector('[aria-hidden="true"]')?.className).toContain('animate-pulse')
+    expect(container.querySelector('[aria-hidden="true"]')?.className).toContain('skeleton')
   })
 })

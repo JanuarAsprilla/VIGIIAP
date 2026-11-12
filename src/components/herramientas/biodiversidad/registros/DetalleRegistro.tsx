@@ -14,6 +14,7 @@ import type { Grupo, RegistroBiodiversidad, RegistroDetalle } from '../types'
 import { CreditoFoto, ImagenGbif } from './FotoRegistro'
 import { textoAlt } from './textoAlt'
 import UbicacionDetalle from './UbicacionDetalle'
+import { Skeleton, RegionCargando } from '@/components/ui/Skeleton'
 
 const ENLACE = { target: '_blank', rel: 'noopener noreferrer' } as const
 const FECHA = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
@@ -161,10 +162,10 @@ export default function DetalleRegistro({ grupo, gbifId, origen, onCerrar, onVer
         {consulta.isError ? (
           <PanelError error={consulta.error} onReintentar={() => void consulta.refetch()} compacto />
         ) : !r ? (
-          <div role="status" aria-label="Cargando el registro" className="bio-detalle-cuerpo animate-pulse">
-            <div className="bg-bg-alt rounded-xl aspect-[4/3]" />
-            <div className="space-y-3"><div className="h-5 bg-bg-alt rounded w-2/3" /><div className="h-24 bg-bg-alt rounded" /><div className="h-24 bg-bg-alt rounded" /></div>
-          </div>
+          <RegionCargando etiqueta="Cargando el registro" className="bio-detalle-cuerpo">
+            <Skeleton className="rounded-xl aspect-[4/3]" />
+            <div className="space-y-3"><Skeleton className="h-5 w-2/3 rounded" /><Skeleton className="h-24 rounded" /><Skeleton className="h-24 rounded" /></div>
+          </RegionCargando>
         ) : <Contenido r={r} onVerEnMapa={onVerEnMapa} />}
       </div>
     </div>,

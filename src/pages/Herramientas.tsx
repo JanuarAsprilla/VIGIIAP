@@ -14,12 +14,13 @@ import { registrarEvento } from '@/lib/analyticsEventos'
 import HerramientaLauncherCard  from '@/components/herramientas/HerramientaLauncherCard'
 import ResumenActividad        from '@/components/herramientas/ResumenActividad'
 import SolicitarHerramientaModal from '@/components/herramientas/SolicitarHerramientaModal'
+import { Skeleton, RegionCargando } from '@/components/ui/Skeleton'
 
 function GridSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-pulse" role="status" aria-label="Cargando herramientas">
-      {[0, 1, 2].map((i) => <div key={i} className="h-28 bg-bg-alt rounded-xl" />)}
-    </div>
+    <RegionCargando etiqueta="Cargando herramientas" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {[0, 1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+    </RegionCargando>
   )
 }
 
