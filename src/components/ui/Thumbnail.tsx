@@ -65,7 +65,7 @@ export default function Thumbnail({ src, alt, className = '', objectFit = 'cover
       )}
       {estado !== 'lista' && (
         <div
-          className={`absolute inset-0 flex items-center justify-center ${estado === 'cargando' ? 'animate-pulse bg-bg-alt' : 'bg-bg-alt'}`}
+          className={`absolute inset-0 flex items-center justify-center ${estado === 'cargando' ? 'skeleton' : 'bg-bg-alt'}`}
           aria-hidden="true"
         >
           {estado === 'error' && <ImageOff className="w-6 h-6 text-text-muted/40" />}
