@@ -21,6 +21,7 @@ import api from '@/lib/api'
 import { asApiError } from '@/lib/apiError'
 import Avatar from '@/components/ui/Avatar'
 import PrivacidadYDatos from '@/components/privacidad/PrivacidadYDatos'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 const fadeUp = fadeUpSm
 
@@ -440,7 +441,7 @@ function SesionesActivas() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-surface animate-pulse" />)}</div>
+        <div className="space-y-2">{[1, 2].map(i => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
       ) : sessions.length === 0 ? (
         <p className="text-sm text-text-muted text-center py-4">No hay sesiones activas</p>
       ) : (
