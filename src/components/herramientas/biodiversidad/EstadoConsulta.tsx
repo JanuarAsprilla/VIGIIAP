@@ -37,5 +37,5 @@ export function PanelVacio({ titulo, detalle }: { titulo: string; detalle: strin
 }
 
 export function Cargando({ etiqueta, className = '' }: { etiqueta: string; className?: string }) {
-  return <div role="status" aria-label={etiqueta} className={`animate-pulse bg-bg-alt rounded-xl ${className}`} />
+  return <div role="status" aria-label={etiqueta} className={`skeleton rounded-xl ${className}`} />
 }
