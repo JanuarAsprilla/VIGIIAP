@@ -21,6 +21,7 @@ import { MODULOS_CATALOGO, type ModuloClave, type PermisoModulo } from '@/lib/co
 import { GRUPOS_MODULOS, iconoDeModulo } from '@/lib/constants/modulosAgrupados'
 import { useToast, ToastContainer } from '@/components/Toast'
 import { USUARIOS_KEYS } from '@/hooks/useUsuarios'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 // ── API helpers ───────────────────────────────────────────────────────────────
 const fetchSuperStats  = () => api.get('/admin/super/stats')
@@ -336,7 +337,7 @@ function AdminTable({
     return (
       <div className="space-y-2">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-14 bg-bg-alt animate-pulse rounded-xl" />
+          <Skeleton key={i} className="h-14 rounded-xl" />
         ))}
       </div>
     )
