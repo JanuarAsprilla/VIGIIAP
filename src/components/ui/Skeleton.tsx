@@ -1,14 +1,27 @@
 /**
- * Skeleton — primitivo de carga.
- * Usa `aria-hidden="true"` porque es puramente decorativo.
+ * Esqueletos de carga: un solo estilo para toda la plataforma.
+ *
+ * El aspecto (relleno, brillo, claro y oscuro, «reducir animaciones») vive en index.css, en la clase `.skeleton` y los tokens
+ * `--skeleton-base` y `--skeleton-brillo`. Aquí solo están las piezas: bloques sueltos, composiciones comunes y el contenedor
+ * accesible. Una pantalla de carga nueva se arma con estas piezas; no se pinta a mano con `animate-pulse` ni con un gris propio.
  */
+import type { ReactNode } from 'react'
 
-export function Skeleton({ className = '' }) {
+/** Bloque de carga. Es decorativo (`aria-hidden`): el estado lo anuncia el contenedor, ver `RegionCargando`. */
+export function Skeleton({ className = '' }: { className?: string }) {
+  return <div aria-hidden="true" className={`skeleton rounded-lg ${className}`} />
+}
+
+/**
+ * Contenedor de una pantalla o zona que está cargando: anuncia «Cargando…» a los lectores de pantalla y marca la zona como
+ * ocupada. Los bloques de dentro son decorativos.
+ */
+export function RegionCargando({ etiqueta, className = '', children }: { etiqueta: string; className?: string; children: ReactNode }) {
   return (
-    <div
-      aria-hidden="true"
-      className={`animate-pulse bg-border rounded-lg ${className}`}
-    />
+    <div role="status" aria-busy="true" aria-label={etiqueta} className={className}>
+      <span className="sr-only">{etiqueta}</span>
+      {children}
+    </div>
   )
 }
 
@@ -25,7 +38,7 @@ export function SkeletonText({ lines = 3, className = '' }) {
 
 export function SkeletonCard({ className = '' }) {
   return (
-    <div className={`bg-white border border-border rounded-2xl p-5 space-y-3 ${className}`} aria-hidden="true">
+    <div className={`bg-[var(--card-bg)] border border-border rounded-2xl p-5 space-y-3 ${className}`} aria-hidden="true">
       <div className="flex items-center gap-3">
         <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
         <div className="flex-1 space-y-2">
@@ -41,8 +54,7 @@ export function SkeletonCard({ className = '' }) {
 /** Lista de tarjetas-fila (icono, dos líneas y una etiqueta) mientras cargan listados de administración. */
 export function SkeletonLista({ filas = 5, className = '' }: { filas?: number; className?: string }) {
   return (
-    <div role="status" aria-busy="true" className={`space-y-3 ${className}`}>
-      <span className="sr-only">Cargando…</span>
+    <RegionCargando etiqueta="Cargando…" className={`space-y-3 ${className}`}>
       {Array.from({ length: filas }, (_, i) => (
         <div key={i} aria-hidden="true" className="flex items-center gap-4 bg-[var(--card-bg)] border border-border/70 rounded-xl p-4">
           <Skeleton className="w-11 h-11 rounded-xl shrink-0" />
@@ -53,7 +65,7 @@ export function SkeletonLista({ filas = 5, className = '' }: { filas?: number; c
           <Skeleton className="hidden sm:block h-6 w-20 rounded-full shrink-0" />
         </div>
       ))}
-    </div>
+    </RegionCargando>
   )
 }
 
