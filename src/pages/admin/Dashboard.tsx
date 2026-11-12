@@ -28,6 +28,7 @@ import {
 import { useUsuariosList } from '@/hooks/useUsuarios'
 import { useAuditLog, MODULO_STYLES } from '@/hooks/useAuditLog'
 import { ROLES } from '@/lib/constants/roles'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 const fadeUp = fadeUpSm
 
@@ -110,7 +111,7 @@ function TraficoUso() {
       </div>
       {isLoading && (
         <div className="h-[200px] flex items-center justify-center">
-          <span className="inline-block w-32 h-6 bg-bg-alt rounded animate-pulse" />
+          <Skeleton className="inline-block w-32 h-6 rounded" />
         </div>
       )}
       {isError && (
@@ -180,7 +181,7 @@ function SaludSistema() {
       </div>
       <div className="flex-1 flex flex-col items-center justify-center text-center py-2">
         {isLoading ? (
-          <span className="inline-block w-24 h-6 bg-bg-alt rounded animate-pulse" />
+          <Skeleton className="inline-block w-24 h-6 rounded" />
         ) : isError ? (
           <p className="text-xs text-red-500">No se pudo verificar</p>
         ) : ok ? (

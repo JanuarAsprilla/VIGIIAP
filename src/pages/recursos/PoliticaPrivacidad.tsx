@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
 import Card3D from '@/components/ui/Card3D'
 import api from '@/lib/api'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 const POLITICA_PRIVACIDAD_FALLBACK = `En cumplimiento de la Ley 1581 de 2012 y el Decreto 1377 de 2013 de la República de Colombia, el IIAP informa lo siguiente sobre el tratamiento de sus datos personales:
 
@@ -61,10 +62,10 @@ export default function PoliticaPrivacidad() {
       >
         <div className="prose prose-sm max-w-none space-y-5 text-text-light leading-relaxed">
           {isLoading ? (
-            <div className="space-y-2 animate-pulse" aria-hidden="true">
-              <div className="h-3 bg-bg-alt rounded w-full" />
-              <div className="h-3 bg-bg-alt rounded w-11/12" />
-              <div className="h-3 bg-bg-alt rounded w-4/5" />
+            <div className="space-y-2" aria-hidden="true">
+              <Skeleton className="h-3 w-full rounded" />
+              <Skeleton className="h-3 w-11/12 rounded" />
+              <Skeleton className="h-3 w-4/5 rounded" />
             </div>
           ) : (
             parrafos.map((parrafo, i) => <p key={i}>{parrafo}</p>)

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import Card3D from '@/components/ui/Card3D'
 import api from '@/lib/api'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 const TERMINOS_USO_FALLBACK = `Al acceder y utilizar la plataforma VIGIA-IIAP del Instituto de Investigaciones Ambientales del Pacífico (IIAP), usted acepta cumplir con estos términos y condiciones de uso. Si no está de acuerdo, le solicitamos abstenerse de utilizar el sistema.
 
@@ -52,10 +53,10 @@ export default function Terminos() {
       >
         <div className="prose prose-sm max-w-none space-y-5 text-text-light leading-relaxed">
           {isLoading ? (
-            <div className="space-y-2 animate-pulse" aria-hidden="true">
-              <div className="h-3 bg-bg-alt rounded w-full" />
-              <div className="h-3 bg-bg-alt rounded w-11/12" />
-              <div className="h-3 bg-bg-alt rounded w-4/5" />
+            <div className="space-y-2" aria-hidden="true">
+              <Skeleton className="h-3 w-full rounded" />
+              <Skeleton className="h-3 w-11/12 rounded" />
+              <Skeleton className="h-3 w-4/5 rounded" />
             </div>
           ) : (
             parrafos.map((parrafo, i) => <p key={i}>{parrafo}</p>)
