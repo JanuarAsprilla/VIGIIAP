@@ -35,7 +35,7 @@ export default function AcercaDatos({ estado, error, cargando, onReintentar }: P
           <ChevronDown className="w-5 h-5 text-text-muted transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
         </summary>
         <div className="px-4 sm:px-5 pb-5 space-y-5">
-          {cargando && <div role="status" aria-label="Cargando información de las fuentes" className="h-24 rounded-xl bg-bg-alt animate-pulse" />}
+          {cargando && <div role="status" aria-label="Cargando información de las fuentes" className="skeleton h-24 rounded-xl" />}
           {!cargando && !estado && <PanelError error={error} onReintentar={onReintentar} compacto />}
           {estado && (
             <>
