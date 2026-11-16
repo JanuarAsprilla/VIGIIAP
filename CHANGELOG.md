@@ -6,6 +6,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.12.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.11.0...v1.12.0) (2026-11-12)
+
+
+### Features
+
+* **biodiversidad:** panel de filtros abierto al entrar y secciones recogidas ([#376](https://github.com/JanuarAsprilla/VIGIIAP/issues/376)) ([f0cdec0](https://github.com/JanuarAsprilla/VIGIIAP/commit/f0cdec07aed00401f5a98909f5dad6d6736cfe9a))
+* **informes:** botón Descargar informe en Biodiversidad (PDF, Excel, CSV) ([#382](https://github.com/JanuarAsprilla/VIGIIAP/issues/382)) ([1affafa](https://github.com/JanuarAsprilla/VIGIIAP/commit/1affafa6fff5ea358eeaeb7eb58bb43143aa2810))
+* **informes:** el Excel y el CSV de Biodiversidad llevan los registros individuales ([#383](https://github.com/JanuarAsprilla/VIGIIAP/issues/383)) ([1424084](https://github.com/JanuarAsprilla/VIGIIAP/commit/1424084c3ac399c73a1193afee89a9dc6077d027))
+* **informes:** módulo Informes descargables en el panel de administración ([#380](https://github.com/JanuarAsprilla/VIGIIAP/issues/380)) ([bc73d91](https://github.com/JanuarAsprilla/VIGIIAP/commit/bc73d91f0b16f3911695803c6641a747ca564f84))
+
 ## [1.11.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.10.0...v1.11.0) (2026-11-09)
 
 
