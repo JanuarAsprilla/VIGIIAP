@@ -29,6 +29,11 @@ export function entero(valor: string | null, min: number, max: number): number |
   return n >= min && n <= max ? n : null
 }
 
+/** Texto con el que se buscan opciones de un filtro: solo lo que la API admite (letras, números, espacios y . ' ( ) -). */
+export function sanearTextoOpciones(valor: string): string {
+  return valor.replace(/[^\p{L}\p{N}\p{M} .'()-]/gu, '').trim()
+}
+
 /** Texto de búsqueda: 2 a 60 caracteres, sin caracteres de control. */
 export function sanearBusqueda(valor: string | null): string {
   if (!valor) return ''

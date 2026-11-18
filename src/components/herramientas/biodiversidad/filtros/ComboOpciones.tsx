@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useBiodiversidadOpciones } from '@/hooks/useBiodiversidad'
 import { useDebounced } from '@/hooks/useDebounced'
 import { fmtNum } from '../lib/format'
+import { sanearTextoOpciones } from '../lib/parametros'
 import type { CampoOpciones, Grupo, OpcionFiltro, ParamsApi } from '../types'
 import Combobox, { type OpcionCombo } from './Combobox'
 
@@ -21,15 +22,13 @@ interface Props {
   onLimpiar: () => void
 }
 
-const SOLO_LETRAS = /[^\p{L}\p{M}\s]/gu
-
 /** Combobox cuyas opciones vienen de `/opciones`. Solo consulta mientras la lista está abierta, con espera al escribir. */
 export default function ComboOpciones({
   grupo, campo, etiqueta, params, seleccion, placeholder, deshabilitado, motivo, etiquetar, onElegir, onLimpiar,
 }: Props) {
   const [abierto, setAbierto] = useState(false)
   const [texto, setTexto] = useState('')
-  const buscado = useDebounced(texto.replace(SOLO_LETRAS, '').trim(), 300)
+  const buscado = useDebounced(sanearTextoOpciones(texto), 300)
   const consulta = useBiodiversidadOpciones(
     grupo, campo, buscado.length >= 2 ? { ...params, buscar: buscado } : params, abierto && !deshabilitado,
   )

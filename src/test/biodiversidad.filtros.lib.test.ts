@@ -5,7 +5,7 @@ import {
 import { alCambiarGrupo, aplicabilidad, especiesSinCruce, reconciliar } from '@/components/herramientas/biodiversidad/lib/aplicabilidad'
 import { paramsApi, paramsSugerencias } from '@/components/herramientas/biodiversidad/lib/paramsApi'
 import { chipsActivos, textoResumen } from '@/components/herramientas/biodiversidad/lib/chips'
-import { actualizarParametros } from '@/components/herramientas/biodiversidad/lib/parametros'
+import { actualizarParametros, sanearTextoOpciones } from '@/components/herramientas/biodiversidad/lib/parametros'
 import {
   bboxATexto, mensajeMuestra, mensajeOcultos, puntosDibujables, redondearBbox, ubicacionPublica,
 } from '@/components/herramientas/biodiversidad/lib/puntos'
@@ -205,5 +205,17 @@ describe('especiesSinCruce', () => {
     expect(especiesSinCruce('agregado', f())).toBe(false)
     expect(especiesSinCruce('agregado', f({ familia: 'Tyrannidae' }))).toBe(false)
     expect(especiesSinCruce('individual', f({ entidad: UUID }))).toBe(false)
+  })
+})
+
+describe('sanearTextoOpciones (búsqueda dentro de las listas de filtro)', () => {
+  test('conserva guiones, números, paréntesis y apóstrofos que la API sí admite', () => {
+    expect(sanearTextoOpciones('Research-grade')).toBe('Research-grade')
+    expect(sanearTextoOpciones('GBIF 2020 (Colombia)')).toBe('GBIF 2020 (Colombia)')
+    expect(sanearTextoOpciones("O'Brien")).toBe("O'Brien")
+  })
+
+  test('descarta lo que la API rechazaría y recorta los espacios', () => {
+    expect(sanearTextoOpciones('  bio<script>%;  ')).toBe('bioscript')
   })
 })
