@@ -30,7 +30,7 @@ export default function TarjetaEspecie({ e, grupo, esIndividual, onVerRegistros,
           foto={foto} grupo={grupo} ancho={480} alt={`Fotografía representativa de ${e.especie}`} proporcion={esIndividual || foto ? undefined : PROPORCION_SIN_FOTOS}
           sinFotoTexto={esIndividual ? 'Aún sin fotografía' : undefined}
         />
-        {fotos > 1 && <span className="bio-tarjeta-fotos" aria-label={`${fotos} fotografías`}>{fotos} fotos</span>}
+        {fotos > 1 && <span className="bio-tarjeta-fotos">{fotos} fotos</span>}
       </div>
       <div className="bio-tarjeta-cuerpo">
         <h4 className="bio-tarjeta-nombre"><i>{e.especie}</i></h4>

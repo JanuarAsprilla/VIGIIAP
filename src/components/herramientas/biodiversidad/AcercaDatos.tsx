@@ -50,7 +50,7 @@ export default function AcercaDatos({ estado, error, cargando, onReintentar }: P
                   <h3 className="bio-eyebrow mt-4 mb-2">Fotografías</h3>
                   <p className="text-sm text-text-light leading-relaxed">
                     Las fotografías se cargan desde GBIF y pertenecen a sus autores: cada una se muestra con su autoría y licencia.
-                    Es la única excepción a que esta herramienta no use servicios externos; las imágenes no se descargan ni se almacenan aquí.
+                    Son lo único que se pide a un servicio externo: las imágenes no se descargan ni se almacenan aquí.
                   </p>
                   <h3 className="bio-eyebrow mt-4 mb-2">Cruce con listas de conservación</h3>
                   <p className="text-sm text-text-light">

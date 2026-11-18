@@ -15,7 +15,7 @@ const COLUMNAS: { clave: ColumnaMunicipios; titulo: string; numerica: boolean }[
   { clave: 'departamento', titulo: 'Departamento', numerica: false },
   { clave: 'registros', titulo: 'Registros', numerica: true },
   { clave: 'especies', titulo: 'Especies', numerica: true },
-  { clave: 'sin_especie', titulo: 'Sin especie', numerica: true },
+  { clave: 'sin_especie', titulo: 'Sin especie (%)', numerica: true },
 ]
 
 export default function TablaMunicipios({ municipios, seleccionado, onSeleccionar }: Props) {
@@ -31,7 +31,7 @@ export default function TablaMunicipios({ municipios, seleccionado, onSelecciona
   return (
     <div className="bio-tabla-caja" data-lenis-prevent tabIndex={0} role="region" aria-label="Tabla de municipios, desplazable">
       <table className="bio-tabla">
-        <caption className="sr-only">Registros y especies por municipio. Activa un encabezado para ordenar.</caption>
+        <caption className="sr-only">Registros y especies por municipio. Activa un encabezado para ordenar. La columna «Sin especie» muestra la cantidad y su porcentaje, y ordena por porcentaje.</caption>
         <thead>
           <tr>
             {COLUMNAS.map((c) => (

@@ -1,5 +1,7 @@
-import type { Metrica } from './metrica'
+import type { MunicipioConteo } from '../types'
 import { fmtNum } from './format'
+import { valorMetrica, type Metrica } from './metrica'
+import { MIN_REGISTROS_PORCENTAJE } from './ranking'
 
 export const NUM_CLASES = 5
 
@@ -15,6 +17,14 @@ export function calcularCortes(valores: number[], clases = NUM_CLASES): number[]
     if (corte < pos[pos.length - 1] && (cortes.length === 0 || corte > cortes[cortes.length - 1])) cortes.push(corte)
   }
   return cortes
+}
+
+/** Valores que definen cortes y máximo: el porcentaje exige el mismo mínimo de registros que el ranking. */
+export function valoresDeEscala(municipios: MunicipioConteo[], metrica: Metrica): number[] {
+  return municipios
+    .filter((m) => metrica !== 'sin_especie' || m.registros >= MIN_REGISTROS_PORCENTAJE)
+    .map((m) => valorMetrica(m, metrica))
+    .filter((v): v is number => v !== null)
 }
 
 /** 0 = sin datos; 1..n = clase por cortes. Un valor 0 con datos (p. ej. 0 % sin especie) cae en la clase 1. */
@@ -41,10 +51,12 @@ export function tramosLeyenda(cortes: number[], maximo: number, entero = true): 
   }))
 }
 
-export function etiquetaTramo(t: TramoLeyenda, metrica: Metrica): string {
+/** En porcentajes el valor del corte pertenece al tramo inferior, así que los superiores se rotulan «más de». */
+export function etiquetaTramo(t: TramoLeyenda, metrica: Metrica, esUltimo = false): string {
   if (metrica === 'sin_especie') {
     const f = (n: number) => n.toLocaleString('es-CO', { maximumFractionDigits: 1 })
-    return `${f(t.desde)} – ${f(t.hasta)} %`
+    if (t.clase === 1) return `${f(t.desde)} – ${f(t.hasta)} %`
+    return esUltimo ? `más de ${f(t.desde)} %` : `más de ${f(t.desde)} hasta ${f(t.hasta)} %`
   }
   return t.desde === t.hasta ? fmtNum(t.hasta) : `${fmtNum(t.desde)} – ${fmtNum(t.hasta)}`
 }

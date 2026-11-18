@@ -138,11 +138,16 @@ function Contenido({ r, onVerEnMapa }: { r: RegistroDetalle; onVerEnMapa?: (r: R
   )
 }
 
+/** Si el botón que abrió el detalle desapareció (popup retirado al recargar), el foco vuelve al interruptor de puntos o al mapa. */
+function focoRespaldoMapa(): HTMLElement | null {
+  return document.querySelector<HTMLElement>('#bio-mapa-seccion .bio-interruptor, #bio-mapa-seccion .bio-mapa-caja')
+}
+
 /** Diálogo modal accesible: foco atrapado, Escape cierra y el foco vuelve a la tarjeta que lo abrió. */
 export default function DetalleRegistro({ grupo, gbifId, origen, onCerrar, onVerEnMapa }: Props) {
   const titulo = useId()
   const consulta = useBiodiversidadRegistro(grupo, gbifId)
-  const { caja, alTeclear } = useDialogoModal(origen, onCerrar)
+  const { caja, alTeclear } = useDialogoModal(origen, onCerrar, focoRespaldoMapa)
 
   const r = consulta.data
   return createPortal(

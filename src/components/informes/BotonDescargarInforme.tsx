@@ -17,25 +17,46 @@ interface Props {
    */
   construir: (maxFilas: number, signal: AbortSignal, formato: FormatoDescarga) => Promise<DatosInforme>
   className?: string
+  /** Mientras los datos del tablero se actualizan, el informe saldría con los de la consulta anterior. */
+  bloqueado?: boolean
 }
 
 /**
  * Botón «Descargar informe». Lo que ofrece lo decide el servidor (Administración → Informes): se oculta si la herramienta no
  * tiene informe, invita a iniciar sesión si así está configurado y ofrece solo los formatos habilitados.
  */
-export default function BotonDescargarInforme({ herramienta, construir, className = 'bio-boton' }: Props) {
+export default function BotonDescargarInforme({ herramienta, construir, className = 'bio-boton', bloqueado = false }: Props) {
   const { data: config } = useConfiguracionInforme(herramienta)
   const navigate = useNavigate()
   const location = useLocation()
   const idMenu = useId()
   const contenedor = useRef<HTMLDivElement>(null)
   const disparador = useRef<HTMLButtonElement>(null)
+  const botonCancelar = useRef<HTMLButtonElement>(null)
+  const estabaOcupado = useRef(false)
   const cancelar = useRef<AbortController | null>(null)
   const [abierto, setAbierto] = useState(false)
   const [generando, setGenerando] = useState<FormatoDescarga | null>(null)
   const [mensaje, setMensaje] = useState<{ texto: string; error: boolean } | null>(null)
 
   useEffect(() => () => cancelar.current?.abort(), [])
+
+  // El foco no se pierde cuando el menú se cierra ni cuando el botón principal se deshabilita: pasa a «Cancelar» y vuelve al terminar.
+  useEffect(() => {
+    if (generando) {
+      estabaOcupado.current = true
+      botonCancelar.current?.focus()
+    } else if (estabaOcupado.current) {
+      estabaOcupado.current = false
+      disparador.current?.focus()
+    }
+  }, [generando])
+
+  const cancelarDescarga = useCallback(() => {
+    cancelar.current?.abort()
+    setGenerando(null)
+    setMensaje({ texto: 'Descarga cancelada.', error: false })
+  }, [])
 
   useEffect(() => {
     if (!abierto) return
@@ -99,13 +120,18 @@ export default function BotonDescargarInforme({ herramienta, construir, classNam
 
   return (
     <div ref={contenedor} className="relative inline-flex flex-col items-start gap-1" onKeyDown={alTeclear}>
-      <button ref={disparador} type="button" className={className} disabled={ocupado}
+      <button ref={disparador} type="button" className={className} disabled={ocupado || bloqueado}
         aria-haspopup={unico ? undefined : 'menu'} aria-expanded={unico ? undefined : abierto} aria-controls={unico ? undefined : idMenu}
         onClick={() => (unico ? void descargar(unico) : setAbierto((v) => !v))}>
         {ocupado ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <IconoPrincipal className="w-4 h-4" aria-hidden="true" />}
-        {ocupado ? 'Preparando informe…' : unico ? `Descargar informe (${NOMBRE_FORMATO[unico]})` : 'Descargar informe'}
-        {!unico && !ocupado && <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />}
+        {ocupado ? 'Preparando informe…' : bloqueado ? 'Actualizando datos…' : unico ? `Descargar informe (${NOMBRE_FORMATO[unico]})` : 'Descargar informe'}
+        {!unico && !ocupado && !bloqueado && <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />}
       </button>
+      {ocupado && (
+        <button ref={botonCancelar} type="button" className="text-xs underline underline-offset-2 text-text-muted hover:text-text" onClick={cancelarDescarga}>
+          Cancelar
+        </button>
+      )}
       {abierto && !unico && (
         <ul id={idMenu} role="menu" aria-label="Formato del informe"
           className="absolute left-0 top-full mt-1 z-30 min-w-[12rem] rounded-xl border border-border bg-surface p-1 shadow-lg">

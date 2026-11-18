@@ -11,6 +11,6 @@ export function urlRegistroGbif(id: string | null): string | null {
 export function urlDoi(doi: string | null): string | null {
   if (!doi) return null
   const limpio = doi.trim()
-  if (!PATRON_DOI.test(limpio)) return null
+  if (!PATRON_DOI.test(limpio) || limpio.includes('..')) return null
   return `https://doi.org/${limpio.split('/').map(encodeURIComponent).join('/')}`
 }

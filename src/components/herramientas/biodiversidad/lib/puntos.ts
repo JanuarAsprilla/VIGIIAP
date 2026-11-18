@@ -2,7 +2,7 @@ import type { PuntoMapa, RegistroBiodiversidad } from '../types'
 import { fmtNum } from './format'
 
 /** Recuadro aproximado del Chocó biogeográfico y alrededores: descarta coordenadas absurdas. */
-const LIMITES = { minLat: -5, maxLat: 14, minLon: -83, maxLon: -66 }
+export const LIMITES = { minLat: -5, maxLat: 14, minLon: -83, maxLon: -66 }
 
 export interface Ubicacion { lat: number; lon: number }
 
@@ -40,10 +40,8 @@ export function bboxATexto(b: Bbox): string {
   return b.join(',')
 }
 
-export function mensajeOcultos(n: number): string | null {
-  if (n <= 0) return null
-  return `${fmtNum(n)} ${n === 1 ? 'registro' : 'registros'} de especies amenazadas o sin determinar no ${n === 1 ? 'muestra' : 'muestran'} su ubicación para protegerlas.`
-}
+/** Texto fijo: el conteo de reservadas cambia con el recuadro y permitiría deducir dónde están. */
+export const MENSAJE_RESERVADAS = 'Hay ubicaciones reservadas: los registros de especies amenazadas o sin determinar no muestran su posición para protegerlas.'
 
 export function mensajeMuestra(mostrados: number, total: number): string {
   return `Mostrando una muestra de ${fmtNum(mostrados)} de ${fmtNum(total)} registros con ubicación visible. Acerca el mapa o añade filtros para ver el resto.`
