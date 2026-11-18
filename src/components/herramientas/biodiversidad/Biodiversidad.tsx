@@ -234,7 +234,7 @@ export default function Biodiversidad() {
       />
       {t.avisoCambio && <AvisoFiltros titulo={t.avisoCambio.titulo} elementos={t.avisoCambio.elementos} onCerrar={t.cerrarAviso} />}
       {!t.avisoCambio && t.descartados.length > 0 && (
-        <AvisoFiltros titulo={`No aplican a ${NOMBRES_GRUPO[p.grupo]} y se ignoran:`} elementos={t.descartados} onCerrar={t.limpiar} />
+        <AvisoFiltros titulo={`No aplican a ${NOMBRES_GRUPO[p.grupo]} y se ignoran:`} elementos={t.descartados} onCerrar={t.limpiarDescartados} />
       )}
 
       <div className={`bio-con-filtros ${ancho && panelAbierto ? 'bio-con-filtros-abierto' : ''}`}>

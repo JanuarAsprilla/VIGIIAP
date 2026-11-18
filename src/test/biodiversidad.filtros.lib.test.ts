@@ -5,7 +5,7 @@ import {
 import { alCambiarGrupo, aplicabilidad, especiesSinCruce, reconciliar } from '@/components/herramientas/biodiversidad/lib/aplicabilidad'
 import { paramsApi, paramsSugerencias } from '@/components/herramientas/biodiversidad/lib/paramsApi'
 import { chipsActivos, textoResumen } from '@/components/herramientas/biodiversidad/lib/chips'
-import { actualizarParametros, sanearTextoOpciones } from '@/components/herramientas/biodiversidad/lib/parametros'
+import { actualizarParametros, leerParametros, sanearTextoOpciones } from '@/components/herramientas/biodiversidad/lib/parametros'
 import {
   bboxATexto, mensajeMuestra, mensajeOcultos, puntosDibujables, redondearBbox, ubicacionPublica,
 } from '@/components/herramientas/biodiversidad/lib/puntos'
@@ -52,6 +52,25 @@ describe('estado de filtros en la URL', () => {
     const url = actualizarParametros(new URLSearchParams('grupo=aves&familia=X1&municipio=05837&departamento=Antioquia'), QUITAR_TODOS)
     expect([...url.keys()]).toEqual(['grupo'])
     expect(contarFiltros(f({ municipio: '05837', departamento: 'Antioquia', familia: 'Hylidae', conFoto: true }))).toBe(4)
+  })
+})
+
+describe('hallazgos de la auditoría: filtros y parámetros', () => {
+  test('/opciones no recibe la búsqueda por nombre de especie: ahí `buscar` filtra las etiquetas de las listas', () => {
+    for (const metodo of ['individual', 'agregado'] as const) {
+      expect(paramsApi('opciones', f({ buscar: 'Pristimantis' }), metodo)).not.toHaveProperty('buscar')
+      expect(paramsApi('especies', f({ buscar: 'Pristimantis' }), metodo)).toHaveProperty('buscar', 'Pristimantis')
+    }
+    expect(paramsApi('opciones', f({ buscar: 'Pristimantis', especie: 'K1' }), 'individual')).toMatchObject({ especie_clave: 'K1' })
+  })
+
+  test('un rango de años invertido en la URL se ordena en vez de provocar un 422', () => {
+    expect(leerFiltros(new URLSearchParams('anio_desde=2020&anio_hasta=2010'))).toMatchObject({ anioDesde: 2010, anioHasta: 2020 })
+    expect(leerFiltros(new URLSearchParams('anio_desde=2010&anio_hasta=2020'))).toMatchObject({ anioDesde: 2010, anioHasta: 2020 })
+  })
+
+  test('la página de la URL nunca supera lo que la API deja paginar', () => {
+    expect(leerParametros(new URLSearchParams('pagina=900')).pagina).toBeLessThanOrEqual(416)
   })
 })
 

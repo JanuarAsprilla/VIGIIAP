@@ -60,6 +60,14 @@ describe('CSV', () => {
     expect(lineas).toContain('# DOI: 10.15468/example')
   })
 
+  test('si la tabla principal está recortada, la nota queda como comentario (el CSV no puede parecer completo)', async () => {
+    const d = datos({
+      secciones: [{ titulo: 'T', tablas: [{ titulo: 'T', columnas: ['a'], filas: [['x']], nota: 'Se incluyen las 300 especies con más registros de 1.480.' }] }],
+    })
+    const lineas = (await texto(generarCsv(d))).slice(1).split('\r\n')
+    expect(lineas).toContain('# Nota: Se incluyen las 300 especies con más registros de 1.480.')
+  })
+
   test('escapa comillas, comas y saltos de línea, y neutraliza las fórmulas', async () => {
     const d = datos({
       secciones: [{ titulo: 'T', tablas: [{ titulo: 'T', columnas: ['a', 'b'], filas: [['dice "hola", ok', '=SUMA(A1)'], ['+cmd', 'línea\nnueva'], [-5, 7]] }] }],

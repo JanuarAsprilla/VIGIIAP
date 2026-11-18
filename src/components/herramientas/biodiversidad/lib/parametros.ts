@@ -51,7 +51,8 @@ export function leerParametros(p: URLSearchParams): ParametrosVista {
   const ordenar = p.get('ordenar') ?? p.get('orden')
   return {
     grupo: esGrupo(grupo) ? grupo : GRUPO_INICIAL,
-    pagina: entero(p.get('pagina'), 1, MAX_REGISTROS_CONSULTABLES / 10) ?? 1,
+    // Tope de la página más corta: pagina × tamaño no puede pasar de MAX_REGISTROS_CONSULTABLES (24 por página → 416).
+    pagina: entero(p.get('pagina'), 1, Math.floor(MAX_REGISTROS_CONSULTABLES / TAMANO_PAGINA)) ?? 1,
     vista: (VISTAS as readonly string[]).includes(vista ?? '') ? (vista as Vista) : null,
     metrica: esMetrica(metrica) ? metrica : METRICA_INICIAL,
     modo: p.get('modo') === 'tabla' ? 'tabla' : 'tarjetas',

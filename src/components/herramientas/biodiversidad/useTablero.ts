@@ -75,6 +75,8 @@ export function useTablero() {
   }, [busqueda, setBusqueda])
 
   const limpiar = useCallback(() => cambiar({ ...QUITAR_TODOS }), [cambiar])
+  // Cerrar el aviso de filtros que no aplican quita solo esos filtros de la URL, no los que sí están en uso.
+  const limpiarDescartados = useCallback(() => cambiar({ ...reconciliado.limpieza }), [cambiar, reconciliado])
 
   const cambiarGrupo = useCallback((g: Grupo) => {
     const nuevo = estado.data?.grupos.find((x) => x.grupo === g)?.metodo ?? METODO_DE_GRUPO[g]
@@ -91,6 +93,6 @@ export function useTablero() {
   return {
     p, filtros, apl, metodo, esIndividual, info, estado, munQ, mun, municipios, datos, cortes, maximo, indicadores, ranking,
     municipioSel, deptoSel, deptoActivo, nombreAlcance, chips, resumen, descartados: reconciliado.descartados,
-    avisoCambio, cerrarAviso: () => setAvisoCambio(null), cambiar, limpiar, cambiarGrupo,
+    avisoCambio, cerrarAviso: () => setAvisoCambio(null), cambiar, limpiar, limpiarDescartados, cambiarGrupo,
   }
 }
