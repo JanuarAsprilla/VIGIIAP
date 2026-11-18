@@ -179,6 +179,15 @@ function fuente(e: EntradaInforme): string[] {
   ]
 }
 
+/** Territorio y filtros en el nombre del archivo: dos informes del mismo día con filtros distintos no se pisan. */
+function sufijoArchivo(e: EntradaInforme): string {
+  const territorio = e.territorio?.municipio ?? e.territorio?.departamento ?? null
+  const huella = e.filtros.length === 0 ? null : e.filtros.join('|')
+  let h = 5381
+  for (const c of huella ?? '') h = (Math.imul(h, 33) + c.charCodeAt(0)) >>> 0
+  return [territorio, huella && h.toString(36)].filter((p): p is string => Boolean(p)).join('-')
+}
+
 const delTerritorio = (e: EntradaInforme): MunicipioConteo[] =>
   municipiosEnTerritorio(e.ranking, e.territorio?.municipio ?? null, e.territorio?.departamento ?? null)
 
@@ -199,7 +208,7 @@ export function construirInforme(e: EntradaInforme): DatosInforme {
       ...(e.registros ? [{ titulo: 'Registros individuales', tablas: [tablaRegistros(e.registros, e.resumen.registros)] }] : []),
     ],
     fuente: fuente(e),
-    nombreArchivo: `informe-biodiversidad-${e.grupo}-${dia}`,
+    nombreArchivo: ['informe-biodiversidad', e.grupo, dia, sufijoArchivo(e)].filter(Boolean).join('-'),
   }
 }
 

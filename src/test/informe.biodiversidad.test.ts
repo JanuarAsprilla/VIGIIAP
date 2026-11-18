@@ -50,8 +50,19 @@ describe('construirInforme', () => {
     expect(d.titulo).toBe('Observatorio de Biodiversidad - Aves')
     expect(d.subtitulo).toBe('Registros de ocurrencia por municipio')
     expect(d.filtros).toEqual(['Grupo: Aves', 'Familia: Tyrannidae'])
-    expect(d.nombreArchivo).toBe('informe-biodiversidad-aves-2026-11-11')
+    expect(d.nombreArchivo).toMatch(/^informe-biodiversidad-aves-2026-11-11-[a-z0-9]+$/)
     expect(d.secciones.map((s) => s.titulo)).toEqual(['Cifras clave', 'Territorio', 'Especies'])
+  })
+
+  test('el nombre del archivo distingue territorio y filtros; sin ninguno queda limpio', () => {
+    const nombre = (extra: Partial<EntradaInforme>) => construirInforme(entrada(extra)).nombreArchivo
+    expect(nombre({ filtros: [] })).toBe('informe-biodiversidad-aves-2026-11-11')
+    expect(nombre({ filtros: [], territorio: { municipio: '27001', departamento: 'Chocó' } })).toBe('informe-biodiversidad-aves-2026-11-11-27001')
+    expect(nombre({ filtros: [], territorio: { municipio: null, departamento: 'Chocó' } })).toBe('informe-biodiversidad-aves-2026-11-11-Chocó')
+    const a = nombre({ filtros: ['Familia: Tyrannidae'] })
+    const b = nombre({ filtros: ['Familia: Trochilidae'] })
+    expect(a).not.toBe(b)
+    expect(nombre({ filtros: ['Familia: Tyrannidae'] })).toBe(a)
   })
 
   test('las cifras salen formateadas y las que no se calculan lo dicen', () => {

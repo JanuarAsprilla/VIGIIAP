@@ -6,6 +6,8 @@ export interface Indicadores {
   totalMunicipios: number
   departamentos: number
   sinEspecie: number
+  /** Registros de los municipios que sí informan `sin_especie`: el denominador del porcentaje. */
+  registrosConDato: number
 }
 
 export interface ResumenDepartamento {
@@ -14,22 +16,27 @@ export interface ResumenDepartamento {
   municipiosConRegistros: number
   totalMunicipios: number
   sinEspecie: number
+  registrosConDato: number
 }
 
 export function calcularIndicadores(municipios: MunicipioConteo[]): Indicadores {
   const deptos = new Set<string>()
   let registros = 0
   let sinEspecie = 0
+  let registrosConDato = 0
   let conRegistros = 0
   for (const m of municipios) {
     registros += m.registros
-    sinEspecie += m.sin_especie ?? 0
+    if (m.sin_especie !== null) {
+      sinEspecie += m.sin_especie
+      registrosConDato += m.registros
+    }
     if (m.registros > 0) {
       conRegistros += 1
       deptos.add(m.departamento)
     }
   }
-  return { registros, municipiosConRegistros: conRegistros, totalMunicipios: municipios.length, departamentos: deptos.size, sinEspecie }
+  return { registros, municipiosConRegistros: conRegistros, totalMunicipios: municipios.length, departamentos: deptos.size, sinEspecie, registrosConDato }
 }
 
 export function topMunicipios(municipios: MunicipioConteo[], n: number): MunicipioConteo[] {
@@ -43,12 +50,13 @@ export function resumenPorDepartamento(municipios: MunicipioConteo[]): ResumenDe
   const mapa = new Map<string, ResumenDepartamento>()
   for (const m of municipios) {
     const previo = mapa.get(m.departamento) ?? {
-      departamento: m.departamento, registros: 0, municipiosConRegistros: 0, totalMunicipios: 0, sinEspecie: 0,
+      departamento: m.departamento, registros: 0, municipiosConRegistros: 0, totalMunicipios: 0, sinEspecie: 0, registrosConDato: 0,
     }
     mapa.set(m.departamento, {
       ...previo,
       registros: previo.registros + m.registros,
       sinEspecie: previo.sinEspecie + (m.sin_especie ?? 0),
+      registrosConDato: previo.registrosConDato + (m.sin_especie === null ? 0 : m.registros),
       totalMunicipios: previo.totalMunicipios + 1,
       municipiosConRegistros: previo.municipiosConRegistros + (m.registros > 0 ? 1 : 0),
     })
@@ -62,13 +70,19 @@ export function listarDepartamentos(municipios: MunicipioConteo[]): string[] {
 
 export type ColumnaMunicipios = 'municipio' | 'departamento' | 'registros' | 'especies' | 'sin_especie'
 
+/** «Sin especie» se ordena por porcentaje (como el mapa y el ranking); el resto, por su valor. */
+function valorOrden(m: MunicipioConteo, columna: ColumnaMunicipios): string | number {
+  if (columna === 'sin_especie') return m.sin_especie === null || m.registros <= 0 ? -1 : m.sin_especie / m.registros
+  return m[columna] ?? -1
+}
+
 export function ordenarMunicipios(
   municipios: MunicipioConteo[], columna: ColumnaMunicipios, descendente: boolean,
 ): MunicipioConteo[] {
   const factor = descendente ? -1 : 1
   return [...municipios].sort((a, b) => {
-    const va = a[columna] ?? -1
-    const vb = b[columna] ?? -1
+    const va = valorOrden(a, columna)
+    const vb = valorOrden(b, columna)
     const cmp = typeof va === 'number' && typeof vb === 'number' ? va - vb : String(va).localeCompare(String(vb), 'es')
     return cmp * factor || a.municipio.localeCompare(b.municipio, 'es')
   })

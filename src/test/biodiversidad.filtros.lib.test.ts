@@ -7,7 +7,7 @@ import { paramsApi, paramsSugerencias } from '@/components/herramientas/biodiver
 import { chipsActivos, textoResumen } from '@/components/herramientas/biodiversidad/lib/chips'
 import { actualizarParametros, leerParametros, sanearTextoOpciones } from '@/components/herramientas/biodiversidad/lib/parametros'
 import {
-  bboxATexto, mensajeMuestra, mensajeOcultos, puntosDibujables, redondearBbox, ubicacionPublica,
+  bboxATexto, mensajeMuestra, MENSAJE_RESERVADAS, puntosDibujables, redondearBbox, ubicacionPublica,
 } from '@/components/herramientas/biodiversidad/lib/puntos'
 import { ordenEspecies, ordenRegistros } from '@/components/herramientas/biodiversidad/lib/orden'
 import { fmtNum } from '@/components/herramientas/biodiversidad/lib/format'
@@ -199,10 +199,8 @@ describe('ubicación y puntos: nunca se dibuja lo reservado', () => {
     expect(bboxATexto(b)).toBe('-77.25,5,-76,6.5')
     expect(redondearBbox(-77.2, 5.1, -76.1, 6.2)).toEqual(redondearBbox(-77.24, 5.01, -76.01, 6.24))
   })
-  test('mensajes de ocultos y de muestra', () => {
-    expect(mensajeOcultos(0)).toBeNull()
-    expect(mensajeOcultos(5079)).toBe('5.079 registros de especies amenazadas o sin determinar no muestran su ubicación para protegerlas.')
-    expect(mensajeOcultos(1)).toMatch(/^1 registro .* no muestra su ubicación/)
+  test('mensajes de reservadas (fijo, sin cifras) y de muestra', () => {
+    expect(MENSAJE_RESERVADAS).toMatch(/ubicaciones reservadas/)
     expect(mensajeMuestra(1500, 4194)).toMatch(/muestra de 1\.500 de 4\.194/)
   })
 })

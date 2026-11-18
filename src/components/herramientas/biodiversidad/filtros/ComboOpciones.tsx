@@ -22,6 +22,10 @@ interface Props {
   onLimpiar: () => void
 }
 
+/** La API entrega como máximo 100 opciones por campo, las de más registros. */
+export const LIMITE_OPCIONES = 100
+const NOTA_LIMITE = `Mostrando las ${LIMITE_OPCIONES} con más registros; escribe para acotar`
+
 /** Combobox cuyas opciones vienen de `/opciones`. Solo consulta mientras la lista está abierta, con espera al escribir. */
 export default function ComboOpciones({
   grupo, campo, etiqueta, params, seleccion, placeholder, deshabilitado, motivo, etiquetar, onElegir, onLimpiar,
@@ -29,9 +33,11 @@ export default function ComboOpciones({
   const [abierto, setAbierto] = useState(false)
   const [texto, setTexto] = useState('')
   const buscado = useDebounced(sanearTextoOpciones(texto), 300)
+  // Con etiquetas traducidas se escribe en español y el servidor busca sobre el valor original: ahí filtra el combo, no el servidor.
   const consulta = useBiodiversidadOpciones(
-    grupo, campo, buscado.length >= 2 ? { ...params, buscar: buscado } : params, abierto && !deshabilitado,
+    grupo, campo, buscado.length >= 2 && !etiquetar ? { ...params, buscar: buscado } : params, abierto && !deshabilitado,
   )
+  const alTope = (consulta.data?.valores.length ?? 0) >= LIMITE_OPCIONES
   const opciones = useMemo<OpcionCombo[]>(
     () => (consulta.data?.valores ?? []).map((o) => ({
       valor: o.valor, etiqueta: etiquetar ? etiquetar(o) : o.nombre, detalle: fmtNum(o.registros),
@@ -41,7 +47,7 @@ export default function ComboOpciones({
   return (
     <Combobox
       etiqueta={etiqueta} placeholder={placeholder} seleccion={seleccion} opciones={opciones}
-      cargando={abierto && consulta.isFetching} error={consulta.isError} deshabilitado={deshabilitado} motivo={motivo}
+      cargando={abierto && consulta.isFetching} error={consulta.isError} deshabilitado={deshabilitado} motivo={motivo} nota={alTope ? NOTA_LIMITE : undefined}
       onAbrir={() => setAbierto(true)} onCerrar={() => setAbierto(false)} onTexto={setTexto}
       onElegir={(o) => onElegir(o.valor, o.etiqueta)} onLimpiar={onLimpiar}
     />

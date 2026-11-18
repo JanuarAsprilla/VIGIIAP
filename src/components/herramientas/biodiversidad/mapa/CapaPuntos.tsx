@@ -4,7 +4,8 @@ import 'leaflet.markercluster'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import { useBiodiversidadPuntos } from '@/hooks/useBiodiversidad'
 import { useDebounced } from '@/hooks/useDebounced'
-import { bboxATexto, puntosDibujables, redondearBbox, type Bbox } from '../lib/puntos'
+import { prefiereMovimientoReducido } from '../lib/geometria'
+import { bboxATexto, LIMITES, puntosDibujables, redondearBbox, type Bbox } from '../lib/puntos'
 import type { Grupo, ParamsApi, PuntoMapa } from '../types'
 import { INFO_INICIAL, type Enfoque, type InfoPuntos } from './tiposPuntos'
 
@@ -21,9 +22,16 @@ interface Props {
 const ESPERA_MOVIMIENTO_MS = 450
 const ZOOM_ENFOQUE = 11
 
+const RECUADRO_REGIONAL = redondearBbox(LIMITES.minLon, LIMITES.minLat, LIMITES.maxLon, LIMITES.maxLat)
+
+/** Sin vista asignada (o con el mapa ya destruido) Leaflet lanza: se cae a la región completa. */
 function leerRecuadro(mapa: L.Map): Bbox {
-  const b = mapa.getBounds()
-  return redondearBbox(b.getWest(), b.getSouth(), b.getEast(), b.getNorth())
+  try {
+    const b = mapa.getBounds()
+    return redondearBbox(b.getWest(), b.getSouth(), b.getEast(), b.getNorth())
+  } catch {
+    return RECUADRO_REGIONAL
+  }
 }
 
 /** Popup construido con nodos de texto: el nombre de la especie viene de la API y nunca se interpreta como HTML. */
@@ -44,7 +52,8 @@ function crearPopup(p: PuntoMapa, abrir: (el: HTMLElement) => void): HTMLElement
 
 function iconoCluster(c: L.MarkerCluster): L.DivIcon {
   const n = c.getChildCount()
-  return L.divIcon({ html: `<span>${n}</span>`, className: 'bio-cluster', iconSize: [36, 36] })
+  const nombre = `Grupo de ${n} puntos. Acerca el mapa para separarlos.`
+  return L.divIcon({ html: `<span role="img" aria-label="${nombre}">${n}</span>`, className: 'bio-cluster', iconSize: [36, 36] })
 }
 
 /** Capa de puntos de registros sobre el mapa: pide `/puntos` por el recuadro visible y agrupa los marcadores. */
@@ -71,11 +80,12 @@ export default function CapaPuntos({ mapa, grupo, params, enfoque, onAbrir, onIn
     }
     const grupoCapas = L.markerClusterGroup({
       chunkedLoading: true, maxClusterRadius: 48, showCoverageOnHover: false, spiderfyOnMaxZoom: true, iconCreateFunction: iconoCluster,
+      animate: !prefiereMovimientoReducido(),
     })
     mapa.addLayer(grupoCapas)
     racimo.current = grupoCapas
     return () => {
-      mapa.removeLayer(grupoCapas)
+      if (mapa.hasLayer(grupoCapas)) mapa.removeLayer(grupoCapas)
       racimo.current = null
       foco.current?.remove()
       foco.current = null
@@ -90,7 +100,7 @@ export default function CapaPuntos({ mapa, grupo, params, enfoque, onAbrir, onIn
     capas.clearLayers()
     capas.addLayers(puntos.map((p) => {
       const m = L.circleMarker([p.lat, p.lon], { pane: 'puntos', radius: 6, weight: 1.5, className: 'bio-punto' })
-      m.bindPopup(crearPopup(p, (el) => alAbrir.current(p.id, el)), { className: 'bio-popup-caja', closeButton: true })
+      m.bindPopup(() => crearPopup(p, (el) => alAbrir.current(p.id, el)), { className: 'bio-popup-caja', closeButton: true })
       return m
     }))
   }, [puntos])
@@ -107,7 +117,7 @@ export default function CapaPuntos({ mapa, grupo, params, enfoque, onAbrir, onIn
   const { refetch } = consulta
   useEffect(() => {
     onInfo(d || consulta.isError
-      ? { cargando: consulta.isFetching, error: consulta.error, total: d?.total ?? 0, mostrados: puntos.length, ocultos: d?.ocultos ?? 0, muestreado: d?.muestreado ?? false, listo: Boolean(d), reintentar: () => void refetch() }
+      ? { cargando: consulta.isFetching, error: consulta.error, total: d?.total ?? 0, mostrados: puntos.length, muestreado: d?.muestreado ?? false, listo: Boolean(d), reintentar: () => void refetch() }
       : INFO_INICIAL)
   }, [d, puntos.length, consulta.isFetching, consulta.isError, consulta.error, refetch, onInfo])
 

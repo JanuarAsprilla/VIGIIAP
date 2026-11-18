@@ -85,7 +85,8 @@ export default function PanelFiltros({
         )}
       </div>
       <footer className="bio-filtros-pie">
-        <p aria-hidden="true">{resultado}</p>
+        {/* En la hoja modal el resumen de la barra queda fuera del diálogo: aquí se anuncia; en el panel lateral ya lo anuncia la barra. */}
+        <p {...(onCerrar ? { role: 'status', 'aria-live': 'polite' as const } : { 'aria-hidden': true })}>{resultado}</p>
         {onCerrar && <button type="button" className="bio-boton bio-boton-lleno" onClick={onCerrar}>Ver resultados</button>}
       </footer>
     </div>

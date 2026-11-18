@@ -210,6 +210,23 @@ describe('Excel', () => {
   })
 })
 
+describe('Excel: tablas enormes y secciones vacías', () => {
+  test('la hoja Resumen no lista títulos de secciones que solo llevan tablas', async () => {
+    const libro = new ExcelJS.Workbook()
+    const solo = datos({ secciones: [...datos().secciones, { titulo: 'Territorio', tablas: [{ titulo: 'Municipios', columnas: ['m'], filas: [['Quibdó']] }] }] })
+    await libro.xlsx.load(await leer(await generarExcel(solo, PLANTILLA)))
+    const valores = libro.getWorksheet('Resumen')!.getSheetValues().flat().map(String)
+    expect(valores).toContain('Cifras clave')
+    expect(valores).not.toContain('Territorio')
+  })
+
+  test('con cientos de miles de filas no se desborda la pila al calcular los anchos', async () => {
+    const filas = Array.from({ length: 200_000 }, (_, i) => [i])
+    const blob = await generarExcel(datos({ secciones: [{ titulo: 'R', tablas: [{ titulo: 'Grande', columnas: ['n'], filas }] }] }), PLANTILLA)
+    expect(blob.size).toBeGreaterThan(0)
+  }, 60_000)
+})
+
 describe('generarArchivo', () => {
   test('devuelve el archivo y su nombre seguro en cada formato', async () => {
     const pdf = await generarArchivo('pdf', datos(), PLANTILLA)

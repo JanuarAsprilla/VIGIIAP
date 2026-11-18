@@ -119,12 +119,14 @@ export default function Biodiversidad() {
   const descripcion = metodo === 'agregado'
     ? 'Inventario agregado: el servicio entrega conteos y especies por municipio, no los registros individuales. Más registros indica dónde se ha muestreado más, no dónde hay más vida.'
     : 'Registros de ocurrencia publicados en GBIF y ubicados por municipio. Más registros indica dónde se ha muestreado más, no dónde hay más vida.'
-  // Misma consulta (y misma caché) que el panel de Resumen: sale con los filtros activos.
-  const resumenGrupo = resumenQ.data ?? null
-  const totalRegistros = resumenGrupo?.registros ?? t.indicadores?.registros ?? null
-  const masRegistros = t.ranking[0] && t.ranking[0].registros > 0 ? t.ranking[0] : null
   const hayFiltros = t.chips.length > 0
-  const vacio = Boolean(mun) && municipios.every((m) => m.registros === 0)
+  // Misma consulta (y misma caché) que el panel de Resumen: sale con los filtros activos.
+  const resumenGrupo = resumenQ.data && !resumenQ.isPlaceholderData ? resumenQ.data : null
+  // Con los datos de filtros anteriores (o del grupo anterior) en pantalla no hay cifra: mejor «—» que un número de otra consulta.
+  const totalRegistros = resumenGrupo?.registros ?? null
+  const subRegistros = resumenGrupo ? (hayFiltros ? 'Con los filtros activos' : 'En el corte vigente') : resumenQ.isError ? 'No se pudo calcular' : 'Calculando…'
+  const masRegistros = t.ranking[0] && t.ranking[0].registros > 0 ? t.ranking[0] : null
+  const vacio = Boolean(mun) && t.filtrados === 0
   const filtrosEnPanel = (idTitulo: string, cerrar?: () => void) => (
     <PanelFiltros
       grupo={p.grupo} metodo={metodo} filtros={f} apl={apl} municipios={municipios} paramsOpciones={paramsOpciones}
@@ -199,7 +201,7 @@ export default function Biodiversidad() {
             <div className="bio-dato-grupo bio-dato-grupo-principal">
               <dt>Registros</dt>
               <dd className="bio-cifra text-[clamp(2rem,4.5vw,3rem)]">{totalRegistros !== null ? fmtNum(totalRegistros) : '—'}</dd>
-              <dd className="bio-dato-sub">{hayFiltros ? 'Con los filtros activos' : 'En el corte vigente'}</dd>
+              <dd className="bio-dato-sub">{subRegistros}</dd>
             </div>
             <div className="bio-dato-grupo">
               <dt>Especies</dt>
@@ -217,6 +219,7 @@ export default function Biodiversidad() {
                 {t.indicadores ? <>{t.indicadores.municipiosConRegistros}<span className="text-text-muted text-[0.5em] font-semibold"> / {t.indicadores.totalMunicipios}</span></> : '—'}
               </dd>
               <dd className="bio-dato-sub">
+                {t.indicadores && <span className="block">En todo el Chocó{hayFiltros ? ', sin acotar por territorio' : ''}</span>}
                 {t.indicadores && t.indicadores.totalMunicipios > 0 && (
                   <span className="bio-barra-mini" aria-hidden="true"><span style={{ width: `${Math.round((t.indicadores.municipiosConRegistros / t.indicadores.totalMunicipios) * 100)}%` }} /></span>
                 )}
@@ -230,7 +233,7 @@ export default function Biodiversidad() {
         grupo={p.grupo} metodo={metodo} filtros={f} apl={apl} chips={t.chips} resumen={t.resumen}
         panelAbierto={panelAbierto} botonPanel={botonPanel} onTogglePanel={() => setPanelUsuario(!panelAbierto)}
         onCambio={t.cambiar} onLimpiar={t.limpiar}
-        accion={<BotonDescargarInforme herramienta="biodiversidad" construir={construirInforme} />}
+        accion={<BotonDescargarInforme herramienta="biodiversidad" construir={construirInforme} bloqueado={t.munQ.isPlaceholderData} />}
       />
       {t.avisoCambio && <AvisoFiltros titulo={t.avisoCambio.titulo} elementos={t.avisoCambio.elementos} onCerrar={t.cerrarAviso} />}
       {!t.avisoCambio && t.descartados.length > 0 && (
@@ -243,7 +246,7 @@ export default function Biodiversidad() {
         </ContenedorFiltros>
         <div className="bio-principal space-y-6">
           {t.munQ.isError && !mun ? (
-            <PanelError error={t.munQ.error} onReintentar={() => void t.munQ.refetch()} />
+            <PanelError error={t.munQ.error} onReintentar={() => void t.munQ.refetch()} onLimpiarFiltros={t.limpiar} />
           ) : vacio && hayFiltros ? (
             <SinResultados titulo="Ningún registro cumple estos filtros" sinFiltros="" {...ayuda} />
           ) : vacio ? (
@@ -257,6 +260,7 @@ export default function Biodiversidad() {
                   puntosDisponibles={esIndividual} puntosActivos={p.puntos} paramsPuntos={paramsPuntos} enfoque={enfoque}
                   onSeleccionar={seleccionarMunicipio} onMetrica={(m: Metrica) => t.cambiar({ metrica: m === METRICA_INICIAL ? null : m })}
                   onPuntos={(a) => t.cambiar({ puntos: a ? '1' : null })} onAbrirRegistro={abrirDesdeMapa}
+                  onVerLista={() => { t.cambiar({ vista: 'registros' }); irAlDetalle() }}
                 />
                 <div className="space-y-6">
                   <DetalleSeleccion

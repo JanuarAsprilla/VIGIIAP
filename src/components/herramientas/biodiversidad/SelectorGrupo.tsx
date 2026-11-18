@@ -8,7 +8,7 @@ interface Props {
   onCambiar: (g: Grupo) => void
 }
 
-/** Selector de colección en píldoras compactas (icono y nombre): radiogroup con teclado (flechas, Inicio, Fin) y desplazamiento en móvil. Los datos del grupo se muestran aparte, en la cabecera. */
+/** Selector de colección en píldoras compactas (icono y nombre): radiogroup con activación manual: las flechas, Inicio y Fin mueven el foco y Enter o Espacio eligen (elegir descarta la taxonomía), más desplazamiento en móvil. Los datos del grupo se muestran aparte, en la cabecera. */
 export default function SelectorGrupo({ grupo, onCambiar }: Props) {
   const refs = useRef<(HTMLButtonElement | null)[]>([])
 
@@ -28,7 +28,6 @@ export default function SelectorGrupo({ grupo, onCambiar }: Props) {
         : e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : -1
     if (destino < 0) return
     e.preventDefault()
-    onCambiar(GRUPOS[destino])
     refs.current[destino]?.focus()
   }
 

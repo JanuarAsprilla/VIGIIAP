@@ -62,7 +62,7 @@ export default function PanelResumen({ grupo, paramsResumen, paramsSeries, param
       </p>
       {!resumen.data ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bio-panel overflow-hidden" aria-busy="true">
-          {[0, 1, 2, 3].map((k) => <Cargando key={k} etiqueta="Cargando indicadores" className="h-24 rounded-none" />)}
+          {[0, 1, 2, 3].map((k) => <Cargando key={k} etiqueta="Cargando indicadores" anunciar={k === 0} className="h-24 rounded-none" />)}
         </div>
       ) : (
         <div className={`space-y-5 ${resumen.isFetching ? 'bio-cargando' : 'bio-entra'}`} aria-busy={resumen.isFetching}>

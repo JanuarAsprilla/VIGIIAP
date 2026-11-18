@@ -405,7 +405,7 @@
 .bio-galeria { display: grid; gap: 0.6rem; align-content: start; min-width: 0; }
 .bio-galeria > .bio-foto { border-radius: var(--radius-lg); }
 .bio-miniaturas { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.15rem; }
-.bio-miniaturas button { display: block; width: 3.5rem; border-radius: 8px; overflow: hidden; border: 2px solid transparent; opacity: 0.7; cursor: pointer; transition: opacity 150ms, border-color 150ms; }
+.bio-miniaturas button { display: block; width: 3.5rem; min-width: 1.5rem; min-height: 1.5rem; border-radius: 8px; overflow: hidden; border: 2px solid transparent; opacity: 0.7; cursor: pointer; transition: opacity 150ms, border-color 150ms; }
 .bio-miniaturas button[aria-current='true'] { border-color: var(--bio-acento); opacity: 1; }
 .bio-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.9rem 1.25rem; }
 .bio-dato dt { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); }

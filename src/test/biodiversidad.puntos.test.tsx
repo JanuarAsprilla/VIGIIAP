@@ -17,6 +17,7 @@ vi.mock('@/components/herramientas/biodiversidad/mapa/MiniMapa', () => ({
 import CapaPuntos from '@/components/herramientas/biodiversidad/mapa/CapaPuntos'
 import { InterruptorPuntos, MensajesPuntos } from '@/components/herramientas/biodiversidad/mapa/ControlPuntos'
 import { INFO_INICIAL, type InfoPuntos } from '@/components/herramientas/biodiversidad/mapa/tiposPuntos'
+import { MENSAJE_RESERVADAS } from '@/components/herramientas/biodiversidad/lib/puntos'
 import UbicacionDetalle from '@/components/herramientas/biodiversidad/registros/UbicacionDetalle'
 
 const resp = (over: Partial<RespuestaPuntos> = {}): RespuestaPuntos => ({
@@ -48,7 +49,7 @@ describe('CapaPuntos', () => {
     render(<CapaPuntos mapa={mapa} grupo="anfibios" params={{ familia: 'Hylidae' }} enfoque={null} onAbrir={vi.fn()} onInfo={onInfo} />)
     await waitFor(() => expect(racimos(mapa)[0]?.getLayers()).toHaveLength(3))
     const ultima = onInfo.mock.calls[onInfo.mock.calls.length - 1][0] as InfoPuntos
-    expect(ultima).toMatchObject({ total: 3, mostrados: 3, ocultos: 5079, muestreado: false, listo: true })
+    expect(ultima).toMatchObject({ total: 3, mostrados: 3, muestreado: false, listo: true })
   })
   test('pide /puntos con los filtros y el recuadro redondeado, y nunca dibuja puntos marcados como ocultos', async () => {
     puntos.q = { ...puntos.q, data: resp({ puntos: [
@@ -70,7 +71,7 @@ describe('CapaPuntos', () => {
     render(<CapaPuntos mapa={mapa} grupo="anfibios" params={{}} enfoque={null} onAbrir={onAbrir} onInfo={vi.fn()} />)
     await waitFor(() => expect(racimos(mapa)[0]?.getLayers()).toHaveLength(3))
     const marcador = racimos(mapa)[0].getLayers().find((l) => (l as L.CircleMarker).getLatLng().lat === 5.7) as L.CircleMarker
-    const contenido = marcador.getPopup()?.getContent() as HTMLElement
+    const contenido = (marcador.getPopup()?.getContent() as (l: L.Layer) => HTMLElement)(marcador)
     expect(contenido.querySelector('img')).toBeNull()
     expect(contenido.textContent).toContain('Boana pugnax<img src=x onerror=1>')
     act(() => { (contenido.querySelector('button') as HTMLButtonElement).click() })
@@ -100,20 +101,19 @@ describe('CapaPuntos', () => {
 })
 
 describe('mensajes de la capa', () => {
-  const info = (c: Partial<InfoPuntos> = {}): InfoPuntos => ({ ...INFO_INICIAL, listo: true, cargando: false, total: 4194, mostrados: 1500, ocultos: 5079, muestreado: true, ...c })
+  const info = (c: Partial<InfoPuntos> = {}): InfoPuntos => ({ ...INFO_INICIAL, listo: true, cargando: false, total: 4194, mostrados: 1500, muestreado: true, ...c })
   test('ubicaciones reservadas y muestra: mensajes persistentes y claros', () => {
     render(<MensajesPuntos info={info()} onReintentar={vi.fn()} />)
-    expect(screen.getByText('5.079 registros de especies amenazadas o sin determinar no muestran su ubicación para protegerlas.')).toBeInTheDocument()
+    expect(screen.getByText(MENSAJE_RESERVADAS)).toBeInTheDocument()
     expect(screen.getByText(/Mostrando una muestra de 1\.500 de 4\.194 registros/)).toBeInTheDocument()
     expect(screen.getByText(/1\.500 puntos en pantalla/)).toBeInTheDocument()
   })
   test('sin muestreo ni ocultos solo informa los puntos; vacío y cargando tienen su texto', () => {
-    const { rerender } = render(<MensajesPuntos info={info({ muestreado: false, ocultos: 0, mostrados: 3, total: 3 })} onReintentar={vi.fn()} />)
+    const { rerender } = render(<MensajesPuntos info={info({ muestreado: false, mostrados: 3, total: 3 })} onReintentar={vi.fn()} />)
     expect(screen.queryByText(/muestra de/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/no muestran su ubicación/)).not.toBeInTheDocument()
-    rerender(<MensajesPuntos info={info({ total: 0, mostrados: 0, ocultos: 12 })} onReintentar={vi.fn()} />)
+    rerender(<MensajesPuntos info={info({ total: 0, mostrados: 0 })} onReintentar={vi.fn()} />)
     expect(screen.getByText(/No hay ubicaciones visibles en esta zona/)).toBeInTheDocument()
-    expect(screen.getByText(/12 registros .* no muestran/)).toBeInTheDocument()
+    expect(screen.getByText(MENSAJE_RESERVADAS)).toBeInTheDocument()
     rerender(<MensajesPuntos info={INFO_INICIAL} onReintentar={vi.fn()} />)
     expect(screen.getByText('Cargando ubicaciones…')).toBeInTheDocument()
   })

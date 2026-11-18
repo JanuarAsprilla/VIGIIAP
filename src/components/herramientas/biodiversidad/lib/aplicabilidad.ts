@@ -9,7 +9,7 @@ export const METODO_DE_GRUPO: Record<Grupo, Metodo> = {
 
 export const MOTIVO_AGREGADO = 'Este grupo se publica como inventario agregado: no tiene registros individuales con año, evidencia, fotografía ni ubicación.'
 export const MOTIVO_FUENTE_CON_TAXON = 'En inventarios agregados la fuente no se combina con taxonomía, especie ni conservación. Quita esos filtros para usarla.'
-export const MOTIVO_TAXON_CON_FUENTE = 'En inventarios agregados no se puede combinar con la fuente. Quita la entidad o el conjunto para usarlo.'
+export const MOTIVO_TAXON_CON_FUENTE = 'En inventarios agregados esta sección no se puede combinar con la fuente. Quita la entidad o el conjunto para usarla.'
 
 export const MOTIVO_ESPECIES_CON_FUENTE = 'Este inventario agregado solo cuenta registros por entidad y conjunto: no dice qué especies aportó cada una. Quita la entidad o el conjunto para ver las especies del territorio.'
 
