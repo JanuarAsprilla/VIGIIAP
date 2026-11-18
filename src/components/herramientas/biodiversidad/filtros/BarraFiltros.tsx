@@ -46,8 +46,7 @@ export default function BarraFiltros({
           />
         </div>
         <button
-          ref={botonPanel} type="button" className="bio-boton bio-boton-panel" aria-expanded={panelAbierto} aria-controls="bio-panel-filtros"
-          aria-haspopup={panelAbierto ? undefined : 'dialog'} onClick={onTogglePanel}
+          ref={botonPanel} type="button" className="bio-boton bio-boton-panel" aria-expanded={panelAbierto} aria-haspopup={panelAbierto ? undefined : 'dialog'} onClick={onTogglePanel}
         >
           <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
           Filtros
@@ -57,10 +56,12 @@ export default function BarraFiltros({
       </div>
       <div className="bio-atajos" role="group" aria-label="Atajos de filtro">
         <span className="bio-eyebrow">Atajos</span>
+        {apl.motivoConservacion && <span id="bio-motivo-atajos" className="sr-only">{apl.motivoConservacion}</span>}
+        {!apl.calidad && <span id="bio-motivo-foto" className="sr-only">{MOTIVO_AGREGADO}</span>}
         {ATAJOS.map(({ tipo, texto, Icono }) => (
           <button
             key={tipo} type="button" className="bio-boton bio-boton-chico" aria-pressed={f.conservacion === tipo}
-            disabled={!apl.conservacion} title={apl.motivoConservacion ?? undefined}
+            disabled={!apl.conservacion} title={apl.motivoConservacion ?? undefined} aria-describedby={apl.motivoConservacion ? 'bio-motivo-atajos' : undefined}
             onClick={() => onCambio(f.conservacion === tipo ? cambiosConservacion(null, null) : cambiosConservacion(tipo, null))}
           >
             <Icono className="w-3.5 h-3.5" aria-hidden="true" />{texto}
@@ -68,7 +69,7 @@ export default function BarraFiltros({
         ))}
         <button
           type="button" className="bio-boton bio-boton-chico" aria-pressed={f.conFoto} disabled={!apl.calidad}
-          title={apl.calidad ? undefined : MOTIVO_AGREGADO} onClick={() => onCambio({ con_foto: f.conFoto ? null : '1' })}
+          title={apl.calidad ? undefined : MOTIVO_AGREGADO} aria-describedby={apl.calidad ? undefined : 'bio-motivo-foto'} onClick={() => onCambio({ con_foto: f.conFoto ? null : '1' })}
         >
           <Camera className="w-3.5 h-3.5" aria-hidden="true" />Con foto
         </button>

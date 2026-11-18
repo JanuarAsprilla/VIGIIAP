@@ -26,6 +26,7 @@ export function generarCsv(datos: DatosInforme): Blob {
   const comentarios = [
     datos.titulo,
     ...datos.filtros.map((f) => `Filtro: ${f}`),
+    ...(tabla?.nota ? [`Nota: ${tabla.nota}`] : []),
     ...datos.fuente,
   ].map((l) => `# ${l.replace(/[\r\n]+/g, ' ')}`)
   const contenido = [...lineas, '', ...comentarios].join('\r\n')

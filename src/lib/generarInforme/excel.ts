@@ -43,7 +43,9 @@ function estiloEncabezadoTabla(fila: ExcelJS.Row, plantilla: PlantillaInforme) {
 
 function ajustarAnchos(hoja: ExcelJS.Worksheet, tabla: TablaInforme) {
   tabla.columnas.forEach((nombre, i) => {
-    const mayor = Math.max(nombre.length, ...tabla.filas.map((f) => String(f[i] ?? '').length))
+    // Bucle y no Math.max(...): con decenas de miles de filas el spread desborda la pila.
+    let mayor = nombre.length
+    for (const fila of tabla.filas) mayor = Math.max(mayor, String(fila[i] ?? '').length)
     hoja.getColumn(i + 1).width = Math.min(ANCHO_MAXIMO, Math.max(10, mayor + 2))
   })
 }
@@ -75,6 +77,7 @@ function hojaResumen(libro: ExcelJS.Workbook, datos: DatosInforme, plantilla: Pl
     fila += 1
   }
   for (const seccion of datos.secciones) {
+    if (!seccion.cifras?.length && !seccion.parrafos?.length) continue
     hoja.getCell(fila, 1).value = seccion.titulo
     hoja.getCell(fila, 1).font = { bold: true, size: 12, color: { argb: argb(plantilla.colorPrimario) } }
     fila += 1

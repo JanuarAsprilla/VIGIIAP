@@ -17,11 +17,13 @@ const CUANTAS = 4
 
 /** Especies amenazadas con fotografía: el rostro de la cifra de conservación. Solo grupos individuales. */
 export default function EspeciesDestacadas({ grupo, params, activo, onVer }: Props) {
+  // La API admite un solo tipo de conservación: con otro elegido (p. ej. endémicas) la sección no aplica, en vez de pisar el filtro.
+  const aplica = activo && (!params.conservacion || params.conservacion === 'amenazada')
   const consulta = useBiodiversidadEspecies(grupo, {
     ...params, conservacion: 'amenazada', con_foto: 'true', orden: 'registros', pagina: 1, tamano: CUANTAS,
-  }, activo)
+  }, aplica)
   const lista = (consulta.data?.especies ?? []).filter((e) => fotoValida(e) !== null)
-  if (!activo || lista.length === 0) return null
+  if (!aplica || lista.length === 0) return null
   return (
     <section className="space-y-3" aria-labelledby="bio-destacadas-titulo">
       <div>

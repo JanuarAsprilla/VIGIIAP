@@ -94,6 +94,12 @@ describe('TablaRegistros: seguridad de ubicación y enlaces', () => {
     expect(container.textContent).not.toMatch(/8[,.]0882|76[,.]8368/)
   })
 
+  test.each([null, undefined])('si la marca de ocultas falta (%s) se asume reservada: jamás se muestran lat/lon', (marca) => {
+    const { container } = render(<TablaRegistros registros={[reg({ coordenadas_ocultas: marca as never, latitud: 8.0882, longitud: -76.8368 })]} />)
+    expect(screen.getByText('Ubicación reservada')).toBeInTheDocument()
+    expect(container.textContent).not.toMatch(/8[,.]0882|76[,.]8368/)
+  })
+
   test('sin coordenadas y no reservado: texto neutro, sin punto', () => {
     render(<TablaRegistros registros={[reg({ latitud: null, longitud: null })]} />)
     expect(screen.getByText('Sin coordenadas')).toBeInTheDocument()

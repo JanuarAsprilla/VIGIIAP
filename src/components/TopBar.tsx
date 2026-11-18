@@ -102,7 +102,7 @@ function TopBarSearchInput({ value, onChange, placeholder, autoFocus, onClear, s
 }) {
   return (
     <div
-      className={`flex items-center gap-2 rounded-lg px-3 py-2 ${className}`}
+      className={`campo-caja flex items-center gap-2 rounded-lg px-3 py-2 ${className}`}
       style={{ background: 'var(--topbar-search-bg)', border: '1px solid var(--topbar-search-border)' }}
     >
       <Search className="w-[18px] h-[18px] shrink-0" style={{ color: 'var(--topbar-icon-off)' }} aria-hidden="true" />
