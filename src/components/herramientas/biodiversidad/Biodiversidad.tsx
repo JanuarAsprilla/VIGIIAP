@@ -15,12 +15,14 @@ import GrupoIcono from './GrupoIcono'
 import Pestanas from './Pestanas'
 import BotonDescargarInforme from '@/components/informes/BotonDescargarInforme'
 import { reunirInforme } from './informe/informe'
+import EspeciesNoDisponibles from './especies/EspeciesNoDisponibles'
 import type { FormatoDescarga } from '@/lib/generarInforme'
 import RankingPanel from './RankingPanel'
 import SelectorGrupo from './SelectorGrupo'
 import TablaMunicipios from './TablaMunicipios'
 import { fmtNum } from './lib/format'
-import { cambiosConservacion, cambiosEspecie } from './lib/filtros'
+import { especiesSinCruce } from './lib/aplicabilidad'
+import { cambiosConservacion, cambiosEntidad, cambiosConjunto, cambiosEspecie } from './lib/filtros'
 import { etiquetaMetodo } from './lib/metodo'
 import { METRICA_INICIAL, type Metrica } from './lib/metrica'
 import { ordenEspecies, ordenRegistros } from './lib/orden'
@@ -61,6 +63,7 @@ export default function Biodiversidad() {
   const [enfoque, setEnfoque] = useState<Enfoque | null>(null)
 
   const vista: Vista = p.vista === 'registros' && !esIndividual ? 'resumen' : p.vista ?? 'resumen'
+  const sinCruce = especiesSinCruce(metodo, f)
   const paramsResumen = useMemo(() => paramsApi('resumen', f, metodo), [f, metodo])
   const resumenQ = useBiodiversidadResumen(p.grupo, paramsResumen)
   const paramsSeries = useMemo(() => paramsApi('series', f, metodo), [f, metodo])
@@ -71,8 +74,10 @@ export default function Biodiversidad() {
   const ayuda = useMemo(() => ({ chips: t.chips, onCambio: t.cambiar, onLimpiar: t.limpiar }), [t.chips, t.cambiar, t.limpiar])
   const construirInforme = useCallback((maxFilas: number, signal: AbortSignal, formato: FormatoDescarga) => reunirInforme({
     grupo: p.grupo, metodo, info: t.info, aviso: t.estado.data?.aviso, filtros: t.chips.map((c) => c.etiqueta),
-    ranking: t.ranking, paramsResumen, paramsEspecies, paramsRegistros,
-  }, maxFilas, signal, formato), [p.grupo, metodo, t.info, t.estado.data, t.chips, t.ranking, paramsResumen, paramsEspecies, paramsRegistros])
+    ranking: t.ranking, territorio: { municipio: f.municipio, departamento: f.departamento }, especiesSinCruce: sinCruce,
+    paramsResumen, paramsEspecies, paramsRegistros,
+  }, maxFilas, signal, formato), [p.grupo, metodo, t.info, t.estado.data, t.chips, t.ranking, f.municipio, f.departamento, sinCruce, paramsResumen, paramsEspecies, paramsRegistros])
+  const quitarFuente = useCallback(() => t.cambiar({ ...cambiosEntidad(null, null), ...cambiosConjunto(null, null) }), [t])
 
   const seleccionarMunicipio = useCallback((codigo: string | null) => {
     const m = codigo ? t.datos.get(codigo) : null
@@ -161,7 +166,7 @@ export default function Biodiversidad() {
         />
       </Suspense>
     ) }] : []),
-    { id: 'especies' as const, titulo: 'Especies', contenido: (
+    { id: 'especies' as const, titulo: 'Especies', contenido: sinCruce ? <EspeciesNoDisponibles onQuitarFuente={quitarFuente} /> : (
       <Suspense fallback={<CargandoPestana />}>
         <SeccionEspecies
           grupo={p.grupo} esIndividual={esIndividual} params={paramsEspecies} orden={ordenEspecies(p.ordenar)} modo={p.modo} pagina={p.pagina}
@@ -199,12 +204,12 @@ export default function Biodiversidad() {
             <div className="bio-dato-grupo">
               <dt>Especies</dt>
               <dd className="bio-cifra text-[clamp(1.75rem,3.6vw,2.5rem)]">{resumenGrupo?.especies != null ? fmtNum(resumenGrupo.especies) : '—'}</dd>
-              <dd className="bio-dato-sub">{resumenGrupo?.especies != null ? 'Distintas documentadas' : resumenGrupo ? 'No se calcula con este filtro' : ''}</dd>
+              <dd className="bio-dato-sub">{resumenGrupo?.especies != null ? 'Distintas documentadas' : resumenGrupo ? (sinCruce ? 'No se separa por entidad o conjunto' : 'No se calcula con este filtro') : ''}</dd>
             </div>
             <div className="bio-dato-grupo">
               <dt>Especies amenazadas</dt>
               <dd className="bio-cifra text-[clamp(1.75rem,3.6vw,2.5rem)]">{resumenGrupo?.amenazadas.total != null ? fmtNum(resumenGrupo.amenazadas.total) : '—'}</dd>
-              <dd className="bio-dato-sub">{resumenGrupo?.amenazadas.total != null ? 'En categoría CR, EN o VU' : resumenGrupo ? 'No se calcula con este filtro' : ''}</dd>
+              <dd className="bio-dato-sub">{resumenGrupo?.amenazadas.total != null ? 'En categoría CR, EN o VU' : resumenGrupo ? (sinCruce ? 'No se separa por entidad o conjunto' : 'No se calcula con este filtro') : ''}</dd>
             </div>
             <div className="bio-dato-grupo">
               <dt>Municipios con datos</dt>

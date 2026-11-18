@@ -74,10 +74,14 @@ export function ordenarMunicipios(
   })
 }
 
+/** Municipios del territorio elegido: uno, todos los de un departamento, o todo el conjunto. */
+export function municipiosEnTerritorio(municipios: MunicipioConteo[], municipio: string | null, departamento: string | null): MunicipioConteo[] {
+  if (municipio) return municipios.filter((m) => m.codigo_municipal === municipio)
+  if (departamento) return municipios.filter((m) => m.departamento === departamento)
+  return municipios
+}
+
 /** Registros del territorio elegido: un municipio, un departamento o todo el conjunto. */
 export function registrosEnTerritorio(municipios: MunicipioConteo[], municipio: string | null, departamento: string | null): number {
-  const dentro = municipio
-    ? municipios.filter((m) => m.codigo_municipal === municipio)
-    : departamento ? municipios.filter((m) => m.departamento === departamento) : municipios
-  return dentro.reduce((suma, m) => suma + m.registros, 0)
+  return municipiosEnTerritorio(municipios, municipio, departamento).reduce((suma, m) => suma + m.registros, 0)
 }

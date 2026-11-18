@@ -2,7 +2,7 @@ import { describe, test, expect } from 'vitest'
 import {
   FILTROS_VACIOS, QUITAR_TODOS, cambiosConservacion, cambiosEntidad, cambiosTaxon, contarFiltros, leerFiltros, type Filtros,
 } from '@/components/herramientas/biodiversidad/lib/filtros'
-import { alCambiarGrupo, aplicabilidad, reconciliar } from '@/components/herramientas/biodiversidad/lib/aplicabilidad'
+import { alCambiarGrupo, aplicabilidad, especiesSinCruce, reconciliar } from '@/components/herramientas/biodiversidad/lib/aplicabilidad'
 import { paramsApi, paramsSugerencias } from '@/components/herramientas/biodiversidad/lib/paramsApi'
 import { chipsActivos, textoResumen } from '@/components/herramientas/biodiversidad/lib/chips'
 import { actualizarParametros } from '@/components/herramientas/biodiversidad/lib/parametros'
@@ -195,5 +195,15 @@ describe('orden', () => {
     expect(ordenEspecies(null)).toBe('registros')
     expect(ordenRegistros('especie')).toBe('especie')
     expect(ordenRegistros('nombre')).toBe('anio_desc')
+  })
+})
+
+describe('especiesSinCruce', () => {
+  test('solo en inventarios agregados con entidad o conjunto activos', () => {
+    expect(especiesSinCruce('agregado', f({ entidad: UUID }))).toBe(true)
+    expect(especiesSinCruce('agregado', f({ conjunto: UUID }))).toBe(true)
+    expect(especiesSinCruce('agregado', f())).toBe(false)
+    expect(especiesSinCruce('agregado', f({ familia: 'Tyrannidae' }))).toBe(false)
+    expect(especiesSinCruce('individual', f({ entidad: UUID }))).toBe(false)
   })
 })
