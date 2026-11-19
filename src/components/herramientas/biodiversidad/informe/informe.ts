@@ -1,5 +1,7 @@
 import api from '@/lib/api'
 import type { Cifra, DatosInforme, FormatoDescarga, TablaInforme } from '@/lib/generarInforme'
+import { MOTIVO_ESPECIES_CON_FUENTE } from '../lib/aplicabilidad'
+import { municipiosEnTerritorio } from '../lib/derivar'
 import { fmtFecha, fmtNum, fmtNumONulo } from '../lib/format'
 import {
   NOMBRES_GRUPO,
@@ -44,6 +46,12 @@ export interface RespuestaExportacion {
   registros: RegistroExportado[]
 }
 
+/** Municipio o departamento elegido en el tablero: el informe solo recoge lo que el tablero muestra de ese territorio. */
+export interface TerritorioInforme {
+  municipio: string | null
+  departamento: string | null
+}
+
 export interface EntradaInforme {
   grupo: Grupo
   metodo: Metodo
@@ -53,6 +61,10 @@ export interface EntradaInforme {
   /** Texto de cada filtro activo («Familia: Hylidae»). */
   filtros: string[]
   ranking: MunicipioConteo[]
+  /** Territorio elegido; sin él, el informe abarca todos los municipios. */
+  territorio?: TerritorioInforme
+  /** Entidad o conjunto activos en un inventario agregado: no hay especies que correspondan al filtro. */
+  especiesSinCruce?: boolean
   resumen: RespuestaResumen
   especies: EspecieResumen[]
   totalEspecies: number
@@ -167,6 +179,18 @@ function fuente(e: EntradaInforme): string[] {
   ]
 }
 
+/** Territorio y filtros en el nombre del archivo: dos informes del mismo día con filtros distintos no se pisan. */
+function sufijoArchivo(e: EntradaInforme): string {
+  const territorio = e.territorio?.municipio ?? e.territorio?.departamento ?? null
+  const huella = e.filtros.length === 0 ? null : e.filtros.join('|')
+  let h = 5381
+  for (const c of huella ?? '') h = (Math.imul(h, 33) + c.charCodeAt(0)) >>> 0
+  return [territorio, huella && h.toString(36)].filter((p): p is string => Boolean(p)).join('-')
+}
+
+const delTerritorio = (e: EntradaInforme): MunicipioConteo[] =>
+  municipiosEnTerritorio(e.ranking, e.territorio?.municipio ?? null, e.territorio?.departamento ?? null)
+
 /** Arma el informe a partir de lo que ya se consultó. No toca la red: es lo que se prueba. */
 export function construirInforme(e: EntradaInforme): DatosInforme {
   const dia = diaLocal(e.generadoEn)
@@ -177,12 +201,14 @@ export function construirInforme(e: EntradaInforme): DatosInforme {
     filtros: [`Grupo: ${NOMBRES_GRUPO[e.grupo]}`, ...e.filtros],
     secciones: [
       { titulo: 'Cifras clave', cifras: cifras(e.resumen, e.info) },
-      { titulo: 'Territorio', tablas: [tablaMunicipios(e.ranking, e.maxFilas)] },
-      { titulo: 'Especies', tablas: [tablaEspecies(e.especies, e.totalEspecies, !e.registros)] },
+      { titulo: 'Territorio', tablas: [tablaMunicipios(delTerritorio(e), e.maxFilas)] },
+      e.especiesSinCruce
+        ? { titulo: 'Especies', parrafos: [MOTIVO_ESPECIES_CON_FUENTE] }
+        : { titulo: 'Especies', tablas: [tablaEspecies(e.especies, e.totalEspecies, !e.registros)] },
       ...(e.registros ? [{ titulo: 'Registros individuales', tablas: [tablaRegistros(e.registros, e.resumen.registros)] }] : []),
     ],
     fuente: fuente(e),
-    nombreArchivo: `informe-biodiversidad-${e.grupo}-${dia}`,
+    nombreArchivo: ['informe-biodiversidad', e.grupo, dia, sufijoArchivo(e)].filter(Boolean).join('-'),
   }
 }
 
@@ -193,6 +219,8 @@ export interface ContextoConsulta {
   aviso: string | undefined
   filtros: string[]
   ranking: MunicipioConteo[]
+  territorio: TerritorioInforme
+  especiesSinCruce: boolean
   paramsResumen: ParamsApi
   paramsEspecies: ParamsApi
   paramsRegistros: ParamsApi
@@ -220,7 +248,8 @@ export async function reunirInforme(c: ContextoConsulta, maxFilas: number, signa
   const resumen: RespuestaResumen = await api.get('/biodiversidad/resumen', { params: { grupo: c.grupo, ...c.paramsResumen }, signal })
   const especies: EspecieResumen[] = []
   let total = 0
-  for (let pagina = 1; especies.length < limite; pagina += 1) {
+  // Sin cruce posible con la fuente, la lista del servidor sería la del territorio entero: no coincidiría con el filtro.
+  for (let pagina = 1; !c.especiesSinCruce && especies.length < limite; pagina += 1) {
     const respuesta: RespuestaEspecies = await api.get('/biodiversidad/especies', {
       params: { grupo: c.grupo, ...c.paramsEspecies, orden: 'registros', pagina, tamano: TAMANO_PAGINA }, signal,
     })
@@ -231,6 +260,6 @@ export async function reunirInforme(c: ContextoConsulta, maxFilas: number, signa
   const registros = conRegistros ? await pedirRegistros(c, signal) : undefined
   return construirInforme({
     grupo: c.grupo, metodo: c.metodo, info: c.info, aviso: c.aviso, filtros: c.filtros, ranking: c.ranking,
-    resumen, especies: especies.slice(0, limite), totalEspecies: total, registros, maxFilas, generadoEn: new Date(),
+    territorio: c.territorio, especiesSinCruce: c.especiesSinCruce, resumen, especies: especies.slice(0, limite), totalEspecies: total, registros, maxFilas, generadoEn: new Date(),
   })
 }

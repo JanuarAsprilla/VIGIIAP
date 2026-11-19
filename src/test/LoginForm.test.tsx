@@ -182,11 +182,10 @@ describe('LoginForm — encabezado', () => {
 })
 
 describe('LoginForm — proveedores OAuth', () => {
-  test('muestra Google y Microsoft, todos deshabilitados', () => {
+  test('muestra solo Google (deshabilitado) y ninguna tarjeta de Microsoft', () => {
     renderLoginForm()
-    for (const label of ['Google', 'Microsoft']) {
-      expect(screen.getByRole('button', { name: new RegExp(label) })).toBeDisabled()
-    }
+    expect(screen.getByRole('button', { name: /Google/ })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: /Microsoft/ })).not.toBeInTheDocument()
   })
 
   test('no muestra Apple, Facebook ni Yahoo', () => {

@@ -19,13 +19,18 @@ function renderOAuthProviders() {
 beforeEach(() => { vi.clearAllMocks() })
 
 describe('OAuthProviders — antes de que resuelva /auth/oauth/providers', () => {
-  test('los 2 botones aparecen deshabilitados con "Pronto" mientras carga', () => {
+  test('el botón de Google aparece deshabilitado con "Pronto" mientras carga', () => {
     vi.mocked(api.get).mockReturnValue(new Promise(() => {})) // nunca resuelve
     renderOAuthProviders()
-    for (const label of ['Google', 'Microsoft']) {
-      expect(screen.getByRole('button', { name: new RegExp(label) })).toBeDisabled()
-    }
-    expect(screen.getAllByText('Pronto')).toHaveLength(2)
+    expect(screen.getByRole('button', { name: /Google/ })).toBeDisabled()
+    expect(screen.getAllByText('Pronto')).toHaveLength(1)
+  })
+
+  test('no muestra Microsoft aunque el backend lo tenga configurado', async () => {
+    vi.mocked(api.get).mockResolvedValue({ google: true, microsoft: true })
+    renderOAuthProviders()
+    expect(await screen.findByRole('link', { name: /Google/ })).toBeInTheDocument()
+    expect(screen.queryByText('Microsoft')).not.toBeInTheDocument()
   })
 
   test('no muestra Apple — requiere Apple Developer Program de pago, no está disponible', () => {
@@ -43,17 +48,6 @@ describe('OAuthProviders — con /auth/oauth/providers resuelto', () => {
     const googleLink = await screen.findByRole('link', { name: /Google/ })
     expect(googleLink).toHaveAttribute('href', 'https://api.vigiiap.iiap.gov.co/api/v1/auth/oauth/google/start')
 
-    // Microsoft sigue deshabilitado
-    expect(screen.getByRole('button', { name: /Microsoft/ })).toBeDisabled()
-    expect(screen.getAllByText('Pronto')).toHaveLength(1)
-  })
-
-  test('con los 2 configurados, no queda ningún botón deshabilitado', async () => {
-    vi.mocked(api.get).mockResolvedValue({ google: true, microsoft: true })
-    renderOAuthProviders()
-
-    expect(await screen.findByRole('link', { name: /Google/ })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Microsoft/ })).toBeInTheDocument()
     expect(screen.queryByText('Pronto')).not.toBeInTheDocument()
   })
 })

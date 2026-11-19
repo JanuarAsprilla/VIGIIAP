@@ -49,3 +49,14 @@ export function puntoInterior(tipo: 'Polygon' | 'MultiPolygon', coordenadas: unk
   }
   return mejor
 }
+
+const PASO_ZOOM = 0.25
+
+/** En móvil el mapa solo se arrastra con un dedo ya acercado; a vista completa el dedo desplaza la página. */
+export function arrastreMovil(zoom: number, zoomVistaCompleta: number): boolean {
+  return Number.isFinite(zoomVistaCompleta) && zoom - zoomVistaCompleta >= PASO_ZOOM
+}
+
+export function prefiereMovimientoReducido(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+}

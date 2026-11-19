@@ -99,14 +99,14 @@ describe('frugalidad: solo se piden opciones al abrir y con espera al escribir',
     const buscados = new Set(conBuscar().map((l) => (l[2] as { buscar: string }).buscar))
     expect([...buscados]).toEqual(['hyl'])
   })
-  test('el texto se limpia a letras (nada de símbolos hacia el servidor)', () => {
+  test('el texto se limpia de símbolos que la API rechaza, sin perder guiones ni números', () => {
     vi.useFakeTimers()
     render(<ComboOpciones {...props} />)
     const caja = screen.getByRole('combobox', { name: 'Familia' })
     fireEvent.focus(caja)
-    fireEvent.change(caja, { target: { value: "hy%_;'lid" } })
+    fireEvent.change(caja, { target: { value: 'hy%_;lid-2020' } })
     act(() => { vi.advanceTimersByTime(400) })
-    expect(opciones.llamadas.some((l) => (l[2] as { buscar?: string }).buscar === 'hylid')).toBe(true)
+    expect(opciones.llamadas.some((l) => (l[2] as { buscar?: string }).buscar === 'hylid-2020')).toBe(true)
   })
   test('sugerencias de especie: sin consulta bajo 2 letras, una consulta tras la espera', () => {
     vi.useFakeTimers()

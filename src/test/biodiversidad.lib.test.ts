@@ -119,7 +119,7 @@ describe('escala de color', () => {
 describe('derivaciones', () => {
   test('indicadores', () => {
     expect(calcularIndicadores(MUNIS)).toEqual({
-      registros: 1700, municipiosConRegistros: 3, totalMunicipios: 4, departamentos: 2, sinEspecie: 130,
+      registros: 1700, municipiosConRegistros: 3, totalMunicipios: 4, departamentos: 2, sinEspecie: 130, registrosConDato: 1700,
     })
     expect(calcularIndicadores([]).registros).toBe(0)
   })

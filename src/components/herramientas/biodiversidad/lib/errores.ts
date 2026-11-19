@@ -1,6 +1,8 @@
 export interface ErrorDescrito {
   titulo: string
   detalle: string
+  /** Repetir la misma consulta no sirve: hay que cambiar los filtros. */
+  requiereCambiarFiltros?: boolean
 }
 
 /** Traduce un error de la API (axios ya normalizado en lib/api.ts con `.status`) a un mensaje claro. */
@@ -10,7 +12,7 @@ export function describirError(error: unknown): ErrorDescrito {
     case 404:
       return { titulo: 'Sin datos disponibles', detalle: 'La herramienta está apagada o este grupo todavía no tiene datos cargados.' }
     case 422:
-      return { titulo: 'Consulta no válida', detalle: 'Los filtros elegidos no se pueden aplicar. Restablécelos e inténtalo de nuevo.' }
+      return { titulo: 'Consulta no válida', detalle: 'Los filtros elegidos no se pueden aplicar. Limpia los filtros e inténtalo de nuevo.', requiereCambiarFiltros: true }
     case 429:
       return { titulo: 'Demasiadas consultas', detalle: 'Se alcanzó el límite de consultas. Espera un momento antes de reintentar.' }
     case 503:

@@ -30,6 +30,15 @@ describe('AnalyticsTracker', () => {
     expect(enviarPageviewBeacon).toHaveBeenCalledWith(expect.objectContaining({ ruta: '/mapas' }))
   })
 
+  test('nunca envía el token de una ruta de enlace único', () => {
+    const token = 'ab12'.repeat(16)
+    renderEn(`/reset-password/${token}?token=zzz`)
+    const payload = vi.mocked(enviarPageviewBeacon).mock.calls[0][0]
+    expect(payload.ruta).toBe('/reset-password/:token')
+    expect(JSON.stringify(payload)).not.toContain(token)
+    expect(JSON.stringify(payload)).not.toContain('zzz')
+  })
+
   test('marca esAreaAdmin=true para rutas bajo /admin', () => {
     renderEn('/admin/actividad')
     expect(enviarPageviewBeacon).toHaveBeenCalledWith(expect.objectContaining({ esAreaAdmin: true }))

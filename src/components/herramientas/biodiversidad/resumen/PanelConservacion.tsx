@@ -9,10 +9,17 @@ interface Props {
   onFiltrar: (f: { conservacion: TipoConservacion; amenaza: Amenaza | null }) => void
 }
 
-function Fila({ etiqueta, valor, nota, onClick }: { etiqueta: string; valor: number | null; nota?: string; onClick?: () => void }) {
+/** La API tiene un solo filtro de endemismo (Colombia o Chocó): las dos filas abren la misma lista. */
+const AVISO_FILTRO_ENDEMICAS = 'La lista incluye las endémicas de Colombia y del Chocó.'
+
+function Fila({ etiqueta, valor, nota, aviso, onClick }: { etiqueta: string; valor: number | null; nota?: string; aviso?: string; onClick?: () => void }) {
   const contenido = (
     <>
-      <span title={nota}>{etiqueta}{nota && valor === null && <small className="block text-[0.6875rem] text-text-muted font-normal">{nota}</small>}</span>
+      <span title={nota}>
+        {etiqueta}
+        {nota && valor === null && <small className="block text-[0.6875rem] text-text-muted font-normal">{nota}</small>}
+        {aviso && onClick && valor !== null && valor > 0 && <small className="block text-[0.6875rem] text-text-muted font-normal">{aviso}</small>}
+      </span>
       {valor === null ? <span className="text-text-muted text-xs font-semibold">Sin lista nacional</span> : <b className="tabular-nums">{fmtNum(valor)}</b>}
     </>
   )
@@ -42,19 +49,20 @@ export default function PanelConservacion({ resumen, grupo, puedeVerEspecies, on
       </div>
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {CATEGORIAS_AMENAZA.map((c) => {
-          const n = a[c] ?? 0
+          const n = a[c]
+          const texto = n === null ? 'sin dato' : `${fmtNum(n)} ${n === 1 ? 'especie' : 'especies'}`
           const cuerpo = (
             <>
               <span className={`bio-uicn bio-uicn-${c}`}>{c}</span>
-              <span className="bio-cifra text-[clamp(1.35rem,3vw,1.9rem)] block mt-2">{fmtNum(n)}</span>
+              <span className="bio-cifra text-[clamp(1.35rem,3vw,1.9rem)] block mt-2">{n === null ? '—' : fmtNum(n)}</span>
               <span className="text-[0.6875rem] text-text-muted leading-tight block mt-1">{NOMBRE_AMENAZA[c]}</span>
             </>
           )
-          return puedeVerEspecies && n > 0 ? (
+          return puedeVerEspecies && n !== null && n > 0 ? (
             <button key={c} type="button" className="bio-tesela bio-tesela-boton" onClick={() => onFiltrar({ conservacion: 'amenazada', amenaza: c })}
-              aria-label={`${NOMBRE_AMENAZA[c]}: ${fmtNum(n)} ${n === 1 ? 'especie' : 'especies'}. Ver la lista`}>{cuerpo}</button>
+              aria-label={`${NOMBRE_AMENAZA[c]}: ${texto}. Ver la lista`}>{cuerpo}</button>
           ) : (
-            <div key={c} className="bio-tesela" role="group" aria-label={`${NOMBRE_AMENAZA[c]}: ${fmtNum(n)} ${n === 1 ? 'especie' : 'especies'}`}>{cuerpo}</div>
+            <div key={c} className="bio-tesela" role="group" aria-label={`${NOMBRE_AMENAZA[c]}: ${texto}`}>{cuerpo}</div>
           )
         })}
       </div>
@@ -64,9 +72,9 @@ export default function PanelConservacion({ resumen, grupo, puedeVerEspecies, on
       <div className="bio-cons-lista">
         <Fila
           etiqueta="Endémicas de Colombia" valor={tieneListaEndemismo(grupo) ? resumen.endemicas_colombia : null}
-          nota="Solo hay listas nacionales de endemismo para aves, plantas y mamíferos." onClick={ir('endemica')}
+          nota="Solo hay listas nacionales de endemismo para aves, plantas y mamíferos." aviso={AVISO_FILTRO_ENDEMICAS} onClick={ir('endemica')}
         />
-        <Fila etiqueta="Endémicas del Chocó, reportadas por el IIAP (2011)" valor={resumen.endemicas_choco} onClick={ir('endemica')} nota="Lista histórica y parcial." />
+        <Fila etiqueta="Endémicas del Chocó, reportadas por el IIAP (2011)" valor={resumen.endemicas_choco} onClick={ir('endemica')} nota="Lista histórica y parcial." aviso={AVISO_FILTRO_ENDEMICAS} />
         <Fila etiqueta="Introducidas" valor={resumen.introducidas} onClick={ir('introducida')} />
         <Fila etiqueta="Invasoras" valor={resumen.invasoras} onClick={ir('invasora')} />
       </div>

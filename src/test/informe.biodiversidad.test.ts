@@ -50,8 +50,19 @@ describe('construirInforme', () => {
     expect(d.titulo).toBe('Observatorio de Biodiversidad - Aves')
     expect(d.subtitulo).toBe('Registros de ocurrencia por municipio')
     expect(d.filtros).toEqual(['Grupo: Aves', 'Familia: Tyrannidae'])
-    expect(d.nombreArchivo).toBe('informe-biodiversidad-aves-2026-11-11')
+    expect(d.nombreArchivo).toMatch(/^informe-biodiversidad-aves-2026-11-11-[a-z0-9]+$/)
     expect(d.secciones.map((s) => s.titulo)).toEqual(['Cifras clave', 'Territorio', 'Especies'])
+  })
+
+  test('el nombre del archivo distingue territorio y filtros; sin ninguno queda limpio', () => {
+    const nombre = (extra: Partial<EntradaInforme>) => construirInforme(entrada(extra)).nombreArchivo
+    expect(nombre({ filtros: [] })).toBe('informe-biodiversidad-aves-2026-11-11')
+    expect(nombre({ filtros: [], territorio: { municipio: '27001', departamento: 'Chocó' } })).toBe('informe-biodiversidad-aves-2026-11-11-27001')
+    expect(nombre({ filtros: [], territorio: { municipio: null, departamento: 'Chocó' } })).toBe('informe-biodiversidad-aves-2026-11-11-Chocó')
+    const a = nombre({ filtros: ['Familia: Tyrannidae'] })
+    const b = nombre({ filtros: ['Familia: Trochilidae'] })
+    expect(a).not.toBe(b)
+    expect(nombre({ filtros: ['Familia: Tyrannidae'] })).toBe(a)
   })
 
   test('las cifras salen formateadas y las que no se calculan lo dicen', () => {
@@ -115,6 +126,32 @@ describe('construirInforme', () => {
   })
 })
 
+describe('construirInforme: coherencia con lo que muestra la plataforma', () => {
+  const ranking = [municipio(1, 500), municipio(2, 40), municipio(3, 300)]
+
+  test('con un municipio elegido, la tabla territorial solo lleva ese municipio', () => {
+    const t = construirInforme(entrada({ ranking, territorio: { municipio: '272', departamento: null } })).secciones[1].tablas![0]
+    expect(t.filas).toEqual([['Municipio 2', 'Chocó', 40, 10]])
+  })
+
+  test('con un departamento elegido, solo lleva los municipios de ese departamento', () => {
+    const otro = { ...municipio(9, 70), departamento: 'Antioquia' }
+    const t = construirInforme(entrada({ ranking: [...ranking, otro], territorio: { municipio: null, departamento: 'Antioquia' } })).secciones[1].tablas![0]
+    expect(t.filas).toEqual([['Municipio 9', 'Antioquia', 70, 10]])
+  })
+
+  test('sin territorio elegido, la tabla sigue llevando todos los municipios con registros', () => {
+    expect(construirInforme(entrada({ ranking })).secciones[1].tablas![0].filas).toHaveLength(3)
+  })
+
+  test('si las especies no se pueden cruzar con la fuente, no se lista un inventario sin filtrar: se explica', () => {
+    const d = construirInforme(entrada({ metodo: 'agregado', especiesSinCruce: true, especies: [], totalEspecies: 0 }))
+    const sec = d.secciones.find((s) => s.titulo === 'Especies')!
+    expect(sec.tablas).toBeUndefined()
+    expect(sec.parrafos![0]).toMatch(/entidad o el conjunto/)
+  })
+})
+
 describe('construirInforme con registros individuales', () => {
   const sec = (d: ReturnType<typeof construirInforme>, titulo: string) => d.secciones.find((s) => s.titulo === titulo)
 
@@ -168,7 +205,8 @@ describe('reunirInforme', () => {
   const contexto = (extra: Partial<ContextoConsulta> = {}): ContextoConsulta => ({
     grupo: 'aves', metodo: 'individual', info, aviso: undefined, filtros: [], ranking: [municipio(1, 5)],
     paramsResumen: { familia: 'Tyrannidae' }, paramsEspecies: { familia: 'Tyrannidae', orden: 'nombre', pagina: 9, tamano: 5 },
-    paramsRegistros: { familia: 'Tyrannidae', orden: 'especie', pagina: 3, tamano: 25 }, ...extra,
+    paramsRegistros: { familia: 'Tyrannidae', orden: 'especie', pagina: 3, tamano: 25 },
+    territorio: { municipio: null, departamento: null }, especiesSinCruce: false, ...extra,
   })
   const pagina = (desde: number, cuantas: number, total: number) => ({ total, especies: Array.from({ length: cuantas }, (_, i) => especie(desde + i)) })
   const senal = new AbortController().signal
@@ -191,6 +229,13 @@ describe('reunirInforme', () => {
     expect(pedidasDeEspecies()[1][1]).toMatchObject({ params: { pagina: 2, tamano: 100 } })
     expect(d.secciones[2].tablas![0].filas).toHaveLength(150)
     expect(d.secciones[2].tablas![0].nota).toBe('Se incluyen las 150 especies con más registros de 1.480.')
+  })
+
+  test('si las especies no se cruzan con la fuente, ni siquiera las pide al servidor', async () => {
+    vi.mocked(api.get).mockImplementation(async () => resumen({ especies: null }))
+    const d = await reunirInforme(contexto({ metodo: 'agregado', especiesSinCruce: true }), 150, senal)
+    expect(pedidasDeEspecies()).toHaveLength(0)
+    expect(d.secciones.find((s) => s.titulo === 'Especies')!.tablas).toBeUndefined()
   })
 
   test('nunca pasa del máximo de especies por informe aunque el tope configurado sea mayor', async () => {
