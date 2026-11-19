@@ -44,15 +44,18 @@ export interface DeptoAgregado {
   departamento: string
   registros: number
   sinEspecie: number
+  /** Registros con dato de `sin_especie`; si falta se asume que todos lo tienen. */
+  registrosConDato?: number
   municipiosConRegistros: number
   totalMunicipios: number
 }
 
 export function rankingDepartamentos(deptos: DeptoAgregado[], metrica: Metrica, n: number): FilaRanking[] {
   if (!admiteDepartamentos(metrica)) return []
+  const base = (d: DeptoAgregado) => (metrica === 'sin_especie' ? d.registrosConDato ?? d.registros : d.registros)
   return deptos
-    .filter((d) => d.registros > 0 && (metrica !== 'sin_especie' || d.registros >= MIN_REGISTROS_PORCENTAJE))
-    .map((d) => ({ d, v: metrica === 'registros' ? d.registros : Math.round((d.sinEspecie / d.registros) * 1000) / 10 }))
+    .filter((d) => d.registros > 0 && (metrica !== 'sin_especie' || base(d) >= MIN_REGISTROS_PORCENTAJE))
+    .map((d) => ({ d, v: metrica === 'registros' ? d.registros : Math.round((d.sinEspecie / base(d)) * 1000) / 10 }))
     .filter((x) => x.v > 0)
     .sort((a, b) => b.v - a.v || a.d.departamento.localeCompare(b.d.departamento, 'es'))
     .slice(0, n)

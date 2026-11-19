@@ -85,21 +85,23 @@ describe('SelectorGrupo', () => {
     expect(tabs.filter((t) => t === '0')).toHaveLength(1)
     expect(screen.getByRole('radio', { name: /Mamíferos/ })).toHaveAttribute('tabindex', '0')
   })
-  test('flechas, Inicio y Fin cambian de grupo y mueven el foco', async () => {
+  test('flechas, Inicio y Fin solo mueven el foco; Enter y Espacio eligen el grupo', async () => {
     const onCambiar = vi.fn()
     render(<SelectorGrupo grupo="aves" onCambiar={onCambiar} />)
     screen.getByRole('radio', { name: /Aves/ }).focus()
     await userEvent.keyboard('{ArrowRight}')
-    expect(onCambiar).toHaveBeenLastCalledWith('mamiferos')
     expect(screen.getByRole('radio', { name: /Mamíferos/ })).toHaveFocus()
-    await userEvent.keyboard('{ArrowLeft}')
-    expect(onCambiar).toHaveBeenLastCalledWith('aves')
-    await userEvent.keyboard('{End}')
-    expect(onCambiar).toHaveBeenLastCalledWith('hongos')
+    await userEvent.keyboard('{ArrowLeft}{ArrowLeft}')
+    expect(screen.getByRole('radio', { name: /Hongos/ })).toHaveFocus()
     await userEvent.keyboard('{Home}')
-    expect(onCambiar).toHaveBeenLastCalledWith('aves')
-    await userEvent.keyboard('{ArrowLeft}')
+    expect(screen.getByRole('radio', { name: /Aves/ })).toHaveFocus()
+    await userEvent.keyboard('{End}')
+    expect(screen.getByRole('radio', { name: /Hongos/ })).toHaveFocus()
+    expect(onCambiar).not.toHaveBeenCalled()
+    await userEvent.keyboard('{Enter}')
     expect(onCambiar).toHaveBeenLastCalledWith('hongos')
+    await userEvent.keyboard('{ArrowLeft} ')
+    expect(onCambiar).toHaveBeenLastCalledWith('plantas')
   })
   test('clic elige el grupo', async () => {
     const onCambiar = vi.fn()
@@ -288,6 +290,11 @@ describe('SeccionEspecies', () => {
     const refetch = vi.fn()
     especies.q = { data: undefined, isError: true, error: { status: 422 } as never, refetch: refetch as never }
     rerender(<SeccionEspecies {...props} onCambio={vi.fn()} onVerRegistros={vi.fn()} />)
+    await userEvent.click(screen.getByRole('button', { name: /Limpiar filtros/ }))
+    expect(AYUDA.onLimpiar).toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: /Reintentar/ })).not.toBeInTheDocument()
+    especies.q = { data: undefined, isError: true, error: { status: 503 } as never, refetch: refetch as never }
+    rerender(<SeccionEspecies {...props} onCambio={vi.fn()} onVerRegistros={vi.fn()} />)
     await userEvent.click(screen.getByRole('button', { name: /Reintentar/ }))
     expect(refetch).toHaveBeenCalled()
     especies.q = { data: undefined, isError: false, isPending: true, refetch: vi.fn() as never }
@@ -338,7 +345,7 @@ describe('PanelResumen', () => {
   test('cargando y error con reintento', async () => {
     resumen.q = { data: undefined, isError: false, isFetching: true, refetch: vi.fn() as never }
     const { rerender } = render(<PanelResumen grupo="aves" paramsResumen={{}} paramsSeries={{}} paramsEspecies={{}} notaSeries={null} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)
-    expect(screen.getAllByRole('status', { name: /Cargando indicadores/ }).length).toBe(4)
+    expect(screen.getAllByRole('status', { name: /Cargando indicadores/ })).toHaveLength(1)
     const refetch = vi.fn()
     resumen.q = { data: undefined, isError: true, error: { status: 503 } as never, refetch: refetch as never }
     rerender(<PanelResumen grupo="aves" paramsResumen={{}} paramsSeries={{}} paramsEspecies={{}} notaSeries={null} nombreAlcance={null} esIndividual={false} onFiltrarEspecies={vi.fn()} onVerRegistros={vi.fn()} />)

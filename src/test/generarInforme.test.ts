@@ -60,6 +60,14 @@ describe('CSV', () => {
     expect(lineas).toContain('# DOI: 10.15468/example')
   })
 
+  test('si la tabla principal está recortada, la nota queda como comentario (el CSV no puede parecer completo)', async () => {
+    const d = datos({
+      secciones: [{ titulo: 'T', tablas: [{ titulo: 'T', columnas: ['a'], filas: [['x']], nota: 'Se incluyen las 300 especies con más registros de 1.480.' }] }],
+    })
+    const lineas = (await texto(generarCsv(d))).slice(1).split('\r\n')
+    expect(lineas).toContain('# Nota: Se incluyen las 300 especies con más registros de 1.480.')
+  })
+
   test('escapa comillas, comas y saltos de línea, y neutraliza las fórmulas', async () => {
     const d = datos({
       secciones: [{ titulo: 'T', tablas: [{ titulo: 'T', columnas: ['a', 'b'], filas: [['dice "hola", ok', '=SUMA(A1)'], ['+cmd', 'línea\nnueva'], [-5, 7]] }] }],
@@ -200,6 +208,23 @@ describe('Excel', () => {
     expect(hoja.getColumn(4).numFmt).not.toBe('#,##0')
     expect(hoja.autoFilter).toBeTruthy()
   })
+})
+
+describe('Excel: tablas enormes y secciones vacías', () => {
+  test('la hoja Resumen no lista títulos de secciones que solo llevan tablas', async () => {
+    const libro = new ExcelJS.Workbook()
+    const solo = datos({ secciones: [...datos().secciones, { titulo: 'Territorio', tablas: [{ titulo: 'Municipios', columnas: ['m'], filas: [['Quibdó']] }] }] })
+    await libro.xlsx.load(await leer(await generarExcel(solo, PLANTILLA)))
+    const valores = libro.getWorksheet('Resumen')!.getSheetValues().flat().map(String)
+    expect(valores).toContain('Cifras clave')
+    expect(valores).not.toContain('Territorio')
+  })
+
+  test('con cientos de miles de filas no se desborda la pila al calcular los anchos', async () => {
+    const filas = Array.from({ length: 200_000 }, (_, i) => [i])
+    const blob = await generarExcel(datos({ secciones: [{ titulo: 'R', tablas: [{ titulo: 'Grande', columnas: ['n'], filas }] }] }), PLANTILLA)
+    expect(blob.size).toBeGreaterThan(0)
+  }, 60_000)
 })
 
 describe('generarArchivo', () => {

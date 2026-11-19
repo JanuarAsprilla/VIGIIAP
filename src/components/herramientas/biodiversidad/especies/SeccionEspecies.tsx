@@ -52,7 +52,7 @@ export default function SeccionEspecies({ grupo, esIndividual, params, orden, mo
         </div>
       </div>
       {consulta.isError && !datos ? (
-        <PanelError error={consulta.error} onReintentar={() => void consulta.refetch()} />
+        <PanelError error={consulta.error} onReintentar={() => void consulta.refetch()} onLimpiarFiltros={ayuda.onLimpiar} />
       ) : !datos ? (
         <Cargando etiqueta="Cargando especies" className="h-80" />
       ) : datos.total === 0 ? (

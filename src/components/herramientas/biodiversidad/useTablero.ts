@@ -2,11 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useBiodiversidadEstado, useBiodiversidadMunicipios } from '@/hooks/useBiodiversidad'
 import { alCambiarGrupo, aplicabilidad, METODO_DE_GRUPO, reconciliar } from './lib/aplicabilidad'
-import { chipsActivos, textoResumen } from './lib/chips'
+import { chipsActivos, recordarNombres, SIN_NOMBRES, soloNombresVerificados, textoResumen, type NombresVerificados } from './lib/chips'
 import { calcularIndicadores, registrosEnTerritorio, resumenPorDepartamento } from './lib/derivar'
-import { calcularCortes } from './lib/escala'
+import { calcularCortes, valoresDeEscala } from './lib/escala'
 import { QUITAR_TODOS, leerFiltros, type CambiosUrl } from './lib/filtros'
-import { valorMetrica } from './lib/metrica'
 import { actualizarParametros, leerParametros } from './lib/parametros'
 import { paramsApi } from './lib/paramsApi'
 import { corregirTerritorio } from './lib/territorio'
@@ -30,8 +29,16 @@ export function useTablero() {
   const metodo = info?.metodo ?? METODO_DE_GRUPO[p.grupo]
   const esIndividual = metodo === 'individual'
   const [avisoCambio, setAvisoCambio] = useState<AvisoCambio | null>(null)
+  const [nombres, setNombres] = useState<NombresVerificados>(SIN_NOMBRES)
 
   const reconciliado = useMemo(() => reconciliar(crudos, metodo), [crudos, metodo])
+  // Filtros ignorados por el método (p. ej. entidad con familia en agregados): se avisa y se quitan de la URL para que no reaparezcan al soltar el otro.
+  if (reconciliado.descartados.length > 0 && avisoCambio?.elementos !== reconciliado.descartados) {
+    setAvisoCambio({ titulo: `No aplican a ${NOMBRES_GRUPO[p.grupo]} y se quitaron:`, elementos: reconciliado.descartados })
+  }
+  useEffect(() => {
+    if (reconciliado.descartados.length > 0) setBusqueda(actualizarParametros(busqueda, reconciliado.limpieza), { replace: true })
+  }, [reconciliado, busqueda, setBusqueda])
   const paramsMunicipios = useMemo(() => paramsApi('municipios', reconciliado.efectivos, metodo), [reconciliado, metodo])
   const munQ = useBiodiversidadMunicipios(p.grupo, paramsMunicipios)
   const baseQ = useBiodiversidadMunicipios(p.grupo)
@@ -45,7 +52,7 @@ export function useTablero() {
   }, [correccionTerritorio, busqueda, setBusqueda])
 
   const datos = useMemo(() => new Map(municipios.map((m) => [m.codigo_municipal, m])), [municipios])
-  const valores = useMemo(() => municipios.map((m) => valorMetrica(m, p.metrica)).filter((v): v is number => v !== null), [municipios, p.metrica])
+  const valores = useMemo(() => valoresDeEscala(municipios, p.metrica), [municipios, p.metrica])
   const cortes = useMemo(() => calcularCortes(valores), [valores])
   const maximo = useMemo(() => Math.max(0, ...valores), [valores])
   const indicadores = useMemo(() => (mun ? calcularIndicadores(municipios) : null), [mun, municipios])
@@ -61,20 +68,23 @@ export function useTablero() {
   const apl = aplicabilidad(metodo, filtros)
   const nombreAlcance = municipioSel ? `${municipioSel.municipio} (${municipioSel.departamento})` : deptoSel?.departamento ?? null
   const nombreMunicipio = municipioSel?.municipio ?? null
-  const chips = chipsActivos(filtros, nombreMunicipio)
+  const chips = chipsActivos(filtros, nombreMunicipio, nombres)
 
   const filtrados = mun ? registrosEnTerritorio(municipios, municipioSel?.codigo_municipal ?? null, deptoSel?.departamento ?? null) : null
   const baseMun = baseQ.data?.municipios
   const total = baseMun ? registrosEnTerritorio(baseMun, municipioSel?.codigo_municipal ?? null, deptoSel?.departamento ?? null) : null
-  const resumen = textoResumen(filtros, NOMBRES_GRUPO[p.grupo], nombreAlcance, filtrados, total, fmtNum)
+  const resumen = textoResumen(soloNombresVerificados(filtros, nombres), NOMBRES_GRUPO[p.grupo], nombreAlcance, filtrados, total, fmtNum)
 
   const cambiar = useCallback((cambios: CambiosUrl) => {
     setAvisoCambio(null)
+    setNombres((previos) => recordarNombres(previos, cambios))
     const resetPagina = !('pagina' in cambios)
     setBusqueda(actualizarParametros(busqueda, resetPagina ? { ...cambios, pagina: null } : cambios), { replace: false })
   }, [busqueda, setBusqueda])
 
   const limpiar = useCallback(() => cambiar({ ...QUITAR_TODOS }), [cambiar])
+  // Cerrar el aviso de filtros que no aplican quita solo esos filtros de la URL, no los que sí están en uso.
+  const limpiarDescartados = useCallback(() => cambiar({ ...reconciliado.limpieza }), [cambiar, reconciliado])
 
   const cambiarGrupo = useCallback((g: Grupo) => {
     const nuevo = estado.data?.grupos.find((x) => x.grupo === g)?.metodo ?? METODO_DE_GRUPO[g]
@@ -90,7 +100,7 @@ export function useTablero() {
 
   return {
     p, filtros, apl, metodo, esIndividual, info, estado, munQ, mun, municipios, datos, cortes, maximo, indicadores, ranking,
-    municipioSel, deptoSel, deptoActivo, nombreAlcance, chips, resumen, descartados: reconciliado.descartados,
-    avisoCambio, cerrarAviso: () => setAvisoCambio(null), cambiar, limpiar, cambiarGrupo,
+    municipioSel, deptoSel, deptoActivo, nombreAlcance, chips, filtrados, resumen, descartados: reconciliado.descartados,
+    avisoCambio, cerrarAviso: () => setAvisoCambio(null), cambiar, limpiar, limpiarDescartados, cambiarGrupo,
   }
 }

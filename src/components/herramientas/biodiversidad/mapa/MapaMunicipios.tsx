@@ -6,7 +6,7 @@ import type { MunicipioConteo } from '../types'
 import { claseDe } from '../lib/escala'
 import { fmtNum, fmtNumONulo, fmtPct } from '../lib/format'
 import { valorMetrica, type Metrica } from '../lib/metrica'
-import { puntoInterior } from '../lib/geometria'
+import { arrastreMovil, prefiereMovimientoReducido, puntoInterior } from '../lib/geometria'
 import { siguienteEnDireccion, type Direccion, type Punto } from '../lib/navegacion'
 import { dibujarBordesDepartamento } from './bordesDepartamento'
 import type { GeoMunicipios } from './geoMunicipios'
@@ -90,8 +90,8 @@ function centroEtiqueta(feature: GeoMunicipios['features'][number], capa: L.Poly
   return punto ? L.latLng(punto[1], punto[0]) : capa.getBounds().getCenter()
 }
 
-function prefiereMovimientoReducido(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+function opcionesZoom(): L.ZoomPanOptions {
+  return { animate: !prefiereMovimientoReducido() }
 }
 
 /** Mapa coroplético sin mapa base externo: solo la capa GeoJSON propia. El color lo pone el CSS
@@ -134,9 +134,11 @@ export default function MapaMunicipios({ geo, datos, metrica, cortes, selecciona
     const el = contenedor.current
     if (!el) return
     const movil = L.Browser.mobile
+    const sinAnimar = prefiereMovimientoReducido()
     const mapa = L.map(el, {
       zoomControl: false, attributionControl: false, dragging: !movil, touchZoom: true, doubleClickZoom: true,
       scrollWheelZoom: false, boxZoom: false, keyboard: false, zoomSnap: 0.25, zoomDelta: 0.5, minZoom: 3, maxZoom: 13,
+      zoomAnimation: !sinAnimar, fadeAnimation: !sinAnimar, markerZoomAnimation: !sinAnimar,
     })
     mapaRef.current = mapa
     alMapa.current?.(mapa)
@@ -157,6 +159,15 @@ export default function MapaMunicipios({ geo, datos, metrica, cortes, selecciona
     const pane = mapa.createPane('seleccion')
     pane.style.zIndex = '460'
     pane.style.pointerEvents = 'none'
+    // Solo lo decorativo se oculta: popups, clústeres y controles de la capa de puntos siguen en el árbol de accesibilidad.
+    for (const decorativo of [mapa.getPane('overlayPane'), pane]) decorativo?.setAttribute('aria-hidden', 'true')
+
+    const alZoom = () => {
+      const base = limites.current ? mapa.getBoundsZoom(limites.current) : Number.NaN
+      if (arrastreMovil(mapa.getZoom(), base)) mapa.dragging.enable()
+      else mapa.dragging.disable()
+    }
+    if (movil) mapa.on('zoomend', alZoom)
 
     // La rueda solo acerca con Ctrl/⌘: sin ellas la página sigue desplazándose.
     const alRueda = (e: WheelEvent) => {
@@ -177,6 +188,7 @@ export default function MapaMunicipios({ geo, datos, metrica, cortes, selecciona
     ro.observe(el)
     return () => {
       ro.disconnect()
+      mapa.off('zoomend', alZoom)
       el.removeEventListener('wheel', alRueda)
       window.clearTimeout(temporizador.current)
       quitarBordes()
@@ -228,8 +240,8 @@ export default function MapaMunicipios({ geo, datos, metrica, cortes, selecciona
 
   function alTeclear(e: KeyboardEvent<HTMLDivElement>) {
     if (e.target !== e.currentTarget) return
-    if (e.key === '+' || e.key === '=') { mapaRef.current?.zoomIn(0.5); return }
-    if (e.key === '-') { mapaRef.current?.zoomOut(0.5); return }
+    if (e.key === '+' || e.key === '=') { mapaRef.current?.zoomIn(0.5, opcionesZoom()); return }
+    if (e.key === '-') { mapaRef.current?.zoomOut(0.5, opcionesZoom()); return }
     const dir = TECLAS[e.key]
     if (dir) {
       e.preventDefault()
@@ -264,10 +276,10 @@ export default function MapaMunicipios({ geo, datos, metrica, cortes, selecciona
       onKeyDown={alTeclear}
       onBlur={() => setFoco(null)}
     >
-      <div ref={contenedor} className="bio-mapa" aria-hidden="true" />
+      <div ref={contenedor} className="bio-mapa" />
       <div className="bio-controles" role="group" aria-label="Controles del mapa">
-        <button type="button" className="bio-ctl" aria-label="Acercar" onClick={() => mapaRef.current?.zoomIn(0.5)}><Plus className="w-4 h-4" aria-hidden="true" /></button>
-        <button type="button" className="bio-ctl" aria-label="Alejar" onClick={() => mapaRef.current?.zoomOut(0.5)}><Minus className="w-4 h-4" aria-hidden="true" /></button>
+        <button type="button" className="bio-ctl" aria-label="Acercar" onClick={() => mapaRef.current?.zoomIn(0.5, opcionesZoom())}><Plus className="w-4 h-4" aria-hidden="true" /></button>
+        <button type="button" className="bio-ctl" aria-label="Alejar" onClick={() => mapaRef.current?.zoomOut(0.5, opcionesZoom())}><Minus className="w-4 h-4" aria-hidden="true" /></button>
         <button type="button" className="bio-ctl" aria-label="Restablecer la vista completa" onClick={() => { if (mapaRef.current && limites.current) mapaRef.current.fitBounds(limites.current, { padding: MARGEN_AJUSTE, animate: !prefiereMovimientoReducido() }) }}>
           <Maximize2 className="w-4 h-4" aria-hidden="true" />
         </button>

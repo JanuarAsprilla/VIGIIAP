@@ -1,10 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { fmtNum } from '../lib/format'
-
-interface Punto {
-  anio: number
-  registros: number
-}
+import { completarAnios, type PuntoAnio } from './anios'
 
 const ANCHO = 640
 const ALTO = 205
@@ -15,8 +11,9 @@ function pasoEtiquetas(n: number): number {
 }
 
 /** Barras de registros por año en SVG propio; el valor del año activo se lee arriba y hay tabla alterna. */
-export default function GraficoAnios({ datos }: { datos: Punto[] }) {
+export default function GraficoAnios({ datos: crudos }: { datos: PuntoAnio[] }) {
   const [activo, setActivo] = useState<number | null>(null)
+  const datos = useMemo(() => completarAnios(crudos), [crudos])
   if (datos.length === 0) return <p className="text-sm text-text-muted">Sin registros fechados en este alcance.</p>
   const maximo = Math.max(1, ...datos.map((d) => d.registros))
   const area = { w: ANCHO - MARGEN.izq - MARGEN.der, h: ALTO - MARGEN.sup - MARGEN.inf }
@@ -50,7 +47,7 @@ export default function GraficoAnios({ datos }: { datos: Punto[] }) {
                   Pico {d.anio} · {fmtNum(d.registros)}
                 </text>
               )}
-              {i % paso5 === 0 && (
+              {d.anio % paso5 === 0 && (
                 <text x={x + ancho / 2} y={ALTO - 7} textAnchor="middle" className="bio-eje-texto">{d.anio}</text>
               )}
             </g>

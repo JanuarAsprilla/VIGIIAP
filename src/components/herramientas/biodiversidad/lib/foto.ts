@@ -7,12 +7,18 @@ export function urlImagenValida(url: string | null | undefined): string | null {
   return PATRON_IMAGEN.test(url) ? url : null
 }
 
+const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/
+
+function esDireccionIp(host: string): boolean {
+  return host.startsWith('[') || IPV4.test(host)
+}
+
 /** Enlace de referencia de la foto: solo https y sin credenciales. */
 export function urlReferenciaValida(url: string | null | undefined): string | null {
   if (typeof url !== 'string' || url.length > 600) return null
   try {
     const u = new URL(url)
-    if (u.protocol !== 'https:' || u.username || u.password || !u.hostname.includes('.')) return null
+    if (u.protocol !== 'https:' || u.username || u.password || !u.hostname.includes('.') || esDireccionIp(u.hostname)) return null
     return u.href
   } catch {
     return null

@@ -67,6 +67,11 @@ export const FILTROS_VACIOS: Filtros = {
   conjunto: null, nombreConjunto: null, anioDesde: null, anioHasta: null, evidencia: null, conFoto: false, conUbicacion: false,
 }
 
+/** Un enlace con el rango invertido (2020–2010) se ordena: la API rechaza «desde» mayor que «hasta». */
+function rangoDeAnios(desde: number | null, hasta: number | null): { anioDesde: number | null, anioHasta: number | null } {
+  return desde !== null && hasta !== null && desde > hasta ? { anioDesde: hasta, anioHasta: desde } : { anioDesde: desde, anioHasta: hasta }
+}
+
 /** Lee los filtros de la URL descartando cualquier valor con forma inválida. */
 export function leerFiltros(p: URLSearchParams): Filtros {
   const departamento = p.get('departamento')
@@ -96,8 +101,7 @@ export function leerFiltros(p: URLSearchParams): Filtros {
     nombreEntidad: entidad ? rotulo(p.get('nombre_entidad')) : null,
     conjunto,
     nombreConjunto: conjunto ? rotulo(p.get('nombre_conjunto')) : null,
-    anioDesde: entero(p.get('anio_desde'), 1900, 2100),
-    anioHasta: entero(p.get('anio_hasta'), 1900, 2100),
+    ...rangoDeAnios(entero(p.get('anio_desde'), 1900, 2100), entero(p.get('anio_hasta'), 1900, 2100)),
     evidencia: evidencia && PATRON_EVIDENCIA.test(evidencia) ? evidencia : null,
     conFoto: p.get('con_foto') === '1',
     conUbicacion: p.get('con_ubicacion') === '1',
