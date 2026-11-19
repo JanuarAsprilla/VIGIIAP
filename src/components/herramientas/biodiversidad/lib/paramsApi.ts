@@ -8,10 +8,11 @@ function territorio(f: Filtros, p: ParamsApi) {
   else if (f.departamento) p.departamento = f.departamento
 }
 
-function taxonomia(f: Filtros, p: ParamsApi, conEspecie: boolean) {
+/** `conBuscar` es falso en `/opciones`: ahí `buscar` filtra las etiquetas de la lista, no el nombre de la especie. */
+function taxonomia(f: Filtros, p: ParamsApi, conEspecie: boolean, conBuscar = true) {
   for (const n of NIVELES_TAXON) if (f[n]) p[n] = f[n]
   if (conEspecie && f.especie) p.especie_clave = f.especie
-  if (conEspecie && f.buscar) p.buscar = f.buscar
+  if (conEspecie && conBuscar && f.buscar) p.buscar = f.buscar
   if (f.conservacion) p.conservacion = f.conservacion
   if (f.conservacion === 'amenazada' && f.amenaza) p.amenaza = f.amenaza
 }
@@ -35,14 +36,14 @@ export function paramsApi(ruta: RutaFiltrada, f: Filtros, metodo: Metodo): Param
   const p: ParamsApi = {}
   if (ruta !== 'municipios') territorio(f, p)
   if (metodo === 'individual') {
-    taxonomia(f, p, true)
+    taxonomia(f, p, true, ruta !== 'opciones')
     fuente(f, p)
     registro(f, p)
     return p
   }
   if (ruta === 'series') return p
   const tax = hayTaxonomia(f) || hayConservacion(f)
-  if (tax) taxonomia(f, p, true)
+  if (tax) taxonomia(f, p, true, ruta !== 'opciones')
   else if ((ruta === 'municipios' || ruta === 'resumen' || ruta === 'opciones') && hayFuente(f)) fuente(f, p)
   return p
 }

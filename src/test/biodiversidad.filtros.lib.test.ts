@@ -2,12 +2,12 @@ import { describe, test, expect } from 'vitest'
 import {
   FILTROS_VACIOS, QUITAR_TODOS, cambiosConservacion, cambiosEntidad, cambiosTaxon, contarFiltros, leerFiltros, type Filtros,
 } from '@/components/herramientas/biodiversidad/lib/filtros'
-import { alCambiarGrupo, aplicabilidad, reconciliar } from '@/components/herramientas/biodiversidad/lib/aplicabilidad'
+import { alCambiarGrupo, aplicabilidad, especiesSinCruce, reconciliar } from '@/components/herramientas/biodiversidad/lib/aplicabilidad'
 import { paramsApi, paramsSugerencias } from '@/components/herramientas/biodiversidad/lib/paramsApi'
 import { chipsActivos, textoResumen } from '@/components/herramientas/biodiversidad/lib/chips'
-import { actualizarParametros } from '@/components/herramientas/biodiversidad/lib/parametros'
+import { actualizarParametros, leerParametros, sanearTextoOpciones } from '@/components/herramientas/biodiversidad/lib/parametros'
 import {
-  bboxATexto, mensajeMuestra, mensajeOcultos, puntosDibujables, redondearBbox, ubicacionPublica,
+  bboxATexto, mensajeMuestra, MENSAJE_RESERVADAS, puntosDibujables, redondearBbox, ubicacionPublica,
 } from '@/components/herramientas/biodiversidad/lib/puntos'
 import { ordenEspecies, ordenRegistros } from '@/components/herramientas/biodiversidad/lib/orden'
 import { fmtNum } from '@/components/herramientas/biodiversidad/lib/format'
@@ -52,6 +52,25 @@ describe('estado de filtros en la URL', () => {
     const url = actualizarParametros(new URLSearchParams('grupo=aves&familia=X1&municipio=05837&departamento=Antioquia'), QUITAR_TODOS)
     expect([...url.keys()]).toEqual(['grupo'])
     expect(contarFiltros(f({ municipio: '05837', departamento: 'Antioquia', familia: 'Hylidae', conFoto: true }))).toBe(4)
+  })
+})
+
+describe('hallazgos de la auditoría: filtros y parámetros', () => {
+  test('/opciones no recibe la búsqueda por nombre de especie: ahí `buscar` filtra las etiquetas de las listas', () => {
+    for (const metodo of ['individual', 'agregado'] as const) {
+      expect(paramsApi('opciones', f({ buscar: 'Pristimantis' }), metodo)).not.toHaveProperty('buscar')
+      expect(paramsApi('especies', f({ buscar: 'Pristimantis' }), metodo)).toHaveProperty('buscar', 'Pristimantis')
+    }
+    expect(paramsApi('opciones', f({ buscar: 'Pristimantis', especie: 'K1' }), 'individual')).toMatchObject({ especie_clave: 'K1' })
+  })
+
+  test('un rango de años invertido en la URL se ordena en vez de provocar un 422', () => {
+    expect(leerFiltros(new URLSearchParams('anio_desde=2020&anio_hasta=2010'))).toMatchObject({ anioDesde: 2010, anioHasta: 2020 })
+    expect(leerFiltros(new URLSearchParams('anio_desde=2010&anio_hasta=2020'))).toMatchObject({ anioDesde: 2010, anioHasta: 2020 })
+  })
+
+  test('la página de la URL nunca supera lo que la API deja paginar', () => {
+    expect(leerParametros(new URLSearchParams('pagina=900')).pagina).toBeLessThanOrEqual(416)
   })
 })
 
@@ -180,10 +199,8 @@ describe('ubicación y puntos: nunca se dibuja lo reservado', () => {
     expect(bboxATexto(b)).toBe('-77.25,5,-76,6.5')
     expect(redondearBbox(-77.2, 5.1, -76.1, 6.2)).toEqual(redondearBbox(-77.24, 5.01, -76.01, 6.24))
   })
-  test('mensajes de ocultos y de muestra', () => {
-    expect(mensajeOcultos(0)).toBeNull()
-    expect(mensajeOcultos(5079)).toBe('5.079 registros de especies amenazadas o sin determinar no muestran su ubicación para protegerlas.')
-    expect(mensajeOcultos(1)).toMatch(/^1 registro .* no muestra su ubicación/)
+  test('mensajes de reservadas (fijo, sin cifras) y de muestra', () => {
+    expect(MENSAJE_RESERVADAS).toMatch(/ubicaciones reservadas/)
     expect(mensajeMuestra(1500, 4194)).toMatch(/muestra de 1\.500 de 4\.194/)
   })
 })
@@ -195,5 +212,27 @@ describe('orden', () => {
     expect(ordenEspecies(null)).toBe('registros')
     expect(ordenRegistros('especie')).toBe('especie')
     expect(ordenRegistros('nombre')).toBe('anio_desc')
+  })
+})
+
+describe('especiesSinCruce', () => {
+  test('solo en inventarios agregados con entidad o conjunto activos', () => {
+    expect(especiesSinCruce('agregado', f({ entidad: UUID }))).toBe(true)
+    expect(especiesSinCruce('agregado', f({ conjunto: UUID }))).toBe(true)
+    expect(especiesSinCruce('agregado', f())).toBe(false)
+    expect(especiesSinCruce('agregado', f({ familia: 'Tyrannidae' }))).toBe(false)
+    expect(especiesSinCruce('individual', f({ entidad: UUID }))).toBe(false)
+  })
+})
+
+describe('sanearTextoOpciones (búsqueda dentro de las listas de filtro)', () => {
+  test('conserva guiones, números, paréntesis y apóstrofos que la API sí admite', () => {
+    expect(sanearTextoOpciones('Research-grade')).toBe('Research-grade')
+    expect(sanearTextoOpciones('GBIF 2020 (Colombia)')).toBe('GBIF 2020 (Colombia)')
+    expect(sanearTextoOpciones("O'Brien")).toBe("O'Brien")
+  })
+
+  test('descarta lo que la API rechazaría y recorta los espacios', () => {
+    expect(sanearTextoOpciones('  bio<script>%;  ')).toBe('bioscript')
   })
 })

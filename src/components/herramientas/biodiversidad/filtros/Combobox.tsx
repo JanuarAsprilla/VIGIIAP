@@ -33,14 +33,16 @@ interface Props {
   filtradoRemoto?: boolean
   ocultarEtiqueta?: boolean
   idEntrada?: string
+  /** Aviso al pie de la lista (p. ej. que solo se muestran las primeras opciones). */
+  nota?: string
 }
 
 const quitarAcentos = (t: string) => t.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 
-/** Combobox accesible (patrón ARIA 1.2 «list autocomplete»): flechas, Enter, Escape, Inicio/Fin, y anuncio de opciones. */
+/** Combobox accesible (patrón ARIA 1.2 «list autocomplete»): flechas, Enter, Escape (Inicio y Fin mueven el cursor del texto) y anuncio de opciones. */
 export default function Combobox({
   etiqueta, placeholder, seleccion, opciones, cargando = false, error = false, deshabilitado = false, motivo, vacio = 'Sin coincidencias',
-  onAbrir, onCerrar, onTexto, onElegir, onLimpiar, onEnterTexto, filtradoRemoto = false, ocultarEtiqueta = false, idEntrada,
+  onAbrir, onCerrar, onTexto, onElegir, onLimpiar, onEnterTexto, filtradoRemoto = false, ocultarEtiqueta = false, idEntrada, nota,
 }: Props) {
   const base = useId()
   const idInput = idEntrada ?? `${base}-in`
@@ -91,10 +93,6 @@ export default function Combobox({
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setActivo((i) => Math.max(0, i - 1))
-    } else if (e.key === 'Home' && abierto) {
-      e.preventDefault(); setActivo(0)
-    } else if (e.key === 'End' && abierto) {
-      e.preventDefault(); setActivo(visibles.length - 1)
     } else if (e.key === 'Enter') {
       if (abierto && activo >= 0 && visibles[activo]) { e.preventDefault(); elegir(visibles[activo]) }
       else if (onEnterTexto && texto.trim().length >= 2) { e.preventDefault(); onEnterTexto(texto.trim()); cerrar() }
@@ -116,7 +114,7 @@ export default function Combobox({
           aria-activedescendant={abierto && activo >= 0 ? `${base}-o${activo}` : undefined}
           aria-describedby={motivo ? `${base}-motivo` : undefined}
           disabled={deshabilitado}
-          placeholder={seleccion ? undefined : placeholder ?? 'Todos'}
+          placeholder={seleccion ?? placeholder ?? 'Todos'}
           value={mostrado}
           onFocus={abrir} onClick={abrir} onBlur={cerrar} onKeyDown={alTeclear}
           onChange={(e) => { setTexto(e.target.value); setActivo(onEnterTexto ? -1 : 0); onTexto?.(e.target.value); if (!abierto) abrir() }}
@@ -130,22 +128,24 @@ export default function Combobox({
       </div>
       {motivo && <p id={`${base}-motivo`} className="bio-combo-motivo">{motivo}</p>}
       {abierto && (
-        <ul id={idLista} ref={lista} role="listbox" aria-label={etiqueta} className="bio-combo-lista" data-lenis-prevent>
+        <ul id={idLista} ref={lista} role="listbox" aria-label={etiqueta} className="bio-combo-lista" data-lenis-prevent
+          onMouseDown={(e) => e.preventDefault()}>
           {visibles.map((o, i) => (
             <li
               key={o.valor} id={`${base}-o${i}`} data-i={i} role="option" aria-selected={o.etiqueta === seleccion}
               className={i === activo ? 'bio-combo-activa' : undefined}
-              onMouseDown={(e) => e.preventDefault()} onMouseEnter={() => setActivo(i)} onClick={() => elegir(o)}
+              onMouseEnter={() => setActivo(i)} onClick={() => elegir(o)}
             >
               <span className="bio-combo-nombre">{o.etiqueta}</span>
               {o.detalle && <span className="bio-combo-detalle">{o.detalle}</span>}
             </li>
           ))}
           {estado && <li role="presentation" className="bio-combo-estado">{estado}</li>}
+          {nota && !estado && <li role="presentation" className="bio-combo-estado">{nota}</li>}
         </ul>
       )}
       <p className="sr-only" role="status" aria-live="polite">
-        {abierto ? (estado || `${visibles.length} ${visibles.length === 1 ? 'opción' : 'opciones'}`) : ''}
+        {abierto ? (estado || `${visibles.length} ${visibles.length === 1 ? 'opción' : 'opciones'}${nota ? `. ${nota}` : ''}`) : ''}
       </p>
     </div>
   )

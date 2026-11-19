@@ -231,7 +231,7 @@ export default function CommandPalette() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Buscar módulos, documentos..."
-              className="flex-1 bg-transparent border-none outline-none text-sm text-text placeholder:text-text-muted"
+              className="campo-libre flex-1 bg-transparent border-none outline-none text-sm text-text placeholder:text-text-muted"
             />
             {query && (
               <button

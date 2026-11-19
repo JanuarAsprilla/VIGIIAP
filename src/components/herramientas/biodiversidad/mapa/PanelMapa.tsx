@@ -29,11 +29,13 @@ interface Props {
   onMetrica: (m: Metrica) => void
   onPuntos: (activo: boolean) => void
   onAbrirRegistro: (id: string, origen: HTMLElement) => void
+  /** Alternativa textual al mapa de puntos: abre la pestaña de registros. */
+  onVerLista?: () => void
 }
 
 export default function PanelMapa({
   grupo, datos, metrica, cortes, maximo, seleccionado, departamento, cargandoDatos, puntosDisponibles, puntosActivos, paramsPuntos,
-  enfoque, onSeleccionar, onMetrica, onPuntos, onAbrirRegistro,
+  enfoque, onSeleccionar, onMetrica, onPuntos, onAbrirRegistro, onVerLista,
 }: Props) {
   const geo = useGeoMunicipios()
   const titulo = useId()
@@ -46,7 +48,7 @@ export default function PanelMapa({
       <div className="px-1 pb-3 flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <h2 id={titulo} className="section-title">Mapa por municipio</h2>
-          <p className="text-xs text-text-muted mt-0.5">Toca o haz clic en un municipio para ver su detalle y filtrar el resto de la herramienta.</p>
+          <p className="text-xs text-text-muted mt-0.5">Toca o haz clic en un municipio para ver su detalle y filtrar el resto de la herramienta. En el celular, acerca el mapa para poder moverlo con un dedo; a vista completa el dedo desplaza la página.</p>
         </div>
         <div role="radiogroup" aria-label="Qué pintar en el mapa" className="bio-segmentos">
           {METRICAS.map((m) => (
@@ -79,7 +81,7 @@ export default function PanelMapa({
           <CapaPuntos mapa={mapa} grupo={grupo} params={paramsPuntos} enfoque={enfoque} onAbrir={onAbrirRegistro} onInfo={alInfo} />
         </Suspense>
       )}
-      {capaActiva && <MensajesPuntos info={info} onReintentar={info.reintentar} />}
+      {capaActiva && <MensajesPuntos info={info} onReintentar={info.reintentar} onVerLista={onVerLista} />}
     </section>
   )
 }

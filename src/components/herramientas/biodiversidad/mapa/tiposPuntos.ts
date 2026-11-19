@@ -5,7 +5,6 @@ export interface InfoPuntos {
   error: unknown
   total: number
   mostrados: number
-  ocultos: number
   muestreado: boolean
   /** Hay una respuesta (aunque esté vacía). */
   listo: boolean
@@ -18,4 +17,4 @@ export interface Enfoque extends Ubicacion {
   vez: number
 }
 
-export const INFO_INICIAL: InfoPuntos = { cargando: true, error: null, total: 0, mostrados: 0, ocultos: 0, muestreado: false, listo: false, reintentar: () => undefined }
+export const INFO_INICIAL: InfoPuntos = { cargando: true, error: null, total: 0, mostrados: 0, muestreado: false, listo: false, reintentar: () => undefined }

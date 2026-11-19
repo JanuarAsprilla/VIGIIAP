@@ -18,10 +18,10 @@ export default function LeyendaEscala({ cortes, maximo, metrica = 'registros' }:
       </div>
       <ul>
         <li title="Municipios sin registros para esta medida"><span className="bio-muestra bio-muestra-vacia" aria-hidden="true" /><span>Sin datos</span></li>
-        {tramos.map((t) => (
+        {tramos.map((t, i) => (
           <li key={t.clase}>
             <span className="bio-muestra" style={{ background: `var(--bio-c${t.clase})` }} aria-hidden="true" />
-            <span>{etiquetaTramo(t, metrica)}</span>
+            <span>{etiquetaTramo(t, metrica, i === tramos.length - 1)}</span>
           </li>
         ))}
       </ul>
