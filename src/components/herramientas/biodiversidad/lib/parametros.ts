@@ -29,6 +29,11 @@ export function entero(valor: string | null, min: number, max: number): number |
   return n >= min && n <= max ? n : null
 }
 
+/** Texto con el que se buscan opciones de un filtro: solo lo que la API admite (letras, números, espacios y . ' ( ) -). */
+export function sanearTextoOpciones(valor: string): string {
+  return valor.replace(/[^\p{L}\p{N}\p{M} .'()-]/gu, '').trim()
+}
+
 /** Texto de búsqueda: 2 a 60 caracteres, sin caracteres de control. */
 export function sanearBusqueda(valor: string | null): string {
   if (!valor) return ''
@@ -46,7 +51,8 @@ export function leerParametros(p: URLSearchParams): ParametrosVista {
   const ordenar = p.get('ordenar') ?? p.get('orden')
   return {
     grupo: esGrupo(grupo) ? grupo : GRUPO_INICIAL,
-    pagina: entero(p.get('pagina'), 1, MAX_REGISTROS_CONSULTABLES / 10) ?? 1,
+    // Tope de la página más corta: pagina × tamaño no puede pasar de MAX_REGISTROS_CONSULTABLES (24 por página → 416).
+    pagina: entero(p.get('pagina'), 1, Math.floor(MAX_REGISTROS_CONSULTABLES / TAMANO_PAGINA)) ?? 1,
     vista: (VISTAS as readonly string[]).includes(vista ?? '') ? (vista as Vista) : null,
     metrica: esMetrica(metrica) ? metrica : METRICA_INICIAL,
     modo: p.get('modo') === 'tabla' ? 'tabla' : 'tarjetas',

@@ -9,7 +9,7 @@ import { etiquetarLicencia } from '@/components/herramientas/biodiversidad/lib/l
 import { leerFiltros } from '@/components/herramientas/biodiversidad/lib/filtros'
 import { leerParametros, sanearBusqueda, actualizarParametros } from '@/components/herramientas/biodiversidad/lib/parametros'
 import { puntoInterior } from '@/components/herramientas/biodiversidad/lib/geometria'
-import { ordenarMunicipios } from '@/components/herramientas/biodiversidad/lib/derivar'
+import { municipiosEnTerritorio, ordenarMunicipios } from '@/components/herramientas/biodiversidad/lib/derivar'
 import type { MunicipioConteo } from '@/components/herramientas/biodiversidad/types'
 
 const FOTO = 'https://api.gbif.org/v1/image/cache/400x/occurrence/4512345678/media/0123456789abcdef0123456789abcdef'
@@ -200,3 +200,17 @@ describe('marcas locales de revisión', () => {
     expect(separarMarcas(undefined)).toEqual([])
   })
 })
+
+describe('municipiosEnTerritorio', () => {
+  const lista: MunicipioConteo[] = [
+    { codigo_municipal: '27001', municipio: 'Quibdó', departamento: 'Chocó', registros: 5, sin_especie: 0, especies: 3 },
+    { codigo_municipal: '27002', municipio: 'Atrato', departamento: 'Chocó', registros: 2, sin_especie: 0, especies: 1 },
+    { codigo_municipal: '05001', municipio: 'Medellín', departamento: 'Antioquia', registros: 9, sin_especie: 0, especies: 4 },
+  ]
+  test('un municipio, un departamento o todo', () => {
+    expect(municipiosEnTerritorio(lista, '27002', null).map((m) => m.municipio)).toEqual(['Atrato'])
+    expect(municiosNombres(municipiosEnTerritorio(lista, null, 'Chocó'))).toEqual(['Quibdó', 'Atrato'])
+    expect(municipiosEnTerritorio(lista, null, null)).toHaveLength(3)
+  })
+})
+const municiosNombres = (l: MunicipioConteo[]) => l.map((m) => m.municipio)

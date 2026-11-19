@@ -21,8 +21,8 @@ const config = (extra: Record<string, unknown> = {}) => ({
 })
 const DATOS = { titulo: 'Informe', generadoEn: new Date(), filtros: [], secciones: [], fuente: [], nombreArchivo: 'informe' } as DatosInforme
 
-function pintar(construir = vi.fn().mockResolvedValue(DATOS)) {
-  const vista = render(<MemoryRouter initialEntries={['/herramientas?grupo=aves']}><BotonDescargarInforme herramienta="biodiversidad" construir={construir} /></MemoryRouter>)
+function pintar(construir = vi.fn().mockResolvedValue(DATOS), bloqueado = false) {
+  const vista = render(<MemoryRouter initialEntries={['/herramientas?grupo=aves']}><BotonDescargarInforme herramienta="biodiversidad" construir={construir} bloqueado={bloqueado} /></MemoryRouter>)
   return { construir, ...vista }
 }
 
@@ -82,6 +82,31 @@ describe('BotonDescargarInforme', () => {
     expect(screen.getByRole('button', { name: /Preparando informe/ })).toBeDisabled()
     terminar(DATOS)
     await waitFor(() => expect(screen.getByRole('button', { name: 'Descargar informe' })).toBeEnabled())
+  })
+
+  test('durante la exportación se puede cancelar; el foco pasa a «Cancelar» y vuelve al botón', async () => {
+    let senal: AbortSignal | undefined
+    const construir = vi.fn().mockImplementation((_m: number, s: AbortSignal) => { senal = s; return new Promise<DatosInforme>(() => {}) })
+    pintar(construir)
+    await userEvent.click(screen.getByRole('button', { name: 'Descargar informe' }))
+    await userEvent.click(screen.getByRole('menuitem', { name: 'PDF' }))
+    const cancelar = screen.getByRole('button', { name: 'Cancelar' })
+    expect(cancelar).toHaveFocus()
+    await userEvent.click(cancelar)
+    expect(senal?.aborted).toBe(true)
+    expect(screen.getByRole('status')).toHaveTextContent('Descarga cancelada.')
+    expect(screen.getByRole('button', { name: 'Descargar informe' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Descargar informe' })).toHaveFocus()
+    expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
+    expect(guardar).not.toHaveBeenCalled()
+  })
+
+  test('mientras los datos del tablero se actualizan, la descarga queda bloqueada', async () => {
+    const { construir } = pintar(undefined, true)
+    const boton = screen.getByRole('button', { name: /Actualizando datos/ })
+    expect(boton).toBeDisabled()
+    await userEvent.click(boton)
+    expect(construir).not.toHaveBeenCalled()
   })
 
   test('con un solo formato descarga directo, sin menú', async () => {

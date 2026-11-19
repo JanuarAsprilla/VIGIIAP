@@ -622,7 +622,39 @@ h1, h2, h3, .font-display {
 :focus-visible {
   outline: 2px solid var(--color-primary-600);
   outline-offset: 3px;
-  border-radius: var(--radius-sm);
+}
+
+/* Campos de texto: un solo anillo (borde + halo) que sigue el radio del propio campo, en lugar de un contorno con desfase. */
+input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file']):focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: var(--color-primary-600);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-600) 22%, transparent);
+}
+
+/* Campo dentro de una caja con borde propia (buscadores con icono): el anillo lo dibuja la caja, nunca el input. */
+.campo-caja:focus-within {
+  border-color: var(--color-primary-600) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-600) 22%, transparent);
+}
+/* La X nativa de los campos de búsqueda duplica a la propia de cada componente. */
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-decoration {
+  appearance: none;
+  display: none;
+}
+
+/* Campo sin caja propia (paleta de búsqueda): la fila entera es el campo, no se dibuja anillo interior. */
+input.campo-libre:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+.campo-caja input:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-radius: 0;
 }
 
 /* ── Button press feedback (Emil: all pressable elements) ── */

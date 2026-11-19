@@ -201,7 +201,10 @@
   min-height: 2.5rem; padding: 0.4rem 0.7rem; font-size: 0.8125rem; color: var(--color-text);
   background: var(--bio-superficie); border: 1px solid var(--bio-linea); border-radius: var(--radius-md); max-width: 100%;
 }
+.bio-campo { transition: border-color 150ms, box-shadow 150ms; }
 .bio-campo:hover { border-color: color-mix(in srgb, var(--color-primary-600) 50%, var(--bio-linea)); }
+/* Un solo anillo de foco por campo: el borde y un halo suave, sin el contorno doble del foco global. */
+.bio-root .bio-campo:focus-visible { outline: none; border-color: var(--color-primary-600); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-600) 22%, transparent); }
 
 /* ── Registros: tabla que se apila en tarjetas en móvil ───────────────────── */
 @media (max-width: 47.99rem) {
@@ -375,8 +378,11 @@
 /* ── Búsqueda e interruptor ───────────────────────────────────────────────── */
 .bio-buscador { display: flex; align-items: center; gap: 0.5rem; min-height: 2.5rem; padding: 0 0.6rem 0 0.75rem; background: var(--bio-superficie); border: 1px solid var(--bio-linea); border-radius: var(--radius-md); transition: border-color 150ms; }
 .bio-buscador:hover { border-color: color-mix(in srgb, var(--color-primary-600) 50%, var(--bio-linea)); }
-.bio-buscador:focus-within { border-color: var(--color-primary-600); outline: 2px solid var(--color-primary-600); outline-offset: 1px; }
+.bio-buscador { transition: border-color 150ms, box-shadow 150ms; }
+.bio-buscador:focus-within { border-color: var(--color-primary-600); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-600) 22%, transparent); }
 .bio-buscador input { flex: 1; min-width: 0; min-height: 2.25rem; font-size: 0.875rem; color: var(--color-text); background: transparent; border: 0; outline: 0; }
+/* El foco ya lo dibuja el contenedor: sin esto, el foco global añade un segundo recuadro verde dentro del campo. */
+.bio-root .bio-buscador input:focus, .bio-root .bio-buscador input:focus-visible { outline: none; box-shadow: none; border-radius: 0; }
 .bio-buscador button { display: grid; place-items: center; width: 2rem; height: 2rem; color: var(--color-text-muted); border-radius: 999px; }
 .bio-buscador button:hover { color: var(--color-text); }
 .bio-interruptor { display: inline-flex; align-items: center; gap: 0.6rem; min-height: 2.5rem; font-size: 0.8125rem; font-weight: 600; color: var(--color-text); cursor: pointer; }
@@ -399,7 +405,7 @@
 .bio-galeria { display: grid; gap: 0.6rem; align-content: start; min-width: 0; }
 .bio-galeria > .bio-foto { border-radius: var(--radius-lg); }
 .bio-miniaturas { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.15rem; }
-.bio-miniaturas button { display: block; width: 3.5rem; border-radius: 8px; overflow: hidden; border: 2px solid transparent; opacity: 0.7; cursor: pointer; transition: opacity 150ms, border-color 150ms; }
+.bio-miniaturas button { display: block; width: 3.5rem; min-width: 1.5rem; min-height: 1.5rem; border-radius: 8px; overflow: hidden; border: 2px solid transparent; opacity: 0.7; cursor: pointer; transition: opacity 150ms, border-color 150ms; }
 .bio-miniaturas button[aria-current='true'] { border-color: var(--bio-acento); opacity: 1; }
 .bio-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.9rem 1.25rem; }
 .bio-dato dt { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); }

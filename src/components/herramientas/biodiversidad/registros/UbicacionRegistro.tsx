@@ -3,10 +3,10 @@ import type { RegistroBiodiversidad } from '../types'
 
 const COORD = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
 
-/** Ubicación: si el servidor marca las coordenadas como ocultas jamás se muestra ni se infiere un lugar;
- *  solo la insignia de reserva, aunque llegaran valores de latitud o longitud. */
+/** Ubicación: si el servidor marca las coordenadas como ocultas, o no dice nada de ellas, jamás se muestra ni se infiere
+ *  un lugar; solo la insignia de reserva, aunque llegaran valores de latitud o longitud (misma regla que `ubicacionPublica`). */
 export function Ubicacion({ r }: { r: Pick<RegistroBiodiversidad, 'coordenadas_ocultas' | 'latitud' | 'longitud' | 'incertidumbre_m'> }) {
-  if (r.coordenadas_ocultas) {
+  if (r.coordenadas_ocultas !== false) {
     return (
       <span className="bio-insignia bio-insignia-reservada" title="Especie amenazada o sin determinar: se protege su localización.">
         <EyeOff className="w-3 h-3" aria-hidden="true" />

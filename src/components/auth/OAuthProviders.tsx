@@ -1,12 +1,9 @@
 /**
- * Botones de proveedor externo — Google y Microsoft. Apple Sign In queda
- * fuera: exige Apple Developer Program (de pago) y no es una prioridad por
- * ahora. Cuáles están activos depende de si el backend tiene credenciales
- * configuradas (ver useOAuthProviders) — así el día que el instituto agregue
- * GOOGLE_CLIENT_ID/MICROSOFT_CLIENT_ID no hace falta tocar el frontend, el
- * botón se activa solo. El que siga sin configurar se muestra deshabilitado
- * con "Próximamente" — un botón que no hace nada al hacer clic es peor que
- * no tenerlo.
+ * Botón de proveedor externo — solo Google. Microsoft se retiró de la interfaz
+ * por decisión del IIAP y Apple Sign In queda fuera (exige Apple Developer
+ * Program, de pago). Si el backend no tiene GOOGLE_CLIENT_ID (ver
+ * useOAuthProviders) el botón se muestra deshabilitado con "Pronto" — un botón
+ * que no hace nada al hacer clic es peor que no tenerlo.
  */
 import api from '@/lib/api'
 import { useOAuthProviders, type OAuthProvidersStatus } from '@/hooks/useOAuthProviders'
@@ -22,20 +19,8 @@ function GoogleIcon() {
   )
 }
 
-function MicrosoftIcon() {
-  return (
-    <svg className="w-[16px] h-[16px]" viewBox="0 0 23 23" aria-hidden="true">
-      <path fill="#f35325" d="M1 1h10v10H1z"/>
-      <path fill="#81bc06" d="M12 1h10v10H12z"/>
-      <path fill="#05a6f0" d="M1 12h10v10H1z"/>
-      <path fill="#ffba08" d="M12 12h10v10H12z"/>
-    </svg>
-  )
-}
-
 const PROVIDERS = [
-  { id: 'google',    label: 'Google',    Icon: GoogleIcon    },
-  { id: 'microsoft', label: 'Microsoft', Icon: MicrosoftIcon },
+  { id: 'google', label: 'Google', Icon: GoogleIcon },
 ] as const
 
 function oauthStartUrl(id: string) {
@@ -55,7 +40,7 @@ export default function OAuthProviders() {
         <div className="flex-1 h-px bg-border" />
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2">
         {PROVIDERS.map(({ id, label, Icon }) => {
           const enabled = providers?.[id as keyof OAuthProvidersStatus] ?? false
           const className = 'flex flex-col items-center gap-1.5 px-2 py-3 border border-border rounded-xl transition-colors ' + (

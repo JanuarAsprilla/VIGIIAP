@@ -1,15 +1,18 @@
-import { AlertTriangle, RotateCw } from 'lucide-react'
+import { AlertTriangle, FilterX, RotateCw } from 'lucide-react'
 import { describirError } from './lib/errores'
 
 interface ErrorProps {
   error: unknown
   onReintentar: () => void
+  /** Si se da, en un error de filtros (422) se ofrece limpiarlos en vez de repetir la misma consulta. */
+  onLimpiarFiltros?: () => void
   compacto?: boolean
 }
 
 /** Error de consulta con mensaje por código HTTP y botón de reintento. */
-export function PanelError({ error, onReintentar, compacto = false }: ErrorProps) {
-  const { titulo, detalle } = describirError(error)
+export function PanelError({ error, onReintentar, onLimpiarFiltros, compacto = false }: ErrorProps) {
+  const { titulo, detalle, requiereCambiarFiltros } = describirError(error)
+  const limpiar = requiereCambiarFiltros && onLimpiarFiltros ? onLimpiarFiltros : null
   return (
     <div role="alert" className={`bio-panel flex flex-col items-start gap-3 ${compacto ? 'p-4' : 'p-6'}`}>
       <div className="flex items-start gap-3">
@@ -19,10 +22,17 @@ export function PanelError({ error, onReintentar, compacto = false }: ErrorProps
           <p className="text-sm text-text-muted mt-0.5">{detalle}</p>
         </div>
       </div>
-      <button type="button" className="bio-boton" onClick={onReintentar}>
-        <RotateCw className="w-4 h-4" aria-hidden="true" />
-        Reintentar
-      </button>
+      {limpiar ? (
+        <button type="button" className="bio-boton" onClick={limpiar}>
+          <FilterX className="w-4 h-4" aria-hidden="true" />
+          Limpiar filtros
+        </button>
+      ) : (
+        <button type="button" className="bio-boton" onClick={onReintentar}>
+          <RotateCw className="w-4 h-4" aria-hidden="true" />
+          Reintentar
+        </button>
+      )}
     </div>
   )
 }
@@ -36,6 +46,8 @@ export function PanelVacio({ titulo, detalle }: { titulo: string; detalle: strin
   )
 }
 
-export function Cargando({ etiqueta, className = '' }: { etiqueta: string; className?: string }) {
+/** `anunciar={false}` en una fila de esqueletos: solo uno se lee, los demás son decorativos. */
+export function Cargando({ etiqueta, className = '', anunciar = true }: { etiqueta: string; className?: string; anunciar?: boolean }) {
+  if (!anunciar) return <div aria-hidden="true" className={`skeleton rounded-xl ${className}`} />
   return <div role="status" aria-label={etiqueta} className={`skeleton rounded-xl ${className}`} />
 }
