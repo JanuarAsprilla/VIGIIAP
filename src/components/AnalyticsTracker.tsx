@@ -4,6 +4,7 @@ import {
   obtenerSessionId, esNuevaSesion, detectarDispositivo, parsearNavegador, extraerUtm,
 } from '@/lib/analyticsSession'
 import { enviarPageviewBeacon } from '@/lib/analyticsBeacon'
+import { rutaParaAnalitica, referrerParaAnalitica } from '@/lib/analyticsRuta'
 
 /**
  * Registra una vista de página anónima en cada navegación (incluida la
@@ -28,7 +29,7 @@ export default function AnalyticsTracker() {
 
     const payload = {
       sessionId,
-      ruta: location.pathname,
+      ruta: rutaParaAnalitica(location.pathname),
       titulo: document.title || null,
       dispositivo: detectarDispositivo(window.innerWidth),
       navegador,
@@ -38,7 +39,7 @@ export default function AnalyticsTracker() {
       // backend los ignora si la sesión ya existía, pero evitamos incluso
       // calcularlos de más en navegaciones intermedias.
       ...(nueva
-        ? { referrerInicial: document.referrer || null, ...extraerUtm(location.search) }
+        ? { referrerInicial: referrerParaAnalitica(document.referrer), ...extraerUtm(location.search) }
         : {}),
     }
 
