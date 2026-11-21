@@ -2,6 +2,7 @@
 // geovisor, usar una herramienta). Anónimo, igual que el pageview; nunca desde el panel admin.
 import { obtenerSessionId } from '@/lib/analyticsSession'
 import { enviarEventoBeacon, type NombreEvento } from '@/lib/analyticsBeacon'
+import { rutaParaAnalitica } from '@/lib/analyticsRuta'
 
 // En una carga directa el efecto del hijo corre antes que el del AnalyticsTracker: sin este
 // retraso el evento llegaría al servidor antes de que exista la sesión y se descartaría.
@@ -9,7 +10,7 @@ export const RETRASO_EVENTO_MS = 1500
 const RECURSO_MAX = 200
 
 export function registrarEvento(nombre: NombreEvento, recurso?: string | null): void {
-  const ruta = window.location.pathname
+  const ruta = rutaParaAnalitica(window.location.pathname)
   if (ruta.startsWith('/admin')) return
   const recursoAcotado = recurso ? recurso.slice(0, RECURSO_MAX) : null
   setTimeout(() => {
