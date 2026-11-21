@@ -98,7 +98,7 @@ jobs:
           cache: npm
       - name: Comprobar que la imagen coincide con @playwright/test
         run: |
-          imagen="1.64.1"
+          imagen=$(sed -n 's|.*mcr.microsoft.com/playwright:v\([0-9.]*\)-.*|\1|p' .github/workflows/ci.yml | head -1)
           instalada=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")
           if [ "$imagen" != "$instalada" ]; then
             echo "::error::La imagen de Playwright es $imagen pero package-lock.json trae $instalada: actualiza la etiqueta de la imagen en ci.yml."
