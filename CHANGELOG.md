@@ -6,6 +6,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.12.1](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.12.0...v1.12.1) (2026-11-21)
+
+
+### Bug Fixes
+
+* **analitica:** no enviar tokens de enlace en la ruta ni el referrer del beacon ([#394](https://github.com/JanuarAsprilla/VIGIIAP/issues/394)) ([372aa5f](https://github.com/JanuarAsprilla/VIGIIAP/commit/372aa5fb03f36b762803c3540793b48eb8f2c7e9))
+* coherencia tablero/informe del Observatorio, auditoría de mapa, filtros e informes ([#395](https://github.com/JanuarAsprilla/VIGIIAP/issues/395)) ([2fbee58](https://github.com/JanuarAsprilla/VIGIIAP/commit/2fbee58703f01837659845a316e79aad3c0ebe9a))
+
 ## [1.12.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.11.0...v1.12.0) (2026-11-12)
 
 
