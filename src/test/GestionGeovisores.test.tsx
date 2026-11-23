@@ -39,6 +39,7 @@ vi.mock('@/hooks/useCategorias', () => ({
 vi.mock('@/hooks/useConexionesGeoserver', () => ({
   useConexionesSeleccionables: vi.fn(),
   useWorkspacesDeConexion: vi.fn(),
+  useSetCapasNuevasConexionGeoserver: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }))
 import { useConexionesSeleccionables, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
 
