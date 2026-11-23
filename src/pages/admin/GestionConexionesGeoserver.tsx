@@ -15,6 +15,7 @@ import {
 } from '@/hooks/useConexionesGeoserver'
 import type { ConexionGeoserverRaw, TipoConexionGeoserver } from '@/types'
 import type { FormErrors } from '@/types/forms'
+import CapasNuevasSwitch from '@/components/admin/CapasNuevasSwitch'
 import { SkeletonLista } from '@/components/ui/Skeleton'
 
 const fadeUp = fadeUpSm
@@ -113,12 +114,17 @@ function ConexionCard({ conexion, canWrite, onEdit, onDelete }: {
           <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
           Timeout: {conexion.timeout_ms} ms
         </p>
-        <p className="flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-          <span className={conexion.capas_nuevas_auto ? 'text-green-700 font-medium' : 'text-text-muted'}>
-            {conexion.capas_nuevas_auto ? 'Capas nuevas: automáticas' : 'Capas nuevas: apagadas'}
-          </span>
-        </p>
+        {canWrite ? (
+          <CapasNuevasSwitch conexionId={conexion.id} conexionNombre={conexion.nombre} value={conexion.capas_nuevas_auto}
+            texto={conexion.capas_nuevas_auto ? 'Capas nuevas: automáticas' : 'Capas nuevas: apagadas'} />
+        ) : (
+          <p className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+            <span className={conexion.capas_nuevas_auto ? 'text-green-700 font-medium' : 'text-text-muted'}>
+              {conexion.capas_nuevas_auto ? 'Capas nuevas: automáticas' : 'Capas nuevas: apagadas'}
+            </span>
+          </p>
+        )}
       </div>
     </motion.div>
   )
