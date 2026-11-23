@@ -1,6 +1,7 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react'
 import { Loader2, Search, MapPinned, ChevronRight, Images } from 'lucide-react'
 import Switch from '@/components/ui/Switch'
+import CapasNuevasSwitch from '@/components/admin/CapasNuevasSwitch'
 import { TituloPaso } from '../PasosGeovisor'
 import {
   inputCls, labelCls, PALETA_AUTO, type CapaWorkspace, type FormState,
@@ -20,7 +21,7 @@ export default function PasoCapas({
   setForm: Dispatch<SetStateAction<FormState>>
   errors: FormErrors
   tipo: TipoGeovisor
-  conexiones: { id: string; nombre: string }[]
+  conexiones: { id: string; nombre: string; capas_nuevas_auto?: boolean }[]
   workspaces: WorkspaceOption[]
   cargando: boolean
   temasSeleccionados: string[]
@@ -43,6 +44,7 @@ export default function PasoCapas({
   }, [workspaces, filtro])
 
   const seleccionadas = form.capasSeleccionadas.length
+  const conexionElegida = conexiones.find((c) => c.id === form.conexionGeoserverId)
 
   return (
     <div className="space-y-4">
@@ -58,6 +60,12 @@ export default function PasoCapas({
           {conexiones.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
         </select>
         {errors.conexionGeoserverId && <p className="text-xs text-red-500 mt-1">{errors.conexionGeoserverId}</p>}
+        {conexionElegida && (
+          <div className="mt-2">
+            <CapasNuevasSwitch conexionId={conexionElegida.id} conexionNombre={conexionElegida.nombre}
+              value={conexionElegida.capas_nuevas_auto ?? true} />
+          </div>
+        )}
       </div>
 
       {!form.conexionGeoserverId ? (

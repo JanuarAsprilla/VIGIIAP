@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Trash2, Pencil, X, CheckCircle, AlertCircle, Loader2,
-  Server, Lock, Globe2, Clock, ShieldAlert, Eye, Building2, Link2,
+  Server, Lock, Globe2, Clock, ShieldAlert, Eye, Building2, Link2, Sparkles,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, staggerContainer, staggerItem } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
@@ -15,6 +15,7 @@ import {
 } from '@/hooks/useConexionesGeoserver'
 import type { ConexionGeoserverRaw, TipoConexionGeoserver } from '@/types'
 import type { FormErrors } from '@/types/forms'
+import CapasNuevasSwitch from '@/components/admin/CapasNuevasSwitch'
 import { SkeletonLista } from '@/components/ui/Skeleton'
 
 const fadeUp = fadeUpSm
@@ -113,6 +114,17 @@ function ConexionCard({ conexion, canWrite, onEdit, onDelete }: {
           <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
           Timeout: {conexion.timeout_ms} ms
         </p>
+        {canWrite ? (
+          <CapasNuevasSwitch conexionId={conexion.id} conexionNombre={conexion.nombre} value={conexion.capas_nuevas_auto}
+            texto={conexion.capas_nuevas_auto ? 'Capas nuevas: automáticas' : 'Capas nuevas: apagadas'} />
+        ) : (
+          <p className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+            <span className={conexion.capas_nuevas_auto ? 'text-green-700 font-medium' : 'text-text-muted'}>
+              {conexion.capas_nuevas_auto ? 'Capas nuevas: automáticas' : 'Capas nuevas: apagadas'}
+            </span>
+          </p>
+        )}
       </div>
     </motion.div>
   )
@@ -131,11 +143,12 @@ export default function GestionConexionesGeoserver() {
   const [form, setForm]                 = useState(EMPTY_FORM)
   const [formErrors, setFormErrors]     = useState<FormErrors>({})
   const [formActivo, setFormActivo]     = useState(true)
+  const [formCapasAuto, setFormCapasAuto] = useState(true)
   const [deleteTarget, setDeleteTarget] = useState<ConexionGeoserverRaw | null>(null)
   const [toast, setToast]               = useState<string | null>(null)
 
   const openCreate = () => {
-    setEditing(null); setForm(EMPTY_FORM); setFormErrors({}); setFormActivo(true); setShowForm(true)
+    setEditing(null); setForm(EMPTY_FORM); setFormErrors({}); setFormActivo(true); setFormCapasAuto(true); setShowForm(true)
   }
 
   const openEdit = (conexion: ConexionGeoserverRaw) => {
@@ -149,6 +162,7 @@ export default function GestionConexionesGeoserver() {
       timeoutMs: String(conexion.timeout_ms),
     })
     setFormActivo(conexion.activo)
+    setFormCapasAuto(conexion.capas_nuevas_auto)
     setFormErrors({})
     setShowForm(true)
   }
@@ -187,6 +201,7 @@ export default function GestionConexionesGeoserver() {
             ...(form.password.trim() ? { password: form.password.trim() } : {}),
             timeoutMs: Number(form.timeoutMs),
             activo: formActivo,
+            capasNuevasAuto: formCapasAuto,
           },
         })
         setToast(`Conexión "${form.nombre.trim()}" actualizada`)
@@ -198,6 +213,7 @@ export default function GestionConexionesGeoserver() {
           ...(form.usuarioLectura.trim() ? { usuarioLectura: form.usuarioLectura.trim() } : {}),
           ...(form.password.trim() ? { password: form.password.trim() } : {}),
           timeoutMs: Number(form.timeoutMs),
+          capasNuevasAuto: formCapasAuto,
         })
         setToast(`Conexión "${form.nombre.trim()}" creada`)
       }
@@ -404,6 +420,21 @@ export default function GestionConexionesGeoserver() {
                     Conexión activa
                   </label>
                 )}
+
+                <div className="flex items-start gap-3">
+                  <input id="cg-capas-auto" type="checkbox" role="switch" checked={formCapasAuto}
+                    aria-describedby="cg-capas-auto-ayuda"
+                    onChange={(e) => setFormCapasAuto(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-border text-primary-800 focus:ring-primary-800/30 cursor-pointer" />
+                  <div>
+                    <label htmlFor="cg-capas-auto" className="text-sm font-semibold text-text cursor-pointer select-none">
+                      Mostrar automáticamente las capas nuevas
+                    </label>
+                    <p id="cg-capas-auto-ayuda" className="text-xs text-text-muted mt-0.5 leading-snug">
+                      Las capas que se suban a GeoServer aparecen solas en los geovisores de sus workspaces. Las capas antiguas que no se eligieron siguen ocultas. Las de comunidades étnicas (t_32) nunca se muestran.
+                    </p>
+                  </div>
+                </div>
 
                 <div className="flex gap-3 pt-1">
                   <button type="button" onClick={() => setShowForm(false)} disabled={isSaving}
