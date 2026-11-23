@@ -21,8 +21,9 @@ vi.mock('framer-motion', () => {
 vi.mock('@/hooks/useConexionesGeoserver', () => ({
   useConexionesSeleccionables: vi.fn(),
   useWorkspacesDeConexion: vi.fn(),
+  useSetCapasNuevasConexionGeoserver: vi.fn(),
 }))
-import { useConexionesSeleccionables, useWorkspacesDeConexion } from '@/hooks/useConexionesGeoserver'
+import { useConexionesSeleccionables, useWorkspacesDeConexion, useSetCapasNuevasConexionGeoserver } from '@/hooks/useConexionesGeoserver'
 
 vi.mock('@/hooks/useGeovisores', () => ({
   useCreateGeovisor: vi.fn(),
@@ -71,7 +72,7 @@ vi.mock('@/components/admin/geovisores/GeovisorMapaConstructor', () => ({
   ),
 }))
 
-const conexionesFixture = [{ id: 'c1', nombre: 'GeoServer IIAP' }]
+const conexionesFixture = [{ id: 'c1', nombre: 'GeoServer IIAP', capas_nuevas_auto: true }]
 const workspacesFixture: WorkspaceOption[] = [
   { id: 't_15_geologia', nombre: 'Geologia', totalCapas: 3, capas: [{ id: 't_15_geologia:fallas', nombre: 'Fallas', tipo: 'vectorial' }] },
   { id: 't_20_hidrologia', nombre: 'Hidrologia', totalCapas: 5, capas: [{ id: 't_20_hidrologia:rios', nombre: 'Ríos', tipo: 'vectorial' }] },
@@ -115,6 +116,9 @@ beforeEach(() => {
   vi.mocked(useConexionesSeleccionables).mockReturnValue({
     data: conexionesFixture,
   } as unknown as ReturnType<typeof useConexionesSeleccionables>)
+  vi.mocked(useSetCapasNuevasConexionGeoserver).mockReturnValue({
+    mutateAsync: vi.fn().mockResolvedValue({}), isPending: false,
+  } as unknown as ReturnType<typeof useSetCapasNuevasConexionGeoserver>)
   vi.mocked(useWorkspacesDeConexion).mockReturnValue({
     data: workspacesFixture, isFetching: false,
   } as unknown as ReturnType<typeof useWorkspacesDeConexion>)
@@ -881,3 +885,33 @@ describe('GeovisorFormModal — asistente por pasos', () => {
   })
 })
 
+
+describe('GeovisorFormModal — capas nuevas automáticas de la conexión', () => {
+  const NOMBRE = /capas nuevas automáticas de la conexión GeoServer IIAP/i
+
+  test('junto a la conexión elegida refleja el valor de la lista de seleccionables', () => {
+    vi.mocked(useConexionesSeleccionables).mockReturnValue({
+      data: [{ id: 'c1', nombre: 'GeoServer IIAP', capas_nuevas_auto: false }],
+    } as unknown as ReturnType<typeof useConexionesSeleccionables>)
+    render(<GeovisorFormModal open editing={makeGeovisor()} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    expect(screen.getByRole('switch', { name: NOMBRE })).not.toBeChecked()
+  })
+
+  test('apagarlo pide confirmación y llama al endpoint estrecho de la conexión', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({})
+    vi.mocked(useSetCapasNuevasConexionGeoserver).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useSetCapasNuevasConexionGeoserver>)
+    const user = userEvent.setup()
+    render(<GeovisorFormModal open editing={makeGeovisor()} onClose={vi.fn()} onSaved={vi.fn()} />)
+
+    await user.click(screen.getByRole('switch', { name: NOMBRE }))
+    expect(mutateAsync).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: /Sí, apagar/i }))
+    expect(mutateAsync).toHaveBeenCalledWith({ id: 'c1', capasNuevasAuto: false })
+  })
+
+  test('sin conexión elegida no se muestra', async () => {
+    render(<GeovisorFormModal open editing={null} onClose={vi.fn()} onSaved={vi.fn()} />)
+    expect(screen.queryByRole('switch', { name: NOMBRE })).not.toBeInTheDocument()
+  })
+})
