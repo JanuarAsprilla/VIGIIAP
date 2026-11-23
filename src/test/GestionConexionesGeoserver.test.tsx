@@ -25,9 +25,11 @@ vi.mock('@/hooks/useConexionesGeoserver', () => ({
   useCreateConexionGeoserver: vi.fn(),
   useUpdateConexionGeoserver: vi.fn(),
   useDeleteConexionGeoserver: vi.fn(),
+  useSetCapasNuevasConexionGeoserver: vi.fn(),
 }))
 import {
   useConexionesGeoserverList, useCreateConexionGeoserver, useUpdateConexionGeoserver, useDeleteConexionGeoserver,
+  useSetCapasNuevasConexionGeoserver,
 } from '@/hooks/useConexionesGeoserver'
 
 function makeConexion(overrides: Record<string, unknown> = {}) {
@@ -47,6 +49,7 @@ beforeEach(() => {
   vi.mocked(useCreateConexionGeoserver).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useCreateConexionGeoserver>)
   vi.mocked(useUpdateConexionGeoserver).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useUpdateConexionGeoserver>)
   vi.mocked(useDeleteConexionGeoserver).mockReturnValue({ mutateAsync: vi.fn(), isPending: false } as unknown as ReturnType<typeof useDeleteConexionGeoserver>)
+  vi.mocked(useSetCapasNuevasConexionGeoserver).mockReturnValue({ mutateAsync: vi.fn().mockResolvedValue({}), isPending: false } as unknown as ReturnType<typeof useSetCapasNuevasConexionGeoserver>)
 })
 
 describe('GestionConexionesGeoserver — permisos', () => {
@@ -260,7 +263,7 @@ describe('GestionConexionesGeoserver — capas nuevas automáticas', () => {
     await user.type(screen.getByLabelText(/URL base/i), 'https://geoserver.iiap.org.co/geoserver')
     await user.type(screen.getByLabelText(/Usuario de lectura/i), 'lector')
     await user.type(screen.getByLabelText(/^Contraseña/i), 'secreta')
-    if (apagar) await user.click(screen.getByRole('switch', { name: /capas nuevas/i }))
+    if (apagar) await user.click(screen.getByRole('switch', { name: 'Mostrar automáticamente las capas nuevas' }))
     await user.click(screen.getByRole('button', { name: /Crear conexión/i }))
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ capasNuevasAuto: !apagar }))
@@ -276,7 +279,7 @@ describe('GestionConexionesGeoserver — capas nuevas automáticas', () => {
     render(<GestionConexionesGeoserver />)
     await user.click(screen.getByTitle('Editar'))
 
-    expect(screen.getByRole('switch', { name: /capas nuevas/i })).not.toBeChecked()
+    expect(screen.getByRole('switch', { name: 'Mostrar automáticamente las capas nuevas' })).not.toBeChecked()
     await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
     expect(mutateAsync).toHaveBeenCalledWith({
       id: 'conexion-1', data: expect.objectContaining({ capasNuevasAuto: false }),
@@ -289,7 +292,7 @@ describe('GestionConexionesGeoserver — capas nuevas automáticas', () => {
     const user = userEvent.setup()
     render(<GestionConexionesGeoserver />)
     await user.click(screen.getByTitle('Editar'))
-    expect(screen.getByRole('switch', { name: /capas nuevas/i })).toBeChecked()
+    expect(screen.getByRole('switch', { name: 'Mostrar automáticamente las capas nuevas' })).toBeChecked()
     await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
     expect(mutateAsync).toHaveBeenCalledWith({
       id: 'conexion-1', data: expect.objectContaining({ capasNuevasAuto: true }),
@@ -320,5 +323,25 @@ describe('GestionConexionesGeoserver — capas nuevas automáticas', () => {
 
     expect(await screen.findByText(mensaje)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Guardar cambios/i })).toBeInTheDocument()
+  })
+})
+
+describe('GestionConexionesGeoserver — interruptor en la tarjeta', () => {
+  test('el super admin apaga desde la tarjeta con confirmación y llama al endpoint estrecho', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({})
+    vi.mocked(useSetCapasNuevasConexionGeoserver).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useSetCapasNuevasConexionGeoserver>)
+    const user = userEvent.setup()
+    render(<GestionConexionesGeoserver />)
+
+    await user.click(screen.getByRole('switch', { name: /capas nuevas automáticas de la conexión GeoServer institucional/i }))
+    await user.click(screen.getByRole('button', { name: /Sí, apagar/i }))
+    expect(mutateAsync).toHaveBeenCalledWith({ id: 'conexion-1', capasNuevasAuto: false })
+  })
+
+  test('quien solo consulta ve la etiqueta sin interruptor', () => {
+    authMock.isSuperAdmin = false
+    render(<GestionConexionesGeoserver />)
+    expect(screen.getByText('Capas nuevas: automáticas')).toBeInTheDocument()
+    expect(screen.queryByRole('switch', { name: /capas nuevas automáticas de la conexión/i })).not.toBeInTheDocument()
   })
 })
