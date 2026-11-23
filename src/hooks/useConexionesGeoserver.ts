@@ -22,6 +22,7 @@ export interface ConexionSeleccionable {
   nombre: string
   tipo: TipoConexionGeoserver
   activo: boolean
+  capas_nuevas_auto: boolean
 }
 
 /**
@@ -58,6 +59,15 @@ export function useUpdateConexionGeoserver() {
   const qc = useQueryClient()
   return useMutation<ConexionGeoserverRaw, Error, { id: string; data: Partial<ConexionGeoserverInput> }>({
     mutationFn: ({ id, data }) => api.patch(`/admin/conexiones-geoserver/${id}`, data),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  })
+}
+
+/** Endpoint estrecho: solo cambia esa opción; lo usan también quienes editan geovisores, no solo el super admin. */
+export function useSetCapasNuevasConexionGeoserver() {
+  const qc = useQueryClient()
+  return useMutation<unknown, Error, { id: string; capasNuevasAuto: boolean }>({
+    mutationFn: ({ id, capasNuevasAuto }) => api.patch(`/admin/conexiones-geoserver/${id}/capas-nuevas`, { capasNuevasAuto }),
     onSuccess:  () => qc.invalidateQueries({ queryKey: KEYS.all }),
   })
 }
