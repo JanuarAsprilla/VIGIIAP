@@ -33,7 +33,7 @@ import {
 function makeConexion(overrides: Record<string, unknown> = {}) {
   return {
     id: 'conexion-1', nombre: 'GeoServer institucional', url: 'https://geoserver.iiap.org.co/geoserver',
-    tipo: 'propio', usuario_lectura: 'lector', timeout_ms: 20000, activo: true,
+    tipo: 'propio', usuario_lectura: 'lector', timeout_ms: 20000, activo: true, capas_nuevas_auto: true,
     creado_en: '2026-01-01', actualizado_en: '2026-01-01', ...overrides,
   }
 }
@@ -235,5 +235,90 @@ describe('GestionConexionesGeoserver — carga', () => {
 
     expect(screen.getByRole('status')).toHaveAttribute('aria-busy', 'true')
     expect(screen.getByText('Cargando…', { selector: '.sr-only' })).toBeInTheDocument()
+  })
+})
+describe('GestionConexionesGeoserver — capas nuevas automáticas', () => {
+  const abrirCrear = async () => {
+    const user = userEvent.setup()
+    render(<GestionConexionesGeoserver />)
+    await user.click(screen.getByRole('button', { name: /Nueva conexión/i }))
+    return user
+  }
+
+  test('al crear, el interruptor aparece encendido y con su ayuda asociada', async () => {
+    await abrirCrear()
+    const sw = screen.getByRole('switch', { name: 'Mostrar automáticamente las capas nuevas' })
+    expect(sw).toBeChecked()
+    expect(sw).toHaveAccessibleDescription(/nunca se muestran/i)
+  })
+
+  test.each([[false], [true]])('al crear se envía capasNuevasAuto=%s según el interruptor', async (apagar) => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeConexion())
+    vi.mocked(useCreateConexionGeoserver).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useCreateConexionGeoserver>)
+    const user = await abrirCrear()
+    await user.type(screen.getByLabelText(/^Nombre/i), 'GeoServer IIAP')
+    await user.type(screen.getByLabelText(/URL base/i), 'https://geoserver.iiap.org.co/geoserver')
+    await user.type(screen.getByLabelText(/Usuario de lectura/i), 'lector')
+    await user.type(screen.getByLabelText(/^Contraseña/i), 'secreta')
+    if (apagar) await user.click(screen.getByRole('switch', { name: /capas nuevas/i }))
+    await user.click(screen.getByRole('button', { name: /Crear conexión/i }))
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ capasNuevasAuto: !apagar }))
+  })
+
+  test('al editar refleja el valor apagado de la conexión y lo envía', async () => {
+    vi.mocked(useConexionesGeoserverList).mockReturnValue({
+      data: [makeConexion({ capas_nuevas_auto: false })], isLoading: false,
+    } as unknown as ReturnType<typeof useConexionesGeoserverList>)
+    const mutateAsync = vi.fn().mockResolvedValue(makeConexion())
+    vi.mocked(useUpdateConexionGeoserver).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useUpdateConexionGeoserver>)
+    const user = userEvent.setup()
+    render(<GestionConexionesGeoserver />)
+    await user.click(screen.getByTitle('Editar'))
+
+    expect(screen.getByRole('switch', { name: /capas nuevas/i })).not.toBeChecked()
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
+    expect(mutateAsync).toHaveBeenCalledWith({
+      id: 'conexion-1', data: expect.objectContaining({ capasNuevasAuto: false }),
+    })
+  })
+
+  test('al editar una conexión encendida se envía capasNuevasAuto=true', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue(makeConexion())
+    vi.mocked(useUpdateConexionGeoserver).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useUpdateConexionGeoserver>)
+    const user = userEvent.setup()
+    render(<GestionConexionesGeoserver />)
+    await user.click(screen.getByTitle('Editar'))
+    expect(screen.getByRole('switch', { name: /capas nuevas/i })).toBeChecked()
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
+    expect(mutateAsync).toHaveBeenCalledWith({
+      id: 'conexion-1', data: expect.objectContaining({ capasNuevasAuto: true }),
+    })
+  })
+
+  test('la tarjeta indica si las capas nuevas son automáticas o están apagadas', () => {
+    vi.mocked(useConexionesGeoserverList).mockReturnValue({
+      data: [
+        makeConexion({ id: 'a', nombre: 'Encendida' }),
+        makeConexion({ id: 'b', nombre: 'Apagada', capas_nuevas_auto: false }),
+      ], isLoading: false,
+    } as unknown as ReturnType<typeof useConexionesGeoserverList>)
+    render(<GestionConexionesGeoserver />)
+
+    expect(screen.getByText('Capas nuevas: automáticas')).toBeInTheDocument()
+    expect(screen.getByText('Capas nuevas: apagadas')).toBeInTheDocument()
+  })
+
+  test('si GeoServer rechaza las credenciales muestra el mensaje y no cierra el formulario', async () => {
+    const mensaje = 'GeoServer rechazó el usuario o la clave: no se guardó el cambio.'
+    const mutateAsync = vi.fn().mockRejectedValue(Object.assign(new Error(mensaje), { status: 422, code: 'GEOSERVER_CREDENCIALES_RECHAZADAS' }))
+    vi.mocked(useUpdateConexionGeoserver).mockReturnValue({ mutateAsync, isPending: false } as unknown as ReturnType<typeof useUpdateConexionGeoserver>)
+    const user = userEvent.setup()
+    render(<GestionConexionesGeoserver />)
+    await user.click(screen.getByTitle('Editar'))
+    await user.click(screen.getByRole('button', { name: /Guardar cambios/i }))
+
+    expect(await screen.findByText(mensaje)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Guardar cambios/i })).toBeInTheDocument()
   })
 })
