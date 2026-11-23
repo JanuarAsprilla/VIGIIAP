@@ -40,7 +40,7 @@ import {
 import { useCreateCategoria, useDeleteCategoria, useUploadCategoriaThumbnail, useUpdateModulosCategoria } from '@/hooks/useCategorias'
 import { useCreateGeovisor, useUpdateGeovisor, useToggleGeovisorActivo, useDeleteGeovisor } from '@/hooks/useGeovisores'
 import {
-  useCreateConexionGeoserver, useUpdateConexionGeoserver, useDeleteConexionGeoserver,
+  useCreateConexionGeoserver, useUpdateConexionGeoserver, useDeleteConexionGeoserver, useSetCapasNuevasConexionGeoserver,
 } from '@/hooks/useConexionesGeoserver'
 
 function makeWrapper() {
@@ -630,6 +630,18 @@ describe('useUpdateConexionGeoserver', () => {
 
     await act(async () => { await result.current.mutateAsync({ id: 'c1', data: { activo: false } }) })
     expect(api.patch).toHaveBeenCalledWith('/admin/conexiones-geoserver/c1', { activo: false })
+  })
+})
+
+describe('useSetCapasNuevasConexionGeoserver', () => {
+  beforeEach(() => { vi.clearAllMocks() })
+
+  test('calls PATCH /admin/conexiones-geoserver/:id/capas-nuevas solo con capasNuevasAuto', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ id: 'c1' })
+    const { result } = renderHook(() => useSetCapasNuevasConexionGeoserver(), { wrapper: makeWrapper() })
+
+    await act(async () => { await result.current.mutateAsync({ id: 'c1', capasNuevasAuto: false }) })
+    expect(api.patch).toHaveBeenCalledWith('/admin/conexiones-geoserver/c1/capas-nuevas', { capasNuevasAuto: false })
   })
 })
 

@@ -265,6 +265,7 @@ export interface ConexionGeoserverRaw {
   usuario_lectura: string | null
   timeout_ms: number
   activo: boolean
+  capas_nuevas_auto: boolean
   creado_en: string
   actualizado_en: string
 }
@@ -279,6 +280,7 @@ export interface ConexionGeoserverInput {
   password?: string
   timeoutMs?: number
   activo?: boolean
+  capasNuevasAuto?: boolean
 }
 
 export interface WorkspaceOption {
