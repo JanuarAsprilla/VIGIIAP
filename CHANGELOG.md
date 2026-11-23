@@ -6,6 +6,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.13.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.12.1...v1.13.0) (2026-11-23)
+
+
+### Features
+
+* **geovisores:** interruptor de capas nuevas automáticas en conexiones GeoServer ([#407](https://github.com/JanuarAsprilla/VIGIIAP/issues/407)) ([3f011bd](https://github.com/JanuarAsprilla/VIGIIAP/commit/3f011bdd10ee92549c2d2606cbf59efe62dc72e0))
+
 ## [1.12.1](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.12.0...v1.12.1) (2026-11-21)
 
 
