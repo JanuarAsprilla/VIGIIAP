@@ -4,7 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronDown, ChevronUp, ChevronRight, Layers, Crosshair, X,
 } from 'lucide-react'
-import type { TemaCapas, CapaGeoserver } from '@/types'
+import type { TemaCapas, CapaGeoserver, GrupoCapas } from '@/types'
+import { prepararGrupos } from '@/lib/geovisores/grupos'
+import { nombreCapa } from '@/lib/geovisores/capas'
+import DetalleCapa from './DetalleCapa'
+import FilaCapaCatalogo from './FilaCapaCatalogo'
+import GrupoCapasItem from './GrupoCapasItem'
 
 interface CapaActiva {
   capa: CapaGeoserver
@@ -41,7 +46,7 @@ function FilaCapaActiva({ capaActiva, color, leyendaUrl, expandida, onToggleLeye
     >
       <div className="flex items-center gap-2 px-2.5 py-2">
         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} aria-hidden="true" />
-        <span className="text-xs font-semibold text-text truncate flex-1">{capaActiva.capa.nombre}</span>
+        <span className="text-xs font-semibold text-text truncate flex-1">{nombreCapa(capaActiva.capa)}</span>
         <div className="flex items-center gap-0.5 shrink-0">
           <button type="button" onClick={() => onMover('subir')} disabled={esUltima} title="Subir"
             className="p-1 rounded text-text-muted hover:text-primary-700 hover:bg-primary-500/10 disabled:opacity-30 disabled:pointer-events-none transition-colors">
@@ -77,7 +82,8 @@ function FilaCapaActiva({ capaActiva, color, leyendaUrl, expandida, onToggleLeye
             className="overflow-hidden"
           >
             <div className="px-2.5 pb-2.5 pt-0.5">
-              <img src={leyendaUrl} alt={`Leyenda de ${capaActiva.capa.nombre}`} crossOrigin="use-credentials"
+              <DetalleCapa resumen={capaActiva.capa.resumen} palabrasClave={capaActiva.capa.palabrasClave} />
+              <img src={leyendaUrl} alt={`Leyenda de ${nombreCapa(capaActiva.capa)}`} crossOrigin="use-credentials"
                 className="max-w-full rounded border border-border/50 bg-white" loading="lazy" />
             </div>
           </motion.div>
@@ -87,8 +93,10 @@ function FilaCapaActiva({ capaActiva, color, leyendaUrl, expandida, onToggleLeye
   )
 }
 
-export default function PanelCapas({ temas, capasActivas, colorPorTema, apiBase, slug, onToggleCapa, onMoverCapa }: {
+export default function PanelCapas({ temas, grupos, capasActivas, colorPorTema, apiBase, slug, onToggleCapa, onMoverCapa }: {
   temas: TemaCapas[]
+  /** Cada capa se sigue pintando por separado; el grupo solo agrupa los controles. */
+  grupos?: GrupoCapas[]
   capasActivas: CapaActiva[]
   colorPorTema: Record<string, string>
   apiBase: string
@@ -102,6 +110,8 @@ export default function PanelCapas({ temas, capasActivas, colorPorTema, apiBase,
   const [colapsado, setColapsado] = useState(false)
 
   const idsActivos = new Set(capasActivas.map((c) => c.capa.id))
+  const gruposPreparados = prepararGrupos(temas, grupos)
+  const colorDe = (temaId: string) => colorPorTema[temaId] ?? colorDeTemaRespaldo(temaId)
   const totalNuevas = temas.reduce((n, t) => n + t.capas.filter((c) => c.nueva).length, 0)
 
   const toggleTema = (temaId: string) => setTemasExpandidos((prev) => {
@@ -188,22 +198,29 @@ export default function PanelCapas({ temas, capasActivas, colorPorTema, apiBase,
                     </button>
                     {abierto && (
                       <div className="border-t border-border/50 divide-y divide-border/40">
-                        {tema.capas.map((capa) => (
-                          <label key={capa.id} className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-text cursor-pointer hover:bg-bg-alt transition-colors">
-                            <input type="checkbox" checked={idsActivos.has(capa.id)} onChange={() => onToggleCapa(capa, tema.id)}
-                              className="w-3.5 h-3.5 rounded border-border text-primary-800 focus:ring-primary-800/30 shrink-0" />
-                            <span className="truncate flex-1">{capa.nombre}</span>
-                            {capa.nueva && (
-                              <span className="rounded-full bg-accent/15 text-primary-800 px-1.5 py-0.5 text-[0.55rem] font-bold shrink-0">Nueva</span>
-                            )}
-                            <span className="text-[0.55rem] uppercase font-bold text-text-muted/70 shrink-0">{capa.tipo === 'raster' ? 'raster' : 'vector'}</span>
-                          </label>
+                        {(gruposPreparados.porTema[tema.id] ?? []).map((g) => (
+                          <GrupoCapasItem key={g.grupo.id} resuelto={g} idsActivos={idsActivos} color={colorDe(tema.id)}
+                            onToggleCapa={(m) => onToggleCapa(m.capa, m.tema)} />
+                        ))}
+                        {tema.capas.filter((capa) => !gruposPreparados.agrupadasPorTema[tema.id]?.has(capa.id)).map((capa) => (
+                          <FilaCapaCatalogo key={capa.id} capa={capa} activa={idsActivos.has(capa.id)} onToggle={() => onToggleCapa(capa, tema.id)} />
                         ))}
                       </div>
                     )}
                   </div>
                 )
               })}
+              {gruposPreparados.sinTema.length > 0 && (
+                <div className="space-y-1 pt-1">
+                  <p className="text-[0.6rem] font-bold uppercase tracking-wider text-text-muted px-0.5">Grupos de capas</p>
+                  <div className="border border-border/60 rounded-lg overflow-hidden divide-y divide-border/40">
+                    {gruposPreparados.sinTema.map((g) => (
+                      <GrupoCapasItem key={g.grupo.id} resuelto={g} idsActivos={idsActivos} color={colorDe(g.grupo.tema)}
+                        onToggleCapa={(m) => onToggleCapa(m.capa, m.tema)} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
