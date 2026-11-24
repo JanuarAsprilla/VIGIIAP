@@ -9,7 +9,7 @@ import 'leaflet-draw/dist/leaflet.draw.css'
 import api from '@/lib/api'
 import { fadeUp } from '@/lib/animations'
 import { getApiErrorMessage } from '@/lib/apiError'
-import { useGeovisorPorSlug, useCapasDeGeovisor } from '@/hooks/useGeovisores'
+import { useGeovisorPorSlug, useCatalogoDeGeovisor } from '@/hooks/useGeovisores'
 import { registrarEvento } from '@/lib/analyticsEventos'
 import BasemapCapas from '@/components/geovisor-viewer/BasemapCapas'
 import BasemapGaleria from '@/components/geovisor-viewer/BasemapGaleria'
@@ -18,7 +18,7 @@ import HerramientasDibujo from '@/components/geovisor-viewer/HerramientasDibujo'
 import ConsultaCapaClick from '@/components/geovisor-viewer/ConsultaCapaClick'
 import FichaPuntoPanel from '@/components/geovisor-viewer/FichaPuntoPanel'
 import type { AreaInteresState } from '@/components/geovisor-viewer/ControlAreaInteres'
-import type { CapaGeoserver, FichaPunto } from '@/types'
+import type { CapaGeoserver, FichaPunto, TemaCapas } from '@/types'
 
 interface CapaActiva {
   capa: CapaGeoserver
@@ -26,11 +26,13 @@ interface CapaActiva {
 }
 
 const API_BASE = api.defaults.baseURL ?? '/api/v1'
+const EMPTY_TEMAS: TemaCapas[] = []
 
 export default function GeovisorViewer() {
   const { slug } = useParams<{ slug: string }>()
   const { data: geovisor, isLoading: cargandoGeovisor, isError, error } = useGeovisorPorSlug(slug)
-  const { data: temas = [], isLoading: cargandoCapas } = useCapasDeGeovisor(slug)
+  const { data: catalogo, isLoading: cargandoCapas } = useCatalogoDeGeovisor(slug)
+  const temas = catalogo?.temas ?? EMPTY_TEMAS
   const geovisorCargado = Boolean(geovisor)
 
   useEffect(() => {
@@ -129,6 +131,7 @@ export default function GeovisorViewer() {
 
           <PanelCapas
             temas={temas}
+            grupos={catalogo?.grupos}
             capasActivas={capasActivas}
             colorPorTema={geovisor.colorPorTema}
             apiBase={API_BASE}
@@ -156,6 +159,12 @@ export default function GeovisorViewer() {
         </MapContainer>
 
         <FichaPuntoPanel ficha={fichaAbierta} onClose={() => setFichaAbierta(null)} />
+
+        {catalogo?.desactualizado && (
+          <p role="status" className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000] px-3 py-1.5 bg-[var(--card-bg)]/95 backdrop-blur-sm border border-border rounded-lg text-xs text-text-muted shadow-md">
+            Datos de GeoServer de hace unos minutos; reintentando
+          </p>
+        )}
 
         {cargandoCapas && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 px-3 py-1.5 bg-[var(--card-bg)]/95 backdrop-blur-sm border border-border rounded-lg text-xs text-text-muted shadow-md">
