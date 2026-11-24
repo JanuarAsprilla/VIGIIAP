@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { puedeVerModulo } from '@/lib/permisosModulo'
 import {
-  Plus, Trash2, Pencil, X, CheckCircle, AlertCircle, Loader2,
+  Database, Plus, Trash2, Pencil, X, CheckCircle, AlertCircle, Loader2,
   Server, Lock, Globe2, Clock, ShieldAlert, Eye, Building2, Link2, Sparkles,
 } from 'lucide-react'
 import { fadeUpSm, panelAnim, staggerContainer, staggerItem } from '@/lib/animations'
@@ -49,9 +51,10 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
   )
 }
 
-function ConexionCard({ conexion, canWrite, onEdit, onDelete }: {
+function ConexionCard({ conexion, canWrite, puedeVerInventario, onEdit, onDelete }: {
   conexion: ConexionGeoserverRaw
   canWrite: boolean
+  puedeVerInventario: boolean
   onEdit: () => void
   onDelete: () => void
 }) {
@@ -125,13 +128,20 @@ function ConexionCard({ conexion, canWrite, onEdit, onDelete }: {
             </span>
           </p>
         )}
+        {puedeVerInventario && (
+          <Link to={`/admin/conexiones-geoserver/${conexion.id}/inventario`} aria-label={`Ver inventario de ${conexion.nombre}`}
+            className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-primary-700 hover:text-primary-800 no-underline">
+            <Database className="w-3.5 h-3.5" aria-hidden="true" />
+            Ver inventario de GeoServer
+          </Link>
+        )}
       </div>
     </motion.div>
   )
 }
 
 export default function GestionConexionesGeoserver() {
-  const { isSuperAdmin } = useAuth()
+  const { isSuperAdmin, user } = useAuth()
   const { data: conexiones = [], isLoading } = useConexionesGeoserverList()
 
   const createConexion = useCreateConexionGeoserver()
@@ -300,6 +310,7 @@ export default function GestionConexionesGeoserver() {
                 key={conexion.id}
                 conexion={conexion}
                 canWrite={isSuperAdmin}
+                puedeVerInventario={puedeVerModulo(user, 'geovisores')}
                 onEdit={() => openEdit(conexion)}
                 onDelete={() => setDeleteTarget(conexion)}
               />
