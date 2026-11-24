@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
-import type { ApiListResponse, GeovisorRaw, GeovisorInput, TemaCapas, CompletitudGeovisor } from '@/types'
+import type { ApiListResponse, GeovisorRaw, GeovisorInput, TemaCapas, CatalogoCapas, CompletitudGeovisor } from '@/types'
 
 const KEYS = {
   all:         ['geovisores'],
@@ -63,12 +63,10 @@ export function useGeovisorPorSlug(slug: string | null | undefined) {
   })
 }
 
-/** Catálogo de capas de un geovisor, agrupado por tema -- descubierto en vivo contra GeoServer. */
-export function useCapasDeGeovisor(slug: string | null | undefined) {
-  return useQuery<{ temas: TemaCapas[] }, Error, TemaCapas[]>({
+function opcionesCatalogo(slug: string | null | undefined) {
+  return {
     queryKey: KEYS.capas(slug),
-    queryFn:  () => api.get(`/geovisores/${slug}/capas`) as Promise<{ temas: TemaCapas[] }>,
-    select:   (res) => res.temas,
+    queryFn:  () => api.get(`/geovisores/${slug}/capas`) as Promise<CatalogoCapas>,
     enabled:  !!slug,
     // Las capas se publican en GeoServer sin pasar por esta plataforma: se vuelve a pedir el
     // catálogo cada minuto (React Query lo pausa solo con la pestaña oculta) y al volver a la
@@ -76,7 +74,17 @@ export function useCapasDeGeovisor(slug: string | null | undefined) {
     staleTime: 30_000,
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
-  })
+  }
+}
+
+/** Catálogo de capas de un geovisor, agrupado por tema -- descubierto en vivo contra GeoServer. */
+export function useCapasDeGeovisor(slug: string | null | undefined) {
+  return useQuery<CatalogoCapas, Error, TemaCapas[]>({ ...opcionesCatalogo(slug), select: (res) => res.temas })
+}
+
+/** Catálogo completo: temas, grupos de capas y el aviso de datos desactualizados (misma consulta que arriba). */
+export function useCatalogoDeGeovisor(slug: string | null | undefined) {
+  return useQuery<CatalogoCapas>(opcionesCatalogo(slug))
 }
 
 export function useCreateGeovisor() {
