@@ -6,6 +6,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 El historial completo previo a esta fecha está disponible en `git log`; este
 archivo empieza a trackear desde acá en adelante.
 
+## [1.14.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.13.0...v1.14.0) (2026-11-24)
+
+
+### Features
+
+* **geovisores:** inventario de GeoServer en el panel y grupos de capas en el visor ([#411](https://github.com/JanuarAsprilla/VIGIIAP/issues/411)) ([e2d160b](https://github.com/JanuarAsprilla/VIGIIAP/commit/e2d160b9d133f457319ca4f2efa8eea68a2a64b5))
+
 ## [1.13.0](https://github.com/JanuarAsprilla/VIGIIAP/compare/v1.12.1...v1.13.0) (2026-11-23)
 
 
