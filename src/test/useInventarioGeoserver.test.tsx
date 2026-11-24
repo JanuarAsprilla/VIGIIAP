@@ -23,7 +23,7 @@ describe('useInventarioGeoserver', () => {
     const { wrapper } = setup()
     const { result } = renderHook(() => useInventarioGeoserver('c1'), { wrapper })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(api.get).toHaveBeenCalledWith('/admin/conexiones-geoserver/c1/inventario')
+    expect(api.get).toHaveBeenCalledWith('/admin/conexiones-geoserver/c1/inventario', { params: { incluirEliminados: 'true' } })
   })
 
   test('no pide nada sin id de conexión', () => {
@@ -53,8 +53,21 @@ describe('useSincronizarConexionGeoserver', () => {
     await act(async () => { await result.current.mutateAsync('c1').catch(() => {}) })
 
     await waitFor(() => expect(result.current.error).not.toBeNull())
-    expect(result.current.error?.message).toMatch(/una vez por minuto/i)
+    expect(result.current.error?.message).toBe('Espera un minuto antes de volver a sincronizar.')
     expect((result.current.error as Error & { status?: number }).status).toBe(429)
+  })
+
+  test('un 409 dice que ya hay una sincronización en curso y refresca el estado', async () => {
+    vi.mocked(api.post).mockRejectedValue(Object.assign(new Error('conflicto'), { status: 409 }))
+    const { wrapper, invalidate } = setup()
+    const { result } = renderHook(() => useSincronizarConexionGeoserver(), { wrapper })
+    await act(async () => { await result.current.mutateAsync('c1').catch(() => {}) })
+
+    await waitFor(() => expect(result.current.error).not.toBeNull())
+    expect(result.current.error?.message).toBe('Ya hay una sincronización en curso; espera a que termine.')
+    expect((result.current.error as Error & { status?: number }).status).toBe(409)
+    const claves = invalidate.mock.calls.map((c) => (c[0] as { queryKey: unknown[] }).queryKey)
+    expect(claves).toContainEqual(['conexiones-geoserver', 'inventario', 'c1'])
   })
 
   test('otros errores conservan su mensaje', async () => {
