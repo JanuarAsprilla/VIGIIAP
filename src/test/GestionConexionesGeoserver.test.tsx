@@ -1,6 +1,7 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { createElement, type ReactNode } from 'react'
 import GestionConexionesGeoserver from '@/pages/admin/GestionConexionesGeoserver'
 
@@ -17,7 +18,7 @@ vi.mock('framer-motion', () => {
   return { motion, AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</> }
 })
 
-const authMock: { isSuperAdmin: boolean } = { isSuperAdmin: true }
+const authMock: { isSuperAdmin: boolean; user?: Record<string, unknown> } = { isSuperAdmin: true }
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => authMock }))
 
 vi.mock('@/hooks/useConexionesGeoserver', () => ({
@@ -43,6 +44,7 @@ function makeConexion(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   vi.clearAllMocks()
   authMock.isSuperAdmin = true
+  authMock.user = undefined
   vi.mocked(useConexionesGeoserverList).mockReturnValue({
     data: [makeConexion()], isLoading: false,
   } as unknown as ReturnType<typeof useConexionesGeoserverList>)
@@ -65,6 +67,22 @@ describe('GestionConexionesGeoserver — permisos', () => {
   test('un super admin sí ve el botón de nueva conexión', () => {
     render(<GestionConexionesGeoserver />)
     expect(screen.getByRole('button', { name: /Nueva conexión/i })).toBeInTheDocument()
+  })
+})
+
+describe('GestionConexionesGeoserver — inventario', () => {
+  test('quien puede ver geovisores tiene el enlace al inventario de cada conexión', () => {
+    authMock.user = { rol: 'admin_sig', modulos: [{ modulo: 'geovisores', puede_ver: true, puede_editar: false }] }
+    render(<MemoryRouter><GestionConexionesGeoserver /></MemoryRouter>)
+
+    expect(screen.getByRole('link', { name: 'Ver inventario de GeoServer institucional' })).toHaveAttribute('href', '/admin/conexiones-geoserver/conexion-1/inventario')
+  })
+
+  test('sin permiso de ver geovisores no aparece el enlace', () => {
+    authMock.user = { rol: 'admin_sig', modulos: [{ modulo: 'conexiones_geoserver', puede_ver: true, puede_editar: false }] }
+    render(<MemoryRouter><GestionConexionesGeoserver /></MemoryRouter>)
+
+    expect(screen.queryByRole('link', { name: /inventario/i })).not.toBeInTheDocument()
   })
 })
 

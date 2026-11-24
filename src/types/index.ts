@@ -305,12 +305,115 @@ export interface CapaGeoserver {
   tema: string
   /** Publicada en GeoServer hace menos de una semana (el backend la marca). */
   nueva?: boolean
+  /** Metadatos de GeoServer; solo llegan tras sincronizar el inventario de la conexión. */
+  titulo?: string
+  resumen?: string
+  palabrasClave?: string[]
+  estiloDefecto?: string
 }
 
 export interface TemaCapas {
   id: string
   nombre: string
   capas: CapaGeoserver[]
+}
+
+/** Grupo de capas de GeoServer; `capas` son ids de capa del catálogo, en orden. */
+export interface GrupoCapas {
+  id: string
+  nombre: string
+  titulo?: string
+  resumen?: string
+  tema: string
+  capas: string[]
+  bbox?: BboxGeografico
+}
+
+/** Respuesta de GET /geovisores/:slug/capas; `grupos` y `desactualizado` son opcionales para no romper catálogos anteriores. */
+export interface CatalogoCapas {
+  temas: TemaCapas[]
+  grupos?: GrupoCapas[]
+  /** GeoServer no respondió y se sirve la última copia guardada. */
+  desactualizado?: boolean
+}
+
+// ─── Inventario de GeoServer (sincronización) ─────────────────────────────────
+
+export type EstadoSincronizacion = 'ok' | 'parcial' | 'error'
+export type FuenteSincronizacion = 'rest+ogc' | 'ogc'
+export type TipoInventario = 'espacios' | 'capas' | 'grupos' | 'estilos'
+
+export interface CambiosSincronizacion {
+  nuevos?: number
+  cambiados?: number
+  eliminados?: number
+}
+
+export type ResumenSincronizacion = Partial<Record<TipoInventario, CambiosSincronizacion>>
+
+export interface SincronizacionInventario {
+  iniciada_en: string
+  terminada_en: string | null
+  estado: EstadoSincronizacion
+  fuente: FuenteSincronizacion
+  resumen: ResumenSincronizacion | null
+  error: string | null
+}
+
+export interface ResultadoSincronizacion {
+  estado: EstadoSincronizacion
+  fuente: FuenteSincronizacion
+  resumen: ResumenSincronizacion | null
+  duracion_ms: number
+}
+
+export interface EspacioInventario {
+  nombre: string
+  namespace_uri: string | null
+  titulo: string | null
+  resumen: string | null
+  capas: number
+  grupos: number
+}
+
+export interface CapaInventario {
+  capa_id: string
+  espacio: string
+  nombre: string
+  titulo: string | null
+  resumen: string | null
+  palabras_clave: string[] | null
+  tipo: 'vectorial' | 'raster' | null
+  estilo_defecto: string | null
+  estilos: string[] | null
+  bbox: BboxGeografico | null
+  habilitada: boolean
+  eliminado_en: string | null
+}
+
+export interface GrupoInventario {
+  grupo_id: string
+  espacio: string | null
+  nombre: string
+  titulo: string | null
+  resumen: string | null
+  modo: string | null
+  miembros: string[] | null
+  bbox: BboxGeografico | null
+}
+
+export interface EstiloInventario {
+  nombre: string
+  espacio: string | null
+  formato: string | null
+}
+
+export interface InventarioGeoserver {
+  sincronizacion: SincronizacionInventario | null
+  espacios: EspacioInventario[]
+  capas: CapaInventario[]
+  grupos: GrupoInventario[]
+  estilos: EstiloInventario[]
 }
 
 // ─── Categorías ───────────────────────────────────────────────────────────────
