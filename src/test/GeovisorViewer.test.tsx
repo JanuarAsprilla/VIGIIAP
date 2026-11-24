@@ -34,9 +34,9 @@ vi.mock('react-leaflet', () => ({
 
 vi.mock('@/hooks/useGeovisores', () => ({
   useGeovisorPorSlug: vi.fn(),
-  useCapasDeGeovisor: vi.fn(),
+  useCatalogoDeGeovisor: vi.fn(),
 }))
-import { useGeovisorPorSlug, useCapasDeGeovisor } from '@/hooks/useGeovisores'
+import { useGeovisorPorSlug, useCatalogoDeGeovisor } from '@/hooks/useGeovisores'
 
 function makeGeovisor(overrides: Partial<GeovisorRaw> = {}): GeovisorRaw {
   return {
@@ -76,7 +76,7 @@ beforeEach(() => {
 describe('GeovisorViewer — estados de carga y error', () => {
   test('muestra un spinner mientras carga el geovisor', () => {
     vi.mocked(useGeovisorPorSlug).mockReturnValue({ data: undefined, isLoading: true, isError: false, error: null } as unknown as ReturnType<typeof useGeovisorPorSlug>)
-    vi.mocked(useCapasDeGeovisor).mockReturnValue({ data: [], isLoading: false } as unknown as ReturnType<typeof useCapasDeGeovisor>)
+    vi.mocked(useCatalogoDeGeovisor).mockReturnValue({ data: { temas: [] }, isLoading: false } as unknown as ReturnType<typeof useCatalogoDeGeovisor>)
     renderViewer()
     expect(screen.queryByTestId('map-container')).not.toBeInTheDocument()
   })
@@ -85,7 +85,7 @@ describe('GeovisorViewer — estados de carga y error', () => {
     vi.mocked(useGeovisorPorSlug).mockReturnValue({
       data: undefined, isLoading: false, isError: true, error: new Error('Geovisor no encontrado'),
     } as unknown as ReturnType<typeof useGeovisorPorSlug>)
-    vi.mocked(useCapasDeGeovisor).mockReturnValue({ data: [], isLoading: false } as unknown as ReturnType<typeof useCapasDeGeovisor>)
+    vi.mocked(useCatalogoDeGeovisor).mockReturnValue({ data: { temas: [] }, isLoading: false } as unknown as ReturnType<typeof useCatalogoDeGeovisor>)
     renderViewer('no-existe')
 
     expect(screen.getByText('Geovisor no encontrado')).toBeInTheDocument()
@@ -98,9 +98,9 @@ describe('GeovisorViewer — mapa y catálogo de capas', () => {
     vi.mocked(useGeovisorPorSlug).mockReturnValue({
       data: makeGeovisor(), isLoading: false, isError: false, error: null,
     } as unknown as ReturnType<typeof useGeovisorPorSlug>)
-    vi.mocked(useCapasDeGeovisor).mockReturnValue({
-      data: temasFixture, isLoading: false,
-    } as unknown as ReturnType<typeof useCapasDeGeovisor>)
+    vi.mocked(useCatalogoDeGeovisor).mockReturnValue({
+      data: { temas: temasFixture }, isLoading: false,
+    } as unknown as ReturnType<typeof useCatalogoDeGeovisor>)
   })
 
   test('centra el mapa en las coordenadas y zoom del geovisor', () => {
@@ -203,5 +203,47 @@ describe('GeovisorViewer — mapa y catálogo de capas', () => {
     await user.click(screen.getByRole('button', { name: 'Satélite' }))
 
     expect(screen.getByTitle('Cambiar mapa base')).toHaveTextContent('Satélite')
+  })
+})
+
+describe('GeovisorViewer — grupos de capas y datos desactualizados', () => {
+  const grupo = { id: 'geologia:base', nombre: 'base', titulo: 'Geología base', tema: 'geologia', capas: ['geologia:unidades', 'geologia:fallas'] }
+
+  beforeEach(() => {
+    vi.mocked(useGeovisorPorSlug).mockReturnValue({
+      data: makeGeovisor(), isLoading: false, isError: false, error: null,
+    } as unknown as ReturnType<typeof useGeovisorPorSlug>)
+  })
+
+  test('encender un grupo pinta cada una de sus capas como su propia capa WMS', async () => {
+    vi.mocked(useCatalogoDeGeovisor).mockReturnValue({
+      data: { temas: temasFixture, grupos: [grupo] }, isLoading: false,
+    } as unknown as ReturnType<typeof useCatalogoDeGeovisor>)
+    const user = userEvent.setup()
+    renderViewer()
+
+    await user.click(screen.getByRole('button', { name: /^Geología\d+$/ }))
+    await user.click(screen.getByRole('checkbox', { name: /Todas las capas de Geología base/ }))
+
+    expect(screen.getAllByTestId('wms-layer').map((n) => n.textContent)).toEqual(['geologia:unidades', 'geologia:fallas'])
+  })
+
+  test('avisa con discreción cuando el catálogo viene desactualizado', () => {
+    vi.mocked(useCatalogoDeGeovisor).mockReturnValue({
+      data: { temas: temasFixture, desactualizado: true }, isLoading: false,
+    } as unknown as ReturnType<typeof useCatalogoDeGeovisor>)
+    renderViewer()
+
+    expect(screen.getByRole('status')).toHaveTextContent('Datos de GeoServer de hace unos minutos; reintentando')
+  })
+
+  test('sin grupos ni desactualizado no aparece ningún elemento nuevo', () => {
+    vi.mocked(useCatalogoDeGeovisor).mockReturnValue({
+      data: { temas: temasFixture }, isLoading: false,
+    } as unknown as ReturnType<typeof useCatalogoDeGeovisor>)
+    renderViewer()
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.queryByText('Grupos de capas')).not.toBeInTheDocument()
   })
 })
