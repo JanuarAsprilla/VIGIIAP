@@ -56,6 +56,7 @@ const AdminDocumentos  = lazy(() => import('./pages/admin/GestionDocumentos'))
 const AdminMapas       = lazy(() => import('./pages/admin/GestionMapas'))
 const AdminGeovisores  = lazy(() => import('./pages/admin/GestionGeovisores'))
 const AdminConexionesGeoserver = lazy(() => import('./pages/admin/GestionConexionesGeoserver'))
+const AdminInventarioGeoserver = lazy(() => import('./pages/admin/InventarioGeoserver'))
 const AdminDatosBiodiversidad = lazy(() => import('./pages/admin/DatosBiodiversidad'))
 const AdminInformes = lazy(() => import('./pages/admin/Informes'))
 const AdminConfig      = lazy(() => import('./pages/admin/Configuracion'))
@@ -212,6 +213,7 @@ function AppRoutes() {
               </Route>
               <Route element={<RequireModulo modulo="geovisores" />}>
                 <Route path="/admin/geovisores"    element={<Suspense fallback={<GenericPageSkeleton />}><AdminGeovisores /></Suspense>} />
+                <Route path="/admin/conexiones-geoserver/:id/inventario" element={<Suspense fallback={<GenericPageSkeleton />}><AdminInventarioGeoserver /></Suspense>} />
               </Route>
               <Route element={<RequireModulo modulo="conexiones_geoserver" />}>
                 <Route path="/admin/conexiones-geoserver" element={<Suspense fallback={<GenericPageSkeleton />}><AdminConexionesGeoserver /></Suspense>} />
