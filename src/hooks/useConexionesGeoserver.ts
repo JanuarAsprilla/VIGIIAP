@@ -1,8 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
-import type { ConexionGeoserverRaw, ConexionGeoserverInput, TipoConexionGeoserver, WorkspaceOption } from '@/types'
+import type {
+  ConexionGeoserverRaw, ConexionGeoserverInput, TipoConexionGeoserver, WorkspaceOption,
+  InventarioGeoserver, ResultadoSincronizacion,
+} from '@/types'
 
 const KEYS = {
+  inventario: (conexionId: string | null | undefined) => ['conexiones-geoserver', 'inventario', conexionId],
   all:        ['conexiones-geoserver'],
   list:       () => ['conexiones-geoserver', 'list'],
   seleccionables: () => ['conexiones-geoserver', 'seleccionables'],
@@ -44,6 +48,39 @@ export function useWorkspacesDeConexion(conexionId: string | null | undefined) {
     queryFn:  () => api.get(`/admin/conexiones-geoserver/${conexionId}/workspaces`),
     enabled:  !!conexionId,
     staleTime: 30_000,
+  })
+}
+
+/** Lo que GeoServer tiene publicado según la última sincronización (solo lectura; sin credenciales). */
+export function useInventarioGeoserver(conexionId: string | null | undefined) {
+  return useQuery<InventarioGeoserver>({
+    queryKey: KEYS.inventario(conexionId),
+    queryFn:  () => api.get(`/admin/conexiones-geoserver/${conexionId}/inventario`),
+    enabled:  !!conexionId,
+  })
+}
+
+export const MENSAJE_LIMITE_SINCRONIZACION =
+  'Esta conexión se puede sincronizar una vez por minuto. Espera un momento y vuelve a intentarlo.'
+
+export function useSincronizarConexionGeoserver() {
+  const qc = useQueryClient()
+  return useMutation<ResultadoSincronizacion, Error & { status?: number }, string>({
+    mutationFn: async (id) => {
+      try {
+        return await api.post(`/admin/conexiones-geoserver/${id}/sincronizar`)
+      } catch (err) {
+        if ((err as { status?: number }).status === 429) {
+          throw Object.assign(new Error(MENSAJE_LIMITE_SINCRONIZACION), { status: 429 })
+        }
+        throw err
+      }
+    },
+    onSuccess: (_res, id) => Promise.all([
+      qc.invalidateQueries({ queryKey: KEYS.inventario(id) }),
+      // El catálogo público se arma con este inventario: que el visor lo vuelva a pedir.
+      qc.invalidateQueries({ queryKey: ['geovisores', 'capas'] }),
+    ]),
   })
 }
 
